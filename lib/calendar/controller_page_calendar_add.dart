@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:life_pilot/event/event_date_range.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/event_item_schedule_comparator.dart';
@@ -348,25 +349,27 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
   void setDate(DateTime picked, {required bool isStart, int? index}) {
     if (index == null) {
       isStart ? startDate = picked : endDate = picked;
-      if (startDate != null &&
-          endDate != null &&
-          startDate!.isAfter(endDate!)) {
-        endDate = startDate;
-      }
     } else {
       isStart
           ? subEvents[index].startDate = picked
           : subEvents[index].endDate = picked;
-
-      if (subEvents[index].startDate != null &&
-          subEvents[index].endDate != null &&
-          subEvents[index].startDate!.isAfter(subEvents[index].endDate!)) {
-        subEvents[index].endDate = subEvents[index].startDate;
-      }
     }
     onContentChanged?.call();
     notifyListeners();
   }
+
+  bool hasInvalidDateRange({int? index}) => index == null
+      ? eventEndBeforeStart(startDate, endDate)
+      : eventEndBeforeStart(
+          subEvents[index].startDate,
+          subEvents[index].endDate,
+        );
+
+  bool get hasInvalidDates =>
+      hasInvalidDateRange() ||
+      subEvents.any(
+        (event) => eventEndBeforeStart(event.startDate, event.endDate),
+      );
 
   void setTime(TimeOfDay picked, {required bool isStart, int? index}) {
     if (index == null) {

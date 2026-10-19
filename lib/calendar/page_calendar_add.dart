@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/event/widgets_event_date_alert.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_page_calendar_add.dart';
@@ -108,6 +109,10 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
 
   Future<void> _saveEvent(AppLocalizations loc) async {
     if (_isSaving) return;
+    if (controllerAdd.hasInvalidDates) {
+      await showEventDateAlert(context);
+      return;
+    }
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _isSaving = true);
@@ -401,6 +406,9 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
 
                       if (picked != null) {
                         ctl.setDate(picked, isStart: true, index: index);
+                        if (ctl.hasInvalidDateRange(index: index)) {
+                          await showEventDateAlert(context);
+                        }
                       }
                     },
                     type: CalendarMisc.startToS,
@@ -421,6 +429,9 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
 
                       if (picked != null) {
                         ctl.setDate(picked, isStart: false, index: index);
+                        if (ctl.hasInvalidDateRange(index: index)) {
+                          await showEventDateAlert(context);
+                        }
                       }
                     },
                     type: CalendarMisc.endToE,

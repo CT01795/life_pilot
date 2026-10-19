@@ -47,6 +47,7 @@ class GenericEventPage extends StatefulWidget {
   final SearchPanelBuilder? searchPanelBuilder;
   final bool enableCityFilter;
   final EventHeaderBuilder? headerBuilder;
+  final Widget? contentHeader;
   final bool Function(EventItem event)? eventPredicate;
   final Object? eventPredicateKey;
   final bool showAddAction;
@@ -62,6 +63,7 @@ class GenericEventPage extends StatefulWidget {
     this.searchPanelBuilder,
     this.enableCityFilter = false,
     this.headerBuilder,
+    this.contentHeader,
     this.eventPredicate,
     this.eventPredicateKey,
     this.showAddAction = true,
@@ -301,6 +303,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
             )
           : Column(
               children: [
+                if (widget.contentHeader != null) widget.contentHeader!,
                 if (pageState.loading) const LinearProgressIndicator(),
                 if (pageState.error) _buildBackgroundLoadError(loc),
                 if (_controller.fromTableName == TableNames.calendarEvents)

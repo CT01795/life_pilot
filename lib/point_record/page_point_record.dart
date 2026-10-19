@@ -1,9 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
+import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/point_record/controller_point_record_list.dart';
@@ -238,7 +239,8 @@ class _AccountCard extends StatelessWidget {
       shouldRebuild: (prev, next) {
         if (prev == null && next == null) return false;
         if (prev == null || next == null) return true;
-        return prev.points != next.points ||
+        return !identical(prev, next) ||
+            prev.points != next.points ||
             prev.masterGraphUrl != next.masterGraphUrl;
       },
       builder: (context, account, _) {
@@ -246,8 +248,6 @@ class _AccountCard extends StatelessWidget {
           return const SizedBox.shrink();
           // 或 return Center(child: CircularProgressIndicator());
         }
-
-        final formatter = NumberFormat('#,###');
 
         return Card(
           color: Colors.grey[50],
@@ -350,24 +350,13 @@ class _AccountCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Gaps.h4,
-                        // Points
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text:
-                                    '${formatter.format(account.points)} ${loc.pointsUnit}'
-                                        .trim(),
-                                style: TextStyle(
-                                  color: account.points >= 0
-                                      ? Color(0xFF388E3C)
-                                      : Color(0xFFD32F2F), // 紅色
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                ),
-                              ),
-                            ],
-                          ),
+                        WidgetsRecordTotals(
+                          accountId: account.id,
+                          accountName: account.accountName,
+                          kind: RecordStatisticsKind.points,
+
+                          total: account.points,
+                          revision: account,
                         ),
                       ],
                     ),

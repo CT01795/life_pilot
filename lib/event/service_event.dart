@@ -585,7 +585,21 @@ class ServiceEvent {
   Future<void> updateLikeEvent({
     required EventItem event,
     required String account,
+    String? tableName,
   }) async {
+    if (tableName == TableNames.recommendEvents ||
+        tableName == TableNames.recommendPlaces) {
+      await supabase.rpc(
+        'set_recommended_content_preference',
+        params: {
+          'p_table_name': tableName,
+          'p_content_id': event.id,
+          'p_is_like': event.isLike == true,
+          'p_is_dislike': event.isDislike == true,
+        },
+      );
+      return;
+    }
     final Map<String, dynamic> data = {
       "id": event.id,
       "is_like": event.isLike,
@@ -594,17 +608,15 @@ class ServiceEvent {
     };
     try {
       await supabase.from(TableNames.recommendEventsFavor).insert([data]);
-    } catch (ex) {
-      try {
-        var query = supabase
-            .from(TableNames.recommendEventsFavor)
-            .update(data)
-            .eq(Fields.id, data[Fields.id]);
-
-        await query;
-      } catch (ex) {
-        logger.e(ex);
-      }
+    } on PostgrestException catch (ex) {
+      if (ex.code != '23505') rethrow;
+      final rows = await supabase
+          .from(TableNames.recommendEventsFavor)
+          .update(data)
+          .eq(Fields.id, event.id)
+          .eq('account', account)
+          .select('id');
+      if (rows.isEmpty) throw StateError('Preference was not saved');
     }
   }
 

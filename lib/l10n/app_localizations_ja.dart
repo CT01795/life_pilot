@@ -2074,7 +2074,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vendorAllShort => '全て';
 
   @override
-  String get vendorAnalyticsCardClicks => 'コンテンツクリック';
+  String get vendorAnalyticsCardClicks => 'ナビクリック';
 
   @override
   String get vendorAnalyticsDays => '分析日数';
@@ -3132,4 +3132,67 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get termsOfService => '利用規約';
+
+  @override
+  String get totalIncomeExpense => '総収支';
+
+  @override
+  String get monthlyIncomeExpense => '今月の収支';
+
+  @override
+  String get monthlyPoints => '今月のポイント';
+
+  @override
+  String get recordStatistics => '統計';
+
+  @override
+  String get viewCharts => 'グラフを見る';
+
+  @override
+  String get cumulativeMonthly => '累積合計';
+
+  @override
+  String get monthlyNet => '月別純増減';
+
+  @override
+  String get lastTwelveMonths => '直近12か月';
+
+  @override
+  String get invalidEventDateRange => '終了日は開始日より前にできません。';
+
+  @override
+  String get activityPerformance => '活動の効果';
+
+  @override
+  String get attractionPerformance => 'スポットの効果';
+
+  @override
+  String get viewPerformance => '効果を見る';
+
+  @override
+  String get performanceActive => '期限前';
+
+  @override
+  String get performanceExpiryMonth => '終了月';
+
+  @override
+  String get performanceOverview => '反応の概要';
+
+  @override
+  String get performanceContents => 'コンテンツ詳細';
+
+  @override
+  String get performancePeriodHint => '今月は期限前の全コンテンツ、他の月はその月に終了するものを表示します。数値は累計です。';
+
+  @override
+  String get performanceNoExpiry => '終了日未設定';
+
+  @override
+  String get performanceSearchHint => '名前または市区町村';
+
+  @override
+  String get performanceHideZeroHint => '統計データのないコンテンツは表示しません。';
+
+  @override
+  String get performanceTimeout => '検索がタイムアウトしました。再試行するか条件を絞ってください。';
 }

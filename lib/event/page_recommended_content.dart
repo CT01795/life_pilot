@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/event/widgets_content_performance_link.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/model_event.dart';
@@ -114,6 +115,12 @@ class _RecommendedContentPageState extends State<RecommendedContentPage> {
         searchPanelBuilder: widgetsSearchPanel,
         headerBuilder: (context) =>
             _buildSubmissionHub(context, isVendor: isVendor),
+        contentHeader: Align(
+          alignment: Alignment.centerLeft,
+          child: ContentPerformanceLink(
+            attractions: widget.kind == RecommendedContentKind.attraction,
+          ),
+        ),
         showAddAction: false,
         autoRefreshPublicEvents: widget.kind.autoRefreshPublicEvents,
         eventPredicateKey: (isVendor, _showOnlyMySubmissions, currentAccount),

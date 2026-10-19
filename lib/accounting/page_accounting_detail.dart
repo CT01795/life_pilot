@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
+import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_detail.dart';
@@ -337,79 +339,18 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     ModelAccountingAccount account,
     ControllerAccountingDetail controller,
   ) {
-    final loc = AppLocalizations.of(context)!;
-    String currency = controller.currentCurrency ?? (account.currency ?? '');
-    num totalValue = controller.total ?? 0;
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
-          child: Table(
-            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            columnWidths: const {
-              0: FlexColumnWidth(1.2),
-              1: FlexColumnWidth(1),
-              2: FlexColumnWidth(1.8),
-            },
-            children: [
-              TableRow(
-                children: [
-                  Text(
-                    ' ${loc.recordTotal} ',
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                  account.currency != null
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            currency,
-                            style: const TextStyle(fontSize: 20),
-                          ),
-                        )
-                      : const SizedBox(),
-                  Text(
-                    '${NumberFormat('#,##0.####').format(totalValue)} ${loc.accountingUnit}'
-                        .trim(),
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: totalValue >= 0
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Colors.red,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                ],
-              ),
-              TableRow(
-                children: [
-                  Text(' ${loc.today} ', style: const TextStyle(fontSize: 20)),
-                  account.currency != null
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            currency,
-                            style: const TextStyle(fontSize: 20),
-                          ),
-                        )
-                      : const SizedBox(),
-                  Text(
-                    '${NumberFormat('#,##0.####').format(controller.todayTotal)} ${loc.accountingUnit}'
-                        .trim(),
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: controller.todayTotal >= 0
-                          ? Colors.green
-                          : Colors.red,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                ],
-              ),
-            ],
+          child: WidgetsRecordTotals(
+            accountId: account.id,
+            accountName: account.accountName,
+            kind: RecordStatisticsKind.accounting,
+            currency: controller.currentCurrency ?? account.currency,
+            total: controller.total ?? account.balance,
+            revision: controller.todayRecords,
           ),
         ),
       ),

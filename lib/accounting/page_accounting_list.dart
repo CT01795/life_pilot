@@ -1,9 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
+import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/page_accounting_detail.dart';
@@ -203,7 +204,8 @@ class _AccountCard extends StatelessWidget {
       shouldRebuild: (prev, next) {
         if (prev == null && next == null) return false;
         if (prev == null || next == null) return true;
-        return prev.balance != next.balance ||
+        return !identical(prev, next) ||
+            prev.balance != next.balance ||
             prev.currency != next.currency ||
             prev.masterGraphUrl != next.masterGraphUrl;
       },
@@ -212,7 +214,6 @@ class _AccountCard extends StatelessWidget {
           return const SizedBox.shrink();
           // 或 return Center(child: CircularProgressIndicator());
         }
-        final formatter = NumberFormat('#,##0.####');
 
         return Card(
           color: Colors.grey[50],
@@ -315,31 +316,13 @@ class _AccountCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Gaps.h4,
-                        // Balance
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: '${account.currency} ',
-                                style: TextStyle(
-                                  color: Color(0xFF757575),
-                                  fontSize: 20,
-                                ), // 中灰
-                              ),
-                              TextSpan(
-                                text:
-                                    '${formatter.format(account.balance)} ${loc.accountingUnit}'
-                                        .trim(),
-                                style: TextStyle(
-                                  color: account.balance >= 0
-                                      ? Color(0xFF388E3C) // 綠色
-                                      : Color(0xFFD32F2F), // 紅色
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                ),
-                              ),
-                            ],
-                          ),
+                        WidgetsRecordTotals(
+                          accountId: account.id,
+                          accountName: account.accountName,
+                          kind: RecordStatisticsKind.accounting,
+                          currency: account.currency,
+                          total: account.balance,
+                          revision: account,
                         ),
                       ],
                     ),

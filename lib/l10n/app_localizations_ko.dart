@@ -2074,7 +2074,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vendorAllShort => '전체';
 
   @override
-  String get vendorAnalyticsCardClicks => '콘텐츠 클릭';
+  String get vendorAnalyticsCardClicks => '길찾기 클릭';
 
   @override
   String get vendorAnalyticsDays => '분석 일수';
@@ -3132,4 +3132,67 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get termsOfService => '서비스 약관';
+
+  @override
+  String get totalIncomeExpense => '총 수지';
+
+  @override
+  String get monthlyIncomeExpense => '이번 달 수지';
+
+  @override
+  String get monthlyPoints => '이번 달 포인트';
+
+  @override
+  String get recordStatistics => '통계';
+
+  @override
+  String get viewCharts => '차트 보기';
+
+  @override
+  String get cumulativeMonthly => '누적 합계';
+
+  @override
+  String get monthlyNet => '월별 순증감';
+
+  @override
+  String get lastTwelveMonths => '최근 12개월';
+
+  @override
+  String get invalidEventDateRange => '종료일은 시작일보다 빠를 수 없습니다.';
+
+  @override
+  String get activityPerformance => '활동 성과';
+
+  @override
+  String get attractionPerformance => '명소 성과';
+
+  @override
+  String get viewPerformance => '성과 보기';
+
+  @override
+  String get performanceActive => '기간 미종료';
+
+  @override
+  String get performanceExpiryMonth => '종료 월';
+
+  @override
+  String get performanceOverview => '반응 요약';
+
+  @override
+  String get performanceContents => '콘텐츠 상세';
+
+  @override
+  String get performancePeriodHint => '이번 달은 아직 종료되지 않은 모든 콘텐츠를, 다른 달은 해당 월에 종료되는 콘텐츠를 표시합니다. 수치는 누적 합계입니다.';
+
+  @override
+  String get performanceNoExpiry => '종료일 미설정';
+
+  @override
+  String get performanceSearchHint => '이름 또는 도시';
+
+  @override
+  String get performanceHideZeroHint => '통계 데이터가 없는 콘텐츠는 표시하지 않습니다.';
+
+  @override
+  String get performanceTimeout => '요청 시간이 초과되었습니다. 다시 시도하거나 검색 범위를 좁혀 주세요.';
 }

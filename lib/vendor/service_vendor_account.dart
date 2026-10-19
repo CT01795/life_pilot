@@ -1,11 +1,15 @@
+import 'package:life_pilot/event/model_content_performance.dart';
+import 'package:life_pilot/event/service_content_performance.dart';
 import 'package:life_pilot/utils/api.dart';
-import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceVendorAccount {
+  final ServiceContentPerformance _performance;
+  ServiceVendorAccount({ServiceContentPerformance? performance})
+    : _performance = performance ?? ServiceContentPerformance();
   Future<void> ensureVendorAccount() async {
     try {
       await supabase.rpc('ensure_my_vendor_account');
@@ -33,21 +37,19 @@ class ServiceVendorAccount {
   Future<VendorContentMetrics> fetchMetrics(String account) async {
     final normalized = normalizeText(account);
     final responses = await Future.wait([
-      supabase
-          .from(TableNames.recommendEvents)
-          .select('id,name,city,is_approved,start_date,end_date')
-          .eq(Fields.account, normalized),
-      supabase
-          .from(TableNames.recommendPlaces)
-          .select('id,name,city,is_approved,start_date,end_date')
-          .eq(Fields.account, normalized),
+      _performance.read(
+        owner: normalized,
+        attractions: false,
+        includeSubmissionDetails: true,
+      ),
+      _performance.read(
+        owner: normalized,
+        attractions: true,
+        includeSubmissionDetails: true,
+      ),
     ]);
-    final eventRows = (responses[0] as List<dynamic>)
-        .map((row) => Map<String, dynamic>.from(row as Map))
-        .toList(growable: false);
-    final attractionRows = (responses[1] as List<dynamic>)
-        .map((row) => Map<String, dynamic>.from(row as Map))
-        .toList(growable: false);
+    final eventRows = responses[0].rows;
+    final attractionRows = responses[1].rows;
     final allRows = [...eventRows, ...attractionRows];
     final today = DateTime.now();
     final date = DateTime(today.year, today.month, today.day);
@@ -108,23 +110,8 @@ class ServiceVendorAccount {
       activeEvents: eventRows.where(active).length,
       activeAttractions: attractionRows.where(active).length,
       recentSubmissions: recentSubmissions.take(5).toList(growable: false),
+      performance: ModelContentPerformance(allRows),
     );
-  }
-
-  Future<VendorEngagementMetrics> fetchEngagementMetrics({
-    required int fallbackAnalyticsDays,
-  }) async {
-    try {
-      final value = await supabase.rpc('get_my_vendor_content_analytics');
-      if (value is Map) {
-        return VendorEngagementMetrics.fromJson(
-          Map<String, dynamic>.from(value),
-        );
-      }
-    } on PostgrestException catch (error) {
-      if (error.code != '42883' && error.code != 'PGRST202') rethrow;
-    }
-    return VendorEngagementMetrics.empty(analyticsDays: fallbackAnalyticsDays);
   }
 
   Future<void> createPricingVersionAsAdmin({

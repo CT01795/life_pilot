@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
+import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
@@ -49,6 +51,9 @@ class PointSummaryCard extends StatelessWidget {
     );
     final pointsTotal = context.select<ModelDashboard, int>(
       (m) => m.state.pointsTotal,
+    );
+    final accountId = context.select<ModelDashboard, String?>(
+      (m) => m.setting.pointAccountId,
     );
 
     final formatter = _formatters.putIfAbsent(
@@ -110,37 +115,13 @@ class PointSummaryCard extends StatelessWidget {
                 )
               else ...[
                 Gaps.h16,
-                ListTile(
-                  dense: true,
-                  title: Text(
-                    loc.totalPoints,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  trailing: Text(
-                    formatter.format(pointsTotal),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: pointsTotal < 0
-                          ? colorScheme.error
-                          : colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                ListTile(
-                  dense: true,
-                  title: Text(
-                    loc.todayPoints,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  trailing: Text(
-                    formatter.format(todayTotal),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: todayTotal < 0
-                          ? colorScheme.error
-                          : colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                WidgetsRecordTotals(
+                  accountId: accountId ?? '',
+                  kind: RecordStatisticsKind.points,
+
+                  total: pointsTotal,
+                  revision: records,
+                  showStatistics: false,
                 ),
                 const Divider(),
                 if (isLoading && records.isNotEmpty)

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/event/widgets_content_performance_link.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -45,13 +46,10 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
     final status = await _service.fetchMyStatus();
     final values = await Future.wait<dynamic>([
       _service.fetchMetrics(account),
-      _service.fetchEngagementMetrics(
-        fallbackAnalyticsDays: status.plan.analyticsDays,
-      ),
       _service.fetchPricingPlans(),
     ]);
     final plans =
-        List<VendorPricingPlan>.from(values[2] as List<VendorPricingPlan>)
+        List<VendorPricingPlan>.from(values[1] as List<VendorPricingPlan>)
           ..sort((left, right) {
             const order = {'free': 0, 'partner': 1, 'growth': 2};
             final byPlan = (order[left.code] ?? 99).compareTo(
@@ -62,7 +60,6 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
           });
     return _VendorDashboardData(
       metrics: values[0] as VendorContentMetrics,
-      engagement: values[1] as VendorEngagementMetrics,
       status: status,
       plans: plans,
     );
@@ -219,7 +216,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
           ),
         ),
         Gaps.h12,
-        _engagementSection(loc, data.engagement),
+        _engagementSection(loc),
         Gaps.h12,
         _nextStep(loc, data),
         Gaps.h24,
@@ -537,13 +534,13 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
 
   Widget _nextStep(AppLocalizations loc, _VendorDashboardData data) {
     final metrics = data.metrics;
-    final engagement = data.engagement;
+    final engagement = data.metrics.performance.totals;
     final (icon, title, message) = switch ((
       metrics.activeEvents + metrics.activeAttractions,
       metrics.pending,
-      engagement.pageViews,
-      engagement.cardClicks,
-      engagement.registrationClicks,
+      engagement['page_views']!,
+      engagement['card_clicks']!,
+      engagement['registration_clicks']!,
     )) {
       (0, _, _, _, _) => (
         Icons.rocket_launch_outlined,
@@ -657,168 +654,29 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
     if (mounted) _reload();
   }
 
-  Widget _engagementSection(
-    AppLocalizations loc,
-    VendorEngagementMetrics metrics,
-  ) {
-    final theme = Theme.of(context);
-    final items = <(IconData, String, int)>[
-      (
-        Icons.visibility_outlined,
-        loc.vendorAnalyticsPageViews,
-        metrics.pageViews,
-      ),
-      (
-        Icons.touch_app_outlined,
-        loc.vendorAnalyticsCardClicks,
-        metrics.cardClicks,
-      ),
-      (
-        Icons.how_to_reg_outlined,
-        loc.vendorAnalyticsRegistrationClicks,
-        metrics.registrationClicks,
-      ),
-      (Icons.bookmark_border, loc.vendorAnalyticsSaves, metrics.saves),
-      (Icons.thumb_up_alt_outlined, loc.vendorAnalyticsLikes, metrics.likes),
-      (
-        Icons.thumb_down_alt_outlined,
-        loc.vendorAnalyticsDislikes,
-        metrics.dislikes,
-      ),
-    ];
-    final hasEngagement = items.any((item) => item.$3 > 0);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              loc.vendorAnalyticsTitle,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            Gaps.h4,
-            Text(loc.vendorAnalyticsDescription(metrics.analyticsDays)),
-            if (!hasEngagement) ...[
-              Gaps.h16,
-              Center(
-                child: Column(
-                  children: [
-                    const Icon(Icons.insights_outlined, size: 40),
-                    Gaps.h8,
-                    Text(loc.vendorAnalyticsEmpty, textAlign: TextAlign.center),
-                    Gaps.h8,
-                    FilledButton.tonalIcon(
-                      onPressed: () =>
-                          _openSubmission(TableNames.recommendEvents),
-                      icon: const Icon(Icons.add_circle_outline),
-                      label: AdaptiveButtonLabel(loc.vendorSubmitActivity),
-                    ),
-                  ],
-                ),
-              ),
-            ] else ...[
-              Gaps.h12,
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _rateChip(
-                    Icons.ads_click_outlined,
-                    loc.vendorClickThroughRate,
-                    metrics.cardClicks,
-                    metrics.pageViews,
-                  ),
-                  _rateChip(
-                    Icons.how_to_reg_outlined,
-                    loc.vendorRegistrationRate,
-                    metrics.registrationClicks,
-                    metrics.cardClicks,
-                  ),
-                  Chip(
-                    avatar: const Icon(Icons.favorite_border, size: 17),
-                    label: Text(
-                      loc.vendorPositiveActions(metrics.saves + metrics.likes),
-                    ),
-                  ),
-                ],
-              ),
-              Gaps.h12,
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final columns = constraints.maxWidth >= 720 ? 3 : 2;
-                  final width =
-                      (constraints.maxWidth - (columns - 1) * 10) / columns;
-                  return Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: items
-                        .map(
-                          (item) => SizedBox(
-                            width: width,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color:
-                                    theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Row(
-                                  children: [
-                                    Icon(item.$1, size: 20),
-                                    Gaps.w8,
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '${item.$3}',
-                                            style: theme.textTheme.titleMedium
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w900,
-                                                ),
-                                          ),
-                                          Text(
-                                            item.$2,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(growable: false),
-                  );
-                },
-              ),
+  Widget _engagementSection(AppLocalizations loc) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            loc.vendorAnalyticsTitle,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          Gaps.h8,
+          const Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              ContentPerformanceLink(attractions: false),
+              ContentPerformanceLink(attractions: true),
             ],
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _rateChip(
-    IconData icon,
-    String label,
-    int numerator,
-    int denominator,
-  ) {
-    final rate = denominator <= 0 ? 0 : numerator / denominator * 100;
-    return Chip(
-      avatar: Icon(icon, size: 17),
-      label: Text('$label ${rate.toStringAsFixed(1)}%'),
-    );
-  }
+    ),
+  );
 
   Widget _metric(double width, IconData icon, String label, int value) {
     return SizedBox(
@@ -947,13 +805,11 @@ class _VendorPlanCard extends StatelessWidget {
 class _VendorDashboardData {
   const _VendorDashboardData({
     required this.metrics,
-    required this.engagement,
     required this.status,
     required this.plans,
   });
 
   final VendorContentMetrics metrics;
-  final VendorEngagementMetrics engagement;
   final VendorSubscriptionStatus status;
   final List<VendorPricingPlan> plans;
 }

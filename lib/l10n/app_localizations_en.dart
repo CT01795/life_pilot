@@ -2074,7 +2074,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vendorAllShort => 'All';
 
   @override
-  String get vendorAnalyticsCardClicks => 'Content clicks';
+  String get vendorAnalyticsCardClicks => 'Navigation clicks';
 
   @override
   String get vendorAnalyticsDays => 'Analytics days';
@@ -3132,4 +3132,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get termsOfService => 'Terms of Service';
+
+  @override
+  String get totalIncomeExpense => 'Total Net';
+
+  @override
+  String get monthlyIncomeExpense => 'This Month’s Net';
+
+  @override
+  String get monthlyPoints => 'This Month’s Points';
+
+  @override
+  String get recordStatistics => 'Statistics';
+
+  @override
+  String get viewCharts => 'View charts';
+
+  @override
+  String get cumulativeMonthly => 'Cumulative total';
+
+  @override
+  String get monthlyNet => 'Monthly net';
+
+  @override
+  String get lastTwelveMonths => 'Last 12 months';
+
+  @override
+  String get invalidEventDateRange => 'The end date cannot be before the start date.';
+
+  @override
+  String get activityPerformance => 'Activity Insights';
+
+  @override
+  String get attractionPerformance => 'Attraction Insights';
+
+  @override
+  String get viewPerformance => 'View insights';
+
+  @override
+  String get performanceActive => 'Not expired';
+
+  @override
+  String get performanceExpiryMonth => 'Expiry month';
+
+  @override
+  String get performanceOverview => 'Engagement overview';
+
+  @override
+  String get performanceContents => 'Content details';
+
+  @override
+  String get performancePeriodHint => 'This month shows all unexpired content; other months show content expiring in that month. Metrics are lifetime totals.';
+
+  @override
+  String get performanceNoExpiry => 'No expiry date';
+
+  @override
+  String get performanceSearchHint => 'Name or city';
+
+  @override
+  String get performanceHideZeroHint => 'Content without statistics is not shown.';
+
+  @override
+  String get performanceTimeout => 'The request timed out. Retry or narrow your search.';
 }

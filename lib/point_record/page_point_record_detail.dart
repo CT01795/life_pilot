@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
+import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -319,55 +321,18 @@ class _PagePointRecordDetailViewState
     ModelPointRecordAccount account,
     ControllerPointRecordDetail controller,
   ) {
-    final loc = AppLocalizations.of(context)!;
-    int totalValue = controller.total ?? 0;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
-          child: Table(
-            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            columnWidths: const {0: FlexColumnWidth(1), 1: FlexColumnWidth(2)},
-            children: [
-              TableRow(
-                children: [
-                  Text(
-                    ' ${loc.recordTotal} ',
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                  Text(
-                    '${NumberFormat('#,###').format(totalValue)} ${loc.pointsUnit}'
-                        .trim(),
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: totalValue >= 0
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Colors.red,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                ],
-              ),
-              TableRow(
-                children: [
-                  Text(' ${loc.today} ', style: const TextStyle(fontSize: 20)),
-                  Text(
-                    '${NumberFormat('#,###').format(controller.todayTotal)} ${loc.pointsUnit}'
-                        .trim(),
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: controller.todayTotal >= 0
-                          ? Colors.green
-                          : Colors.red,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                ],
-              ),
-            ],
+          child: WidgetsRecordTotals(
+            accountId: account.id,
+            accountName: account.accountName,
+            kind: RecordStatisticsKind.points,
+
+            total: controller.total ?? account.points,
+            revision: controller.todayRecords,
           ),
         ),
       ),

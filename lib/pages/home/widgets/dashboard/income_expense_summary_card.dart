@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
+import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
@@ -49,6 +51,9 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
     );
     final accountTotal = context.select<ModelDashboard, num>(
       (m) => m.state.accountingTotal,
+    );
+    final accountId = context.select<ModelDashboard, String?>(
+      (m) => m.setting.accountingAccountId,
     );
     final currency = context.select<ModelDashboard, String>(
       (m) => m.state.accountingCurrency,
@@ -113,37 +118,13 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                 )
               else ...[
                 Gaps.h16,
-                ListTile(
-                  dense: true,
-                  title: Text(
-                    loc.totalAmount,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  trailing: Text(
-                    '${formatter.format(accountTotal)} $currency',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: accountTotal < 0
-                          ? colorScheme.error
-                          : colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                ListTile(
-                  dense: true,
-                  title: Text(
-                    loc.todayIncomeExpense,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  trailing: Text(
-                    '${formatter.format(todayTotal)} $currency',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: todayTotal < 0
-                          ? colorScheme.error
-                          : colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                WidgetsRecordTotals(
+                  accountId: accountId ?? '',
+                  kind: RecordStatisticsKind.accounting,
+                  currency: currency,
+                  total: accountTotal,
+                  revision: records,
+                  showStatistics: false,
                 ),
                 const Divider(),
                 if (isLoading && records.isNotEmpty)

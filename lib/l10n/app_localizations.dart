@@ -3969,10 +3969,10 @@ abstract class AppLocalizations {
   /// **'All'**
   String get vendorAllShort;
 
-  /// Label for vendor analytics card clicks
+  /// Successful navigation/map launch count
   ///
   /// In en, this message translates to:
-  /// **'Content clicks'**
+  /// **'Navigation clicks'**
   String get vendorAnalyticsCardClicks;
 
   /// Label for vendor analytics days
@@ -5984,6 +5984,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Terms of Service'**
   String get termsOfService;
+
+  /// Record statistics and content insights: totalIncomeExpense
+  ///
+  /// In en, this message translates to:
+  /// **'Total Net'**
+  String get totalIncomeExpense;
+
+  /// Record statistics and content insights: monthlyIncomeExpense
+  ///
+  /// In en, this message translates to:
+  /// **'This Month’s Net'**
+  String get monthlyIncomeExpense;
+
+  /// Record statistics and content insights: monthlyPoints
+  ///
+  /// In en, this message translates to:
+  /// **'This Month’s Points'**
+  String get monthlyPoints;
+
+  /// Record statistics and content insights: recordStatistics
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get recordStatistics;
+
+  /// Record statistics and content insights: viewCharts
+  ///
+  /// In en, this message translates to:
+  /// **'View charts'**
+  String get viewCharts;
+
+  /// Record statistics and content insights: cumulativeMonthly
+  ///
+  /// In en, this message translates to:
+  /// **'Cumulative total'**
+  String get cumulativeMonthly;
+
+  /// Record statistics and content insights: monthlyNet
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly net'**
+  String get monthlyNet;
+
+  /// Record statistics and content insights: lastTwelveMonths
+  ///
+  /// In en, this message translates to:
+  /// **'Last 12 months'**
+  String get lastTwelveMonths;
+
+  /// Record statistics and content insights: invalidEventDateRange
+  ///
+  /// In en, this message translates to:
+  /// **'The end date cannot be before the start date.'**
+  String get invalidEventDateRange;
+
+  /// Record statistics and content insights: activityPerformance
+  ///
+  /// In en, this message translates to:
+  /// **'Activity Insights'**
+  String get activityPerformance;
+
+  /// Record statistics and content insights: attractionPerformance
+  ///
+  /// In en, this message translates to:
+  /// **'Attraction Insights'**
+  String get attractionPerformance;
+
+  /// Record statistics and content insights: viewPerformance
+  ///
+  /// In en, this message translates to:
+  /// **'View insights'**
+  String get viewPerformance;
+
+  /// Content performance filters and layout
+  ///
+  /// In en, this message translates to:
+  /// **'Not expired'**
+  String get performanceActive;
+
+  /// Content performance filters and layout
+  ///
+  /// In en, this message translates to:
+  /// **'Expiry month'**
+  String get performanceExpiryMonth;
+
+  /// Content performance filters and layout
+  ///
+  /// In en, this message translates to:
+  /// **'Engagement overview'**
+  String get performanceOverview;
+
+  /// Content performance filters and layout
+  ///
+  /// In en, this message translates to:
+  /// **'Content details'**
+  String get performanceContents;
+
+  /// Content performance filters and layout
+  ///
+  /// In en, this message translates to:
+  /// **'This month shows all unexpired content; other months show content expiring in that month. Metrics are lifetime totals.'**
+  String get performancePeriodHint;
+
+  /// Content performance filters and layout
+  ///
+  /// In en, this message translates to:
+  /// **'No expiry date'**
+  String get performanceNoExpiry;
+
+  /// Search own content by title or city, combined with expiry month
+  ///
+  /// In en, this message translates to:
+  /// **'Name or city'**
+  String get performanceSearchHint;
+
+  /// Content with all six counters zero is hidden
+  ///
+  /// In en, this message translates to:
+  /// **'Content without statistics is not shown.'**
+  String get performanceHideZeroHint;
+
+  /// Performance query timeout with retry guidance
+  ///
+  /// In en, this message translates to:
+  /// **'The request timed out. Retry or narrow your search.'**
+  String get performanceTimeout;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

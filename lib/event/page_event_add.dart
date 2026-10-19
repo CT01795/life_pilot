@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/event/widgets_event_date_alert.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -123,8 +124,16 @@ class _PageEventAddState extends State<PageEventAdd> {
     });
   }
 
+  Future<void> _showInvalidDateAlert() async {
+    await showEventDateAlert(context);
+  }
+
   Future<void> _saveEvent(AppLocalizations loc) async {
     if (_isSaving) return;
+    if (controllerAdd.hasInvalidDates) {
+      await _showInvalidDateAlert();
+      return;
+    }
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _isSaving = true);
@@ -742,6 +751,9 @@ class _PageEventAddState extends State<PageEventAdd> {
 
                       if (picked != null) {
                         ctl.setDate(picked, isStart: true, index: index);
+                        if (ctl.hasInvalidDateRange(index: index)) {
+                          await _showInvalidDateAlert();
+                        }
                       }
                     },
                     type: CalendarMisc.startToS,
@@ -762,6 +774,9 @@ class _PageEventAddState extends State<PageEventAdd> {
 
                       if (picked != null) {
                         ctl.setDate(picked, isStart: false, index: index);
+                        if (ctl.hasInvalidDateRange(index: index)) {
+                          await _showInvalidDateAlert();
+                        }
                       }
                     },
                     type: CalendarMisc.endToE,

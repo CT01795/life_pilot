@@ -1,4 +1,5 @@
 import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/event/model_content_performance.dart';
 
 class VendorPricingPlan {
   const VendorPricingPlan({
@@ -80,6 +81,7 @@ class VendorContentMetrics {
     required this.activeEvents,
     required this.activeAttractions,
     required this.recentSubmissions,
+    required this.performance,
   });
 
   final int published;
@@ -87,6 +89,7 @@ class VendorContentMetrics {
   final int activeEvents;
   final int activeAttractions;
   final List<VendorRecentSubmission> recentSubmissions;
+  final ModelContentPerformance performance;
 }
 
 class VendorRecentSubmission {
@@ -107,45 +110,4 @@ class VendorRecentSubmission {
   final bool isApproved;
   final DateTime? startDate;
   final DateTime? endDate;
-}
-
-class VendorEngagementMetrics {
-  const VendorEngagementMetrics({
-    required this.analyticsDays,
-    required this.pageViews,
-    required this.cardClicks,
-    required this.registrationClicks,
-    required this.saves,
-    required this.likes,
-    required this.dislikes,
-  });
-
-  const VendorEngagementMetrics.empty({this.analyticsDays = 30})
-    : pageViews = 0,
-      cardClicks = 0,
-      registrationClicks = 0,
-      saves = 0,
-      likes = 0,
-      dislikes = 0;
-
-  final int analyticsDays;
-  final int pageViews;
-  final int cardClicks;
-  final int registrationClicks;
-  final int saves;
-  final int likes;
-  final int dislikes;
-
-  factory VendorEngagementMetrics.fromJson(Map<String, dynamic> json) {
-    int value(String key) => parseIntValue(json[key]);
-    return VendorEngagementMetrics(
-      analyticsDays: value('analytics_days'),
-      pageViews: value('page_views'),
-      cardClicks: value('card_clicks'),
-      registrationClicks: value('registration_clicks'),
-      saves: value('saves'),
-      likes: value('likes'),
-      dislikes: value('dislikes'),
-    );
-  }
 }

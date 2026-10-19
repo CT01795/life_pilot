@@ -2074,7 +2074,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vendorAllShort => '全部';
 
   @override
-  String get vendorAnalyticsCardClicks => '內容點擊';
+  String get vendorAnalyticsCardClicks => '導航點擊';
 
   @override
   String get vendorAnalyticsDays => '成效統計天數';
@@ -3132,4 +3132,67 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get termsOfService => '服務條款';
+
+  @override
+  String get totalIncomeExpense => '總收支';
+
+  @override
+  String get monthlyIncomeExpense => '當月收支';
+
+  @override
+  String get monthlyPoints => '當月積分';
+
+  @override
+  String get recordStatistics => '統計';
+
+  @override
+  String get viewCharts => '檢視圖表';
+
+  @override
+  String get cumulativeMonthly => '累積總額';
+
+  @override
+  String get monthlyNet => '各月淨額';
+
+  @override
+  String get lastTwelveMonths => '近 12 個月';
+
+  @override
+  String get invalidEventDateRange => '結束日期不得早於開始日期。';
+
+  @override
+  String get activityPerformance => '活動成效';
+
+  @override
+  String get attractionPerformance => '景點成效';
+
+  @override
+  String get viewPerformance => '檢視成效';
+
+  @override
+  String get performanceActive => '尚未到期';
+
+  @override
+  String get performanceExpiryMonth => '到期月份';
+
+  @override
+  String get performanceOverview => '互動總覽';
+
+  @override
+  String get performanceContents => '內容明細';
+
+  @override
+  String get performancePeriodHint => '本月顯示全部未到期內容；其他月份顯示該月到期內容。數據為累計互動。';
+
+  @override
+  String get performanceNoExpiry => '未設定到期日';
+
+  @override
+  String get performanceSearchHint => '名稱或縣市';
+
+  @override
+  String get performanceHideZeroHint => '尚未有統計資料的不顯示';
+
+  @override
+  String get performanceTimeout => '查詢逾時，請重試或縮小搜尋範圍。';
 }

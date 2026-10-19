@@ -8,6 +8,7 @@ import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/model_event_page.dart';
+import 'package:life_pilot/event/model_event_preference.dart';
 import 'package:life_pilot/event/model_event_view_cache.dart';
 import 'package:life_pilot/event/public_event_refresh.dart';
 import 'package:life_pilot/event/service_event.dart';
@@ -59,6 +60,7 @@ class ControllerEvent extends SafeChangeNotifier {
   bool _hasMoreEvents = true;
   late String _dataScopeKey;
   int _dataScopeGeneration = 0;
+  final Set<String> _pendingPreferences = {};
   Future<void>? _pageInitialization;
 
   ControllerEvent({
@@ -236,69 +238,55 @@ class ControllerEvent extends SafeChangeNotifier {
         (auth.isSysAdmin && _tableName != TableNames.memoryTrace);
   }
 
-  Future<void> likeEvent(EventItem event) async {
-    final previousLike = event.isLike;
-    final previousDislike = event.isDislike;
-    event.isLike = event.isLike == true ? false : true;
-    event.isDislike = event.isLike == true ? false : event.isDislike;
-    _sortRecommendedContent();
-    _invalidateViewModel(event.id);
-    if (!_disposed) notifyListeners();
-    try {
-      await _serviceEvent.updateLikeEvent(
-        event: event,
-        account: auth.currentAccount!,
-      );
-      if (_tableName == TableNames.recommendEvents ||
-          _tableName == TableNames.calendarEvents ||
-          _tableName == TableNames.memoryTrace) {
-        // 🔹 呼叫 function 更新資料庫
-        await tracking.incrementEventCounter(
-          eventId: event.id,
-          eventName: event.name, // 或者用 eventViewModel.name
-          column: event.isLike == true ? 'like_counts' : 'card_clicks',
-        );
-      }
-    } catch (_) {
-      event.isLike = previousLike;
-      event.isDislike = previousDislike;
-      _sortRecommendedContent();
-      _invalidateViewModel(event.id);
-      if (!_disposed) notifyListeners();
-      rethrow;
-    }
-  }
+  Future<void> likeEvent(EventItem event) =>
+      _changePreference(event, EventPreferenceAction.like);
 
-  Future<void> dislikeEvent(EventItem event) async {
-    final previousLike = event.isLike;
-    final previousDislike = event.isDislike;
-    event.isDislike = event.isDislike == true ? false : true;
-    event.isLike = event.isDislike == true ? false : event.isLike;
+  Future<void> dislikeEvent(EventItem event) =>
+      _changePreference(event, EventPreferenceAction.dislike);
+
+  Future<void> _changePreference(
+    EventItem event,
+    EventPreferenceAction action,
+  ) async {
+    if (_disposed) return;
+    _handleAuthChange();
+    final generation = _dataScopeGeneration;
+    final account = auth.currentAccount;
+    if (account == null ||
+        account.isEmpty ||
+        !_isCurrentDataScope(generation)) {
+      return;
+    }
+    final requestKey = '$generation|${event.id}';
+    if (!_pendingPreferences.add(requestKey)) return;
+    final previous = ModelEventPreference.fromEvent(event);
+    final updated = previous.toggle(action);
+    updated.applyTo(event);
     _sortRecommendedContent();
     _invalidateViewModel(event.id);
     if (!_disposed) notifyListeners();
+    // A synchronous listener can switch accounts while publishing the change.
     try {
+      if (!_isCurrentDataScope(generation)) return;
+      // Persist the requested snapshot, not a mutable card that may change later.
+      // The database saves preferences and adjusts both counters atomically.
       await _serviceEvent.updateLikeEvent(
-        event: event,
-        account: auth.currentAccount!,
+        event: event.copyWith(
+          newIsLike: updated.isLike,
+          newIsDislike: updated.isDislike,
+        ),
+        account: account,
+        tableName: _tableName,
       );
-      if (_tableName == TableNames.recommendEvents ||
-          _tableName == TableNames.calendarEvents ||
-          _tableName == TableNames.memoryTrace) {
-        // 🔹 呼叫 function 更新資料庫
-        await tracking.incrementEventCounter(
-          eventId: event.id,
-          eventName: event.name, // 或者用 eventViewModel.name
-          column: event.isDislike == true ? 'dislike_counts' : 'card_clicks',
-        );
-      }
     } catch (_) {
-      event.isLike = previousLike;
-      event.isDislike = previousDislike;
+      if (!_isCurrentDataScope(generation)) rethrow;
+      previous.applyTo(event);
       _sortRecommendedContent();
       _invalidateViewModel(event.id);
       if (!_disposed) notifyListeners();
       rethrow;
+    } finally {
+      _pendingPreferences.remove(requestKey);
     }
   }
 
