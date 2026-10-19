@@ -115,6 +115,9 @@ class ControllerEvent extends SafeChangeNotifier {
     _weatherPreloadDebounce?.cancel();
     _pendingWeatherPreloads.clear();
     _weatherPreloadAttemptedIds.clear();
+    // A new scope must not wait for an old in-flight network request. Existing
+    // queue callbacks retain their generation and will skip stale work.
+    _weatherPreloadQueue = Future<void>.value();
     _invalidateViewModelCache();
     _modelEvent.resetForDataScope();
     if (!_disposed) notifyListeners();
@@ -420,28 +423,12 @@ class ControllerEvent extends SafeChangeNotifier {
     _modelEvent.updateSearchKeywords(keywords);
     _filterRevision++;
 
-    final filter = _modelEvent.searchFilter;
-
     if (keywords == null || keywords.isEmpty) {
-      filter.tags.clear();
       _searchController.clear();
       if (!_disposed) notifyListeners();
       return;
     }
 
-    // 如果最後一個字元是空白 → 產生 tag
-    final keywordList = keywords
-        // ignore: deprecated_member_use
-        .split(RegExp(r'[,，\s]+'))
-        .map(
-          (s) => s.trim(),
-        ) // 只修剪每個 tag 前後空白 .split(RegExp(r'[,，\s]+')) // ← 逗號（英文/中文）或任意空白都分隔
-        .where((s) => s.isNotEmpty)
-        .toList();
-    filter.tags.clear();
-    if (keywordList.isNotEmpty) {
-      filter.tags = keywordList;
-    }
     if (!_disposed) notifyListeners();
     return;
   }
@@ -860,6 +847,7 @@ class ControllerEvent extends SafeChangeNotifier {
   }
 
   void preloadWeatherForEvent(EventViewModel event) {
+    if (_disposed || _dataScopeKey != _currentDataScopeKey) return;
     if (!_weatherPreloadAttemptedIds.add(event.id)) return;
     _pendingWeatherPreloads[event.id] = event;
     _weatherPreloadDebounce?.cancel();
@@ -871,20 +859,25 @@ class ControllerEvent extends SafeChangeNotifier {
 
   void _flushWeatherPreloads() {
     if (_disposed || _pendingWeatherPreloads.isEmpty) return;
+    final generation = _dataScopeGeneration;
     final events = _pendingWeatherPreloads.values.toList(growable: false);
     _pendingWeatherPreloads.clear();
     _weatherPreloadQueue = _weatherPreloadQueue
-        .then((_) => _preloadWeatherForEvents(events))
+        .then((_) => _preloadWeatherForEvents(events, generation))
         .catchError((_) {});
   }
 
-  Future<void> _preloadWeatherForEvents(List<EventViewModel> events) async {
-    if (_disposed) return;
+  Future<void> _preloadWeatherForEvents(
+    List<EventViewModel> events,
+    int generation,
+  ) async {
+    if (!_isCurrentDataScope(generation)) return;
     final requested = await _serviceWeather.preloadWeather(
       events,
       tableName: _tableName,
+      shouldContinue: () => _isCurrentDataScope(generation),
     );
-    if (requested && !_disposed) notifyListeners();
+    if (requested && _isCurrentDataScope(generation)) notifyListeners();
   }
 
   // ------------------ controller event card ------------------

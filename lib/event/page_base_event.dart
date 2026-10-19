@@ -7,8 +7,9 @@ import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/model_event_projection.dart';
+import 'package:life_pilot/event/model_event_regions.dart';
 import 'package:life_pilot/event/page_event_add.dart';
-import 'package:life_pilot/event/widgets_event_map.dart';
+import 'package:life_pilot/event/widgets_event_map.dart' show WidgetsEventMap;
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -78,21 +79,16 @@ class _GenericEventPageState extends State<GenericEventPage> {
   bool _hasLoaded = false; // ✅ 避免重複觸發 loadEvents()
   bool _isBackfillingCoordinates = false;
   int _coordinateBackfillOffset = 0;
-  EventRegionData? _regionData;
+  final _regions = ModelEventRegions();
   final _projection = ModelEventProjection();
 
   ControllerEvent get _controller => widget.controllerEvent;
-
-  EventRegionData _regionsFor(List<EventItem> events) {
-    final cached = _regionData;
-    if (cached != null && identical(cached.source, events)) return cached;
-    return _regionData = EventRegionData.fromEvents(events);
-  }
 
   late final ControllerAppBarActions _appBarHandler;
 
   @override
   void dispose() {
+    _regions.clear();
     _appBarHandler.dispose();
     _cityScrollController.dispose();
     super.dispose();
@@ -337,7 +333,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
                             predicate: widget.eventPredicate,
                             cacheKey: widget.eventPredicateKey,
                           );
-                          final regionData = _regionsFor(pageEvents);
+                          final regionData = _regions.select(pageEvents);
                           final cityCounts = regionData.counts;
                           final cities = regionData.sortedRegions;
                           // A city may exist on a page that has not been fetched yet.

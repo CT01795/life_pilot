@@ -5,8 +5,9 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/model_event_regions.dart';
 import 'package:life_pilot/memory_trace/page_memory_add.dart';
-import 'package:life_pilot/event/widgets_event_map.dart';
+import 'package:life_pilot/event/widgets_event_map.dart' show WidgetsEventMap;
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/export/service_export_excel.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
@@ -60,23 +61,18 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
   String? _selectedCity;
   final ScrollController _cityScrollController = ScrollController();
   late DataStorageLocation _loadedStorage;
-  EventRegionData? _regionData;
+  final _regions = ModelEventRegions();
   bool _hasLoaded = false; // ✅ 避免重複觸發 loadEvents()
   LoadTiming? _entryTiming;
   bool _contentFrameScheduled = false;
 
   ControllerEvent get _controller => widget.controllerEvent;
 
-  EventRegionData _regionsFor(List<EventItem> events) {
-    final cached = _regionData;
-    if (cached != null && identical(cached.source, events)) return cached;
-    return _regionData = EventRegionData.fromEvents(events);
-  }
-
   late final ControllerAppBarActions _appBarHandler;
 
   @override
   void dispose() {
+    _regions.clear();
     _appBarHandler.dispose();
     _cityScrollController.dispose();
     super.dispose();
@@ -262,7 +258,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                   child: Selector<ControllerEvent, List<EventItem>>(
                     selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
                     builder: (_, filteredEvents, _) {
-                      final regionData = _regionsFor(filteredEvents);
+                      final regionData = _regions.select(filteredEvents);
                       final cityCounts = regionData.counts;
                       final cities = regionData.sortedRegions;
                       final effectiveCity =

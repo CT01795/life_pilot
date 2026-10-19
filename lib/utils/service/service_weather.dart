@@ -3,10 +3,10 @@
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
+import 'package:life_pilot/utils/model_weather_forecast_window.dart';
 import 'package:life_pilot/utils/weather_cache_store.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 
@@ -32,20 +32,6 @@ class ServiceWeather {
     return null;
   }
 
-  bool _isWithinForecastWindow({
-    required DateTime? startDate,
-    required DateTime? endDate,
-  }) {
-    if (startDate == null) return false;
-
-    final today = DateTimeFormatter.dateOnly(DateTime.now());
-    final rangeEndExclusive = today.add(const Duration(days: 7));
-    final eventStart = DateTimeFormatter.dateOnly(startDate);
-    final eventEnd = DateTimeFormatter.dateOnly(endDate ?? startDate);
-
-    return eventStart.isBefore(rangeEndExclusive) && !eventEnd.isBefore(today);
-  }
-
   Future<List<EventWeather>?> loadWeather({
     required EventViewModel event,
     required bool hasLocation,
@@ -59,7 +45,9 @@ class ServiceWeather {
       return _getValidCache(event.locationDisplay)?.data;
     }
     if (tableName != TableNames.recommendPlaces &&
-        !_isWithinForecastWindow(startDate: startDate, endDate: endDate)) {
+        !ModelWeatherForecastWindow(
+          DateTime.now(),
+        ).includes(startDate: startDate, endDate: endDate)) {
       return null;
     }
 
@@ -131,27 +119,24 @@ class ServiceWeather {
   Future<bool> preloadWeather(
     List<EventViewModel> events, {
     required String tableName,
+    bool Function()? shouldContinue,
   }) async {
     var requested = false;
-    final DateTime today = DateTimeFormatter.dateOnly(DateTime.now());
-    final DateTime rangeEndExclusive = today.add(const Duration(days: 7));
+    final window = ModelWeatherForecastWindow(DateTime.now());
+    final attemptedLocations = <String>{};
     for (final e in events) {
-      if (tableName != TableNames.recommendPlaces) {
-        if (e.endDate == null) {
-          if (!(e.startDate!.isBefore(rangeEndExclusive) &&
-              !e.startDate!.isBefore(today))) {
-            continue;
-          }
-        } else {
-          if (!(e.startDate!.isBefore(rangeEndExclusive) &&
-              !e.endDate!.isBefore(today))) {
-            continue;
-          }
-        } //當只有start date, 日期必須是今日或一周內才要看天氣
-        //strat date 必須在一周內開始, 且結束日必須至少今天開始才要看天氣
+      // In-flight HTTP work may finish, but a stale owner must not start the
+      // remaining locations in its batch.
+      if (shouldContinue?.call() == false) break;
+      if (tableName != TableNames.recommendPlaces &&
+          !window.includes(startDate: e.startDate, endDate: e.endDate)) {
+        continue;
       }
-      if (!e.hasLocation) continue;
+      if (!e.hasLocation || e.locationDisplay.isEmpty) continue;
       if (_getValidCache(e.locationDisplay) != null) continue;
+      // Cache keys already identify weather by location. Do not retry a failed
+      // lookup for every card in this batch; a later batch may retry normally.
+      if (!attemptedLocations.add(e.locationDisplay)) continue;
 
       await loadWeather(
         event: e,

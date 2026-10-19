@@ -19,6 +19,17 @@ class ModelEvent {
   List<EventItem>? _filteredEventsCache;
   AppLocalizations? _filteredEventsLoc;
   final _searchTextIndex = ModelEventSearchIndex();
+  String? _parsedKeywords;
+  ModelEventSearchQuery? _parsedQuery;
+
+  ModelEventSearchQuery _queryForCurrentKeywords() {
+    final keywords = _searchFilter.keywords;
+    if (_parsedQuery == null || _parsedKeywords != keywords) {
+      _parsedKeywords = keywords;
+      _parsedQuery = ModelEventSearchQuery(keywords);
+    }
+    return _parsedQuery!;
+  }
 
   // Keep these aliases for existing callers; parsing belongs to the query.
   static final RegExp ageSingle = ModelEventSearchQuery.ageSingle;
@@ -66,11 +77,14 @@ class ModelEvent {
 
   void clearSearchAll() {
     _searchFilter.clear();
+    _parsedKeywords = null;
+    _parsedQuery = null;
     _invalidateFilteredEvents();
   }
 
   void updateSearchKeywords(String? keywords) {
     _searchFilter.keywords = keywords ?? '';
+    _searchFilter.tags = List.of(_queryForCurrentKeywords().tokens);
     _invalidateFilteredEvents();
   }
 
@@ -143,7 +157,7 @@ class ModelEvent {
     _events.clear();
     selectedEventIds.clear();
     removedEventIds.clear();
-    _searchFilter.clear();
+    clearSearchAll();
     showSearchPanel = false;
     _invalidateEventData();
   }
@@ -157,15 +171,22 @@ class ModelEvent {
   }
 
   void appendMemoryEvents(List<EventItem> list) {
-    final existingIds = _events.map((event) => event.id).toSet();
-    _events.addAll(list.where((event) => existingIds.add(event.id)));
+    _appendUniqueEvents(list);
     sortMemoryEvents();
   }
 
   void appendEvents(List<EventItem> list) {
+    _appendUniqueEvents(list);
+    _invalidateFilteredEvents();
+  }
+
+  /// Appending does not replace or mutate existing rows. Preserve their search
+  /// indexes, including deferred child text; newly accepted objects are indexed
+  /// on demand. Edits and full reloads retain their explicit invalidation paths.
+  void _appendUniqueEvents(List<EventItem> list) {
+    if (list.isEmpty) return;
     final existingIds = _events.map((event) => event.id).toSet();
     _events.addAll(list.where((event) => existingIds.add(event.id)));
-    _invalidateEventData();
   }
 
   void sortMemoryEvents() {
@@ -189,7 +210,7 @@ class ModelEvent {
     required Set<String> removedEventIds,
     required AppLocalizations loc,
   }) {
-    final query = ModelEventSearchQuery(inFilter.keywords);
+    final query = _queryForCurrentKeywords();
     final labels = (
       free: loc.free,
       pay: loc.pay,

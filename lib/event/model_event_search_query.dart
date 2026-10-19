@@ -16,13 +16,22 @@ class ModelEventSearchQuery {
 
   final List<_SearchTerm> _terms;
 
+  /// Display tokens retain the input's case; matching terms are normalized.
+  final List<String> tokens;
+
   ModelEventSearchQuery(String keywords)
-    : _terms = keywords
-          .toLowerCase()
-          .split(_separator)
-          .map((word) => word.trim())
-          .where((word) => word.isNotEmpty)
-          .map(_SearchTerm.new)
+    : this._(
+        keywords
+            .split(_separator)
+            .map((word) => word.trim())
+            .where((word) => word.isNotEmpty)
+            .toList(growable: false),
+      );
+
+  ModelEventSearchQuery._(List<String> words)
+    : tokens = List.unmodifiable(words),
+      _terms = words
+          .map((word) => _SearchTerm(word.toLowerCase()))
           .toList(growable: false);
 
   bool get isEmpty => _terms.isEmpty;
