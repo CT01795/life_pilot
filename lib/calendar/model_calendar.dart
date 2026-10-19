@@ -7,6 +7,7 @@ import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/calendar/service_calendar.dart';
 import 'package:life_pilot/calendar/model_calendar_week_layout.dart';
+import 'package:life_pilot/calendar/model_calendar_day_grouping.dart';
 
 import '../utils/logger.dart';
 
@@ -174,30 +175,7 @@ class ModelCalendar {
     required List<List<DateTime>> weeks,
     required List<EventItem> inEvents,
   }) {
-    final Map<int, Map<int, List<EventItem>>> result = {};
-    if (weeks.isEmpty) return result;
-    // Normalize each event once, not again for every day in the grid.
-    final ranges = inEvents.map((event) {
-      final start = DateTimeFormatter.dateOnly(event.startDate!);
-      final end = DateTimeFormatter.dateOnly(event.endDate ?? start);
-      return (event: event, start: start, end: end);
-    }).toList();
-
-    for (int weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
-      final week = weeks[weekIndex];
-
-      for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
-        final day = week[dayIndex];
-        result[weekIndex] ??= {};
-        result[weekIndex]![dayIndex] = [
-          for (final range in ranges)
-            if (!day.isBefore(range.start) && !day.isAfter(range.end))
-              range.event,
-        ];
-      }
-    }
-
-    return result;
+    return ModelCalendarDayGrouping.group(weeks: weeks, events: inEvents);
   }
 
   // 查詢特定日期的事件

@@ -54,10 +54,11 @@ class ModelScheduleOverview {
           ? tomorrowEvents
           : null;
       if (target == null) continue;
+      final start = _eventStart(event);
       target.add((
         event: event,
-        start: _eventStart(event),
-        interval: _interval(event),
+        start: start,
+        interval: _interval(event, start),
       ));
     }
     todayEvents.sort((a, b) => a.start.compareTo(b.start));
@@ -167,18 +168,14 @@ class ModelScheduleOverview {
     return interval != null && !interval.end.isAfter(now);
   }
 
-  static ({DateTime start, DateTime end})? _interval(CalendarEvent event) {
+  static ({DateTime start, DateTime end})? _interval(
+    CalendarEvent event,
+    DateTime start,
+  ) {
     final startDate = event.startDate;
     final startTime = event.startTime;
     if (startDate == null || startTime == null) return null;
     final endDate = event.endDate ?? startDate;
-    final start = DateTime(
-      startDate.year,
-      startDate.month,
-      startDate.day,
-      startTime.hour,
-      startTime.minute,
-    );
     final endTime = event.endTime;
     final end = endTime != null
         ? DateTime(

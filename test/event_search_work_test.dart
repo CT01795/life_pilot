@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/l10n/app_localizations_en.dart';
+import 'package:life_pilot/l10n/app_localizations_zh.dart';
 
 class _TextEvent extends EventItem {
   _TextEvent(String id, DateTime? date, {List<EventItem> children = const []})
@@ -22,6 +23,121 @@ class _TextEvent extends EventItem {
 
 void main() {
   final loc = AppLocalizationsEn();
+  test('editing one record preserves the other records search index', () {
+    final changed = _TextEvent('changed', DateTime(2026, 10, 1));
+    final keep = _TextEvent('keep', DateTime(2026, 10, 1));
+    final model = ModelEvent()
+      ..setEvents([changed, keep])
+      ..updateSearchKeywords('needle');
+    expect(model.getFilteredEvents(loc).length, 2);
+    model.updateEvent(EventItem(id: 'changed', name: 'different'));
+    expect(model.getFilteredEvents(loc).single.id, 'keep');
+    expect(keep.reads, 1);
+  });
+
+  test('deleting duplicate IDs preserves unrelated search text', () {
+    final first = _TextEvent('duplicate', DateTime(2026, 10, 1));
+    final second = _TextEvent('duplicate', DateTime(2026, 10, 2));
+    final keep = _TextEvent('keep', DateTime(2026, 10, 1));
+    final model = ModelEvent()
+      ..setEvents([first, second, keep])
+      ..updateSearchKeywords('needle');
+    expect(model.getFilteredEvents(loc).length, 3);
+    model.removeEvent(EventItem(id: 'duplicate', name: 'argument only'));
+    expect(model.getFilteredEvents(loc).single.id, 'keep');
+    expect(keep.reads, 1);
+    expect(model.findEventById('duplicate'), isNull);
+  });
+
+  test('editing a mutable shared child refreshes the parent result', () {
+    final child = _TextEvent('child', DateTime(2026, 10, 1));
+    final parent = EventItem(id: 'parent', name: '', subEvents: [child]);
+    final model = ModelEvent()
+      ..setEvents([parent, child])
+      ..updateSearchKeywords('needle');
+    expect(model.getFilteredEvents(loc).length, 2);
+    child.description = 'replacement';
+    model.updateEvent(child);
+    expect(model.getFilteredEvents(loc), isEmpty);
+    model.updateSearchKeywords('replacement');
+    expect(model.getFilteredEvents(loc).map((e) => e.id), ['parent', 'child']);
+  });
+
+  test('parent text match keeps child search text deferred', () {
+    final child = _TextEvent('child', DateTime(2026, 10, 1));
+    final parent = _TextEvent(
+      'parent',
+      DateTime(2026, 10, 1),
+      children: [child],
+    );
+    final model = ModelEvent()
+      ..setEvents([parent])
+      ..updateSearchKeywords('needle');
+    expect(model.getFilteredEvents(loc).single.id, 'parent');
+    expect([parent.reads, child.reads], [1, 0]);
+    model.updateSearchKeywords('child');
+    expect(model.getFilteredEvents(loc).single.id, 'parent');
+    expect([parent.reads, child.reads], [1, 1]);
+  });
+
+  test('editing invalidates both levels of the text index', () {
+    final model = ModelEvent()
+      ..setEvents([
+        EventItem(
+          id: 'e',
+          name: 'before',
+          subEvents: [EventItem(id: 'c', name: 'oldchild')],
+        ),
+      ])
+      ..updateSearchKeywords('oldchild');
+    expect(model.getFilteredEvents(loc).length, 1);
+    model.updateEvent(
+      EventItem(
+        id: 'e',
+        name: 'after',
+        subEvents: [EventItem(id: 'c', name: 'newchild')],
+      ),
+    );
+    expect(model.getFilteredEvents(loc), isEmpty);
+    model.updateSearchKeywords('newchild');
+    expect(model.getFilteredEvents(loc).single.id, 'e');
+  });
+
+  test('data scope reset cannot restore previous account indexed text', () {
+    final model = ModelEvent()
+      ..setEvents([EventItem(id: 'same', name: 'private-a')])
+      ..updateSearchKeywords('private-a');
+    expect(model.getFilteredEvents(loc).length, 1);
+    model.resetForDataScope();
+    model.setEvents([EventItem(id: 'same', name: 'private-b')]);
+    model.updateSearchKeywords('private-a');
+    expect(model.getFilteredEvents(loc), isEmpty);
+    model.updateSearchKeywords('private-b');
+    expect(model.getFilteredEvents(loc).length, 1);
+  });
+
+  test('locale switch updates translated search text', () {
+    final chinese = AppLocalizationsZh();
+    final model = ModelEvent()
+      ..setEvents([EventItem(id: 'e', name: '', isFree: true)])
+      ..updateSearchKeywords(chinese.free);
+    expect(model.getFilteredEvents(loc), isEmpty);
+    expect(model.getFilteredEvents(chinese).single.id, 'e');
+    expect(model.getFilteredEvents(loc), isEmpty);
+  });
+  test('numeric metadata search avoids parent and child text indexing', () {
+    final child = _TextEvent('child', DateTime(2026, 10, 1));
+    final parent = _TextEvent(
+      'parent',
+      DateTime(2026, 10, 1),
+      children: [child],
+    );
+    final model = ModelEvent()
+      ..setEvents([parent])
+      ..updateSearchKeywords('18y 100');
+    expect(model.getFilteredEvents(loc).single.id, 'parent');
+    expect([parent.reads, child.reads], [0, 0]);
+  });
   test('date-only filtering never builds parent or child search text', () {
     final child = _TextEvent('child', DateTime(2026, 10, 1));
     final old = _TextEvent('old', DateTime(2026, 9, 1), children: [child]);

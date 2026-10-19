@@ -7,6 +7,8 @@ import 'package:life_pilot/event/controller_page_event_add.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/model_event_page.dart';
+import 'package:life_pilot/event/model_event_view_cache.dart';
 import 'package:life_pilot/event/public_event_refresh.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/event/service_event_public.dart';
@@ -217,7 +219,7 @@ class ControllerEvent extends SafeChangeNotifier {
   }
 
   void _invalidateViewModel(String eventId) {
-    _viewModelCache.remove(eventId);
+    _viewModelCache.invalidate(eventId);
   }
 
   bool canDelete({required String account, bool isApproved = false}) {
@@ -490,37 +492,21 @@ class ControllerEvent extends SafeChangeNotifier {
     return _tableName != TableNames.recommendPlaces;
   }
 
-  final Map<
-    String,
-    ({EventItem event, AppLocalizations loc, EventViewModel viewModel})
-  >
-  _viewModelCache = {};
+  final _viewModelCache = ModelEventViewCache();
 
   EventViewModel buildViewModel({
     required EventItem event,
     required AppLocalizations loc,
   }) {
-    final cached = _viewModelCache[event.id];
-    if (cached != null &&
-        identical(cached.event, event) &&
-        identical(cached.loc, loc)) {
-      return cached.viewModel;
-    }
-
-    EventViewModel tmp = EventViewModel.buildEventViewModel(
+    return _viewModelCache.build(
       event: event,
-      parentLocation: '',
       canDelete: canDelete(
         account: event.account ?? '',
         isApproved: event.isApproved,
       ),
-      showSubEvents: true,
       loc: loc,
       tableName: _tableName,
     );
-
-    _viewModelCache[event.id] = (event: event, loc: loc, viewModel: tmp);
-    return tmp;
   }
 
   /// Own page-entry orchestration here rather than in individual views.
@@ -560,6 +546,17 @@ class ControllerEvent extends SafeChangeNotifier {
     if (autoRefresh && canRefreshPublicEvents) await refreshPublicEvents();
   }
 
+  List<EventItem> _acceptCloudPage(List<EventItem> rows, {int offset = 0}) {
+    final page = ModelEventPage.fromRows(
+      rows,
+      pageSize: _cloudPageSize,
+      offset: offset,
+    );
+    _hasMoreEvents = page.hasMore;
+    _nextCloudOffset = page.nextOffset;
+    return page.events;
+  }
+
   Future<void> loadEvents({required bool isGetPublicEvents}) async {
     _handleAuthChange();
     if (_isLoadingEvents) return;
@@ -596,11 +593,7 @@ class ControllerEvent extends SafeChangeNotifier {
       if (!_isCurrentDataScope(generation)) return;
       var loadedEvents = list ?? [];
       if (usesCloudPagination) {
-        _hasMoreEvents = loadedEvents.length > _cloudPageSize;
-        if (_hasMoreEvents) {
-          loadedEvents = loadedEvents.take(_cloudPageSize).toList();
-        }
-        _nextCloudOffset = loadedEvents.length;
+        loadedEvents = _acceptCloudPage(loadedEvents);
       } else {
         _hasMoreEvents = false;
         _nextCloudOffset = 0;
@@ -629,11 +622,7 @@ class ControllerEvent extends SafeChangeNotifier {
               [];
           if (!_isCurrentDataScope(generation)) return;
           if (usesCloudPagination) {
-            _hasMoreEvents = loadedEvents.length > _cloudPageSize;
-            if (_hasMoreEvents) {
-              loadedEvents = loadedEvents.take(_cloudPageSize).toList();
-            }
-            _nextCloudOffset = loadedEvents.length;
+            loadedEvents = _acceptCloudPage(loadedEvents);
           }
         }
       }
@@ -728,11 +717,7 @@ class ControllerEvent extends SafeChangeNotifier {
         if (!_isCurrentDataScope(generation)) return;
         var refreshedEvents = newList ?? [];
         if (usesCloudPagination) {
-          _hasMoreEvents = refreshedEvents.length > _cloudPageSize;
-          if (_hasMoreEvents) {
-            refreshedEvents = refreshedEvents.take(_cloudPageSize).toList();
-          }
-          _nextCloudOffset = refreshedEvents.length;
+          refreshedEvents = _acceptCloudPage(refreshedEvents);
         }
         _modelEvent.setEvents(refreshedEvents);
         _hasLoadedEventsSuccessfully = true;
@@ -787,9 +772,7 @@ class ControllerEvent extends SafeChangeNotifier {
             ) ??
             [];
         if (!_isCurrentDataScope(generation)) return;
-        _hasMoreEvents = nextPage.length > _cloudPageSize;
-        if (_hasMoreEvents) nextPage = nextPage.take(_cloudPageSize).toList();
-        _nextCloudOffset += nextPage.length;
+        nextPage = _acceptCloudPage(nextPage, offset: _nextCloudOffset);
         _modelEvent.appendMemoryEvents(nextPage);
         if (_hasMoreEvents) return;
       }
@@ -819,11 +802,7 @@ class ControllerEvent extends SafeChangeNotifier {
       if (!_isCurrentDataScope(generation)) return;
       var visibleOlderEvents = olderEvents;
       if (usesCloudPagination) {
-        _hasMoreEvents = olderEvents.length > _cloudPageSize;
-        if (_hasMoreEvents) {
-          visibleOlderEvents = olderEvents.take(_cloudPageSize).toList();
-        }
-        _nextCloudOffset = visibleOlderEvents.length;
+        visibleOlderEvents = _acceptCloudPage(olderEvents);
       }
       _modelEvent.appendMemoryEvents(visibleOlderEvents);
       _memoryLoadedStartDate = rangeStart;
@@ -866,12 +845,12 @@ class ControllerEvent extends SafeChangeNotifier {
           ) ??
           [];
       if (!_isCurrentDataScope(generation)) return;
-      _hasMoreEvents = nextPage.length > _cloudPageSize;
-      if (_hasMoreEvents) nextPage = nextPage.take(_cloudPageSize).toList();
-      _nextCloudOffset += nextPage.length;
+      nextPage = _acceptCloudPage(nextPage, offset: _nextCloudOffset);
       _modelEvent.appendEvents(nextPage);
       _sortRecommendedContent();
-      _invalidateViewModelCache();
+      // Appending preserves existing event instances; their cached models
+      // remain valid. Replaced rows, locale and permission changes are checked
+      // by the cache, while full reloads still explicitly clear it.
     } finally {
       if (_isCurrentDataScope(generation)) {
         _isLoadingMoreEvents = false;
@@ -1017,11 +996,7 @@ class ControllerEvent extends SafeChangeNotifier {
       if (!_isCurrentDataScope(generation)) return false;
       var refreshedEvents = newList ?? <EventItem>[];
       if (usesCloudPagination) {
-        _hasMoreEvents = refreshedEvents.length > _cloudPageSize;
-        if (_hasMoreEvents) {
-          refreshedEvents = refreshedEvents.take(_cloudPageSize).toList();
-        }
-        _nextCloudOffset = refreshedEvents.length;
+        refreshedEvents = _acceptCloudPage(refreshedEvents);
       }
       _modelEvent.setEvents(refreshedEvents);
       _hasLoadedEventsSuccessfully = true;

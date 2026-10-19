@@ -15,10 +15,11 @@ import 'package:life_pilot/utils/service/service_weather.dart';
 class _Auth extends ControllerAuth {
   String account = 'one@example.com';
   bool local = false;
+  bool admin = true;
   @override
   String? get currentAccount => account;
   @override
-  bool get isSysAdmin => true;
+  bool get isSysAdmin => admin;
   @override
   bool get storesNewDataLocally => local;
   @override
@@ -94,6 +95,106 @@ void main() {
     if (!controller.notifierDisposed) controller.dispose();
     auth.dispose();
     public.close();
+  });
+
+  test(
+    'loading another page preserves existing card presentation models',
+    () async {
+      events.rows = List.generate(51, (i) => EventItem(id: '$i', name: '$i'));
+      await controller.loadEvents(isGetPublicEvents: false);
+      final original = controller.findEventById('0')!;
+      final first = controller.buildViewModel(event: original, loc: loc);
+      await controller.loadMoreRecommendedEvents();
+      expect(
+        identical(controller.buildViewModel(event: original, loc: loc), first),
+        isTrue,
+      );
+      expect(
+        controller
+            .buildViewModel(event: controller.findEventById('50')!, loc: loc)
+            .id,
+        '50',
+      );
+    },
+  );
+
+  test(
+    'role changes refresh cached delete permission without switching account',
+    () {
+      final event = EventItem(
+        id: 'e',
+        name: '',
+        account: 'other@example.com',
+        isApproved: true,
+      );
+      expect(
+        controller.buildViewModel(event: event, loc: loc).canDelete,
+        isTrue,
+      );
+      auth.admin = false;
+      auth.notifyListeners();
+      expect(
+        controller.buildViewModel(event: event, loc: loc).canDelete,
+        isFalse,
+      );
+    },
+  );
+
+  test('full reload still invalidates cached in-place event content', () async {
+    final event = EventItem(id: 'e', name: 'before');
+    events.rows = [event];
+    await controller.loadEvents(isGetPublicEvents: false);
+    final first = controller.buildViewModel(event: event, loc: loc);
+    event.name = 'after';
+    await controller.loadEvents(isGetPublicEvents: false);
+    final updated = controller.buildViewModel(event: event, loc: loc);
+    expect(identical(updated, first), isFalse);
+    expect(updated.name, 'after');
+  });
+
+  test('account change clears even same-instance cached models', () {
+    final event = EventItem(id: 'same', name: 'before');
+    final first = controller.buildViewModel(event: event, loc: loc);
+    event.name = 'after';
+    auth.switchAccount();
+    final updated = controller.buildViewModel(event: event, loc: loc);
+    expect(identical(updated, first), isFalse);
+    expect(updated.name, 'after');
+  });
+
+  test(
+    'initial load and continuations consume each lookahead only once',
+    () async {
+      events.rows = List.generate(101, (i) => EventItem(id: '$i', name: '$i'));
+      await controller.loadEvents(isGetPublicEvents: false);
+      expect(controller.getFilteredEvents(loc).length, 50);
+      expect(controller.hasMoreEvents, isTrue);
+      await controller.loadMoreRecommendedEvents();
+      expect(controller.getFilteredEvents(loc).length, 100);
+      expect(controller.hasMoreEvents, isTrue);
+      await controller.loadMoreRecommendedEvents();
+      expect(controller.getFilteredEvents(loc).length, 101);
+      expect(controller.hasMoreEvents, isFalse);
+      expect(events.calls.map((call) => call.offset), [0, 50, 100]);
+      expect(events.calls.every((call) => call.limit == 51), isTrue);
+    },
+  );
+
+  test('deduplication never changes server continuation offset', () async {
+    events.rows = [
+      ...List.generate(50, (i) => EventItem(id: '$i', name: '$i')),
+      ...List.generate(50, (_) => EventItem(id: '0', name: 'duplicate')),
+      EventItem(id: 'last', name: 'last'),
+    ];
+    await controller.loadEvents(isGetPublicEvents: false);
+    await controller.loadMoreRecommendedEvents();
+    expect(controller.getFilteredEvents(loc).length, 50);
+    expect(controller.hasMoreEvents, isTrue);
+    await controller.loadMoreRecommendedEvents();
+    expect(events.calls.last.offset, 100);
+    expect(controller.findEventById('last'), isNotNull);
+    expect(controller.getFilteredEvents(loc).length, 51);
+    expect(controller.hasMoreEvents, isFalse);
   });
 
   test(

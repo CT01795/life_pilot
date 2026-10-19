@@ -1,9 +1,10 @@
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/model_event_ordering.dart';
+import 'package:life_pilot/event/model_event_search_query.dart';
+import 'package:life_pilot/event/model_event_search_index.dart';
 import 'package:life_pilot/event/model_search_filter.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/date_time.dart';
-import 'package:life_pilot/utils/value_parser.dart';
 
 class ModelEvent {
   List<EventItem> _events = [];
@@ -17,15 +18,12 @@ class ModelEvent {
   final Set<String> removedEventIds = {};
   List<EventItem>? _filteredEventsCache;
   AppLocalizations? _filteredEventsLoc;
-  final Map<EventItem, ({AppLocalizations loc, String text})> _searchTextCache =
-      {};
+  final _searchTextIndex = ModelEventSearchIndex();
 
-  // ignore: deprecated_member_use
-  static final RegExp ageSingle = RegExp(r'^(\d+)y$'); // 例如 "18y"
-  // ignore: deprecated_member_use
-  static final RegExp ageRange = RegExp(r'^(\d+)y~(\d+)y$'); // 例如 "18y~25y"
-  // ignore: deprecated_member_use
-  static final RegExp priceReg = RegExp(r'^\$?(\d+)(?:~\$?(\d+))?$');
+  // Keep these aliases for existing callers; parsing belongs to the query.
+  static final RegExp ageSingle = ModelEventSearchQuery.ageSingle;
+  static final RegExp ageRange = ModelEventSearchQuery.ageRange;
+  static final RegExp priceReg = ModelEventSearchQuery.price;
 
   List<EventItem> getFilteredEvents(AppLocalizations loc) {
     if (_filteredEventsCache != null && identical(_filteredEventsLoc, loc)) {
@@ -51,8 +49,10 @@ class ModelEvent {
     final index = _events.indexWhere((e) => e.id == updatedEvent.id);
 
     if (index != -1) {
+      final previous = _events[index];
       _events[index] = updatedEvent;
-      _invalidateEventData();
+      _searchTextIndex.invalidate([previous, updatedEvent]);
+      _invalidateFilteredEvents();
     }
   }
 
@@ -119,8 +119,14 @@ class ModelEvent {
 
   //--------------------------- 核心方法 ---------------------------
   void removeEvent(EventItem event) {
-    _events.removeWhere((e) => e.id == event.id);
-    _invalidateEventData();
+    final removed = <EventItem>[];
+    _events.removeWhere((existing) {
+      if (existing.id != event.id) return false;
+      removed.add(existing);
+      return true;
+    });
+    _searchTextIndex.invalidate(removed);
+    _invalidateFilteredEvents();
   }
 
   void sortRecommendedContent({required bool isEvent, DateTime? now}) {
@@ -173,38 +179,8 @@ class ModelEvent {
   }
 
   void _invalidateEventData() {
-    _searchTextCache.clear();
+    _searchTextIndex.clear();
     _invalidateFilteredEvents();
-  }
-
-  String _searchableText(EventItem event, AppLocalizations loc) {
-    final cached = _searchTextCache[event];
-    if (cached != null && identical(cached.loc, loc)) return cached.text;
-
-    final values = <String>[
-      event.city,
-      event.location,
-      event.name,
-      event.type,
-      event.description,
-      event.unit,
-      if (event.isFree != null) event.isFree! ? loc.free : loc.pay,
-      if (event.isOutdoor != null) event.isOutdoor! ? loc.outdoor : loc.indoor,
-      for (final subEvent in event.subEvents) ...[
-        subEvent.city,
-        subEvent.location,
-        subEvent.name,
-        subEvent.type,
-        subEvent.description,
-        subEvent.unit,
-        if (subEvent.isFree != null) subEvent.isFree! ? loc.free : loc.pay,
-        if (subEvent.isOutdoor != null)
-          subEvent.isOutdoor! ? loc.outdoor : loc.indoor,
-      ],
-    ];
-    final text = values.join('\n').toLowerCase();
-    _searchTextCache[event] = (loc: loc, text: text);
-    return text;
   }
 
   List<EventItem> _filterEvents({
@@ -213,18 +189,15 @@ class ModelEvent {
     required Set<String> removedEventIds,
     required AppLocalizations loc,
   }) {
-    // 🧠 預先處理關鍵字（全部轉小寫）
-    final List<String> keywords = inFilter.keywords
-        .toLowerCase()
-        .split(
-          // ignore: deprecated_member_use
-          RegExp(r'[,，\s]+'),
-        ) // ← 逗號（英文/中文）或任意空白都分隔 //.split(RegExp(r'\s+'))
-        .map((s) => s.trim()) // 只修剪每個 tag 前後空白
-        .where((word) => word.isNotEmpty)
-        .toList();
+    final query = ModelEventSearchQuery(inFilter.keywords);
+    final labels = (
+      free: loc.free,
+      pay: loc.pay,
+      outdoor: loc.outdoor,
+      indoor: loc.indoor,
+    );
 
-    if (keywords.isEmpty &&
+    if (query.isEmpty &&
         inFilter.startDate == null &&
         inFilter.endDate == null &&
         removedEventIds.isEmpty) {
@@ -234,85 +207,11 @@ class ModelEvent {
     return events.where((e) {
       if (removedEventIds.contains(e.id)) return false;
       if (!_matchesDateRange(e, inFilter)) return false;
-      final searchableText = keywords.isEmpty ? '' : _searchableText(e, loc);
-      bool matchesKeywords = keywords.every((word) {
-        if (searchableText.contains(word)) return true;
-        // 🔹 年齡判斷
-        final ageSingleMatch = ModelEvent.ageSingle.firstMatch(word);
-        final ageRangeMatch = ModelEvent.ageRange.firstMatch(word);
-        final priceMatch = ModelEvent.priceReg.firstMatch(word);
-
-        if (ageRangeMatch != null) {
-          final num kwStart = parseNumValue(ageRangeMatch.group(1));
-          final num kwEnd = parseNumValue(ageRangeMatch.group(2));
-          final num eStart = e.ageMin ?? 0;
-          final num eEnd = e.ageMax ?? 999;
-          // 🔹 區間有交集即可
-          if (!(kwEnd < eStart || kwStart > eEnd)) {
-            return true;
-          }
-        } else if (ageSingleMatch != null) {
-          final num kwAge = parseNumValue(ageSingleMatch.group(1));
-          if ((e.ageMin ?? 0) <= kwAge && (e.ageMax ?? 999) >= kwAge) {
-            return true;
-          }
-        }
-
-        // 🔹 價格判斷（主事件）
-        if (priceMatch != null) {
-          final num kwMin = parseNumValue(priceMatch.group(1));
-          final num? kwMax = priceMatch.group(2) != null
-              ? parseNumValue(priceMatch.group(2))
-              : null;
-
-          if (_matchPrice(
-            kwMin: kwMin,
-            kwMax: kwMax,
-            priceMin: e.priceMin,
-            priceMax: e.priceMax,
-          )) {
-            return true;
-          }
-        }
-
-        bool matchedSubEvents = e.subEvents.any((se) {
-          // 子事件年齡判斷
-          if (ageRangeMatch != null) {
-            final num kwStart = parseNumValue(ageRangeMatch.group(1));
-            final num kwEnd = parseNumValue(ageRangeMatch.group(2));
-            final num seStart = se.ageMin ?? 0;
-            final num seEnd = se.ageMax ?? 999;
-            if (!(kwEnd < seStart || kwStart > seEnd)) {
-              return true;
-            }
-          } else if (ageSingleMatch != null) {
-            final num kwAge = parseNumValue(ageSingleMatch.group(1));
-            if ((se.ageMin ?? 0) <= kwAge && (se.ageMax ?? 999) >= kwAge) {
-              return true;
-            }
-          }
-
-          // 🔹 子事件價格判斷
-          if (priceMatch != null) {
-            final num kwMin = parseNumValue(priceMatch.group(1));
-            final num? kwMax = priceMatch.group(2) != null
-                ? parseNumValue(priceMatch.group(2))
-                : null;
-
-            if (_matchPrice(
-              kwMin: kwMin,
-              kwMax: kwMax,
-              priceMin: se.priceMin,
-              priceMax: se.priceMax,
-            )) {
-              return true;
-            }
-          }
-          return false;
-        });
-        return matchedSubEvents;
-      });
-      return matchesKeywords;
+      return query.matchesWithText(
+        e,
+        containsText: (word) =>
+            _searchTextIndex.contains(e, word, labels: labels),
+      );
     }).toList();
   }
 
@@ -324,23 +223,5 @@ class ModelEvent {
     final end = DateTimeFormatter.dateOnly(event.endDate ?? rawStart);
     return (filter.startDate == null || !end.isBefore(filter.startDate!)) &&
         (filter.endDate == null || !start.isAfter(filter.endDate!));
-  }
-
-  bool _matchPrice({
-    required num kwMin,
-    num? kwMax,
-    required num? priceMin,
-    required num? priceMax,
-  }) {
-    final num eMin = (priceMin ?? 0);
-    final num eMax = (priceMax ?? 999999);
-
-    if (kwMax == null) {
-      // 單一價格：100
-      return eMin <= kwMin && eMax >= kwMin;
-    } else {
-      // 區間：100~200（有交集即可）
-      return !(kwMax < eMin || kwMin > eMax);
-    }
   }
 }

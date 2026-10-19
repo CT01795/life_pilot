@@ -1,8 +1,10 @@
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_upcoming_schedule.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_state.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
@@ -75,13 +77,13 @@ class ModelDashboard extends SafeChangeNotifier {
 
   List<DashboardCity> _eventCities = [];
   bool _eventCitiesLoaded = false;
-  Future<void>? _eventCitiesLoad;
+  RefreshRequestCoordinator _eventCityRequests = RefreshRequestCoordinator();
 
   List<DashboardCity> get eventCities => _eventCities;
 
   List<DashboardCity> _placeCities = [];
   bool _placeCitiesLoaded = false;
-  Future<void>? _placeCitiesLoad;
+  RefreshRequestCoordinator _placeCityRequests = RefreshRequestCoordinator();
 
   List<DashboardCity> get placeCities => _placeCities;
 
@@ -100,15 +102,17 @@ class ModelDashboard extends SafeChangeNotifier {
     _placeCities = [];
     _eventCitiesLoaded = false;
     _placeCitiesLoaded = false;
-    _eventCitiesLoad = null;
-    _placeCitiesLoad = null;
+    _eventCityRequests = RefreshRequestCoordinator();
+    _placeCityRequests = RefreshRequestCoordinator();
     _sectionLoadingCounts.clear();
     _failedSections.clear();
     notifyListeners();
   }
 
   bool _isCurrentRequest(String account, int generation) =>
-      _activeAccount == account && _accountGeneration == generation;
+      !notifierDisposed &&
+      _activeAccount == account &&
+      _accountGeneration == generation;
 
   /// Recommendations need the saved city, not every dashboard summary.
   Future<void> waitForSettings({required String account}) async {
@@ -151,26 +155,18 @@ class ModelDashboard extends SafeChangeNotifier {
     String account, {
     bool forceRefresh = false,
   }) async {
-    final pending = _eventCitiesLoad;
-    if (pending != null) {
-      await pending;
-      if (!forceRefresh) return;
-    } else if (_eventCitiesLoaded && !forceRefresh) {
+    final generation = _accountGeneration;
+    if (!_isCurrentRequest(account, generation)) return;
+    if (_eventCitiesLoaded && !forceRefresh && !_eventCityRequests.isRunning) {
       return;
     }
-
-    late final Future<void> operation;
-    operation = _loadEventCities(account).whenComplete(() {
-      if (identical(_eventCitiesLoad, operation)) {
-        _eventCitiesLoad = null;
-      }
-    });
-    _eventCitiesLoad = operation;
-    await operation;
+    await _eventCityRequests.run(
+      () => _loadEventCities(account, generation),
+      force: forceRefresh,
+    );
   }
 
-  Future<void> _loadEventCities(String account) async {
-    final generation = _accountGeneration;
+  Future<void> _loadEventCities(String account, int generation) async {
     if (!_isCurrentRequest(account, generation)) return;
     List<DashboardCity> eventCities;
     try {
@@ -193,26 +189,18 @@ class ModelDashboard extends SafeChangeNotifier {
     String account, {
     bool forceRefresh = false,
   }) async {
-    final pending = _placeCitiesLoad;
-    if (pending != null) {
-      await pending;
-      if (!forceRefresh) return;
-    } else if (_placeCitiesLoaded && !forceRefresh) {
+    final generation = _accountGeneration;
+    if (!_isCurrentRequest(account, generation)) return;
+    if (_placeCitiesLoaded && !forceRefresh && !_placeCityRequests.isRunning) {
       return;
     }
-
-    late final Future<void> operation;
-    operation = _loadPlaceCities(account).whenComplete(() {
-      if (identical(_placeCitiesLoad, operation)) {
-        _placeCitiesLoad = null;
-      }
-    });
-    _placeCitiesLoad = operation;
-    await operation;
+    await _placeCityRequests.run(
+      () => _loadPlaceCities(account, generation),
+      force: forceRefresh,
+    );
   }
 
-  Future<void> _loadPlaceCities(String account) async {
-    final generation = _accountGeneration;
+  Future<void> _loadPlaceCities(String account, int generation) async {
     if (!_isCurrentRequest(account, generation)) return;
     List<DashboardCity> placeCities;
     try {
@@ -646,29 +634,35 @@ class ModelDashboard extends SafeChangeNotifier {
     DateTime? currentTime,
   }) {
     if (_activeAccount != account) return;
-    final startDate = event.startDate;
-    if (startDate == null || event.isCompleted) return;
-
-    final now = currentTime ?? DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final visibleUntil = today.add(const Duration(days: 3));
-    final eventDate = DateTime(startDate.year, startDate.month, startDate.day);
-    if (eventDate.isBefore(today) || !eventDate.isBefore(visibleUntil)) return;
-
-    final events =
-        [..._state.todayEvents.where((item) => item.id != event.id), event]
-          ..sort((a, b) {
-            final dateComparison = a.startDate!.compareTo(b.startDate!);
-            if (dateComparison != 0) return dateComparison;
-            final aMinutes =
-                (a.startTime?.hour ?? 0) * 60 + (a.startTime?.minute ?? 0);
-            final bMinutes =
-                (b.startTime?.hour ?? 0) * 60 + (b.startTime?.minute ?? 0);
-            return aMinutes.compareTo(bMinutes);
-          });
-
-    _state = _state.copyWith(todayEvents: events.toList(growable: false));
+    final events = ModelUpcomingSchedule.withEvent(
+      events: _state.todayEvents,
+      event: event,
+      now: currentTime ?? DateTime.now(),
+    );
+    if (events == null) return;
+    _state = _state.copyWith(todayEvents: events);
     notifyListeners();
+  }
+
+  /// Keeps settings writes scoped to the account and lifecycle that started
+  /// them. Repository owns persistence; stale completions must not publish or
+  /// launch another dashboard refresh.
+  Future<bool> _saveSetting({
+    required String account,
+    required DashboardSetting setting,
+    bool publishBeforeSave = false,
+  }) async {
+    final generation = _accountGeneration;
+    if (!_isCurrentRequest(account, generation)) return false;
+    if (publishBeforeSave) _setting = setting;
+    await repository.saveDashboardSetting(account: account, setting: setting);
+    if (!_isCurrentRequest(account, generation)) return false;
+    if (!publishBeforeSave) {
+      _setting = setting;
+      notifyListeners();
+    }
+    // A listener can synchronously switch accounts during publication.
+    return _isCurrentRequest(account, generation);
   }
 
   Future<void> changeEventCity({
@@ -677,13 +671,9 @@ class ModelDashboard extends SafeChangeNotifier {
   }) async {
     final updatedSetting = _setting.copyWith(recommendEventCity: city);
 
-    await repository.saveDashboardSetting(
-      account: account,
-      setting: updatedSetting,
-    );
-
-    _setting = updatedSetting;
-    notifyListeners();
+    if (!await _saveSetting(account: account, setting: updatedSetting)) {
+      return;
+    }
 
     await refreshRecommendEvent(account: account);
   }
@@ -694,13 +684,9 @@ class ModelDashboard extends SafeChangeNotifier {
   }) async {
     final updatedSetting = _setting.copyWith(recommendPlaceCity: city);
 
-    await repository.saveDashboardSetting(
-      account: account,
-      setting: updatedSetting,
-    );
-
-    _setting = updatedSetting;
-    notifyListeners();
+    if (!await _saveSetting(account: account, setting: updatedSetting)) {
+      return;
+    }
 
     await refreshRecommendPlace(account: account);
   }
@@ -709,9 +695,13 @@ class ModelDashboard extends SafeChangeNotifier {
     required String account,
     required String language,
   }) async {
-    _setting = _setting.copyWith(language: language);
-
-    await repository.saveDashboardSetting(account: account, setting: _setting);
+    if (!await _saveSetting(
+      account: account,
+      setting: _setting.copyWith(language: language),
+      publishBeforeSave: true,
+    )) {
+      return;
+    }
 
     await refreshAll(account: account);
   }
@@ -726,13 +716,9 @@ class ModelDashboard extends SafeChangeNotifier {
       accountingAccountName: accountName,
     );
 
-    await repository.saveDashboardSetting(
-      account: account,
-      setting: updatedSetting,
-    );
-
-    _setting = updatedSetting;
-    notifyListeners();
+    if (!await _saveSetting(account: account, setting: updatedSetting)) {
+      return;
+    }
 
     if (accountId == null) {
       _accountingRequest++;
@@ -766,13 +752,9 @@ class ModelDashboard extends SafeChangeNotifier {
       pointAccountName: accountName,
     );
 
-    await repository.saveDashboardSetting(
-      account: account,
-      setting: updatedSetting,
-    );
-
-    _setting = updatedSetting;
-    notifyListeners();
+    if (!await _saveSetting(account: account, setting: updatedSetting)) {
+      return;
+    }
 
     if (accountId == null) {
       _pointsRequest++;

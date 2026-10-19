@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_schedule_overview.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_schedule_timing.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
@@ -36,10 +37,8 @@ class TodayLifeOverviewCard extends StatelessWidget {
     final todayEvents = context.select<ModelDashboard, List<CalendarEvent>>(
       (model) => model.state.todayEvents,
     );
-    final scheduleOverview = ModelScheduleOverview.from(
-      todayEvents,
-      DateTime.now(),
-    );
+    final now = DateTime.now();
+    final scheduleOverview = ModelScheduleOverview.from(todayEvents, now);
     final eventCount = scheduleOverview.todayCount;
     final nextEvent = scheduleOverview.nextEvent;
     final accountingTotal = context.select<ModelDashboard, num>(
@@ -148,7 +147,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
                                         .titleSmall
                                         ?.copyWith(fontWeight: FontWeight.w800),
                                   ),
-                                  if (_nextEventTiming(context, nextEvent)
+                                  if (_nextEventTiming(context, nextEvent, now)
                                       case final timing?)
                                     Text(
                                       timing,
@@ -374,41 +373,20 @@ class TodayLifeOverviewCard extends StatelessWidget {
     return values.isEmpty ? null : values.join(' · ');
   }
 
-  String? _nextEventTiming(BuildContext context, CalendarEvent event) {
-    final startDate = event.startDate;
-    final startTime = event.startTime;
-    if (startDate == null || startTime == null) return null;
+  String? _nextEventTiming(
+    BuildContext context,
+    CalendarEvent event,
+    DateTime now,
+  ) {
+    final timing = ModelScheduleTiming.forEvent(event, now);
+    if (timing == null) return null;
     final loc = AppLocalizations.of(context)!;
-    final now = DateTime.now();
-    final startsAt = DateTime(
-      startDate.year,
-      startDate.month,
-      startDate.day,
-      startTime.hour,
-      startTime.minute,
-    );
-    final minutes = startsAt.difference(now).inMinutes;
-    if (minutes < 0) {
-      final endDate = event.endDate ?? startDate;
-      final endTime = event.endTime;
-      final endsAt = endTime != null
-          ? DateTime(
-              endDate.year,
-              endDate.month,
-              endDate.day,
-              endTime.hour,
-              endTime.minute,
-            )
-          : startsAt.add(const Duration(hours: 1));
-      return !endsAt.isAfter(now)
-          ? loc.scheduleNeedsReview
-          : loc.scheduleAlreadyStarted;
-    }
-    if (minutes < 60) return loc.scheduleStartsInMinutes(minutes + 1);
-    if (minutes < 24 * 60) {
-      return loc.scheduleStartsInHours((minutes / 60).ceil());
-    }
-    return null;
+    return switch (timing.kind) {
+      ScheduleTimingKind.needsReview => loc.scheduleNeedsReview,
+      ScheduleTimingKind.alreadyStarted => loc.scheduleAlreadyStarted,
+      ScheduleTimingKind.minutes => loc.scheduleStartsInMinutes(timing.amount),
+      ScheduleTimingKind.hours => loc.scheduleStartsInHours(timing.amount),
+    };
   }
 }
 
