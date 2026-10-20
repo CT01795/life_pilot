@@ -71,6 +71,14 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
               ),
             );
           }
+          if (!data.hasChartData) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(loc.statisticsNoData, textAlign: TextAlign.center),
+              ),
+            );
+          }
           final series = data.series(cumulative: cumulative);
           final months = series.months;
           final values = series.values;

@@ -39,12 +39,17 @@ class ModelRecordStatistics {
   final num month;
   final num today;
   final List<RecordMonthStatistics> months;
+
+  /// Opening history counts for cumulative charts. Future months do not.
+  /// An actual zero-value record or offsetting records are not an empty result.
+  final bool hasChartData;
   ModelRecordStatistics(
     this.total,
     this.month,
     this.today,
-    List<RecordMonthStatistics> months,
-  ) : months = List.unmodifiable(months);
+    List<RecordMonthStatistics> months, {
+    this.hasChartData = true,
+  }) : months = List.unmodifiable(months);
   late final RecordStatisticsSeries _cumulative = RecordStatisticsSeries(
     months,
     cumulative: true,
@@ -67,9 +72,11 @@ class ModelRecordStatistics {
     final firstMonth = DateTime(now.year, now.month - 11);
     final totals = List<num>.filled(12, 0);
     num total = 0, month = 0, today = 0, opening = 0;
+    var hasChartData = false;
     for (final row in rows) {
       final date = tryParseDateTimeValue(row['date'], toLocal: true);
       if (date == null) continue;
+      if (date.isBefore(nextMonth)) hasChartData = true;
       final value = parseNumValue(row['value']);
       total += value;
       if (!date.isBefore(monthStart) && date.isBefore(nextMonth)) {
@@ -89,6 +96,6 @@ class ModelRecordStatistics {
           totals[i],
           cumulative += totals[i],
         ),
-    ]);
+    ], hasChartData: hasChartData);
   }
 }

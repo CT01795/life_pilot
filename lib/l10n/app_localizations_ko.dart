@@ -1521,7 +1521,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subscriptionPartialExpiryImpact => '다른 구독은 계속 유효합니다. 만료 후 남는 누적 한도는 아래와 같습니다.';
 
   @override
-  String get subscriptionExpiringCloudImpact => '갱신하지 않으면 추가와 수정이 중단됩니다. 만료 후 유효한 클라우드 한도를 초과한 데이터는 정리 절차에 들어갑니다.';
+  String get subscriptionExpiringCloudImpact => '만료 후에는 남은 유효 클라우드 한도가 적용되며, 유료 한도가 없으면 무료 한도로 전환됩니다. 초과 데이터는 유예 기간 후 정리 대상이 됩니다.';
 
   @override
   String get subscriptionExpiringLocalImpact => '갱신하지 않으면 기기 데이터는 조회와 삭제만 가능하며 추가와 수정은 중단됩니다.';
@@ -1645,7 +1645,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get subscriptionRenewalRequired => '유료 기간이 종료되었습니다. 갱신하거나 모든 클라우드 데이터를 이 기기로 이동할 때까지 클라우드는 읽기 전용입니다.';
+  String get subscriptionRenewalRequired => '클라우드 변경이 거부되었습니다. 한도를 새로고침하고 문제가 계속되면 관리자에게 문의하세요.';
 
   @override
   String subscriptionUsage(int used, int quota) {
@@ -1782,6 +1782,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get calendarInvite => '조회자 초대';
+
+  @override
+  String get calendarSendShare => '공유 보내기';
 
   @override
   String get calendarInviteHint => '이메일을 쉼표 또는 줄바꿈으로 구분해 입력하세요';
@@ -3195,4 +3198,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get performanceTimeout => '요청 시간이 초과되었습니다. 다시 시도하거나 검색 범위를 좁혀 주세요.';
+
+  @override
+  String get statisticsNoData => '표시할 데이터가 없습니다';
+
+  @override
+  String get performanceMetricShareHint => '비중: 이 항목 / 필터 합계';
+
+  @override
+  String performanceMetricShareLabel(String metric) {
+    return '$metric: 이 항목 / 필터 합계';
+  }
+
+  @override
+  String get performanceMetricShareExplanation => '분자는 이 항목의 수치이며, 분모는 현재 월 필터와 검색 조건에 해당하는 같은 지표의 합계입니다. 예를 들어 25/100은 25%입니다. 순 방문자 수가 아닙니다.';
 }

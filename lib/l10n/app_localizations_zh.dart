@@ -1521,7 +1521,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionPartialExpiryImpact => '其他訂閱仍有效；到期後的剩餘累積額度如下。';
 
   @override
-  String get subscriptionExpiringCloudImpact => '未續訂將無法新增或修改資料；超出有效雲端額度的資料會進入清理流程。';
+  String get subscriptionExpiringCloudImpact => '到期後依剩餘有效雲端額度使用；無有效付費額度時改用免費額度。超額資料依寬限期清理。';
 
   @override
   String get subscriptionExpiringLocalImpact => '未續訂將無法新增或修改本機資料，但仍可查詢或刪除。';
@@ -1645,7 +1645,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get subscriptionRenewalRequired => '付費期間已結束，雲端資料目前為唯讀。請續訂，或將全部雲端資料安全搬移到這台裝置。';
+  String get subscriptionRenewalRequired => '雲端寫入遭拒，請重新整理額度；若仍無法使用，請聯絡管理者。';
 
   @override
   String subscriptionUsage(int used, int quota) {
@@ -1782,6 +1782,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get calendarInvite => '邀請查看者';
+
+  @override
+  String get calendarSendShare => '送出分享';
 
   @override
   String get calendarInviteHint => '輸入帳號 Email，多個帳號請用逗號或換行分隔';
@@ -3195,4 +3198,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get performanceTimeout => '查詢逾時，請重試或縮小搜尋範圍。';
+
+  @override
+  String get statisticsNoData => '沒有資料可顯示';
+
+  @override
+  String get performanceMetricShareHint => '佔比：此筆／篩選總計';
+
+  @override
+  String performanceMetricShareLabel(String metric) {
+    return '$metric，此筆數值／篩選總計';
+  }
+
+  @override
+  String get performanceMetricShareExplanation => '分子是此筆數值，分母是目前月份與搜尋條件下，同一指標的總計。例如 25／100 代表佔 25%；不代表獨立訪客人數。';
 }

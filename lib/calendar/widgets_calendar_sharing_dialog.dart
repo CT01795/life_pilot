@@ -154,6 +154,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
   }
 
   Future<void> _invite() async {
+    if (_submitting || _silentlyRefreshing) return;
     final loc = AppLocalizations.of(context)!;
     final emails = _splitEmails(_emailsController.text);
     final invalidEmail = emails.any(
@@ -168,14 +169,24 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
             : null;
         _eventSelectionError = _selectedEventIds.isEmpty;
       });
+      // The fixed footer can be used while the recipient field is offscreen.
+      if ((emails.isEmpty || invalidEmail) &&
+          _dialogScrollController.hasClients) {
+        await _dialogScrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      }
       return;
     }
     setState(() {
       _emailError = null;
       _eventSelectionError = false;
     });
+    final eventIds = Set<String>.unmodifiable(_selectedEventIds);
     await _run(
-      () => widget.service.inviteAll(emails, _selectedEventIds),
+      () => widget.service.inviteAll(emails, eventIds),
       successMessage: loc.calendarInvitationSent,
     );
   }
@@ -421,6 +432,26 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
         TextButton(
           onPressed: _submitting ? null : () => Navigator.pop(context),
           child: Text(loc.close),
+        ),
+        // Dialog actions stay outside the scrollable event list, reserving
+        // their own space rather than covering the selected events.
+        Tooltip(
+          message: _selectedEventIds.isEmpty
+              ? loc.calendarSelectEventRequired
+              : loc.calendarSendShare,
+          child: FilledButton.icon(
+            key: const ValueKey('calendar-share-send'),
+            onPressed:
+                _submitting || _silentlyRefreshing || _selectedEventIds.isEmpty
+                ? null
+                : _invite,
+            icon: Badge.count(
+              count: _selectedEventIds.length,
+              isLabelVisible: _selectedEventIds.isNotEmpty,
+              child: const Icon(Icons.send),
+            ),
+            label: AdaptiveButtonLabel(loc.calendarSendShare),
+          ),
         ),
       ],
     );

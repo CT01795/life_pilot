@@ -2994,7 +2994,7 @@ abstract class AppLocalizations {
   /// Label for subscriptionExpiringCloudImpact
   ///
   /// In en, this message translates to:
-  /// **'Without renewal, adding and editing stops. Data above the cloud quota remaining after expiry enters the cleanup process.'**
+  /// **'After expiry, your remaining active cloud quota applies, or the free quota if no paid quota remains. Excess data is subject to cleanup after the grace period.'**
   String get subscriptionExpiringCloudImpact;
 
   /// Label for subscriptionExpiringLocalImpact
@@ -3210,7 +3210,7 @@ abstract class AppLocalizations {
   /// Label for subscriptionRenewalRequired
   ///
   /// In en, this message translates to:
-  /// **'Your paid period has ended. Cloud data is read-only until you renew or move all cloud data to this device.'**
+  /// **'Cloud changes were rejected. Refresh your quota; if the issue persists, contact an administrator.'**
   String get subscriptionRenewalRequired;
 
   /// No description provided for @subscriptionUsage.
@@ -3452,6 +3452,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invite viewers'**
   String get calendarInvite;
+
+  /// Fixed footer action to send the selected calendar events
+  ///
+  /// In en, this message translates to:
+  /// **'Send share'**
+  String get calendarSendShare;
 
   /// Label for calendarInviteHint
   ///
@@ -6110,6 +6116,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The request timed out. Retry or narrow your search.'**
   String get performanceTimeout;
+
+  /// Empty state for content performance and record statistics
+  ///
+  /// In en, this message translates to:
+  /// **'No data to display'**
+  String get statisticsNoData;
+
+  /// Numerator is this content's metric; denominator is the same metric summed across the current filtered results
+  ///
+  /// In en, this message translates to:
+  /// **'Share: this item / filtered total'**
+  String get performanceMetricShareHint;
+
+  /// Short tooltip for a metric ratio in a performance detail card
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}: this item / filtered total'**
+  String performanceMetricShareLabel(String metric);
+
+  /// Tooltip explaining the filtered metric share and why it is not a unique visitor count
+  ///
+  /// In en, this message translates to:
+  /// **'The numerator is this item\'s value; the denominator is the same metric\'s total for the current month filter and search. For example, 25/100 means 25%. These figures are not unique visitor counts.'**
+  String get performanceMetricShareExplanation;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

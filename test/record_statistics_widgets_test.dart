@@ -215,8 +215,7 @@ void main() {
           scrollable: find.byType(Scrollable).first,
         );
         expect(find.text('My attraction'), findsOneWidget);
-        await tester.tap(find.text('My attraction'));
-        await tester.pumpAndSettle();
+        expect(find.text('1,234/1,234'), findsOneWidget);
         expect(find.textContaining('1,234'), findsWidgets);
         expect(tester.takeException(), null);
         await tester.pumpWidget(const SizedBox());

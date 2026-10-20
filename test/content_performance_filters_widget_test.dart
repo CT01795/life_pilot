@@ -48,7 +48,7 @@ void main() {
           tester.element(find.byType(PageContentPerformance)),
         )!;
         final emptyBeforeTyping = tester.widget<Text>(
-          find.text(loc.noInfoAvailable),
+          find.text(loc.statisticsNoData),
         );
         expect(service.periods.single!.month, null);
         expect(find.text(loc.performanceHideZeroHint), findsOneWidget);
@@ -57,7 +57,7 @@ void main() {
         expect(
           identical(
             emptyBeforeTyping,
-            tester.widget<Text>(find.text(loc.noInfoAvailable)),
+            tester.widget<Text>(find.text(loc.statisticsNoData)),
           ),
           true,
         );
@@ -90,11 +90,11 @@ void main() {
         service.pending.last.complete(ModelContentPerformance([]));
         await tester.pumpAndSettle();
         await tester.scrollUntilVisible(
-          find.text(loc.noInfoAvailable),
+          find.text(loc.statisticsNoData),
           100,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.text(loc.noInfoAvailable), findsOneWidget);
+        expect(find.text(loc.statisticsNoData), findsOneWidget);
         await tester.ensureVisible(find.byType(TextField));
         await tester.pumpAndSettle();
         await tester.enterText(find.byType(TextField), 'Festival');

@@ -1521,7 +1521,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionPartialExpiryImpact => '他のサブスクリプションは引き続き有効です。終了後の合計利用枠は以下のとおりです。';
 
   @override
-  String get subscriptionExpiringCloudImpact => '更新しない場合、追加・編集はできません。終了後の有効なクラウド枠を超えるデータは整理対象になります。';
+  String get subscriptionExpiringCloudImpact => '終了後は残りの有効なクラウド枠を適用し、有料枠がなければ無料枠に切り替わります。超過データは猶予期間後に整理対象となります。';
 
   @override
   String get subscriptionExpiringLocalImpact => '更新しない場合、端末データは閲覧・削除のみとなり、追加・編集はできません。';
@@ -1645,7 +1645,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get subscriptionRenewalRequired => '有料期間が終了しました。更新するか、すべてのクラウドデータをこの端末へ移動するまでクラウドは読み取り専用です。';
+  String get subscriptionRenewalRequired => 'クラウドへの変更が拒否されました。利用枠を再読み込みし、解決しない場合は管理者に連絡してください。';
 
   @override
   String subscriptionUsage(int used, int quota) {
@@ -1782,6 +1782,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get calendarInvite => '閲覧者を招待';
+
+  @override
+  String get calendarSendShare => '共有を送信';
 
   @override
   String get calendarInviteHint => 'メールをカンマまたは改行で区切って入力';
@@ -3195,4 +3198,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get performanceTimeout => '検索がタイムアウトしました。再試行するか条件を絞ってください。';
+
+  @override
+  String get statisticsNoData => '表示できるデータがありません';
+
+  @override
+  String get performanceMetricShareHint => '割合：この項目／絞り込み合計';
+
+  @override
+  String performanceMetricShareLabel(String metric) {
+    return '$metric：この項目／絞り込み合計';
+  }
+
+  @override
+  String get performanceMetricShareExplanation => '分子はこの項目の数値、分母は現在の月と検索条件で絞り込んだ同じ指標の合計です。例：25／100 は25%を表します。ユニーク訪問者数ではありません。';
 }

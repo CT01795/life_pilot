@@ -88,28 +88,31 @@ Future<EventItem?> copyEventToAnotherPage({
   final destination = await showModalBottomSheet<EventCopyDestination>(
     context: context,
     showDragHandle: true,
+    isScrollControlled: true,
     builder: (sheetContext) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ListTile(
-              title: Text(
-                loc.copyToPage,
-                style: Theme.of(sheetContext).textTheme.titleLarge,
-              ),
-              subtitle: Text(loc.copyContentHint),
-            ),
-            for (final item in destinations)
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               ListTile(
-                leading: Icon(item.icon),
-                title: Text(item.label(loc)),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.pop(sheetContext, item),
+                title: Text(
+                  loc.copyToPage,
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+                subtitle: Text(loc.copyContentHint),
               ),
-          ],
+              for (final item in destinations)
+                ListTile(
+                  leading: Icon(item.icon),
+                  title: Text(item.label(loc)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.pop(sheetContext, item),
+                ),
+            ],
+          ),
         ),
       ),
     ),
@@ -122,14 +125,21 @@ Future<EventItem?> copyEventToAnotherPage({
   );
   EventItem? created;
   if (destination == EventCopyDestination.calendar) {
+    final calendar = context.read<ControllerCalendar>();
     created = await Navigator.of(context).push<EventItem?>(
       MaterialPageRoute(
         builder: (_) => PageCalendarAdd(
-          controllerCalendar: context.read<ControllerCalendar>(),
+          controllerCalendar: calendar,
           templateEvent: template,
         ),
       ),
     );
+    if (created != null && !calendar.notifierDisposed) {
+      // Saving invalidates all months touched by the event, including the
+      // visible grid. Like the regular Add action, rebuild that grid from the
+      // complete own + shared result instead of leaving an empty cache behind.
+      await calendar.addEvent(created);
+    }
   } else {
     final targetController = ControllerEvent(
       auth: auth,

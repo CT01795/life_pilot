@@ -4,7 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_content_performance.dart';
-import 'package:life_pilot/event/model_content_performance.dart';
+import 'package:life_pilot/event/widgets_content_performance_overview.dart';
+import 'package:life_pilot/event/widgets_content_performance_card.dart';
 import 'package:life_pilot/event/service_content_performance.dart';
 import 'package:life_pilot/event/widgets_performance_month_picker.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -62,23 +63,6 @@ class _PageContentPerformanceState extends State<PageContentPerformance> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final format = NumberFormat.decimalPattern(loc.localeName);
-    final labels = [
-      loc.vendorAnalyticsPageViews,
-      loc.vendorAnalyticsCardClicks,
-      loc.vendorAnalyticsRegistrationClicks,
-      loc.vendorAnalyticsSaves,
-      loc.vendorAnalyticsLikes,
-      loc.vendorAnalyticsDislikes,
-    ];
-    const icons = [
-      Icons.visibility_outlined,
-      Icons.directions_outlined,
-      Icons.how_to_reg_outlined,
-      Icons.bookmark_border,
-      Icons.thumb_up_alt_outlined,
-      Icons.thumb_down_alt_outlined,
-    ];
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -227,223 +211,24 @@ class _PageContentPerformanceState extends State<PageContentPerformance> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              loc.noInfoAvailable,
+                              loc.statisticsNoData,
                               textAlign: TextAlign.center,
                             ),
                           ],
                         ),
                       );
                     }
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          loc.performanceOverview,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final columns = constraints.maxWidth >= 720
-                                ? 3
-                                : constraints.maxWidth >= 280 &&
-                                      MediaQuery.textScalerOf(
-                                            context,
-                                          ).scale(14) <
-                                          24
-                                ? 2
-                                : 1;
-                            final width =
-                                (constraints.maxWidth - (columns - 1) * 12) /
-                                columns;
-                            return Wrap(
-                              spacing: 12,
-                              runSpacing: 12,
-                              children: [
-                                for (
-                                  var i = 0;
-                                  i < contentPerformanceColumns.length;
-                                  i++
-                                )
-                                  if (data.totals[contentPerformanceColumns[i]] !=
-                                      0)
-                                    SizedBox(
-                                      width: width,
-                                      child: DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          color: theme
-                                              .colorScheme
-                                              .surfaceContainerLow,
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                          border: Border.all(
-                                            color: theme
-                                                .colorScheme
-                                                .outlineVariant,
-                                          ),
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Icon(
-                                                icons[i],
-                                                color:
-                                                    theme.colorScheme.primary,
-                                                size: 22,
-                                              ),
-                                              const SizedBox(height: 12),
-                                              Text(
-                                                format.format(
-                                                  data.totals[contentPerformanceColumns[i]],
-                                                ),
-                                                style: theme
-                                                    .textTheme
-                                                    .headlineSmall
-                                                    ?.copyWith(
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                    ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                labels[i],
-                                                style:
-                                                    theme.textTheme.bodyMedium,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                              ],
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 28),
-                        Text(
-                          '${loc.performanceContents} · ${data.rows.length}',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                    );
+                    return WidgetsContentPerformanceOverview(data: data);
                   }
                   final item = data!.items[index - 2];
-                  final starts = item.starts;
-                  final ends = item.visibleEndDate;
-                  final dateFormat = DateFormat.yMd(loc.localeName);
-                  final city = item.city;
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 0,
-                    color: theme.colorScheme.surface,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: theme.colorScheme.outlineVariant),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: ExpansionTile(
-                      key: ValueKey((controller.selectedMonth, item.id, index)),
-                      tilePadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      title: Text(
-                        item.name,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (city.isNotEmpty)
-                              Text(city, style: theme.textTheme.bodySmall),
-                            if (starts != null)
-                              Text(
-                                '${loc.startDate} · ${dateFormat.format(starts)}',
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            if (ends != null)
-                              Text(
-                                '${loc.endDate} · ${dateFormat.format(ends)}',
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            if (starts == null && item.ends == null)
-                              Text(
-                                loc.performanceNoExpiry,
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            const SizedBox(height: 4),
-                            Text(
-                              item.approved
-                                  ? loc.publishedSubmission
-                                  : loc.unpublishedSubmission,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      children: [
-                        const Divider(height: 24),
-                        for (
-                          var i = 0;
-                          i < contentPerformanceColumns.length;
-                          i++
-                        )
-                          if (item.counts[i] != 0)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Wrap(
-                                    alignment: WrapAlignment.spaceBetween,
-                                    spacing: 12,
-                                    runSpacing: 4,
-                                    children: [
-                                      Text(
-                                        labels[i],
-                                        style: theme.textTheme.bodyMedium,
-                                      ),
-                                      Text(
-                                        format.format(item.counts[i]),
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  LinearProgressIndicator(
-                                    minHeight: 5,
-                                    borderRadius: BorderRadius.circular(3),
-                                    value: (item.counts[i] / item.maximum)
-                                        .clamp(0.0, 1.0),
-                                    backgroundColor: theme
-                                        .colorScheme
-                                        .surfaceContainerHighest,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                ],
-                              ),
-                            ),
-                      ],
-                    ),
+                  return WidgetsContentPerformanceCard(
+                    item: item,
+                    performance: data,
+                    expansionKey: ValueKey((
+                      controller.selectedMonth,
+                      item.id,
+                      index,
+                    )),
                   );
                 },
               );

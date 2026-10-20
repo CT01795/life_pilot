@@ -1521,7 +1521,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionPartialExpiryImpact => 'Other subscriptions remain active. Your cumulative quota after expiry is shown below.';
 
   @override
-  String get subscriptionExpiringCloudImpact => 'Without renewal, adding and editing stops. Data above the cloud quota remaining after expiry enters the cleanup process.';
+  String get subscriptionExpiringCloudImpact => 'After expiry, your remaining active cloud quota applies, or the free quota if no paid quota remains. Excess data is subject to cleanup after the grace period.';
 
   @override
   String get subscriptionExpiringLocalImpact => 'Without renewal, local data becomes read/delete only; adding and editing stops.';
@@ -1645,7 +1645,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get subscriptionRenewalRequired => 'Your paid period has ended. Cloud data is read-only until you renew or move all cloud data to this device.';
+  String get subscriptionRenewalRequired => 'Cloud changes were rejected. Refresh your quota; if the issue persists, contact an administrator.';
 
   @override
   String subscriptionUsage(int used, int quota) {
@@ -1782,6 +1782,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarInvite => 'Invite viewers';
+
+  @override
+  String get calendarSendShare => 'Send share';
 
   @override
   String get calendarInviteHint => 'Enter account emails, separated by commas or new lines';
@@ -3195,4 +3198,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get performanceTimeout => 'The request timed out. Retry or narrow your search.';
+
+  @override
+  String get statisticsNoData => 'No data to display';
+
+  @override
+  String get performanceMetricShareHint => 'Share: this item / filtered total';
+
+  @override
+  String performanceMetricShareLabel(String metric) {
+    return '$metric: this item / filtered total';
+  }
+
+  @override
+  String get performanceMetricShareExplanation => 'The numerator is this item\'s value; the denominator is the same metric\'s total for the current month filter and search. For example, 25/100 means 25%. These figures are not unique visitor counts.';
 }

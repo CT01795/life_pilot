@@ -1,5 +1,27 @@
 typedef FetchRows = Future<List<dynamic>> Function(int offset, int limit);
 
+/// Reads complete result sets even when the server caps responses below the
+/// requested size. Callers retain query, authorization and timeout ownership.
+Future<List<Map<String, dynamic>>> readAllPagedRows({
+  required FetchRows fetch,
+  int batchSize = 500,
+}) async {
+  if (batchSize < 1) throw ArgumentError.value(batchSize, 'batchSize');
+  final rows = <Map<String, dynamic>>[];
+  final seen = <String>{};
+  while (true) {
+    final batch = await fetch(rows.length, batchSize);
+    if (batch.isEmpty) return rows;
+    for (final value in batch) {
+      final row = Map<String, dynamic>.from(value as Map);
+      if (!seen.add(row['id'].toString())) {
+        throw StateError('Pagination returned a repeated row; check offset');
+      }
+      rows.add(row);
+    }
+  }
+}
+
 /// Fills a requested window even when the server caps each response size.
 /// Throws if offsets are ignored, rather than silently declaring end-of-data.
 Future<List<dynamic>> readPagedRows({

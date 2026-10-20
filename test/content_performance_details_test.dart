@@ -107,17 +107,27 @@ void main() {
           expect(find.text(loc.vendorAnalyticsCardClicks), findsOneWidget);
           expect(find.text(loc.vendorAnalyticsLikes), findsOneWidget);
           await tester.ensureVisible(find.text('Normal'));
-          await tester.tap(find.text('Normal'));
           await tester.pumpAndSettle();
-          expect(find.text(loc.vendorAnalyticsCardClicks), findsNWidgets(2));
+          expect(find.text(loc.vendorAnalyticsCardClicks), findsOneWidget);
+          expect(
+            find.byTooltip(
+              loc.performanceMetricShareLabel(loc.vendorAnalyticsCardClicks),
+            ),
+            findsOneWidget,
+          );
           expect(
             find.text(loc.vendorAnalyticsLikes),
             findsOneWidget,
           ); // Not shown in Normal.
           await tester.ensureVisible(find.text('Sentinel'));
-          await tester.tap(find.text('Sentinel'));
           await tester.pumpAndSettle();
-          expect(find.text(loc.vendorAnalyticsLikes), findsNWidgets(2));
+          expect(find.text(loc.vendorAnalyticsLikes), findsOneWidget);
+          expect(
+            find.byTooltip(
+              loc.performanceMetricShareLabel(loc.vendorAnalyticsLikes),
+            ),
+            findsOneWidget,
+          );
           expect(tester.takeException(), null);
           await tester.pumpWidget(const SizedBox());
         },

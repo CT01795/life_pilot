@@ -1,15 +1,21 @@
 import 'dart:convert';
 import 'package:life_pilot/utils/value_parser.dart';
-import 'package:life_pilot/event/model_content_performance_period.dart';
 
-const contentPerformanceColumns = [
-  'page_views',
-  'card_clicks',
-  'registration_clicks',
-  'saves',
-  'like_counts',
-  'dislike_counts',
-];
+enum ContentPerformanceMetric {
+  pageViews('page_views'),
+  navigationClicks('card_clicks'),
+  registrationClicks('registration_clicks'),
+  saves('saves'),
+  likes('like_counts'),
+  dislikes('dislike_counts');
+
+  final String column;
+  const ContentPerformanceMetric(this.column);
+}
+
+final contentPerformanceColumns = List<String>.unmodifiable(
+  ContentPerformanceMetric.values.map((metric) => metric.column),
+);
 
 int compareContentPerformance(
   Map<String, dynamic> left,
@@ -34,6 +40,17 @@ class ModelContentPerformance {
   final List<Map<String, dynamic>> rows;
   final List<ContentPerformanceItem> items;
   final Map<String, int> totals;
+  int totalFor(ContentPerformanceMetric metric) => totals[metric.column]!;
+
+  /// Share of the same metric across this query's filtered result, not people.
+  double shareFor(
+    ContentPerformanceItem item,
+    ContentPerformanceMetric metric,
+  ) {
+    final total = totalFor(metric);
+    return total > 0 ? (item.countFor(metric) / total).clamp(0.0, 1.0) : 0.0;
+  }
+
   ModelContentPerformance._(this.rows, this.items, this.totals);
   factory ModelContentPerformance(
     List<Map<String, dynamic>> rows, {
@@ -72,6 +89,7 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
   DateTime? get visibleEndDate =>
       ends != null && ends!.year < 2100 ? ends : null;
   final List<int> counts;
+  int countFor(ContentPerformanceMetric metric) => counts[metric.index];
   final int maximum;
   bool get hasStatistics => counts.any((value) => value != 0);
   ContentPerformanceItem._(
@@ -87,6 +105,8 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
     this.maximum,
   );
   factory ContentPerformanceItem(Map<String, dynamic> row) {
+    final starts = tryParseDateTimeValue(row['start_date'], toLocal: true);
+    final ends = tryParseDateTimeValue(row['end_date'], toLocal: true);
     final counts = <int>[];
     var maximum = 1;
     for (final column in contentPerformanceColumns) {
@@ -100,9 +120,9 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
       parseStringValue(row['name']),
       parseStringValue(row['city']),
       row['is_approved'] == true,
-      ContentPerformancePeriod.expiration(row),
-      tryParseDateTimeValue(row['start_date'], toLocal: true),
-      tryParseDateTimeValue(row['end_date'], toLocal: true),
+      ends ?? starts,
+      starts,
+      ends,
       List.unmodifiable(counts),
       maximum,
     );
