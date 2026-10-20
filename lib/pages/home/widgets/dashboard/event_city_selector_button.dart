@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_city_selector.dart';
 import 'package:provider/provider.dart';
 
@@ -9,15 +9,15 @@ class EventCitySelectorButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedCity = context.select<ModelDashboard, String>(
+    final selectedCity = context.select<ControllerDashboard, String>(
       (dashboard) => dashboard.setting.recommendEventCity,
     );
     final cities = context.select(
-      (ModelDashboard dashboard) => dashboard.eventCities,
+      (ControllerDashboard dashboard) => dashboard.eventCities,
     );
-    final dashboard = context.read<ModelDashboard>();
+    final dashboard = context.read<ControllerDashboard>();
     final auth = context.read<ModelAuthView>();
-    final isLoading = context.select<ModelDashboard, bool>(
+    final isLoading = context.select<ControllerDashboard, bool>(
       (dashboard) => dashboard.isLoading(DashboardSection.recommendEvents),
     );
 

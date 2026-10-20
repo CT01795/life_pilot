@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/extension.dart';
-import 'package:life_pilot/utils/provider_locale.dart';
-import 'package:life_pilot/calendar/service_calendar.dart';
 import 'package:life_pilot/calendar/model_calendar_week_layout.dart';
 import 'package:life_pilot/calendar/model_calendar_day_grouping.dart';
-
-import '../utils/logger.dart';
 
 class ModelCalendar {
   List<EventItem> _events = [];
@@ -98,48 +92,9 @@ class ModelCalendar {
     });
   }
 
-  Future<List<EventItem>> loadEventsFromService({
-    required ServiceEvent serviceEvent,
-    required DateTime month,
-    required ControllerAuth? auth,
-    required ProviderLocale localeProvider,
-    required String tableName,
-  }) async {
-    if (isDisposed) return [];
-    try {
-      DateTime tmpMonth = DateTimeFormatter.monthOnly(month); // ✅ 加這行
-      final user = auth?.currentAccount;
-      final locale = localeProvider.locale;
-      final weeks = getWeeks(tmpMonth);
-      final start = weeks.first.first;
-      final end = weeks.last.last;
-
-      final results = await Future.wait<Object?>([
-        serviceEvent.getEvents(
-          tableName: tableName,
-          dateS: start,
-          dateE: end,
-          inputUser: user,
-        ),
-        ServiceCalendar.fetchHolidays(
-          start.subtract(const Duration(days: 2)),
-          end.add(const Duration(days: 2)),
-          locale,
-        ),
-      ]);
-      final serverEvents = results[0] as List<EventItem>?;
-      final holidays = results[1] as List<EventItem>;
-
-      if (isDisposed) return [];
-
-      return [...?serverEvents, ...holidays]..sort(_compareEventSchedule);
-    } catch (e, st) {
-      if (!isDisposed) {
-        logger.e("❌ loadCalendarEvents error: $e", stackTrace: st);
-      }
-      rethrow;
-    }
-  }
+  /// Orders a private copy; storage and request orchestration live elsewhere.
+  static List<EventItem> orderedEvents(Iterable<EventItem> events) =>
+      events.toList()..sort(_compareEventSchedule);
 
   static int _compareEventSchedule(EventItem left, EventItem right) {
     var comparison = (left.startDate ?? DateTime(9999)).compareTo(

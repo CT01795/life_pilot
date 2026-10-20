@@ -176,6 +176,7 @@ class _DelayedEventService extends ServiceEvent {
     int? limit,
     int offset = 0,
     void Function(List<EventItem> events)? onPartialEvents,
+    bool Function()? shouldContinue,
   }) => response.future;
 }
 

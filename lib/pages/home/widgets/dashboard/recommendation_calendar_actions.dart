@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/widgets_schedule_datetime_dialog.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:life_pilot/utils/logger.dart';
@@ -47,7 +47,7 @@ void publishAddedCalendarEvent({
   required String account,
   required AppLocalizations loc,
 }) {
-  context.read<ModelDashboard>().addUpcomingEvent(event, account: account);
+  context.read<ControllerDashboard>().addUpcomingEvent(event, account: account);
   context.read<ControllerCalendar>().invalidateEventCache(
     startDate: event.startDate,
     endDate: event.endDate,

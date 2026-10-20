@@ -6,7 +6,7 @@ import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/account_selector_button.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
@@ -33,29 +33,30 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final records = context.select<ModelDashboard, List<IncomeExpenseItem>>(
-      (m) => m.state.todayIncomeExpense,
-    );
-    final hasLoadFailed = context.select<ModelDashboard, bool>(
+    final records = context
+        .select<ControllerDashboard, List<IncomeExpenseItem>>(
+          (m) => m.state.todayIncomeExpense,
+        );
+    final hasLoadFailed = context.select<ControllerDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.accounting),
     );
-    final isLoading = context.select<ModelDashboard, bool>(
+    final isLoading = context.select<ControllerDashboard, bool>(
       (m) => m.isLoading(DashboardSection.accounting),
     );
-    final hasSelectedAccount = context.select<ModelDashboard, bool>(
+    final hasSelectedAccount = context.select<ControllerDashboard, bool>(
       (m) => m.setting.accountingAccountId != null,
     );
 
-    final todayTotal = context.select<ModelDashboard, num>(
+    final todayTotal = context.select<ControllerDashboard, num>(
       (m) => m.state.todayAccountingTotal,
     );
-    final accountTotal = context.select<ModelDashboard, num>(
+    final accountTotal = context.select<ControllerDashboard, num>(
       (m) => m.state.accountingTotal,
     );
-    final accountId = context.select<ModelDashboard, String?>(
+    final accountId = context.select<ControllerDashboard, String?>(
       (m) => m.setting.accountingAccountId,
     );
-    final currency = context.select<ModelDashboard, String>(
+    final currency = context.select<ControllerDashboard, String>(
       (m) => m.state.accountingCurrency,
     );
 
@@ -131,10 +132,11 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                   const LinearProgressIndicator(),
                 if (hasLoadFailed)
                   DashboardLoadFailure(
-                    onRetry: () => context.read<ModelDashboard>().retrySection(
-                      section: DashboardSection.accounting,
-                      account: context.read<ModelAuthView>().account!,
-                    ),
+                    onRetry: () =>
+                        context.read<ControllerDashboard>().retrySection(
+                          section: DashboardSection.accounting,
+                          account: context.read<ModelAuthView>().account!,
+                        ),
                   )
                 else if (isLoading && records.isEmpty)
                   const DashboardSectionLoading()
@@ -177,7 +179,7 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                 child: TextButton(
                   onPressed: () async {
                     if (context
-                            .read<ModelDashboard>()
+                            .read<ControllerDashboard>()
                             .setting
                             .accountingAccountId !=
                         null) {

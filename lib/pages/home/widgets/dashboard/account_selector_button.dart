@@ -3,7 +3,7 @@ import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_account_selector.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
@@ -14,13 +14,13 @@ class AccountSelectorButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final accountName = context.select<ModelDashboard, String?>(
+    final accountName = context.select<ControllerDashboard, String?>(
       (dashboard) => dashboard.setting.accountingAccountName,
     );
-    final accountId = context.select<ModelDashboard, String?>(
+    final accountId = context.select<ControllerDashboard, String?>(
       (dashboard) => dashboard.setting.accountingAccountId,
     );
-    final dashboard = context.read<ModelDashboard>();
+    final dashboard = context.read<ControllerDashboard>();
     final auth = context.read<ModelAuthView>();
 
     return DashboardAccountSelector(

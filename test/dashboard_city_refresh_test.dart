@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 
@@ -30,7 +30,7 @@ void main() {
   for (final event in [true, false]) {
     group(event ? 'event cities' : 'place cities', () {
       late _Repository repository;
-      late ModelDashboard model;
+      late ControllerDashboard model;
       List<Completer<List<DashboardCity>>> requests() =>
           event ? repository.events : repository.places;
       List<DashboardCity> cities() =>
@@ -45,7 +45,7 @@ void main() {
 
       setUp(() {
         repository = _Repository();
-        model = ModelDashboard(
+        model = ControllerDashboard(
           repository: repository,
           localeProvider: ProviderLocale(locale: const Locale('zh')),
         )..switchAccount('user');

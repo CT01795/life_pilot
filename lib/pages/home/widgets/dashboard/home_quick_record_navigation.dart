@@ -3,14 +3,14 @@ import 'package:life_pilot/accounting/page_accounting_detail.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/point_record/page_point_record_detail.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:provider/provider.dart';
 
 Future<void> openHomeAccountingQuickAdd(BuildContext context) async {
   final loc = AppLocalizations.of(context)!;
-  final dashboard = context.read<ModelDashboard>();
+  final dashboard = context.read<ControllerDashboard>();
   final auth = context.read<ModelAuthView>();
   final accountId = dashboard.setting.accountingAccountId;
   final user = auth.account;
@@ -47,7 +47,7 @@ Future<void> openHomeAccountingQuickAdd(BuildContext context) async {
 }
 
 Future<void> openHomeAccountingDetails(BuildContext context) async {
-  final dashboard = context.read<ModelDashboard>();
+  final dashboard = context.read<ControllerDashboard>();
   final auth = context.read<ModelAuthView>();
   final accountId = dashboard.setting.accountingAccountId;
   final accountName = dashboard.setting.accountingAccountName;
@@ -69,7 +69,7 @@ Future<void> openHomeAccountingDetails(BuildContext context) async {
 
 Future<void> openHomePointQuickAdd(BuildContext context) async {
   final loc = AppLocalizations.of(context)!;
-  final dashboard = context.read<ModelDashboard>();
+  final dashboard = context.read<ControllerDashboard>();
   final auth = context.read<ModelAuthView>();
   final accountId = dashboard.setting.pointAccountId;
   final user = auth.account;
@@ -106,7 +106,7 @@ Future<void> openHomePointQuickAdd(BuildContext context) async {
 }
 
 Future<void> openHomePointDetails(BuildContext context) async {
-  final dashboard = context.read<ModelDashboard>();
+  final dashboard = context.read<ControllerDashboard>();
   final auth = context.read<ModelAuthView>();
   final accountId = dashboard.setting.pointAccountId;
   final accountName = dashboard.setting.pointAccountName;

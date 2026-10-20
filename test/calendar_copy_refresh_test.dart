@@ -6,6 +6,8 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
+import 'package:life_pilot/calendar/model_calendar_month_query.dart';
+import 'package:life_pilot/calendar/service_calendar_month.dart';
 import 'package:life_pilot/calendar/page_calendar_add.dart';
 import 'package:life_pilot/event/event_copy_flow.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -32,17 +34,18 @@ class _Notifications implements ControllerNotification {
 class _Model extends ModelCalendar {
   final List<EventItem> saved = [];
   final List<DateTime> requests = [];
+}
 
+class _Loader extends ServiceCalendarMonth {
+  final _Model model;
+  _Loader(this.model);
   @override
-  Future<List<EventItem>> loadEventsFromService({
-    required ServiceEvent serviceEvent,
-    required DateTime month,
-    required ControllerAuth? auth,
-    required ProviderLocale localeProvider,
-    required String tableName,
+  Future<List<EventItem>> loadMonth(
+    ModelCalendarMonthQuery query, {
+    bool Function()? shouldContinue,
   }) async {
-    requests.add(month);
-    return List.of(saved);
+    model.requests.add(query.month);
+    return List.of(model.saved);
   }
 }
 
@@ -105,6 +108,7 @@ void main() {
           model.cacheMonthEvents(DateTime(2026, 11), [shared]);
           final calendar = ControllerCalendar(
             modelCalendar: model,
+            monthLoader: _Loader(model),
             serviceEvent: ServiceEvent(),
             auth: auth,
             controllerNotification: _Notifications(),

@@ -58,6 +58,14 @@ class ModelEventSearchIndex {
     _labels = null;
   }
 
+  /// Only for progressive snapshots whose existing objects are unchanged.
+  /// Edits must still use invalidate; do not inspect/decode child records here.
+  void retainEvents(Iterable<EventItem> events) {
+    if (_entries.isEmpty) return;
+    final active = Set<EventItem>.identity()..addAll(events);
+    _entries.removeWhere((event, _) => !active.contains(event));
+  }
+
   static String _text(EventItem event, EventSearchLabels labels) => <String>[
     event.city,
     event.location,

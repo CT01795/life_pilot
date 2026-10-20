@@ -6,7 +6,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/service/calendar_service.dart';
 import 'package:life_pilot/event/service_event_tracking.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.dart';
@@ -48,28 +48,28 @@ class TodayScheduleCard extends StatelessWidget {
       (auth) => auth.account,
     );
     final tracking = context.read<EventTrackingService>();
-    final events = context.select<ModelDashboard, List<CalendarEvent>>(
+    final events = context.select<ControllerDashboard, List<CalendarEvent>>(
       (m) => m.state.todayEvents,
     );
-    final hasLoadFailed = context.select<ModelDashboard, bool>(
+    final hasLoadFailed = context.select<ControllerDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.todaySchedule),
     );
-    final isLoading = context.select<ModelDashboard, bool>(
+    final isLoading = context.select<ControllerDashboard, bool>(
       (m) => m.isLoading(DashboardSection.todaySchedule),
     );
-    final accountingAccountId = context.select<ModelDashboard, String?>(
+    final accountingAccountId = context.select<ControllerDashboard, String?>(
       (m) => m.setting.accountingAccountId,
     );
-    final accountingAccountName = context.select<ModelDashboard, String?>(
+    final accountingAccountName = context.select<ControllerDashboard, String?>(
       (m) => m.setting.accountingAccountName,
     );
-    final accountingCurrency = context.select<ModelDashboard, String>(
+    final accountingCurrency = context.select<ControllerDashboard, String>(
       (m) => m.state.accountingCurrency,
     );
-    final pointAccountId = context.select<ModelDashboard, String?>(
+    final pointAccountId = context.select<ControllerDashboard, String?>(
       (m) => m.setting.pointAccountId,
     );
-    final pointAccountName = context.select<ModelDashboard, String?>(
+    final pointAccountName = context.select<ControllerDashboard, String?>(
       (m) => m.setting.pointAccountName,
     );
 
@@ -157,10 +157,11 @@ class TodayScheduleCard extends StatelessWidget {
                 const LinearProgressIndicator(),
               if (hasLoadFailed)
                 DashboardLoadFailure(
-                  onRetry: () => context.read<ModelDashboard>().retrySection(
-                    section: DashboardSection.todaySchedule,
-                    account: account!,
-                  ),
+                  onRetry: () =>
+                      context.read<ControllerDashboard>().retrySection(
+                        section: DashboardSection.todaySchedule,
+                        account: account!,
+                      ),
                 )
               else if (isLoading && events.isEmpty)
                 const DashboardSectionLoading()
@@ -236,7 +237,7 @@ class TodayScheduleCard extends StatelessWidget {
                                   }
                                   try {
                                     await context
-                                        .read<ModelDashboard>()
+                                        .read<ControllerDashboard>()
                                         .completeEvent(
                                           id: e.id,
                                           account: account!,
@@ -425,13 +426,13 @@ class TodayScheduleCard extends StatelessWidget {
                                         .refreshSubscriptionUsage(),
                                     if (accountingRecords.isNotEmpty)
                                       context
-                                          .read<ModelDashboard>()
+                                          .read<ControllerDashboard>()
                                           .refreshAccounting(
                                             accountId: accountingAccountId!,
                                           ),
                                     if (choice.pointValue != null)
                                       context
-                                          .read<ModelDashboard>()
+                                          .read<ControllerDashboard>()
                                           .refreshPoints(
                                             accountId: pointAccountId!,
                                           ),

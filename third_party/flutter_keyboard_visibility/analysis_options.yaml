@@ -1,1 +1,9 @@
-include: package:pedantic/analysis_options.yaml
+# Keep the vendored package self-contained: root pub get does not install its
+# dev dependencies. Analyzer errors/warnings remain enabled without an include
+# that depends on this nested package's separate package configuration.
+linter:
+  rules:
+    - avoid_empty_else
+    - empty_statements
+    - no_duplicate_case_values
+    - unnecessary_statements

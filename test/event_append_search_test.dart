@@ -89,10 +89,11 @@ void main() {
         model
           ..setEvents([existing])
           ..updateSearchKeywords('needle');
-        model.getFilteredEvents(loc);
+        final filtered = model.getFilteredEvents(loc);
         append([duplicate, duplicate]);
         append([]);
-        expect(model.getFilteredEvents(loc), [existing]);
+        expect(model.getFilteredEvents(loc), same(filtered));
+        expect(filtered, [existing]);
         expect([existing.reads, duplicate.reads], [1, 0]);
       });
 

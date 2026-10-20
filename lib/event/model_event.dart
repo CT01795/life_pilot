@@ -162,31 +162,53 @@ class ModelEvent {
     _invalidateEventData();
   }
 
-  void setEvents(List<EventItem> list) {
+  void setEvents(List<EventItem> list) =>
+      _replaceEvents(list, preserveSearchIndex: false);
+
+  /// A progressive service response retains unchanged object instances.
+  /// Full reloads and in-place edits keep their explicit invalidation paths.
+  void setProgressiveEvents(List<EventItem> list) =>
+      _replaceEvents(list, preserveSearchIndex: true);
+
+  void _replaceEvents(
+    List<EventItem> list, {
+    required bool preserveSearchIndex,
+  }) {
     if (identical(_events, list)) {
       return;
     }
     _events = list;
-    _invalidateEventData();
+    if (preserveSearchIndex) {
+      _searchTextIndex.retainEvents(list);
+      _invalidateFilteredEvents();
+    } else {
+      _invalidateEventData();
+    }
   }
 
   void appendMemoryEvents(List<EventItem> list) {
-    _appendUniqueEvents(list);
+    if (!_appendUniqueEvents(list)) return;
     sortMemoryEvents();
   }
 
   void appendEvents(List<EventItem> list) {
-    _appendUniqueEvents(list);
+    if (!_appendUniqueEvents(list)) return;
     _invalidateFilteredEvents();
   }
 
   /// Appending does not replace or mutate existing rows. Preserve their search
   /// indexes, including deferred child text; newly accepted objects are indexed
   /// on demand. Edits and full reloads retain their explicit invalidation paths.
-  void _appendUniqueEvents(List<EventItem> list) {
-    if (list.isEmpty) return;
+  bool _appendUniqueEvents(List<EventItem> list) {
+    if (list.isEmpty) return false;
     final existingIds = _events.map((event) => event.id).toSet();
-    _events.addAll(list.where((event) => existingIds.add(event.id)));
+    var added = false;
+    for (final event in list) {
+      if (!existingIds.add(event.id)) continue;
+      _events.add(event);
+      added = true;
+    }
+    return added;
   }
 
   void sortMemoryEvents() {

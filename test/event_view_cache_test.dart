@@ -93,6 +93,32 @@ void main() {
     cache.invalidate('missing');
   });
 
+  test('progressive rows retain unchanged models and deferred children', () {
+    final child = _Child();
+    event.subEvents = [child];
+    final first = build();
+    final childView = first.subEvents.single;
+    final other = EventItem(id: 'other', name: 'next');
+    cache.retainEvents([event, other]);
+    expect(build(), same(first));
+    expect(build().subEvents.single, same(childView));
+    expect(child.reads, 1);
+  });
+
+  test('retaining current rows evicts removed and same-ID replaced models', () {
+    final first = build();
+    final other = EventItem(id: 'other', name: 'removed');
+    final removed = build(row: other);
+    final replacement = EventItem(id: event.id, name: 'replacement');
+    cache.retainEvents([replacement]);
+    expect(build(row: replacement).name, 'replacement');
+    expect(build(row: other), isNot(same(removed)));
+    expect(build(), isNot(same(first)));
+    cache.retainEvents([]);
+    final afterClear = build();
+    expect(afterClear, isNot(same(first)));
+  });
+
   test('cache hits preserve deferred children and their built models', () {
     final child = _Child();
     event.subEvents = [child];

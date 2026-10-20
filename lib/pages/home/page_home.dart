@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/utils/enum.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/income_expense_summary_card.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/home_quick_record_navigation.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/point_summary_card.dart';
@@ -41,7 +41,7 @@ class _PageHomeState extends State<PageHome> {
   bool? _coreIncludedPoints;
 
   Future<void> _loadCore(String account, {required bool includePoints}) async {
-    final operation = context.read<ModelDashboard>().refreshCore(
+    final operation = context.read<ControllerDashboard>().refreshCore(
       account: account,
       includePoints: includePoints,
     );
@@ -72,7 +72,7 @@ class _PageHomeState extends State<PageHome> {
   Future<void> _ensureRecommendEvents({bool forceRefresh = false}) async {
     final account = context.read<ModelAuthView>().account;
     if (account == null || account.isEmpty) return;
-    final dashboard = context.read<ModelDashboard>();
+    final dashboard = context.read<ControllerDashboard>();
     await dashboard.waitForSettings(account: account);
     if (!mounted || context.read<ModelAuthView>().account != account) return;
     if (_recommendEventsAccount != account) {
@@ -97,7 +97,7 @@ class _PageHomeState extends State<PageHome> {
   Future<void> _ensureRecommendPlaces({bool forceRefresh = false}) async {
     final account = context.read<ModelAuthView>().account;
     if (account == null || account.isEmpty) return;
-    final dashboard = context.read<ModelDashboard>();
+    final dashboard = context.read<ControllerDashboard>();
     await dashboard.waitForSettings(account: account);
     if (!mounted || context.read<ModelAuthView>().account != account) return;
     if (_recommendPlacesAccount != account) {
@@ -144,7 +144,7 @@ class _PageHomeState extends State<PageHome> {
           return;
         }
 
-        final dashboard = context.read<ModelDashboard>();
+        final dashboard = context.read<ControllerDashboard>();
         final coreOperation = dashboard.refreshCore(
           account: account,
           includePoints: pointsEnabled,

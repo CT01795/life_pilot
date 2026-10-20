@@ -11,7 +11,7 @@ import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_setting.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/pages/home/service/calendar_service.dart';
@@ -61,7 +61,7 @@ void main() async {
           create: (_) => ProviderLocale(locale: const Locale(Locales.zh)),
         ),
         ChangeNotifierProvider(
-          create: (context) => ModelDashboard(
+          create: (context) => ControllerDashboard(
             repository: DashboardRepository(),
             localeProvider: context.read<ProviderLocale>(),
           ),
@@ -70,8 +70,9 @@ void main() async {
         Provider<EventTrackingService>(create: (_) => EventTrackingService()),
         Provider<CalendarService>(create: (_) => CalendarService()),
         ChangeNotifierProvider(
-          create: (context) =>
-              ControllerAuth(modelDashboard: context.read<ModelDashboard>()),
+          create: (context) => ControllerAuth(
+            dashboardController: context.read<ControllerDashboard>(),
+          ),
         ),
         //-------------- Weather --------------
         Provider<ServiceWeather>(lazy: true, create: (_) => ServiceWeather()),

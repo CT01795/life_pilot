@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
@@ -33,26 +33,26 @@ class PointSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final records = context.select<ModelDashboard, List<PointRecordItem>>(
+    final records = context.select<ControllerDashboard, List<PointRecordItem>>(
       (m) => m.state.todayPoints,
     );
-    final hasLoadFailed = context.select<ModelDashboard, bool>(
+    final hasLoadFailed = context.select<ControllerDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.points),
     );
-    final isLoading = context.select<ModelDashboard, bool>(
+    final isLoading = context.select<ControllerDashboard, bool>(
       (m) => m.isLoading(DashboardSection.points),
     );
-    final hasSelectedAccount = context.select<ModelDashboard, bool>(
+    final hasSelectedAccount = context.select<ControllerDashboard, bool>(
       (m) => m.setting.pointAccountId != null,
     );
 
-    final todayTotal = context.select<ModelDashboard, int>(
+    final todayTotal = context.select<ControllerDashboard, int>(
       (m) => m.state.todayPointsTotal,
     );
-    final pointsTotal = context.select<ModelDashboard, int>(
+    final pointsTotal = context.select<ControllerDashboard, int>(
       (m) => m.state.pointsTotal,
     );
-    final accountId = context.select<ModelDashboard, String?>(
+    final accountId = context.select<ControllerDashboard, String?>(
       (m) => m.setting.pointAccountId,
     );
 
@@ -128,10 +128,11 @@ class PointSummaryCard extends StatelessWidget {
                   const LinearProgressIndicator(),
                 if (hasLoadFailed)
                   DashboardLoadFailure(
-                    onRetry: () => context.read<ModelDashboard>().retrySection(
-                      section: DashboardSection.points,
-                      account: context.read<ModelAuthView>().account!,
-                    ),
+                    onRetry: () =>
+                        context.read<ControllerDashboard>().retrySection(
+                          section: DashboardSection.points,
+                          account: context.read<ModelAuthView>().account!,
+                        ),
                   )
                 else if (isLoading && records.isEmpty)
                   const DashboardSectionLoading()
@@ -173,7 +174,10 @@ class PointSummaryCard extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () async {
-                    if (context.read<ModelDashboard>().setting.pointAccountId !=
+                    if (context
+                            .read<ControllerDashboard>()
+                            .setting
+                            .pointAccountId !=
                         null) {
                       await openHomePointDetails(context);
                     } else if (context.mounted) {

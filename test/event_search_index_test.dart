@@ -45,6 +45,46 @@ String legacyText(EventItem event, EventSearchLabels labels) {
 }
 
 void main() {
+  test('retaining unchanged rows preserves deferred child text', () {
+    final child = _CountedEvent('child', 'needle');
+    final parent = _CountedEvent('parent', 'other', children: [child]);
+    final index = ModelEventSearchIndex();
+    expect(index.contains(parent, 'needle', labels: labels), true);
+    index.retainEvents([parent, _CountedEvent('new', 'new')]);
+    expect(index.contains(parent, 'needle', labels: labels), true);
+    expect([parent.reads, child.reads], [1, 1]);
+  });
+
+  test(
+    'retention releases removed objects and does not equate matching IDs',
+    () {
+      final old = _CountedEvent('same', 'before');
+      final replacement = _CountedEvent('same', 'after');
+      final index = ModelEventSearchIndex();
+      index.contains(old, 'before', labels: labels);
+      index.retainEvents([replacement]);
+      expect(index.contains(replacement, 'before', labels: labels), false);
+      expect(index.contains(replacement, 'after', labels: labels), true);
+      index.contains(old, 'before', labels: labels);
+      expect(old.reads, 2);
+      index.retainEvents([]);
+      index.contains(replacement, 'after', labels: labels);
+      expect(replacement.reads, 2);
+    },
+  );
+
+  test('retention does not force deferred child indexing', () {
+    final child = _CountedEvent('child', 'child');
+    final parent = _CountedEvent('parent', 'needle', children: [child]);
+    final index = ModelEventSearchIndex();
+    index.contains(parent, 'needle', labels: labels);
+    index.retainEvents([parent]);
+    expect([parent.reads, child.reads], [1, 0]);
+    child.description = 'changed';
+    index.invalidate([parent]);
+    expect(index.contains(parent, 'changed', labels: labels), true);
+  });
+
   test('targeted invalidation preserves unrelated indexed text', () {
     final changed = _CountedEvent('changed', 'before');
     final keep = _CountedEvent('keep', 'stable');

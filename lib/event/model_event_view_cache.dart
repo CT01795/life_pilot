@@ -40,6 +40,13 @@ class ModelEventViewCache {
 
   void invalidate(String eventId) => _entries.remove(eventId);
 
+  /// Keep unchanged rows across progressive responses, releasing models for
+  /// removed or replaced records. Locale/permission checks still happen in build.
+  void retainEvents(Iterable<EventItem> events) {
+    final current = {for (final event in events) event.id: event};
+    _entries.removeWhere((id, cached) => !identical(current[id], cached.event));
+  }
+
   void clear() => _entries.clear();
 }
 

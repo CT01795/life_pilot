@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
 import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
@@ -70,7 +70,7 @@ class _Repository extends DashboardRepository {
   }
 }
 
-final changes = <String, Future<void> Function(ModelDashboard, String)>{
+final changes = <String, Future<void> Function(ControllerDashboard, String)>{
   'event city': (model, account) =>
       model.changeEventCity(account: account, city: '台中'),
   'place city': (model, account) =>
@@ -91,10 +91,10 @@ final changes = <String, Future<void> Function(ModelDashboard, String)>{
 
 void main() {
   late _Repository repository;
-  late ModelDashboard model;
+  late ControllerDashboard model;
   setUp(() {
     repository = _Repository();
-    model = ModelDashboard(
+    model = ControllerDashboard(
       repository: repository,
       localeProvider: ProviderLocale(locale: const Locale('zh')),
     )..switchAccount('old');

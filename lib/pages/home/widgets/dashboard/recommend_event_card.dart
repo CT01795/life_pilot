@@ -3,7 +3,7 @@ import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/service/calendar_service.dart';
 import 'package:life_pilot/event/service_event_tracking.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/event_city_selector_button.dart';
@@ -93,13 +93,13 @@ class RecommendEventCard extends StatelessWidget {
     );
     final tracking = context.read<EventTrackingService>();
     final today = DateUtils.dateOnly(DateTime.now());
-    final events = context.select<ModelDashboard, List<RecommendedEvent>>(
+    final events = context.select<ControllerDashboard, List<RecommendedEvent>>(
       (m) => m.state.recommendEvents,
     );
-    final hasLoadFailed = context.select<ModelDashboard, bool>(
+    final hasLoadFailed = context.select<ControllerDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.recommendEvents),
     );
-    final isLoading = context.select<ModelDashboard, bool>(
+    final isLoading = context.select<ControllerDashboard, bool>(
       (m) => m.isLoading(DashboardSection.recommendEvents),
     );
 
@@ -148,10 +148,11 @@ class RecommendEventCard extends StatelessWidget {
                 const LinearProgressIndicator(),
               if (hasLoadFailed)
                 DashboardLoadFailure(
-                  onRetry: () => context.read<ModelDashboard>().retrySection(
-                    section: DashboardSection.recommendEvents,
-                    account: account!,
-                  ),
+                  onRetry: () =>
+                      context.read<ControllerDashboard>().retrySection(
+                        section: DashboardSection.recommendEvents,
+                        account: account!,
+                      ),
                 )
               else if (isLoading && events.isEmpty)
                 const DashboardSectionLoading()
@@ -299,7 +300,7 @@ class RecommendEventCard extends StatelessWidget {
                     context.read<ControllerPageMain>().changePage(
                       PageType.recommendEvent,
                       city: context
-                          .read<ModelDashboard>()
+                          .read<ControllerDashboard>()
                           .setting
                           .recommendEventCity,
                     );

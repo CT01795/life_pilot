@@ -6,6 +6,7 @@ import 'package:life_pilot/utils/load_timing.dart';
 import 'package:life_pilot/event/event_save_exception.dart';
 import 'package:life_pilot/event/event_delete_exception.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/model_event_load_policy.dart';
 import 'package:life_pilot/event/model_local_event_query.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -143,10 +144,13 @@ class ServiceEvent {
     int? limit,
     int offset = 0,
     void Function(List<EventItem> events)? onPartialEvents,
+    bool Function()? shouldContinue,
   }) async {
+    if (shouldContinue?.call() == false) return [];
     final timing = tableName == TableNames.memoryTrace
         ? LoadTiming('query')
         : null;
+    final loadPolicy = ModelEventLoadPolicy.forTable(tableName);
     timing?.mark('start');
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     if (tableName == TableNames.recommendEvents) {
@@ -172,11 +176,13 @@ class ServiceEvent {
       storageLocation,
     );
     timing?.mark(useLocal ? 'mode_local' : 'mode_cloud');
+    if (shouldContinue?.call() == false) return [];
     if (useLocal) {
       final localRows = await LocalDataStore.instance
           .readOnlyRows(owner: inputUser!, resource: tableName)
           .timeout(const Duration(seconds: 15));
       timing?.mark('local_rows_read', rows: localRows.length);
+      if (shouldContinue?.call() == false) return [];
       final selected = ModelLocalEventQuery.iterate(
         localRows,
         start:
@@ -196,8 +202,9 @@ class ServiceEvent {
       }
       final events = <EventItem>[];
       for (final event in selected) {
+        if (shouldContinue?.call() == false) return [];
         events.add(event);
-        if (events.length == 12) {
+        if (events.length == loadPolicy.previewBatchSize) {
           timing?.mark('first_batch_decoded', rows: events.length);
           onPartialEvents(List<EventItem>.unmodifiable(events));
           // Let the first cards render before decoding the remaining history.
@@ -263,10 +270,12 @@ class ServiceEvent {
                   tableName == TableNames.memoryTrace &&
                       onPartialEvents != null &&
                       offset == 0
-                  ? 6
+                  ? loadPolicy.previewBatchSize
                   : null,
               onProgress: onPartialEvents == null ? null : publishRows,
+              shouldContinue: shouldContinue,
             );
+      if (shouldContinue?.call() == false) return [];
       if (limit == null) {
         timing?.mark('rpc_returned', rows: (response as List).length);
       }

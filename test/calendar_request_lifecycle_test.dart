@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
+import 'package:life_pilot/calendar/model_calendar_month_query.dart';
+import 'package:life_pilot/calendar/service_calendar_month.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -13,16 +14,20 @@ import 'package:life_pilot/utils/service/service_weather.dart';
 
 class _Model extends ModelCalendar {
   final requests = <Completer<List<EventItem>>>[];
+  final months = <DateTime>[];
+}
+
+class _Loader extends ServiceCalendarMonth {
+  final _Model model;
+  _Loader(this.model);
   @override
-  Future<List<EventItem>> loadEventsFromService({
-    required ServiceEvent serviceEvent,
-    required DateTime month,
-    required ControllerAuth? auth,
-    required ProviderLocale localeProvider,
-    required String tableName,
+  Future<List<EventItem>> loadMonth(
+    ModelCalendarMonthQuery query, {
+    bool Function()? shouldContinue,
   }) {
     final pending = Completer<List<EventItem>>();
-    requests.add(pending);
+    model.months.add(query.month);
+    model.requests.add(pending);
     return pending.future;
   }
 }
@@ -45,6 +50,7 @@ void main() {
     locale = ProviderLocale(locale: const Locale('en'));
     controller = ControllerCalendar(
       modelCalendar: model,
+      monthLoader: _Loader(model),
       serviceEvent: ServiceEvent(),
       auth: null,
       controllerNotification: _Notifications(),
@@ -71,6 +77,85 @@ void main() {
       expect(model.events, isEmpty);
     },
   );
+
+  test('disposed calendar does not start another service read', () async {
+    controller.dispose();
+    await controller.reloadEvents();
+    expect(model.requests, isEmpty);
+  });
+
+  test('leaving during month load does not start adjacent preload', () async {
+    final pending = controller.goToMonth(month: DateTime(2026, 10));
+    controller.dispose();
+    model.requests.single.complete([]);
+    await pending;
+    expect(model.requests.length, 1);
+  });
+
+  test('reset during month load does not preload the old scope', () async {
+    final pending = controller.goToMonth(month: DateTime(2026, 10));
+    controller.clearAll(notify: false);
+    model.requests.single.complete([]);
+    await pending;
+    expect(model.requests.length, 1);
+  });
+
+  test('old completion cannot unlock a newer month transition', () async {
+    final old = controller.goToMonth(month: DateTime(2026, 10));
+    controller.clearAll(notify: false);
+    final fresh = controller.goToMonth(month: DateTime(2026, 11));
+    expect(model.requests.length, 2);
+    model.requests.first.complete([]);
+    await old;
+    await controller.goToMonth(month: DateTime(2026, 12));
+    expect(model.requests.length, 2);
+    controller.dispose();
+    model.requests[1].complete([]);
+    await fresh;
+  });
+
+  test('active month still refreshes both adjacent months', () async {
+    final pending = controller.goToMonth(month: DateTime(2026, 10));
+    model.requests.first.complete([]);
+    await pending;
+    expect(model.months, [
+      DateTime(2026, 10),
+      DateTime(2026, 11),
+      DateTime(2026, 9),
+    ]);
+    for (final request in model.requests.skip(1)) {
+      request.complete([]);
+    }
+    await Future<void>.delayed(Duration.zero);
+  });
+
+  test(
+    'background failures do not escape or clear the visible month',
+    () async {
+      final pending = controller.goToMonth(month: DateTime(2026, 10));
+      model.requests.first.complete(rows());
+      await pending;
+      for (final request in model.requests.skip(1)) {
+        request.completeError(StateError('preload unavailable'));
+      }
+      await Future<void>.delayed(Duration.zero);
+      expect(model.events.single.id, 'old');
+      expect(model.cachedEvents.containsKey('2026-10'), true);
+    },
+  );
+
+  test('foreground failure remains observable and allows retry', () async {
+    final pending = controller.goToMonth(month: DateTime(2026, 10));
+    final result = expectLater(pending, throwsStateError);
+    model.requests.first.completeError(StateError('load failed'));
+    await result;
+    expect(model.requests.length, 1);
+    final retry = controller.goToMonth(month: DateTime(2026, 10));
+    expect(model.requests.length, 2);
+    controller.dispose();
+    model.requests.last.complete([]);
+    await retry;
+  });
 
   test('clearing scope rejects results from the previous generation', () async {
     final request = controller.reloadEvents();

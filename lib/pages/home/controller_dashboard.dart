@@ -18,7 +18,9 @@ enum DashboardSection {
   points,
 }
 
-class ModelDashboard extends SafeChangeNotifier {
+/// Coordinates dashboard requests and presentation state. Data structures live
+/// in model/dashboard; persistence remains in DashboardRepository.
+class ControllerDashboard extends SafeChangeNotifier {
   final DashboardRepository repository;
   final ProviderLocale localeProvider;
   int _accountGeneration = 0;
@@ -26,17 +28,18 @@ class ModelDashboard extends SafeChangeNotifier {
   Future<DashboardSetting>? _settingsLoad;
   int _settingsRequest = 0;
 
-  ModelDashboard({required this.repository, required this.localeProvider});
+  ControllerDashboard({required this.repository, required this.localeProvider});
 
-  bool _loading = false;
   final Map<DashboardSection, int> _sectionLoadingCounts = {};
+  final Map<DashboardSection, int> _retryRequests = {};
   final Set<DashboardSection> _failedSections = {};
   int _recommendEventRequest = 0;
   int _recommendPlaceRequest = 0;
   int _accountingRequest = 0;
   int _pointsRequest = 0;
+  int _todayScheduleRequest = 0;
 
-  bool get loading => _loading;
+  bool get loading => _sectionLoadingCounts.isNotEmpty;
 
   bool isLoading(DashboardSection section) =>
       (_sectionLoadingCounts[section] ?? 0) > 0;
@@ -91,7 +94,6 @@ class ModelDashboard extends SafeChangeNotifier {
     _accountGeneration++;
     _activeAccount = account;
     _settingsLoad = null;
-    _loading = false;
     _state = DashboardState.empty();
     _setting = DashboardSetting(
       recommendEventCity: '台北',
@@ -222,12 +224,12 @@ class ModelDashboard extends SafeChangeNotifier {
   Future<void> refreshAll({required String account}) async {
     const sections = DashboardSection.values;
     final generation = _accountGeneration;
+    if (!_isCurrentRequest(account, generation)) return;
+    final scheduleRequest = ++_todayScheduleRequest;
     final recommendEventRequest = ++_recommendEventRequest;
     final recommendPlaceRequest = ++_recommendPlaceRequest;
     final accountingRequest = ++_accountingRequest;
     final pointsRequest = ++_pointsRequest;
-    if (!_isCurrentRequest(account, generation)) return;
-    _loading = true;
     _beginLoading(sections);
     _failedSections.clear();
     notifyListeners();
@@ -238,7 +240,9 @@ class ModelDashboard extends SafeChangeNotifier {
             DashboardSection.todaySchedule,
             () => repository.loadTodayEvents(account),
           ).then((todayEvents) {
-            if (_isCurrentRequest(account, generation) && todayEvents != null) {
+            if (_isCurrentRequest(account, generation) &&
+                scheduleRequest == _todayScheduleRequest &&
+                todayEvents != null) {
               _state = _state.copyWith(todayEvents: todayEvents);
               notifyListeners();
             }
@@ -316,7 +320,6 @@ class ModelDashboard extends SafeChangeNotifier {
       ]);
     } finally {
       if (_isCurrentRequest(account, generation)) {
-        _loading = false;
         _endLoading(sections);
         notifyListeners();
       }
@@ -333,10 +336,10 @@ class ModelDashboard extends SafeChangeNotifier {
       if (includePoints) DashboardSection.points,
     ];
     final generation = _accountGeneration;
+    if (!_isCurrentRequest(account, generation)) return;
+    final scheduleRequest = ++_todayScheduleRequest;
     final accountingRequest = ++_accountingRequest;
     final pointsRequest = ++_pointsRequest;
-    if (!_isCurrentRequest(account, generation)) return;
-    _loading = true;
     _beginLoading(sections);
     _failedSections.removeAll(sections);
     notifyListeners();
@@ -347,7 +350,9 @@ class ModelDashboard extends SafeChangeNotifier {
             DashboardSection.todaySchedule,
             () => repository.loadTodayEvents(account),
           ).then((todayEvents) {
-            if (_isCurrentRequest(account, generation) && todayEvents != null) {
+            if (_isCurrentRequest(account, generation) &&
+                scheduleRequest == _todayScheduleRequest &&
+                todayEvents != null) {
               _state = _state.copyWith(todayEvents: todayEvents);
               notifyListeners();
             }
@@ -397,7 +402,6 @@ class ModelDashboard extends SafeChangeNotifier {
       await Future.wait([todayEventsFuture, accountingFuture, pointsFuture]);
     } finally {
       if (_isCurrentRequest(account, generation)) {
-        _loading = false;
         _endLoading(sections);
         notifyListeners();
       }
@@ -408,9 +412,13 @@ class ModelDashboard extends SafeChangeNotifier {
     DashboardSection section,
     Future<T> Function() loader,
   ) async {
+    final generation = _accountGeneration;
+    final account = _activeAccount;
+    if (account == null || !_isCurrentRequest(account, generation)) return null;
     try {
       return await loader();
     } catch (error, stackTrace) {
+      if (!_isCurrentRequest(account, generation)) return null;
       logger.e(
         'Could not load dashboard section: $section.',
         error: error,
@@ -425,6 +433,13 @@ class ModelDashboard extends SafeChangeNotifier {
     required DashboardSection section,
     required String account,
   }) async {
+    final generation = _accountGeneration;
+    if (!_isCurrentRequest(account, generation)) return;
+    final request = (_retryRequests[section] ?? 0) + 1;
+    _retryRequests[section] = request;
+    bool isCurrent() =>
+        _isCurrentRequest(account, generation) &&
+        _retryRequests[section] == request;
     try {
       switch (section) {
         case DashboardSection.todaySchedule:
@@ -442,8 +457,9 @@ class ModelDashboard extends SafeChangeNotifier {
           if (accountId == null) return;
           await refreshPoints(accountId: accountId);
       }
-      _failedSections.remove(section);
+      if (isCurrent()) _failedSections.remove(section);
     } catch (error, stackTrace) {
+      if (!isCurrent()) return;
       _failedSections.add(section);
       logger.e(
         'Could not retry dashboard section: $section.',
@@ -451,25 +467,27 @@ class ModelDashboard extends SafeChangeNotifier {
         stackTrace: stackTrace,
       );
     } finally {
-      notifyListeners();
+      if (isCurrent()) notifyListeners();
     }
   }
 
   Future<void> refreshTodaySchedule({required String account}) async {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
-    _loading = true;
+    final request = ++_todayScheduleRequest;
     _beginLoading(const [DashboardSection.todaySchedule]);
     notifyListeners();
 
     try {
       final todayEvents = await repository.loadTodayEvents(account);
-      if (!_isCurrentRequest(account, generation)) return;
+      if (!_isCurrentRequest(account, generation) ||
+          request != _todayScheduleRequest) {
+        return;
+      }
 
       _state = _state.copyWith(todayEvents: todayEvents);
     } finally {
       if (_isCurrentRequest(account, generation)) {
-        _loading = false;
         _endLoading(const [DashboardSection.todaySchedule]);
         notifyListeners();
       }
@@ -480,7 +498,6 @@ class ModelDashboard extends SafeChangeNotifier {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
     final request = ++_recommendEventRequest;
-    _loading = true;
     _beginLoading(const [DashboardSection.recommendEvents]);
     notifyListeners();
 
@@ -498,10 +515,6 @@ class ModelDashboard extends SafeChangeNotifier {
     } finally {
       if (_isCurrentRequest(account, generation)) {
         _endLoading(const [DashboardSection.recommendEvents]);
-      }
-      if (_isCurrentRequest(account, generation) &&
-          request == _recommendEventRequest) {
-        _loading = false;
         notifyListeners();
       }
     }
@@ -511,7 +524,6 @@ class ModelDashboard extends SafeChangeNotifier {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
     final request = ++_recommendPlaceRequest;
-    _loading = true;
     _beginLoading(const [DashboardSection.recommendPlaces]);
     notifyListeners();
 
@@ -529,10 +541,6 @@ class ModelDashboard extends SafeChangeNotifier {
     } finally {
       if (_isCurrentRequest(account, generation)) {
         _endLoading(const [DashboardSection.recommendPlaces]);
-      }
-      if (_isCurrentRequest(account, generation) &&
-          request == _recommendPlaceRequest) {
-        _loading = false;
         notifyListeners();
       }
     }
@@ -543,7 +551,6 @@ class ModelDashboard extends SafeChangeNotifier {
     final generation = _accountGeneration;
     if (account == null || !_isCurrentRequest(account, generation)) return;
     final request = ++_accountingRequest;
-    _loading = true;
     _beginLoading(const [DashboardSection.accounting]);
     notifyListeners();
 
@@ -567,10 +574,6 @@ class ModelDashboard extends SafeChangeNotifier {
     } finally {
       if (_isCurrentRequest(account, generation)) {
         _endLoading(const [DashboardSection.accounting]);
-      }
-      if (_isCurrentRequest(account, generation) &&
-          request == _accountingRequest) {
-        _loading = false;
         notifyListeners();
       }
     }
@@ -581,7 +584,6 @@ class ModelDashboard extends SafeChangeNotifier {
     final generation = _accountGeneration;
     if (account == null || !_isCurrentRequest(account, generation)) return;
     final request = ++_pointsRequest;
-    _loading = true;
     _beginLoading(const [DashboardSection.points]);
     notifyListeners();
 
@@ -602,9 +604,6 @@ class ModelDashboard extends SafeChangeNotifier {
     } finally {
       if (_isCurrentRequest(account, generation)) {
         _endLoading(const [DashboardSection.points]);
-      }
-      if (_isCurrentRequest(account, generation) && request == _pointsRequest) {
-        _loading = false;
         notifyListeners();
       }
     }
@@ -620,6 +619,7 @@ class ModelDashboard extends SafeChangeNotifier {
     await repository.completeEvent(id: id, account: account);
 
     if (!_isCurrentRequest(account, generation)) return;
+    _todayScheduleRequest++;
     _state = _state.copyWith(
       todayEvents: _state.todayEvents
           .where((event) => event.id != id)
@@ -633,13 +633,14 @@ class ModelDashboard extends SafeChangeNotifier {
     required String account,
     DateTime? currentTime,
   }) {
-    if (_activeAccount != account) return;
+    if (notifierDisposed || _activeAccount != account) return;
     final events = ModelUpcomingSchedule.withEvent(
       events: _state.todayEvents,
       event: event,
       now: currentTime ?? DateTime.now(),
     );
     if (events == null) return;
+    _todayScheduleRequest++;
     _state = _state.copyWith(todayEvents: events);
     notifyListeners();
   }

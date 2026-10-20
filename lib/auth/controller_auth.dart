@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -21,7 +21,7 @@ enum AccountValidationResult { valid, unavailable, signedOut }
 
 class ControllerAuth extends SafeChangeNotifier {
   ControllerCalendar? controllerCalendar;
-  final ModelDashboard? modelDashboard;
+  final ControllerDashboard? dashboardController;
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<String?>? _externalAuthAccountSubscription;
   StreamSubscription<void>? _passwordRecoveryLinkSubscription;
@@ -31,7 +31,7 @@ class ControllerAuth extends SafeChangeNotifier {
   DateTime? _lastAccountValidationAt;
   Future<AccountValidationResult>? _accountValidationInFlight;
   Future<void>? _invalidAccountSignOutInFlight;
-  ControllerAuth({this.controllerCalendar, this.modelDashboard});
+  ControllerAuth({this.controllerCalendar, this.dashboardController});
 
   bool _initialized = false;
 
@@ -439,14 +439,14 @@ class ControllerAuth extends SafeChangeNotifier {
     _personalDataRevision++;
     notifyListeners();
     await refreshSubscriptionUsage();
-    modelDashboard?.switchAccount(account);
+    dashboardController?.switchAccount(account);
     controllerCalendar?.clearAll();
     try {
       await Future.wait<void>([
-        if (modelDashboard != null) ...[
-          modelDashboard!.loadEventCities(account),
-          modelDashboard!.loadPlaceCities(account),
-          modelDashboard!.refreshAll(account: account),
+        if (dashboardController != null) ...[
+          dashboardController!.loadEventCities(account),
+          dashboardController!.loadPlaceCities(account),
+          dashboardController!.refreshAll(account: account),
         ],
         if (controllerCalendar != null)
           controllerCalendar!.loadCalendarEvents(month: DateTime.now()),
@@ -464,16 +464,16 @@ class ControllerAuth extends SafeChangeNotifier {
     final account = _currentAccount;
     await refreshSubscriptionUsage(notify: false);
     _personalDataRevision++;
-    modelDashboard?.switchAccount(account);
+    dashboardController?.switchAccount(account);
     controllerCalendar?.clearAll();
     notifyListeners();
     if (account == null) return;
     try {
       await Future.wait<void>([
-        if (modelDashboard != null) ...[
-          modelDashboard!.loadEventCities(account),
-          modelDashboard!.loadPlaceCities(account),
-          modelDashboard!.refreshAll(account: account),
+        if (dashboardController != null) ...[
+          dashboardController!.loadEventCities(account),
+          dashboardController!.loadPlaceCities(account),
+          dashboardController!.refreshAll(account: account),
         ],
         if (controllerCalendar != null)
           controllerCalendar!.loadCalendarEvents(month: DateTime.now()),
@@ -521,7 +521,7 @@ class ControllerAuth extends SafeChangeNotifier {
       _lastAccountValidationAt = null;
     }, notify: false);
 
-    modelDashboard?.switchAccount(null);
+    dashboardController?.switchAccount(null);
     controllerCalendar?.clearAll();
     _accountValidationTimer?.cancel();
     _accountValidationTimer = null;
@@ -692,10 +692,10 @@ class ControllerAuth extends SafeChangeNotifier {
       // 🧹 若帳號不同，清空並重新載入日曆資料
       if (!_isLoggedIn) {
         controllerCalendar?.clearAll();
-        modelDashboard?.switchAccount(null);
+        dashboardController?.switchAccount(null);
       } else if (_currentAccount != oldAccount) {
         controllerCalendar?.clearAll();
-        modelDashboard?.switchAccount(_currentAccount);
+        dashboardController?.switchAccount(_currentAccount);
         if (_preferredStorage == DataStorageLocation.cloud) {
           await controllerCalendar?.syncCompletedEventReminders();
         }

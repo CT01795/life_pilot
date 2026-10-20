@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_schedule_overview.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_schedule_timing.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
@@ -34,35 +34,36 @@ class TodayLifeOverviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final colors = Theme.of(context).colorScheme;
-    final todayEvents = context.select<ModelDashboard, List<CalendarEvent>>(
-      (model) => model.state.todayEvents,
-    );
+    final todayEvents = context
+        .select<ControllerDashboard, List<CalendarEvent>>(
+          (model) => model.state.todayEvents,
+        );
     final now = DateTime.now();
     final scheduleOverview = ModelScheduleOverview.from(todayEvents, now);
     final eventCount = scheduleOverview.todayCount;
     final nextEvent = scheduleOverview.nextEvent;
-    final accountingTotal = context.select<ModelDashboard, num>(
+    final accountingTotal = context.select<ControllerDashboard, num>(
       (model) => model.state.todayAccountingTotal,
     );
-    final currency = context.select<ModelDashboard, String>(
+    final currency = context.select<ControllerDashboard, String>(
       (model) => model.state.accountingCurrency,
     );
-    final pointsTotal = context.select<ModelDashboard, int>(
+    final pointsTotal = context.select<ControllerDashboard, int>(
       (model) => model.state.todayPointsTotal,
     );
-    final hasAccountingAccount = context.select<ModelDashboard, bool>(
+    final hasAccountingAccount = context.select<ControllerDashboard, bool>(
       (model) => model.setting.accountingAccountId != null,
     );
-    final hasPointAccount = context.select<ModelDashboard, bool>(
+    final hasPointAccount = context.select<ControllerDashboard, bool>(
       (model) => model.setting.pointAccountId != null,
     );
-    final scheduleLoading = context.select<ModelDashboard, bool>(
+    final scheduleLoading = context.select<ControllerDashboard, bool>(
       (model) => model.isLoading(DashboardSection.todaySchedule),
     );
-    final accountingLoading = context.select<ModelDashboard, bool>(
+    final accountingLoading = context.select<ControllerDashboard, bool>(
       (model) => model.isLoading(DashboardSection.accounting),
     );
-    final pointsLoading = context.select<ModelDashboard, bool>(
+    final pointsLoading = context.select<ControllerDashboard, bool>(
       (model) => model.isLoading(DashboardSection.points),
     );
     final numberFormats = _OverviewNumberFormats.forLocale(loc.localeName);

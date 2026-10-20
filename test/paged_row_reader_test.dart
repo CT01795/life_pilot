@@ -3,6 +3,80 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/utils/paged_row_reader.dart';
 
 void main() {
+  test('expired scope never starts a request', () async {
+    var calls = 0;
+    final rows = await readPagedRows(
+      offset: 0,
+      limit: 13,
+      shouldContinue: () => false,
+      fetch: (_, _) async {
+        calls++;
+        return [];
+      },
+    );
+    expect(rows, isEmpty);
+    expect(calls, 0);
+  });
+
+  test(
+    'expiry during fetch discards batch before publishing or decoding',
+    () async {
+      var active = true;
+      final pending = Completer<List<dynamic>>();
+      var progress = 0;
+      var calls = 0;
+      final request = readPagedRows(
+        offset: 0,
+        limit: 13,
+        shouldContinue: () => active,
+        onProgress: (_) => progress++,
+        fetch: (_, _) {
+          calls++;
+          return pending.future;
+        },
+      );
+      active = false;
+      pending.complete([
+        {'id': 'discarded'},
+      ]);
+      expect(await request, isEmpty);
+      expect(progress, 0);
+      expect(calls, 1);
+    },
+  );
+
+  test('expiry from preview callback prevents the next request', () async {
+    var active = true;
+    var calls = 0;
+    final rows = await readPagedRows(
+      offset: 0,
+      limit: 13,
+      initialBatchSize: 3,
+      shouldContinue: () => active,
+      onProgress: (_) => active = false,
+      fetch: (_, limit) async {
+        calls++;
+        return List.generate(limit, (i) => {'id': '$i'});
+      },
+    );
+    expect(rows.length, 3);
+    expect(calls, 1);
+  });
+
+  test(
+    'active scope still fills the entire page despite server caps',
+    () async {
+      final data = List.generate(13, (i) => {'id': '$i'});
+      final rows = await readPagedRows(
+        offset: 0,
+        limit: 13,
+        shouldContinue: () => true,
+        fetch: (offset, limit) async => data.skip(offset).take(2).toList(),
+      );
+      expect(rows, data);
+    },
+  );
+
   test(
     'small first batch publishes early without truncating the logical page',
     () async {

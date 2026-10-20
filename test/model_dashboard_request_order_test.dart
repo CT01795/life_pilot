@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
 import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
@@ -387,10 +387,11 @@ void main() {
   );
 }
 
-ModelDashboard _model(DashboardRepository repository) => ModelDashboard(
-  repository: repository,
-  localeProvider: ProviderLocale(locale: const Locale('zh')),
-);
+ControllerDashboard _model(DashboardRepository repository) =>
+    ControllerDashboard(
+      repository: repository,
+      localeProvider: ProviderLocale(locale: const Locale('zh')),
+    );
 
 RecommendedEvent _event(String name) => RecommendedEvent(id: name, name: name);
 

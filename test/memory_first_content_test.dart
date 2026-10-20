@@ -35,10 +35,14 @@ class _Service extends ServiceEvent {
   final checks = <Completer<bool>>[];
   final boundaries = <DateTime>[];
   int reads = 0;
+  bool paged = false;
+  final windows =
+      <({int? limit, int offset, DateTime? start, DateTime? end})>[];
   DateTime? latest;
   Completer<List<EventItem>>? pendingRows;
   Completer<List<EventItem>>? pendingFallback;
   void Function(List<EventItem>)? previewCallback;
+  bool Function()? continueCallback;
   @override
   Future<List<EventItem>?> getEvents({
     required String tableName,
@@ -50,12 +54,16 @@ class _Service extends ServiceEvent {
     int? limit,
     int offset = 0,
     void Function(List<EventItem> events)? onPartialEvents,
+    bool Function()? shouldContinue,
   }) async {
     reads++;
+    continueCallback = shouldContinue;
+    windows.add((limit: limit, offset: offset, start: dateS, end: dateE));
     previewCallback = onPartialEvents;
     if (reads > 1 && pendingFallback != null) return pendingFallback!.future;
     if (pendingRows != null) return pendingRows!.future;
     if (latest != null && reads == 1) return [];
+    if (paged) return rows.skip(offset).take(limit ?? rows.length).toList();
     return rows;
   }
 
@@ -169,14 +177,83 @@ void main() {
     expect(controller.hasLoadedEventsSuccessfully, false);
   });
 
+  test(
+    'progressive and final publishing reuse unchanged card models',
+    () async {
+      final completion = service.pendingRows = Completer<List<EventItem>>();
+      final request = controller.loadEvents(isGetPublicEvents: false);
+      service.previewCallback!(service.rows);
+      final first = controller.buildViewModel(
+        event: service.rows.first,
+        loc: loc,
+      );
+      service.previewCallback!([
+        ...service.rows,
+        EventItem(id: 'another', name: 'Another', startDate: DateTime.now()),
+      ]);
+      expect(
+        controller.buildViewModel(event: service.rows.first, loc: loc),
+        same(first),
+      );
+      completion.complete(service.rows);
+      await _flush();
+      expect(
+        controller.buildViewModel(event: service.rows.first, loc: loc),
+        same(first),
+      );
+      service.checks.single.complete(false);
+      await request;
+      expect(
+        controller.buildViewModel(event: service.rows.first, loc: loc),
+        same(first),
+      );
+    },
+  );
+
   test('late preview after disposal is ignored', () async {
     final completion = service.pendingRows = Completer<List<EventItem>>();
     final request = controller.loadEvents(isGetPublicEvents: false);
+    expect(service.continueCallback!(), true);
     controller.dispose();
+    expect(service.continueCallback!(), false);
     service.previewCallback!(service.rows);
     completion.complete(service.rows);
     await request;
     expect(controller.hasLoadedEventsSuccessfully, false);
+  });
+
+  for (final local in [false, true]) {
+    test(
+      'scope predicate expires after account/storage change local=$local',
+      () async {
+        final completion = service.pendingRows = Completer<List<EventItem>>();
+        final request = controller.loadEvents(isGetPublicEvents: false);
+        final active = service.continueCallback!;
+        expect(active(), true);
+        if (local) {
+          auth.local = true;
+          auth.notifyListeners();
+        } else {
+          auth.switchAccount();
+        }
+        expect(active(), false);
+        completion.complete(service.rows);
+        await request;
+        expect(controller.getFilteredEvents(loc), isEmpty);
+      },
+    );
+  }
+
+  test('expired service query does not access storage or network', () async {
+    for (final storage in DataStorageLocation.values) {
+      final rows = await ServiceEvent().getEvents(
+        tableName: TableNames.memoryTrace,
+        inputUser: 'expired@example.com',
+        storageLocation: storage,
+        shouldContinue: () => false,
+      );
+      expect(rows, isEmpty);
+    }
   });
 
   test(
@@ -271,10 +348,55 @@ void main() {
       );
       await controller.loadEvents(isGetPublicEvents: false);
       expect(service.checks, isEmpty);
-      expect(controller.getFilteredEvents(loc).length, 50);
+      expect(controller.getFilteredEvents(loc).length, 12);
       expect(controller.hasMoreMemory, true);
     },
   );
+  test(
+    'small cloud pages retain lookahead and future-date query bounds',
+    () async {
+      service.paged = true;
+      final future = DateTime.now().add(const Duration(days: 7));
+      service.rows = List.generate(
+        25,
+        (i) => EventItem(id: '$i', name: '$i', startDate: future),
+      );
+      await controller.loadEvents(isGetPublicEvents: false);
+      expect(controller.getFilteredEvents(loc).length, 12);
+      expect(service.windows.single.limit, 13);
+      final firstWindow = service.windows.single;
+      expect(firstWindow.end!.isAfter(future), true);
+      await controller.loadMoreMemoryEvents();
+      expect(controller.getFilteredEvents(loc).length, 24);
+      expect(service.windows.last.offset, 12);
+      expect(service.windows.last.start, firstWindow.start);
+      expect(service.windows.last.end, firstWindow.end);
+      expect(controller.hasMoreMemory, true);
+      await controller.loadMoreMemoryEvents();
+      expect(service.windows.map((window) => window.offset), [0, 12, 24]);
+      expect(
+        controller.getFilteredEvents(loc).map((event) => event.id).toSet(),
+        service.rows.map((event) => event.id).toSet(),
+      );
+      expect(controller.getFilteredEvents(loc).length, 25);
+      expect(controller.hasMoreMemory, false);
+    },
+  );
+  test('local history is not truncated to the cloud page size', () async {
+    auth.local = true;
+    auth.notifyListeners();
+    service.paged = true;
+    service.rows = List.generate(
+      25,
+      (i) => EventItem(id: '$i', name: '$i', startDate: DateTime.now()),
+    );
+    final pending = controller.loadEvents(isGetPublicEvents: false);
+    await _flush();
+    service.checks.single.complete(false);
+    await pending;
+    expect(service.windows.single.limit, isNull);
+    expect(controller.getFilteredEvents(loc).length, 25);
+  });
   test(
     'account switch discards old metadata and does not block new load',
     () async {

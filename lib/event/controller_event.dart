@@ -8,6 +8,7 @@ import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/model_event_page.dart';
+import 'package:life_pilot/event/model_event_load_policy.dart';
 import 'package:life_pilot/event/model_event_preference.dart';
 import 'package:life_pilot/event/model_event_view_cache.dart';
 import 'package:life_pilot/event/public_event_refresh.dart';
@@ -54,7 +55,10 @@ class ControllerEvent extends SafeChangeNotifier {
   bool _isLoadingMoreMemory = false;
   bool _isCheckingMoreMemory = false;
   bool _hasMoreMemory = true;
-  static const int _cloudPageSize = 50;
+  // Memory rows can include embedded photos. Keep their logical page smaller
+  // without changing the date window or the recommended-content page size.
+  int get _cloudPageSize =>
+      ModelEventLoadPolicy.forTable(_tableName).cloudPageSize;
   int _nextCloudOffset = 0;
   bool _isLoadingMoreEvents = false;
   bool _hasMoreEvents = true;
@@ -177,14 +181,19 @@ class ControllerEvent extends SafeChangeNotifier {
     required EventItem newEvent,
     bool isNew = true,
   }) async {
+    if (_disposed) return;
+    _handleAuthChange();
+    final generation = _dataScopeGeneration;
+    final account = auth.currentAccount ?? '';
     await _serviceEvent.saveEvent(
-      currentAccount: auth.currentAccount ?? '',
+      currentAccount: account,
       event: newEvent,
       isNew: isNew,
       tableName: _tableName,
       originalAccount: oldEvent?.account,
       originalIsApproved: oldEvent?.isApproved,
     );
+    if (!_isCurrentDataScope(generation)) return;
     if (isNew &&
         (_tableName == TableNames.calendarEvents ||
             _tableName == TableNames.memoryTrace)) {
@@ -194,15 +203,23 @@ class ControllerEvent extends SafeChangeNotifier {
 
   // ✅ 刪除事件，並更新列表與通知 UI
   Future<void> deleteEvent(EventItem event) async {
+    if (_disposed) return;
+    _handleAuthChange();
+    final generation = _dataScopeGeneration;
+    final account = auth.currentAccount ?? '';
     await _serviceEvent.deleteEvent(
-      currentAccount: auth.currentAccount ?? '',
+      currentAccount: account,
       event: event,
       tableName: _tableName,
     );
+    if (!_isCurrentDataScope(generation)) return;
     if (_tableName == TableNames.calendarEvents ||
         _tableName == TableNames.memoryTrace) {
       await auth.refreshSubscriptionUsage();
     }
+
+    // Quota refresh can also outlive an account or storage-mode change.
+    if (!_isCurrentDataScope(generation)) return;
 
     // 移除事件並更新快取
     _modelEvent
@@ -213,7 +230,11 @@ class ControllerEvent extends SafeChangeNotifier {
   }
 
   Future<void> approveEvent({required EventItem event}) async {
+    if (_disposed) return;
+    _handleAuthChange();
+    final generation = _dataScopeGeneration;
     await _serviceEvent.approvalEvent(eventId: event.id, tableName: _tableName);
+    if (!_isCurrentDataScope(generation)) return;
     event.isApproved = true;
     _invalidateViewModel(event.id);
     if (!_disposed) notifyListeners();
@@ -548,22 +569,29 @@ class ControllerEvent extends SafeChangeNotifier {
       void publishMemoryPreview(List<EventItem> rows) {
         if (!_isCurrentDataScope(generation) || rows.isEmpty) return;
         // Keep the service's accumulating buffer separate from model sorting.
-        _modelEvent.setEvents(rows.take(_cloudPageSize).toList());
+        final preview = rows.take(_cloudPageSize).toList();
+        _modelEvent.setProgressiveEvents(preview);
         _modelEvent.sortMemoryEvents();
         _hasLoadedEventsSuccessfully = true;
         _hasMoreMemory = true;
-        _invalidateViewModelCache();
+        _viewModelCache.retainEvents(preview);
         notifyListeners();
       }
 
-      _memoryLoadedEndDate = isMemoryTrace ? today : null;
+      // Continuations must use exactly the same upper bound as the first query,
+      // which also includes memories entered for a future date.
+      _memoryLoadedEndDate = isMemoryTrace
+          ? DateTime(today.year + 2, today.month, today.day)
+          : null;
       final list = await _serviceEvent.getEvents(
         tableName: _tableName,
         inputUser: auth.currentAccount,
         storageLocation: auth.preferredStorage,
         dateS: isMemoryTrace ? memoryStart : null,
+        dateE: isMemoryTrace ? _memoryLoadedEndDate : null,
         limit: usesCloudPagination ? _cloudPageSize + 1 : null,
         onPartialEvents: isMemoryTrace ? publishMemoryPreview : null,
+        shouldContinue: () => _isCurrentDataScope(generation),
       );
       if (!_isCurrentDataScope(generation)) return;
       var loadedEvents = list ?? [];
@@ -593,6 +621,7 @@ class ControllerEvent extends SafeChangeNotifier {
                 dateE: latestOlder,
                 limit: usesCloudPagination ? _cloudPageSize + 1 : null,
                 onPartialEvents: publishMemoryPreview,
+                shouldContinue: () => _isCurrentDataScope(generation),
               ) ??
               [];
           if (!_isCurrentDataScope(generation)) return;
@@ -602,7 +631,11 @@ class ControllerEvent extends SafeChangeNotifier {
         }
       }
       _isLoadingMemoryRecords = false;
-      _modelEvent.setEvents(loadedEvents);
+      if (isMemoryTrace) {
+        _modelEvent.setProgressiveEvents(loadedEvents);
+      } else {
+        _modelEvent.setEvents(loadedEvents);
+      }
       _hasLoadedEventsSuccessfully = true;
       _sortRecommendedContent();
       if (isMemoryTrace) {
@@ -626,7 +659,7 @@ class ControllerEvent extends SafeChangeNotifier {
           // The content is ready. Publish it before this optional metadata query.
           _hasMoreMemory = true;
           _isCheckingMoreMemory = true;
-          _invalidateViewModelCache();
+          _viewModelCache.retainEvents(loadedEvents);
           notifyListeners();
           if (!_isCurrentDataScope(generation)) return;
           try {
@@ -654,7 +687,11 @@ class ControllerEvent extends SafeChangeNotifier {
       }
 
       // ✅ STOP UI card 不再觸發 weather
-      _invalidateViewModelCache();
+      if (isMemoryTrace) {
+        _viewModelCache.retainEvents(loadedEvents);
+      } else {
+        _invalidateViewModelCache();
+      }
     } catch (error, stackTrace) {
       if (!_isCurrentDataScope(generation)) return;
       _loadEventsError = error;
@@ -688,6 +725,7 @@ class ControllerEvent extends SafeChangeNotifier {
           inputUser: auth.currentAccount,
           storageLocation: auth.preferredStorage,
           limit: usesCloudPagination ? _cloudPageSize + 1 : null,
+          shouldContinue: () => _isCurrentDataScope(generation),
         );
         if (!_isCurrentDataScope(generation)) return;
         var refreshedEvents = newList ?? [];
@@ -744,6 +782,7 @@ class ControllerEvent extends SafeChangeNotifier {
               dateE: _memoryLoadedEndDate,
               limit: _cloudPageSize + 1,
               offset: _nextCloudOffset,
+              shouldContinue: () => _isCurrentDataScope(generation),
             ) ??
             [];
         if (!_isCurrentDataScope(generation)) return;
@@ -772,6 +811,7 @@ class ControllerEvent extends SafeChangeNotifier {
             dateS: rangeStart,
             dateE: rangeEnd,
             limit: usesCloudPagination ? _cloudPageSize + 1 : null,
+            shouldContinue: () => _isCurrentDataScope(generation),
           ) ??
           [];
       if (!_isCurrentDataScope(generation)) return;
@@ -817,6 +857,7 @@ class ControllerEvent extends SafeChangeNotifier {
             storageLocation: auth.preferredStorage,
             limit: _cloudPageSize + 1,
             offset: _nextCloudOffset,
+            shouldContinue: () => _isCurrentDataScope(generation),
           ) ??
           [];
       if (!_isCurrentDataScope(generation)) return;
@@ -973,6 +1014,7 @@ class ControllerEvent extends SafeChangeNotifier {
         inputUser: auth.currentAccount,
         storageLocation: auth.preferredStorage,
         limit: usesCloudPagination ? _cloudPageSize + 1 : null,
+        shouldContinue: () => _isCurrentDataScope(generation),
       );
       if (!_isCurrentDataScope(generation)) return false;
       var refreshedEvents = newList ?? <EventItem>[];

@@ -24,12 +24,15 @@ Future<List<Map<String, dynamic>>> readAllPagedRows({
 
 /// Fills a requested window even when the server caps each response size.
 /// Throws if offsets are ignored, rather than silently declaring end-of-data.
+/// Stops without publishing an in-flight batch when the caller's scope expires.
+/// The caller must discard the incomplete result rather than treating it as EOF.
 Future<List<dynamic>> readPagedRows({
   required FetchRows fetch,
   required int offset,
   required int limit,
   int? initialBatchSize,
   void Function(List<dynamic> rows)? onProgress,
+  bool Function()? shouldContinue,
 }) async {
   if (offset < 0 || limit < 1) throw ArgumentError('Invalid page range');
   if (initialBatchSize != null && initialBatchSize < 1) {
@@ -38,6 +41,7 @@ Future<List<dynamic>> readPagedRows({
   final rows = <dynamic>[];
   final seenIds = <Object>{};
   while (rows.length < limit) {
+    if (shouldContinue?.call() == false) break;
     final remaining = limit - rows.length;
     // Keep the logical page unchanged; only its first network response is
     // smaller, so image-heavy lists can show their first cards sooner.
@@ -46,6 +50,7 @@ Future<List<dynamic>> readPagedRows({
         ? initialBatchSize
         : remaining;
     final batch = await fetch(offset + rows.length, batchLimit);
+    if (shouldContinue?.call() == false) break;
     if (batch.isEmpty) break;
     for (final row in batch.take(batchLimit)) {
       if (row is Map &&

@@ -46,6 +46,7 @@ class _Events extends ServiceEvent {
     int? limit,
     int offset = 0,
     void Function(List<EventItem>)? onPartialEvents,
+    bool Function()? shouldContinue,
   }) async {
     calls.add((limit: limit, offset: offset));
     if (pending != null) return pending!.future;

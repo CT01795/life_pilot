@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
 import 'package:life_pilot/pages/home/service/calendar_service.dart';
 import 'package:life_pilot/event/service_event_tracking.dart';
@@ -96,13 +96,13 @@ class RecommendPlaceCard extends StatelessWidget {
       (auth) => auth.account,
     );
     final tracking = context.read<EventTrackingService>();
-    final places = context.select<ModelDashboard, List<RecommendedPlace>>(
+    final places = context.select<ControllerDashboard, List<RecommendedPlace>>(
       (m) => m.state.recommendPlaces,
     );
-    final hasLoadFailed = context.select<ModelDashboard, bool>(
+    final hasLoadFailed = context.select<ControllerDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.recommendPlaces),
     );
-    final isLoading = context.select<ModelDashboard, bool>(
+    final isLoading = context.select<ControllerDashboard, bool>(
       (m) => m.isLoading(DashboardSection.recommendPlaces),
     );
 
@@ -151,10 +151,11 @@ class RecommendPlaceCard extends StatelessWidget {
                 const LinearProgressIndicator(),
               if (hasLoadFailed)
                 DashboardLoadFailure(
-                  onRetry: () => context.read<ModelDashboard>().retrySection(
-                    section: DashboardSection.recommendPlaces,
-                    account: account!,
-                  ),
+                  onRetry: () =>
+                      context.read<ControllerDashboard>().retrySection(
+                        section: DashboardSection.recommendPlaces,
+                        account: account!,
+                      ),
                 )
               else if (isLoading && places.isEmpty)
                 const DashboardSectionLoading()
@@ -302,7 +303,7 @@ class RecommendPlaceCard extends StatelessWidget {
                     context.read<ControllerPageMain>().changePage(
                       PageType.recommendPlaces,
                       city: context
-                          .read<ModelDashboard>()
+                          .read<ControllerDashboard>()
                           .setting
                           .recommendPlaceCity,
                     );

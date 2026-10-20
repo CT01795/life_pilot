@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/today_life_overview_card.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
@@ -18,7 +18,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final localeProvider = ProviderLocale(locale: const Locale('en'));
-    final dashboard = ModelDashboard(
+    final dashboard = ControllerDashboard(
       repository: DashboardRepository(),
       localeProvider: localeProvider,
     );
