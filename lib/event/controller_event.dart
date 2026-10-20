@@ -662,26 +662,10 @@ class ControllerEvent extends SafeChangeNotifier {
           _viewModelCache.retainEvents(loadedEvents);
           notifyListeners();
           if (!_isCurrentDataScope(generation)) return;
-          try {
-            final hasOlder = await _serviceEvent
-                .hasEventsBefore(
-                  tableName: _tableName,
-                  before: _memoryLoadedStartDate ?? memoryStart,
-                  inputUser: auth.currentAccount,
-                  storageLocation: auth.preferredStorage,
-                )
-                .timeout(const Duration(seconds: 10));
-            if (!_isCurrentDataScope(generation)) return;
-            _hasMoreMemory = hasOlder;
-          } catch (error, stackTrace) {
-            if (!_isCurrentDataScope(generation)) return;
-            // Keep visible records and allow an explicit load-more retry.
-            logger.w(
-              'Memory history availability check failed',
-              error: error,
-              stackTrace: stackTrace,
-            );
-          }
+          await _refreshMemoryHistoryAvailability(
+            generation: generation,
+            before: _memoryLoadedStartDate ?? memoryStart,
+          );
         }
         if (!_isCurrentDataScope(generation)) return;
       }
@@ -747,6 +731,35 @@ class ControllerEvent extends SafeChangeNotifier {
       } finally {
         _endPublicEventServiceOperation();
       }
+    }
+  }
+
+  /// Optional metadata must not discard content or write into a newer scope.
+  /// Keep the history action available if this lightweight check fails.
+  Future<void> _refreshMemoryHistoryAvailability({
+    required int generation,
+    required DateTime before,
+  }) async {
+    if (!_isCurrentDataScope(generation)) return;
+    try {
+      final hasOlder = await _serviceEvent
+          .hasEventsBefore(
+            tableName: _tableName,
+            before: before,
+            inputUser: auth.currentAccount,
+            storageLocation: auth.preferredStorage,
+          )
+          .timeout(const Duration(seconds: 10));
+      if (!_isCurrentDataScope(generation)) return;
+      _hasMoreMemory = hasOlder;
+    } catch (error, stackTrace) {
+      if (!_isCurrentDataScope(generation)) return;
+      _hasMoreMemory = true;
+      logger.w(
+        'Memory history availability check failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -822,14 +835,14 @@ class ControllerEvent extends SafeChangeNotifier {
       _modelEvent.appendMemoryEvents(visibleOlderEvents);
       _memoryLoadedStartDate = rangeStart;
       _memoryLoadedEndDate = rangeEnd;
-      _hasMoreMemory =
-          _hasMoreEvents ||
-          await _serviceEvent.hasEventsBefore(
-            tableName: _tableName,
-            before: rangeStart,
-            inputUser: auth.currentAccount,
-            storageLocation: auth.preferredStorage,
-          );
+      if (_hasMoreEvents) {
+        _hasMoreMemory = true;
+      } else {
+        await _refreshMemoryHistoryAvailability(
+          generation: generation,
+          before: rangeStart,
+        );
+      }
     } finally {
       if (_isCurrentDataScope(generation)) {
         _isLoadingMoreMemory = false;

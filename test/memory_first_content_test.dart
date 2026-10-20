@@ -278,6 +278,101 @@ void main() {
     },
   );
 
+  testWidgets(
+    'load-more metadata timeout preserves rows and releases loading',
+    (tester) async {
+      final initial = controller.loadEvents(isGetPublicEvents: false);
+      await tester.pump();
+      service.checks.single.complete(true);
+      await initial;
+      final oldDate = DateTime.now().subtract(const Duration(days: 100));
+      service.latest = oldDate;
+      service.rows = [
+        EventItem(id: 'older', name: 'Older', startDate: oldDate),
+      ];
+      final pending = controller.loadMoreMemoryEvents();
+      await tester.pump();
+      expect(service.checks.length, 2);
+      expect(
+        controller.getFilteredEvents(loc).map((e) => e.id),
+        contains('older'),
+      );
+      expect(controller.isLoadingMoreMemory, true);
+      await tester.pump(const Duration(seconds: 10));
+      await pending;
+      expect(controller.isLoadingMoreMemory, false);
+      expect(controller.hasMoreMemory, true);
+      expect(controller.hasLoadEventsError, false);
+      service.checks.last.complete(false);
+      await tester.pump();
+      expect(controller.hasMoreMemory, true);
+    },
+  );
+
+  for (final change in ['account', 'storage', 'dispose']) {
+    test('late load-more metadata cannot update after $change', () async {
+      final initial = controller.loadEvents(isGetPublicEvents: false);
+      await _flush();
+      service.checks.single.complete(true);
+      await initial;
+      final oldDate = DateTime.now().subtract(const Duration(days: 100));
+      service.latest = oldDate;
+      service.rows = [
+        EventItem(id: 'older', name: 'Older', startDate: oldDate),
+      ];
+      final pending = controller.loadMoreMemoryEvents();
+      await _flush();
+      expect(service.checks.length, 2);
+      var updates = 0;
+      controller.addListener(() => updates++);
+      if (change == 'account') {
+        auth.switchAccount();
+      } else if (change == 'storage') {
+        auth.local = true;
+        auth.notifyListeners();
+      } else {
+        controller.dispose();
+      }
+      final before = controller.hasMoreMemory;
+      updates = 0;
+      service.checks.last.complete(!before);
+      await pending;
+      expect(controller.hasMoreMemory, before);
+      expect(updates, 0);
+    });
+  }
+
+  test(
+    'load-more metadata failure keeps new rows and permits another attempt',
+    () async {
+      final initial = controller.loadEvents(isGetPublicEvents: false);
+      await _flush();
+      service.checks.single.complete(true);
+      await initial;
+      final oldDate = DateTime.now().subtract(const Duration(days: 100));
+      service.latest = oldDate;
+      service.rows = [
+        EventItem(id: 'older', name: 'Older', startDate: oldDate),
+      ];
+      final pending = controller.loadMoreMemoryEvents();
+      await _flush();
+      service.checks.last.completeError(
+        StateError('history metadata unavailable'),
+      );
+      await pending;
+      expect(controller.getFilteredEvents(loc).map((e) => e.id).toSet(), {
+        'recent',
+        'older',
+      });
+      expect(controller.hasMoreMemory, true);
+      expect(controller.isLoadingMoreMemory, false);
+      service.latest = null;
+      await controller.loadMoreMemoryEvents();
+      expect(controller.hasMoreMemory, false);
+      expect(controller.getFilteredEvents(loc).length, 2);
+    },
+  );
+
   testWidgets('history metadata timeout does not leave loading stuck', (
     tester,
   ) async {

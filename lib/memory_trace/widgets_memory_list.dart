@@ -11,6 +11,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/event_copy_flow.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_card.dart';
+import 'package:life_pilot/memory_trace/model_memory_timeline.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_dialog.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_trailing.dart';
 import 'package:life_pilot/point_record/controller_point_record_list.dart';
@@ -18,7 +19,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
 class WidgetsMemoryList extends StatelessWidget {
-  static final Expando<_MemoryTimelineCounts> _timelineCountsCache = Expando();
+  static final Expando<ModelMemoryTimeline> _timelineCountsCache = Expando();
   static final Map<String, _MemoryDateFormats> _dateFormatsCache = {};
 
   final ControllerAuth auth;
@@ -38,7 +39,7 @@ class WidgetsMemoryList extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final timelineCounts = _timelineCountsCache[filteredEvents] ??=
-        _MemoryTimelineCounts.from(filteredEvents);
+        ModelMemoryTimeline.fromEvents(filteredEvents);
     final dateFormats = _dateFormatsCache.putIfAbsent(
       loc.localeName,
       () => _MemoryDateFormats(loc.localeName),
@@ -133,7 +134,7 @@ class WidgetsMemoryList extends StatelessWidget {
                     ),
                     Text(
                       loc.memoryCountForMonth(
-                        timelineCounts.monthly[_monthKey(date)] ?? 1,
+                        timelineCounts.countForMonth(date, fallback: 1),
                       ),
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.w700,
@@ -168,7 +169,7 @@ class WidgetsMemoryList extends StatelessWidget {
                       ),
                       child: Text(
                         loc.memoryCountForDay(
-                          timelineCounts.daily[_dayKey(date)] ?? 1,
+                          timelineCounts.countForDay(date, fallback: 1),
                         ),
                         style: const TextStyle(
                           color: Color(0xFF6D4876),
@@ -279,10 +280,6 @@ class WidgetsMemoryList extends StatelessWidget {
         date.day == other.day;
   }
 
-  int _dayKey(DateTime date) => date.year * 10000 + date.month * 100 + date.day;
-
-  int _monthKey(DateTime date) => date.year * 100 + date.month;
-
   bool _sameMonth(DateTime date, DateTime? other) =>
       other != null && date.year == other.year && date.month == other.month;
 
@@ -359,43 +356,4 @@ class _MemoryDateFormats {
 
   final DateFormat month;
   final DateFormat day;
-}
-
-class _MemoryTimelineCounts {
-  const _MemoryTimelineCounts({
-    required this.daily,
-    required this.monthly,
-    required this.memoryCount,
-    required this.dayCount,
-    required this.cityCount,
-  });
-
-  factory _MemoryTimelineCounts.from(List<EventItem> events) {
-    final daily = <int, int>{};
-    final monthly = <int, int>{};
-    final cities = <String>{};
-    for (final event in events) {
-      final date = event.startDate;
-      if (date == null) continue;
-      final dayKey = date.year * 10000 + date.month * 100 + date.day;
-      final monthKey = date.year * 100 + date.month;
-      daily[dayKey] = (daily[dayKey] ?? 0) + 1;
-      monthly[monthKey] = (monthly[monthKey] ?? 0) + 1;
-      final city = event.city.trim().toLowerCase();
-      if (city.isNotEmpty) cities.add(city);
-    }
-    return _MemoryTimelineCounts(
-      daily: daily,
-      monthly: monthly,
-      memoryCount: events.length,
-      dayCount: daily.length,
-      cityCount: cities.length,
-    );
-  }
-
-  final Map<int, int> daily;
-  final Map<int, int> monthly;
-  final int memoryCount;
-  final int dayCount;
-  final int cityCount;
 }
