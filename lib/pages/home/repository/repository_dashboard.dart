@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_recommendations.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_schedule_query.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_detail_query.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
 import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
@@ -29,37 +31,14 @@ class DashboardRepository {
   }
 
   Future<List<CalendarEvent>> loadTodayEvents(String account) async {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    final rangeEnd = today.add(const Duration(days: 3));
-
-    if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.list(
-        owner: _localOwner!,
+    final query = ModelDashboardScheduleQuery(DateTime.now());
+    final localOwner = _localOwner;
+    if (localOwner != null && await _storesLocally) {
+      final rows = await LocalDataStore.instance.readOnlyRows(
+        owner: localOwner,
         resource: TableNames.calendarEvents,
       );
-      final filtered =
-          rows
-              .where((row) {
-                if (row['is_completed'] == true) return false;
-                final start = tryParseDateTimeValue(
-                  parseStringValue(row['start_date']),
-                  toLocal: true,
-                );
-                if (start == null) return false;
-                final end = tryParseDateTimeValue(
-                  parseStringValue(row['end_date']),
-                  toLocal: true,
-                );
-                final effectiveEnd = end ?? start;
-                return !effectiveEnd.isBefore(today) &&
-                    start.isBefore(rangeEnd);
-              })
-              .map(CalendarEvent.fromJson)
-              .toList()
-            ..sort(_compareCalendarEvents);
-      return filtered;
+      return query.selectLocal(rows);
     }
 
     final result = await supabase
@@ -70,52 +49,37 @@ class DashboardRepository {
         )
         .eq(Fields.account, account)
         .eq('is_completed', false)
-        .lt('start_date', rangeEnd.toUtc().toIso8601String())
+        .lt('start_date', query.rangeEnd.toUtc().toIso8601String())
         .or(
-          'end_date.gte.${today.toUtc().toIso8601String()},'
-          'and(end_date.is.null,start_date.gte.${today.toUtc().toIso8601String()})',
+          'end_date.gte.${query.today.toUtc().toIso8601String()},'
+          'and(end_date.is.null,start_date.gte.${query.today.toUtc().toIso8601String()})',
         );
 
-    return (result as List).map((e) => CalendarEvent.fromJson(e)).toList()
-      ..sort(_compareCalendarEvents);
+    return query.decodeRows((result as List).cast<Map<String, dynamic>>());
   }
-
-  static int _compareCalendarEvents(CalendarEvent left, CalendarEvent right) {
-    var comparison = (left.startDate ?? DateTime(9999)).compareTo(
-      right.startDate ?? DateTime(9999),
-    );
-    if (comparison != 0) return comparison;
-    comparison = _timeMinutes(
-      left.startTime,
-    ).compareTo(_timeMinutes(right.startTime));
-    if (comparison != 0) return comparison;
-    comparison = (left.city ?? '').compareTo(right.city ?? '');
-    if (comparison != 0) return comparison;
-    comparison = (left.location ?? '').compareTo(right.location ?? '');
-    return comparison != 0 ? comparison : left.name.compareTo(right.name);
-  }
-
-  static int _timeMinutes(TimeOfDay? time) =>
-      time == null ? 24 * 60 : time.hour * 60 + time.minute;
 
   Future<List<CalendarEvent>> getSpecificEvent(
     String eventId,
     String account,
   ) async {
-    if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.list(
-        owner: _localOwner ?? account.toLowerCase(),
+    final localOwner = _localOwner;
+    if (localOwner != null && await _storesLocally) {
+      final rows = await LocalDataStore.instance.readOnlyRows(
+        owner: localOwner,
         resource: TableNames.calendarEvents,
       );
       final filtered =
-          rows.where((row) => parseStringValue(row[Fields.id]) == eventId).toList()
+          rows
+              .where((row) => parseStringValue(row[Fields.id]) == eventId)
+              .toList()
             ..sort((a, b) {
-              final dateComparison = parseStringValue(a['start_date'])
-                  .compareTo(parseStringValue(b['start_date']));
+              final dateComparison = parseStringValue(
+                a['start_date'],
+              ).compareTo(parseStringValue(b['start_date']));
               if (dateComparison != 0) return dateComparison;
-              return parseStringValue(a['start_time']).compareTo(
-                parseStringValue(b['start_time']),
-              );
+              return parseStringValue(
+                a['start_time'],
+              ).compareTo(parseStringValue(b['start_time']));
             });
       return filtered.map(CalendarEvent.fromJson).toList();
     }
@@ -136,14 +100,13 @@ class DashboardRepository {
     required String account,
   }) async {
     if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.list(
+      final row = await LocalDataStore.instance.readOnlyRow(
         owner: account,
         resource: TableNames.calendarEvents,
+        id: id,
       );
-      final matches = rows.where((row) => parseStringValue(row[Fields.id]) == id);
-      if (matches.isEmpty) return;
-      final updated = Map<String, Object?>.from(matches.first)
-        ..['is_completed'] = true;
+      if (row == null) return;
+      final updated = Map<String, Object?>.from(row)..['is_completed'] = true;
       await LocalDataStore.instance.put(
         owner: account,
         resource: TableNames.calendarEvents,
@@ -165,7 +128,7 @@ class DashboardRepository {
     required String account,
   }) async {
     if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.list(
+      final rows = await LocalDataStore.instance.readOnlyRows(
         owner: account,
         resource: TableNames.dashboardSetting,
       );
@@ -204,39 +167,19 @@ class DashboardRepository {
   Future<DashboardSetting> _recoverLocalDashboardSetting(String account) async {
     // Local mode must remain independent from Supabase. If the transferred
     // dashboard setting is incomplete, rebuild it from local account rows.
-    final accountingAccounts = await LocalDataStore.instance.list(
-      owner: account,
-      resource: TableNames.accountingAccount,
-    );
-    final pointAccounts = await LocalDataStore.instance.list(
-      owner: account,
-      resource: TableNames.pointRecordAccount,
-    );
-    Map<String, dynamic>? firstValid(List<Map<String, dynamic>> rows) {
-      for (final row in rows) {
-        if (row[Fields.isValid] == true) return row;
-      }
-      return null;
-    }
-
-    final accounting = firstValid(accountingAccounts);
-    final points = firstValid(pointAccounts);
-    final setting = DashboardSetting(
-      recommendEventCity: '台北',
-      recommendPlaceCity: '台北',
-      language: 'zh',
-      accountingAccountId: accounting?[Fields.id] == null
-          ? null
-          : parseStringValue(accounting?[Fields.id]),
-      accountingAccountName: accounting?[Fields.account] == null
-          ? null
-          : parseStringValue(accounting?[Fields.account]),
-      pointAccountId: points?[Fields.id] == null
-          ? null
-          : parseStringValue(points?[Fields.id]),
-      pointAccountName: points?[Fields.account] == null
-          ? null
-          : parseStringValue(points?[Fields.account]),
+    final accounts = await Future.wait([
+      LocalDataStore.instance.readOnlyRows(
+        owner: account,
+        resource: TableNames.accountingAccount,
+      ),
+      LocalDataStore.instance.readOnlyRows(
+        owner: account,
+        resource: TableNames.pointRecordAccount,
+      ),
+    ]);
+    final setting = DashboardSetting.fromLocalAccounts(
+      accountingAccounts: accounts[0],
+      pointAccounts: accounts[1],
     );
     await LocalDataStore.instance.put(
       owner: account,
@@ -280,26 +223,9 @@ class DashboardRepository {
       params: {'p_city': city, 'p_limit': 5},
     );
 
-    return (result as List).map((e) => RecommendedEvent.fromJson(e)).toList()
-      ..sort(_compareRecommendedEvents);
-  }
-
-  static int _compareRecommendedEvents(
-    RecommendedEvent left,
-    RecommendedEvent right,
-  ) {
-    var comparison = (left.startDate ?? DateTime(9999)).compareTo(
-      right.startDate ?? DateTime(9999),
+    return ModelDashboardRecommendations.events(
+      (result as List).cast<Map<String, dynamic>>(),
     );
-    if (comparison != 0) return comparison;
-    comparison = _timeMinutes(
-      left.startTime,
-    ).compareTo(_timeMinutes(right.startTime));
-    if (comparison != 0) return comparison;
-    comparison = (left.city ?? '').compareTo(right.city ?? '');
-    if (comparison != 0) return comparison;
-    comparison = (left.location ?? '').compareTo(right.location ?? '');
-    return comparison != 0 ? comparison : left.name.compareTo(right.name);
   }
 
   Future<List<DashboardCity>> loadPlaceCities() async {
@@ -316,39 +242,39 @@ class DashboardRepository {
       params: {'p_city': city, 'p_limit': 5},
     );
 
-    return (result as List).map((e) => RecommendedPlace.fromJson(e)).toList();
+    return ModelDashboardRecommendations.places(
+      (result as List).cast<Map<String, dynamic>>(),
+    );
   }
 
   Future<AccountingDashboardSummary> loadAccountingSummary({
     required String accountId,
   }) async {
     if (accountId.isEmpty) return const AccountingDashboardSummary.empty();
-    if (await _storesLocally) {
-      final accounts = await LocalDataStore.instance.list(
-        owner: _localOwner!,
+    final localOwner = _localOwner;
+    if (localOwner != null && await _storesLocally) {
+      final account = await LocalDataStore.instance.readOnlyRow(
+        owner: localOwner,
         resource: TableNames.accountingAccount,
+        id: accountId,
       );
-      final account = accounts
-          .where(
-            (row) =>
-                parseStringValue(row[Fields.id]) == accountId &&
-                row[Fields.isValid] == true,
-          )
-          .firstOrNull;
-      if (account == null) return const AccountingDashboardSummary.empty();
-      final currency = parseStringValue(account['main_currency'], fallback: 'TWD');
-      final rows = await _todayLocalDetails(
+      if (account == null || account[Fields.isValid] != true) {
+        return const AccountingDashboardSummary.empty();
+      }
+      final currency = parseStringValue(
+        account['main_currency'],
+        fallback: 'TWD',
+      );
+      final details = await _todayLocalDetails(
+        owner: localOwner,
         resource: TableNames.accountingDetail,
         accountId: accountId,
         currency: currency,
       );
       return AccountingDashboardSummary(
-        records: rows.take(5).map(IncomeExpenseItem.fromJson).toList(),
+        records: details.previewRows.map(IncomeExpenseItem.fromJson).toList(),
         total: parseNumValue(account['balance']),
-        todayTotal: rows.fold<num>(
-          0,
-          (sum, row) => sum + parseNumValue(row['value']),
-        ),
+        todayTotal: details.todayTotal,
         currency: currency,
       );
     }
@@ -396,30 +322,25 @@ class DashboardRepository {
     required String accountId,
   }) async {
     if (accountId.isEmpty) return const PointDashboardSummary.empty();
-    if (await _storesLocally) {
-      final accounts = await LocalDataStore.instance.list(
-        owner: _localOwner!,
+    final localOwner = _localOwner;
+    if (localOwner != null && await _storesLocally) {
+      final account = await LocalDataStore.instance.readOnlyRow(
+        owner: localOwner,
         resource: TableNames.pointRecordAccount,
+        id: accountId,
       );
-      final account = accounts
-          .where(
-            (row) =>
-                parseStringValue(row[Fields.id]) == accountId &&
-                row[Fields.isValid] == true,
-          )
-          .firstOrNull;
-      if (account == null) return const PointDashboardSummary.empty();
-      final rows = await _todayLocalDetails(
+      if (account == null || account[Fields.isValid] != true) {
+        return const PointDashboardSummary.empty();
+      }
+      final details = await _todayLocalDetails(
+        owner: localOwner,
         resource: TableNames.pointRecordDetail,
         accountId: accountId,
       );
       return PointDashboardSummary(
-        records: rows.take(5).map(PointRecordItem.fromJson).toList(),
+        records: details.previewRows.map(PointRecordItem.fromJson).toList(),
         total: parseIntValue(account['points']),
-        todayTotal: rows.fold<int>(
-          0,
-          (sum, row) => sum + parseIntValue(row['value']),
-        ),
+        todayTotal: details.todayTotal.toInt(),
       );
     }
     final accountResult = await supabase
@@ -459,34 +380,23 @@ class DashboardRepository {
     );
   }
 
-  Future<List<Map<String, dynamic>>> _todayLocalDetails({
+  Future<ModelDashboardDetailProjection> _todayLocalDetails({
+    required String owner,
     required String resource,
     required String accountId,
     String? currency,
   }) async {
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day);
-    final end = start.add(const Duration(days: 1));
-    final rows = await LocalDataStore.instance.list(
-      owner: _localOwner!,
+    final query = ModelDashboardDetailQuery(
+      now: DateTime.now(),
+      accountId: accountId,
+      currency: currency,
+    );
+    final rows = await LocalDataStore.instance.readOnlyRows(
+      owner: owner,
       resource: resource,
     );
-    final result =
-        rows.where((row) {
-          if (parseStringValue(row['account_id']) != accountId) return false;
-          if (currency != null && parseStringValue(row['currency']) != currency) {
-            return false;
-          }
-          final date = tryParseDateTimeValue(
-            parseStringValue(row['date']),
-            toLocal: true,
-          );
-          return date != null && !date.isBefore(start) && date.isBefore(end);
-        }).toList()..sort(
-          (a, b) => parseStringValue(b['date']).compareTo(
-            parseStringValue(a['date']),
-          ),
-        );
-    return result;
+    return resource == TableNames.pointRecordDetail
+        ? query.selectPoints(rows)
+        : query.selectAccounting(rows);
   }
 }

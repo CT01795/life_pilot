@@ -1,0 +1,140 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
+import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
+import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
+import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
+import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
+import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
+import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
+import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
+import 'package:life_pilot/utils/provider_locale.dart';
+
+DashboardSetting _setting() => DashboardSetting(
+  recommendEventCity: '',
+  recommendPlaceCity: '',
+  language: 'en',
+  accountingAccountId: 'cash',
+  pointAccountId: 'points',
+);
+
+class _Repository extends DashboardRepository {
+  DashboardSection? target;
+  bool gateSettings = false;
+  final settings = <Completer<DashboardSetting>>[];
+  final pending = <({void Function() succeed, void Function() fail})>[];
+  final calls = <DashboardSection, int>{};
+
+  Future<T> load<T>(DashboardSection section, T result) {
+    calls.update(section, (value) => value + 1, ifAbsent: () => 1);
+    if (section != target) return Future.value(result);
+    final completer = Completer<T>();
+    pending.add((
+      succeed: () => completer.complete(result),
+      fail: () => completer.completeError(StateError('source unavailable')),
+    ));
+    return completer.future;
+  }
+
+  @override
+  Future<DashboardSetting> loadDashboardSetting({required String account}) {
+    if (!gateSettings) return Future.value(_setting());
+    final completer = Completer<DashboardSetting>();
+    settings.add(completer);
+    return completer.future;
+  }
+
+  @override
+  Future<List<CalendarEvent>> loadTodayEvents(String account) =>
+      load(DashboardSection.todaySchedule, <CalendarEvent>[]);
+  @override
+  Future<List<RecommendedEvent>> loadRecommendEvents(String city) =>
+      load(DashboardSection.recommendEvents, <RecommendedEvent>[]);
+  @override
+  Future<List<RecommendedPlace>> loadRecommendPlaces(String city) =>
+      load(DashboardSection.recommendPlaces, <RecommendedPlace>[]);
+  @override
+  Future<AccountingDashboardSummary> loadAccountingSummary({
+    required String accountId,
+  }) => load(
+    DashboardSection.accounting,
+    const AccountingDashboardSummary.empty(),
+  );
+  @override
+  Future<PointDashboardSummary> loadPointSummary({required String accountId}) =>
+      load(DashboardSection.points, const PointDashboardSummary.empty());
+}
+
+void main() {
+  late _Repository repository;
+  late ControllerDashboard controller;
+  late ProviderLocale locale;
+  setUp(() {
+    repository = _Repository();
+    locale = ProviderLocale(locale: const Locale('en'));
+    controller = ControllerDashboard(
+      repository: repository,
+      localeProvider: locale,
+    )..switchAccount('user');
+  });
+  tearDown(() {
+    controller.dispose();
+    locale.dispose();
+  });
+
+  for (final section in DashboardSection.values) {
+    test(
+      'late $section failure cannot mark a newer successful refresh failed',
+      () async {
+        repository.target = section;
+        final first = controller.refreshAll(account: 'user');
+        await Future<void>.delayed(Duration.zero);
+        final second = controller.refreshAll(account: 'user');
+        await Future<void>.delayed(Duration.zero);
+        expect(repository.pending.length, 2);
+        repository.pending.last.succeed();
+        await second;
+        repository.pending.first.fail();
+        await first;
+        expect(controller.hasFailed(section), false);
+        expect(controller.loading, false);
+      },
+    );
+  }
+
+  test('superseded settings do not launch obsolete section reads', () async {
+    repository.gateSettings = true;
+    final first = controller.refreshAll(account: 'user');
+    final second = controller.refreshAll(account: 'user');
+    repository.settings.last.complete(_setting());
+    await second;
+    repository.settings.first.complete(_setting());
+    await first;
+    expect(repository.calls[DashboardSection.todaySchedule], 2);
+    for (final section in DashboardSection.values.skip(1)) {
+      expect(repository.calls[section], 1, reason: '$section');
+    }
+    expect(controller.loading, false);
+  });
+
+  test(
+    'current failures remain visible and a fresh retry can clear them',
+    () async {
+      repository.target = DashboardSection.recommendEvents;
+      final first = controller.refreshAll(account: 'user');
+      await Future<void>.delayed(Duration.zero);
+      repository.pending.single.fail();
+      await first;
+      expect(controller.hasFailed(DashboardSection.recommendEvents), true);
+      final retry = controller.retrySection(
+        section: DashboardSection.recommendEvents,
+        account: 'user',
+      );
+      repository.pending.last.succeed();
+      await retry;
+      expect(controller.hasFailed(DashboardSection.recommendEvents), false);
+      expect(controller.loading, false);
+    },
+  );
+}

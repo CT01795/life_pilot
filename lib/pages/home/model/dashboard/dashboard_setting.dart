@@ -1,4 +1,6 @@
 import 'package:life_pilot/apps/config_app.dart';
+import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 const _notProvided = Object();
 
@@ -20,6 +22,35 @@ class DashboardSetting {
     this.pointAccountId,
     this.pointAccountName,
   });
+
+  /// Restores missing local settings using the first valid account in each
+  /// source's existing order. Does not read or write any storage.
+  factory DashboardSetting.fromLocalAccounts({
+    required Iterable<Map<String, dynamic>> accountingAccounts,
+    required Iterable<Map<String, dynamic>> pointAccounts,
+  }) {
+    Map<String, dynamic>? firstValid(Iterable<Map<String, dynamic>> rows) {
+      for (final row in rows) {
+        if (row[Fields.isValid] == true) return row;
+      }
+      return null;
+    }
+
+    String? field(Map<String, dynamic>? row, String key) =>
+        row?[key] == null ? null : parseStringValue(row?[key]);
+
+    final accounting = firstValid(accountingAccounts);
+    final points = firstValid(pointAccounts);
+    return DashboardSetting(
+      recommendEventCity: '台北',
+      recommendPlaceCity: '台北',
+      language: Locales.zh,
+      accountingAccountId: field(accounting, Fields.id),
+      accountingAccountName: field(accounting, Fields.account),
+      pointAccountId: field(points, Fields.id),
+      pointAccountName: field(points, Fields.account),
+    );
+  }
 
   DashboardSetting copyWith({
     String? recommendEventCity,
@@ -49,9 +80,7 @@ class DashboardSetting {
     );
   }
 
-  factory DashboardSetting.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory DashboardSetting.fromJson(Map<String, dynamic> json) {
     return DashboardSetting(
       recommendEventCity: json['recommend_event_city'] ?? '台北',
       recommendPlaceCity: json['recommend_place_city'] ?? '台北',

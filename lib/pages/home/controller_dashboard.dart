@@ -238,6 +238,7 @@ class ControllerDashboard extends SafeChangeNotifier {
       final todayEventsFuture =
           _loadSection(
             DashboardSection.todaySchedule,
+            scheduleRequest,
             () => repository.loadTodayEvents(account),
           ).then((todayEvents) {
             if (_isCurrentRequest(account, generation) &&
@@ -254,6 +255,7 @@ class ControllerDashboard extends SafeChangeNotifier {
       final recommendEventsFuture =
           _loadSection(
             DashboardSection.recommendEvents,
+            recommendEventRequest,
             () => repository.loadRecommendEvents(setting.recommendEventCity),
           ).then((events) {
             if (!_isCurrentRequest(account, generation)) return;
@@ -266,6 +268,7 @@ class ControllerDashboard extends SafeChangeNotifier {
       final recommendPlacesFuture =
           _loadSection(
             DashboardSection.recommendPlaces,
+            recommendPlaceRequest,
             () => repository.loadRecommendPlaces(setting.recommendPlaceCity),
           ).then((places) {
             if (!_isCurrentRequest(account, generation)) return;
@@ -278,6 +281,7 @@ class ControllerDashboard extends SafeChangeNotifier {
       final accountingFuture =
           _loadSection(
             DashboardSection.accounting,
+            accountingRequest,
             () => repository.loadAccountingSummary(
               accountId: setting.accountingAccountId ?? '',
             ),
@@ -296,6 +300,7 @@ class ControllerDashboard extends SafeChangeNotifier {
       final pointsFuture =
           _loadSection(
             DashboardSection.points,
+            pointsRequest,
             () => repository.loadPointSummary(
               accountId: setting.pointAccountId ?? '',
             ),
@@ -348,6 +353,7 @@ class ControllerDashboard extends SafeChangeNotifier {
       final todayEventsFuture =
           _loadSection(
             DashboardSection.todaySchedule,
+            scheduleRequest,
             () => repository.loadTodayEvents(account),
           ).then((todayEvents) {
             if (_isCurrentRequest(account, generation) &&
@@ -364,6 +370,7 @@ class ControllerDashboard extends SafeChangeNotifier {
       final accountingFuture =
           _loadSection(
             DashboardSection.accounting,
+            accountingRequest,
             () => repository.loadAccountingSummary(
               accountId: setting.accountingAccountId ?? '',
             ),
@@ -383,6 +390,7 @@ class ControllerDashboard extends SafeChangeNotifier {
       final pointsFuture = includePoints
           ? _loadSection(
               DashboardSection.points,
+              pointsRequest,
               () => repository.loadPointSummary(
                 accountId: setting.pointAccountId ?? '',
               ),
@@ -408,17 +416,32 @@ class ControllerDashboard extends SafeChangeNotifier {
     }
   }
 
+  int _sectionRequest(DashboardSection section) => switch (section) {
+    DashboardSection.todaySchedule => _todayScheduleRequest,
+    DashboardSection.recommendEvents => _recommendEventRequest,
+    DashboardSection.recommendPlaces => _recommendPlaceRequest,
+    DashboardSection.accounting => _accountingRequest,
+    DashboardSection.points => _pointsRequest,
+  };
+
   Future<T?> _loadSection<T>(
     DashboardSection section,
+    int request,
     Future<T> Function() loader,
   ) async {
     final generation = _accountGeneration;
     final account = _activeAccount;
-    if (account == null || !_isCurrentRequest(account, generation)) return null;
+    bool isCurrent() =>
+        account != null &&
+        _isCurrentRequest(account, generation) &&
+        request == _sectionRequest(section);
+    // A settings read may have outlived the refresh that requested it.
+    // Do not start superseded section reads or publish their late failures.
+    if (!isCurrent()) return null;
     try {
       return await loader();
     } catch (error, stackTrace) {
-      if (!_isCurrentRequest(account, generation)) return null;
+      if (!isCurrent()) return null;
       logger.e(
         'Could not load dashboard section: $section.',
         error: error,

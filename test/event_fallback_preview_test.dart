@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/model_event_load_policy.dart';
+import 'package:life_pilot/event/model_event_page.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/api.dart' as api;
@@ -14,8 +16,10 @@ void main() {
   late SupabaseClient client;
   late List<Map<String, dynamic>> response;
   late List<Uri> requests;
+  late List<({int offset, int limit})> pages;
   setUp(() {
     requests = [];
+    pages = [];
     response = [
       {
         'id': 'old',
@@ -35,6 +39,7 @@ void main() {
           final limit = payload['inputlimit'] as int?;
           final offset = payload['inputoffset'] as int? ?? 0;
           if (limit != null) {
+            pages.add((offset: offset, limit: limit));
             returnedRows = response.skip(offset).take(limit).toList();
           }
         }
@@ -50,32 +55,118 @@ void main() {
   });
   tearDown(() => client.dispose());
 
-  test('memory publishes six complete photo records before the rest', () async {
-    response = List.generate(
-      24,
-      (index) => {
-        'id': '$index',
-        'name': 'Memory $index',
-        'master_graph_url': 'original-photo-$index',
-        'start_date': '2026-10-01T08:00:00Z',
-      },
-    );
-    final snapshots = <List<EventItem>>[];
+  test(
+    'memory publishes the configured photo preview before the rest',
+    () async {
+      final previewSize = ModelEventLoadPolicy.memory.previewBatchSize!;
+      response = List.generate(
+        24,
+        (index) => {
+          'id': '$index',
+          'name': 'Memory $index',
+          'master_graph_url': 'original-photo-$index',
+          'start_date': '2026-10-01T08:00:00Z',
+        },
+      );
+      final snapshots = <List<EventItem>>[];
+      final rows = await ServiceEvent().getEvents(
+        tableName: TableNames.memoryTrace,
+        inputUser: 'owner@example.com',
+        storageLocation: DataStorageLocation.cloud,
+        limit: 51,
+        onPartialEvents: (events) {
+          if (snapshots.isEmpty) expect(requests.length, 1);
+          snapshots.add(events);
+        },
+      );
+      expect(snapshots.map((events) => events.length), [previewSize, 24]);
+      expect(
+        snapshots.first.last.masterGraphUrl,
+        'original-photo-${previewSize - 1}',
+      );
+      expect(rows!.map((event) => event.id), List.generate(24, (i) => '$i'));
+      expect(rows.last.masterGraphUrl, 'original-photo-23');
+      expect(requests.length, 3);
+    },
+  );
+
+  test(
+    'memory policy pages retain photos and lookahead without gaps',
+    () async {
+      response = List.generate(
+        24,
+        (i) => {
+          'id': '$i',
+          'name': 'Memory $i',
+          'master_graph_url': 'original-photo-$i',
+          'start_date': '2026-10-01T08:00:00Z',
+        },
+      );
+      final policy = ModelEventLoadPolicy.memory;
+      final service = ServiceEvent();
+      final snapshots = <int>[];
+      final firstRows = await service.getEvents(
+        tableName: TableNames.memoryTrace,
+        inputUser: 'owner@example.com',
+        storageLocation: DataStorageLocation.cloud,
+        limit: policy.cloudPageSize + 1,
+        onPartialEvents: (events) => snapshots.add(events.length),
+      );
+      final first = ModelEventPage.fromRows(
+        firstRows!,
+        pageSize: policy.cloudPageSize,
+      );
+      expect(snapshots, [policy.previewBatchSize, policy.cloudPageSize + 1]);
+      expect(first.hasMore, true);
+      final nextRows = await service.getEvents(
+        tableName: TableNames.memoryTrace,
+        inputUser: 'owner@example.com',
+        storageLocation: DataStorageLocation.cloud,
+        limit: policy.cloudPageSize + 1,
+        offset: first.nextOffset,
+      );
+      final next = ModelEventPage.fromRows(
+        nextRows!,
+        pageSize: policy.cloudPageSize,
+        offset: first.nextOffset,
+      );
+      final visible = [...first.events, ...next.events];
+      expect(visible.map((event) => event.id), List.generate(24, (i) => '$i'));
+      expect(
+        visible.map((event) => event.masterGraphUrl),
+        List.generate(24, (i) => 'original-photo-$i'),
+      );
+      expect(next.hasMore, false);
+      expect(pages, [
+        (offset: 0, limit: policy.previewBatchSize!),
+        (
+          offset: policy.previewBatchSize!,
+          limit: policy.cloudPageSize + 1 - policy.previewBatchSize!,
+        ),
+        (offset: first.nextOffset, limit: policy.cloudPageSize + 1),
+        (offset: 24, limit: 1),
+      ]);
+    },
+  );
+
+  test('scope ending after preview prevents another memory RPC', () async {
+    response = List.generate(24, (i) => {'id': '$i'});
+    var active = true;
+    final snapshots = <int>[];
     final rows = await ServiceEvent().getEvents(
       tableName: TableNames.memoryTrace,
       inputUser: 'owner@example.com',
       storageLocation: DataStorageLocation.cloud,
-      limit: 51,
+      limit: ModelEventLoadPolicy.memory.cloudPageSize + 1,
+      shouldContinue: () => active,
       onPartialEvents: (events) {
-        if (snapshots.isEmpty) expect(requests.length, 1);
-        snapshots.add(events);
+        snapshots.add(events.length);
+        active = false;
       },
     );
-    expect(snapshots.map((events) => events.length), [6, 24]);
-    expect(snapshots.first.last.masterGraphUrl, 'original-photo-5');
-    expect(rows!.map((event) => event.id), List.generate(24, (i) => '$i'));
-    expect(rows.last.masterGraphUrl, 'original-photo-23');
-    expect(requests.length, 3);
+    expect(snapshots, [ModelEventLoadPolicy.memory.previewBatchSize]);
+    expect(requests.length, 1);
+    expect(rows, isEmpty);
   });
 
   test(

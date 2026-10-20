@@ -138,6 +138,21 @@ class LocalDataStore {
     _invalidateResource(owner, resource);
   }
 
+  /// Reads one owner/resource-scoped key without loading the resource list.
+  /// As with [readOnlyRows], nested values must be treated as read-only.
+  Future<Map<String, dynamic>?> readOnlyRow({
+    required String owner,
+    required String resource,
+    required String id,
+  }) async {
+    final snapshot = await _records
+        .record(_recordKey(owner, resource, id))
+        .get(await _db)
+        .timeout(const Duration(seconds: 10));
+    if (snapshot == null) return null;
+    return Map<String, dynamic>.unmodifiable(snapshot['data']! as Map);
+  }
+
   Future<List<Map<String, dynamic>>> list({
     required String owner,
     required String resource,
