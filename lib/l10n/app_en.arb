@@ -1040,7 +1040,7 @@
   "@subscriptionQuotaReached": {"description": "Label for subscriptionQuotaReached"},
   "subscriptionQuotaReachedDetail": "Cloud limit reached: {used} of {quota} records are in use, so {remaining} more can be added. Delete an older record, switch to this device, or upgrade to Plus.",
   "@subscriptionQuotaReachedDetail": {"placeholders": {"used": {"type": "int"},"quota": {"type": "int"},"remaining": {"type": "int"}}},
-  "subscriptionRenewalRequired": "Cloud changes were rejected. Refresh your quota; if the issue persists, contact an administrator.",
+  "subscriptionRenewalRequired": "Changes were rejected. Refresh your quota; if the issue persists, contact an administrator.",
   "@subscriptionRenewalRequired": {"description": "Label for subscriptionRenewalRequired"},
   "subscriptionUsage": "Used {used} / {quota}",
   "@subscriptionUsage": {"placeholders": {"used": {"type": "int"},"quota": {"type": "int"}}},

@@ -3210,7 +3210,7 @@ abstract class AppLocalizations {
   /// Label for subscriptionRenewalRequired
   ///
   /// In en, this message translates to:
-  /// **'Cloud changes were rejected. Refresh your quota; if the issue persists, contact an administrator.'**
+  /// **'Changes were rejected. Refresh your quota; if the issue persists, contact an administrator.'**
   String get subscriptionRenewalRequired;
 
   /// No description provided for @subscriptionUsage.

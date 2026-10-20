@@ -1645,7 +1645,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get subscriptionRenewalRequired => 'Cloud changes were rejected. Refresh your quota; if the issue persists, contact an administrator.';
+  String get subscriptionRenewalRequired => 'Changes were rejected. Refresh your quota; if the issue persists, contact an administrator.';
 
   @override
   String subscriptionUsage(int used, int quota) {

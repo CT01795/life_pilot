@@ -1040,7 +1040,7 @@
   "@subscriptionQuotaReached": {"description": "Label for subscriptionQuotaReached"},
   "subscriptionQuotaReachedDetail": "雲端額度已滿：目前已使用 {used}／{quota} 筆，還可新增 {remaining} 筆。請先刪除舊資料、改存此裝置，或升級 Plus。",
   "@subscriptionQuotaReachedDetail": {"placeholders": {"used": {"type": "int"},"quota": {"type": "int"},"remaining": {"type": "int"}}},
-  "subscriptionRenewalRequired": "雲端寫入遭拒，請重新整理額度；若仍無法使用，請聯絡管理者。",
+  "subscriptionRenewalRequired": "寫入遭拒，請重新整理額度；若仍無法使用，請聯絡管理者。",
   "@subscriptionRenewalRequired": {"description": "Label for subscriptionRenewalRequired"},
   "subscriptionUsage": "已使用 {used}／{quota}",
   "@subscriptionUsage": {"placeholders": {"used": {"type": "int"},"quota": {"type": "int"}}},

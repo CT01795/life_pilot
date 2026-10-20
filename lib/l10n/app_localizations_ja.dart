@@ -1645,7 +1645,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get subscriptionRenewalRequired => 'クラウドへの変更が拒否されました。利用枠を再読み込みし、解決しない場合は管理者に連絡してください。';
+  String get subscriptionRenewalRequired => '変更が拒否されました。利用枠を再読み込みし、解決しない場合は管理者に連絡してください。';
 
   @override
   String subscriptionUsage(int used, int quota) {

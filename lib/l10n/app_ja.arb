@@ -1040,7 +1040,7 @@
   "@subscriptionQuotaReached": {"description": "Label for subscriptionQuotaReached"},
   "subscriptionQuotaReachedDetail": "クラウド上限に達しました。{quota} 件中 {used} 件を使用中で、あと {remaining} 件追加できます。古いデータを削除するか、このデバイスへ切り替えるか、Plusへアップグレードしてください。",
   "@subscriptionQuotaReachedDetail": {"placeholders": {"used": {"type": "int"},"quota": {"type": "int"},"remaining": {"type": "int"}}},
-  "subscriptionRenewalRequired": "クラウドへの変更が拒否されました。利用枠を再読み込みし、解決しない場合は管理者に連絡してください。",
+  "subscriptionRenewalRequired": "変更が拒否されました。利用枠を再読み込みし、解決しない場合は管理者に連絡してください。",
   "@subscriptionRenewalRequired": {"description": "Label for subscriptionRenewalRequired"},
   "subscriptionUsage": "使用済み {used}／{quota}",
   "@subscriptionUsage": {"placeholders": {"used": {"type": "int"},"quota": {"type": "int"}}},

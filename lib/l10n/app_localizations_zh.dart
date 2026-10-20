@@ -1645,7 +1645,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get subscriptionRenewalRequired => '雲端寫入遭拒，請重新整理額度；若仍無法使用，請聯絡管理者。';
+  String get subscriptionRenewalRequired => '寫入遭拒，請重新整理額度；若仍無法使用，請聯絡管理者。';
 
   @override
   String subscriptionUsage(int used, int quota) {

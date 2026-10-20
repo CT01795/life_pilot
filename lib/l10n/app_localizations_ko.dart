@@ -1645,7 +1645,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get subscriptionRenewalRequired => '클라우드 변경이 거부되었습니다. 한도를 새로고침하고 문제가 계속되면 관리자에게 문의하세요.';
+  String get subscriptionRenewalRequired => '변경이 거부되었습니다. 한도를 새로고침하고 문제가 계속되면 관리자에게 문의하세요.';
 
   @override
   String subscriptionUsage(int used, int quota) {
