@@ -168,7 +168,6 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     answerController.clear();
 
     await _speech.listen(
-      localeId: 'en_US',
       onResult: (result) {
         if (!mounted ||
             !isRecording ||
@@ -179,11 +178,12 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
         onResult(result.recognizedWords);
       },
       listenOptions: stt.SpeechListenOptions(
+        localeId: 'en_US',
         listenMode: stt.ListenMode.confirmation,
         partialResults: true,
+        listenFor: const Duration(seconds: 10),
+        pauseFor: const Duration(seconds: 3),
       ),
-      listenFor: const Duration(seconds: 10), // 🔥 最重要
-      pauseFor: const Duration(seconds: 3), // 🔥 停頓多久才結束
     );
   }
 

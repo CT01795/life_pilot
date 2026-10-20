@@ -5,17 +5,15 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/event_item_schedule_comparator.dart';
 import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/controller_speech_input.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/event_country.dart';
-import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
 
-class ControllerPageEventAdd extends SafeChangeNotifier {
+class ControllerPageEventAdd extends ControllerSpeechInput {
   final ControllerAuth auth;
-  final ServiceSpeech _serviceSpeech = ServiceSpeech();
 
   final String tableName;
   final Uuid uuid = const Uuid();
@@ -68,10 +66,6 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
   ];
   DateTime? reminderTime;
 
-  // --- 語音辨識 ---
-  bool isListening = false;
-  String? currentListeningKey;
-
   // --- 控制器管理 ---
   final Map<String, TextEditingController> controllerMap = {};
   VoidCallback? onContentChanged;
@@ -97,6 +91,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
     this.likeCounts,
     this.dislikeCounts,
     this.source,
+    super.serviceSpeech,
   }) {
     _init();
   }
@@ -585,34 +580,6 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
       ..source = existingEvent?.source ?? source
       ..mapLat = addressUnchanged ? existingEvent?.mapLat : null
       ..mapLng = addressUnchanged ? existingEvent?.mapLng : null;
-  }
-
-  // --- 語音控制區 ---
-  Future<void> startListening({
-    required ValueChanged<String> onResult,
-    required String key,
-  }) async {
-    final available = await _serviceSpeech.startListening(
-      onResult: (text) {
-        onResult(text);
-        notifyListeners();
-      },
-    );
-    if (!available) return;
-    isListening = true;
-    currentListeningKey = key;
-    notifyListeners();
-  }
-
-  Future<void> stopListening() async {
-    await _serviceSpeech.stopListening();
-    isListening = false;
-    currentListeningKey = null;
-    notifyListeners();
-  }
-
-  Future<void> speakText({required String text}) async {
-    await _serviceSpeech.speakText(text: text);
   }
 
   void addSubEvent() {

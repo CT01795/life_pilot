@@ -13,6 +13,7 @@ class ControllerContentPerformance extends SafeChangeNotifier {
   final ServiceContentPerformance service;
   final String? _owner;
   final Duration requestTimeout;
+  int _personalDataRevision;
   int _request = 0;
   bool loading = false;
   Object? error;
@@ -27,18 +28,22 @@ class ControllerContentPerformance extends SafeChangeNotifier {
     ServiceContentPerformance? service,
     this.requestTimeout = const Duration(seconds: 30),
   }) : service = service ?? ServiceContentPerformance(),
-       _owner = auth.currentAccount {
+       _owner = auth.currentAccount,
+       _personalDataRevision = auth.personalDataRevision {
     auth.addListener(_authChanged);
   }
   void _authChanged() {
-    if (_owner != auth.currentAccount) {
+    if (_owner != auth.currentAccount ||
+        _personalDataRevision != auth.personalDataRevision) {
       _request++;
       _loads = RefreshRequestCoordinator();
       _loadKey = null;
       data = null;
       error = null;
       loading = false;
+      _personalDataRevision = auth.personalDataRevision;
       notifyListeners();
+      if (_owner == auth.currentAccount) unawaited(load());
     }
   }
 
@@ -54,7 +59,7 @@ class ControllerContentPerformance extends SafeChangeNotifier {
       now: DateTime.now(),
     );
     final search = keyword.trim();
-    final key = (period.month, period.today, search);
+    final key = (period.month, period.today, search, auth.personalDataRevision);
     if (_loadKey != key) {
       _request++;
       _loads = RefreshRequestCoordinator();
@@ -82,9 +87,7 @@ class ControllerContentPerformance extends SafeChangeNotifier {
     data = null;
     error = null;
     notifyListeners();
-    if (notifierDisposed ||
-        request != _request ||
-        _owner != auth.currentAccount) {
+    if (!_isCurrentRequest(request)) {
       return;
     }
     try {
@@ -97,13 +100,11 @@ class ControllerContentPerformance extends SafeChangeNotifier {
             statisticsOnly: true,
           )
           .timeout(requestTimeout);
-      if (!notifierDisposed &&
-          request == _request &&
-          _owner == auth.currentAccount) {
+      if (_isCurrentRequest(request)) {
         data = result;
       }
     } catch (failure, stack) {
-      if (!notifierDisposed && request == _request) {
+      if (_isCurrentRequest(request)) {
         error = failure;
         logger.w(
           'Content performance query failed (${attractions ? 'attractions' : 'events'})',
@@ -112,12 +113,18 @@ class ControllerContentPerformance extends SafeChangeNotifier {
         );
       }
     } finally {
-      if (!notifierDisposed && request == _request) {
+      if (_isCurrentRequest(request)) {
         loading = false;
         notifyListeners();
       }
     }
   }
+
+  bool _isCurrentRequest(int request) =>
+      !notifierDisposed &&
+      request == _request &&
+      _owner == auth.currentAccount &&
+      _personalDataRevision == auth.personalDataRevision;
 
   Future<void> selectMonth(DateTime? month, {String? keyword}) async {
     if (notifierDisposed) return;

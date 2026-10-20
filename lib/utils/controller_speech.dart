@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:speech_to_text/speech_to_text.dart';
 
 class ControllerSpeech {
-  
   final SpeechService _speechService = SpeechService();
 
   Future<String> recordAndTranscribe() async {
@@ -18,10 +17,10 @@ class SpeechService {
     if (!await _speech.initialize()) return '';
 
     final completer = Completer<String>();
-    
+
     await _speech.listen(
-      localeId: 'zh_TW',
       listenOptions: SpeechListenOptions(
+        localeId: 'zh_TW',
         listenMode: ListenMode.confirmation, // ✅ 新位置
         partialResults: false, // 減少亂跳
         cancelOnError: true,
