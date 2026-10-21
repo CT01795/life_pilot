@@ -91,7 +91,9 @@ class ServiceRecordStatistics {
     required DateTime now,
     String? currency,
     bool history = false,
+    bool Function()? shouldContinue,
   }) async {
+    if (shouldContinue?.call() == false) return [];
     final table = kind == RecordStatisticsKind.accounting
         ? TableNames.accountingDetail
         : TableNames.pointRecordDetail;
@@ -104,9 +106,11 @@ class ServiceRecordStatistics {
         kind: kind,
         currency: currency,
       );
+      if (shouldContinue?.call() == false) return [];
       return projection.rows(now: now, history: history);
     }
     return readAllPagedRows(
+      shouldContinue: shouldContinue,
       fetch: (offset, limit) async {
         if (supabase.auth.currentUser?.email?.toLowerCase() !=
             owner.toLowerCase()) {

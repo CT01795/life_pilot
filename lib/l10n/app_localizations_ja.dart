@@ -3173,6 +3173,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get viewPerformance => '効果を見る';
 
   @override
+  String get personalActivityPerformanceHint => '自分が作成した活動の効果';
+
+  @override
+  String get personalAttractionPerformanceHint => '自分が作成したスポットの効果';
+
+  @override
   String get performanceActive => '期限前';
 
   @override

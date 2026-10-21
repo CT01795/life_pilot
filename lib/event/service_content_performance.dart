@@ -20,6 +20,7 @@ class ServiceContentPerformance {
     ContentPerformancePeriod? period,
     String keyword = '',
     bool statisticsOnly = false,
+    bool Function()? shouldContinue,
   }) async {
     final projection = ModelContentPerformanceQuery(
       includeSubmissionDetails: includeSubmissionDetails,
@@ -29,6 +30,7 @@ class ServiceContentPerformance {
     );
     final elapsed = Stopwatch()..start();
     final rows = await readAllPagedRows(
+      shouldContinue: shouldContinue,
       fetch: (offset, limit) async {
         if (supabase.auth.currentUser?.email?.toLowerCase() !=
             owner.toLowerCase()) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/event/model_content_performance.dart';
 import 'package:life_pilot/event/model_content_performance_period.dart';
@@ -5,6 +6,75 @@ import 'package:life_pilot/event/model_content_performance_query.dart';
 import 'package:life_pilot/utils/paged_row_reader.dart';
 
 void main() {
+  test('expired full-result scope sends no request', () async {
+    var calls = 0;
+    expect(
+      await readAllPagedRows(
+        shouldContinue: () => false,
+        fetch: (_, _) async {
+          calls++;
+          return [];
+        },
+      ),
+      isEmpty,
+    );
+    expect(calls, 0);
+  });
+  test(
+    'expiry during full-result fetch discards data before decoding',
+    () async {
+      var active = true;
+      final batch = Completer<List<dynamic>>();
+      var calls = 0;
+      final pending = readAllPagedRows(
+        shouldContinue: () => active,
+        fetch: (_, _) {
+          calls++;
+          return batch.future;
+        },
+      );
+      active = false;
+      batch.complete([
+        Object(),
+      ]); // Would throw during row decoding if processed.
+      expect(await pending, isEmpty);
+      expect(calls, 1);
+    },
+  );
+  test('expiry between batches never returns a partial aggregate', () async {
+    var checks = 0;
+    var calls = 0;
+    final result = await readAllPagedRows(
+      shouldContinue: () => ++checks < 3,
+      fetch: (_, _) async {
+        calls++;
+        return [
+          {'id': 'first'},
+        ];
+      },
+    );
+    expect(result, isEmpty);
+    expect(calls, 1);
+  });
+  test(
+    'expiry during second batch discards previously collected rows too',
+    () async {
+      var active = true;
+      var calls = 0;
+      final result = await readAllPagedRows(
+        shouldContinue: () => active,
+        fetch: (offset, _) async {
+          calls++;
+          if (offset > 0) active = false;
+          return [
+            {'id': '$offset'},
+          ];
+        },
+      );
+      expect(result, isEmpty);
+      expect(calls, 2);
+    },
+  );
   test(
     'complete pagination continues past capped short pages until empty',
     () async {
@@ -13,6 +83,7 @@ void main() {
         for (var i = 0; i < 5; i++) {'id': '$i'},
       ];
       final rows = await readAllPagedRows(
+        shouldContinue: () => true,
         fetch: (offset, limit) async {
           calls.add((offset, limit));
           return source.skip(offset).take(2).toList();

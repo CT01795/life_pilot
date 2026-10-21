@@ -6063,6 +6063,18 @@ abstract class AppLocalizations {
   /// **'View insights'**
   String get viewPerformance;
 
+  /// Tooltip clarifying that activity insights cover only content created by the signed-in user.
+  ///
+  /// In en, this message translates to:
+  /// **'Insights for activities you created'**
+  String get personalActivityPerformanceHint;
+
+  /// Tooltip clarifying that attraction insights cover only content created by the signed-in user.
+  ///
+  /// In en, this message translates to:
+  /// **'Insights for attractions you created'**
+  String get personalAttractionPerformanceHint;
+
   /// Content performance filters and layout
   ///
   /// In en, this message translates to:

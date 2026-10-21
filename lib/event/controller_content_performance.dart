@@ -90,6 +90,7 @@ class ControllerContentPerformance extends SafeChangeNotifier {
     if (!_isCurrentRequest(request)) {
       return;
     }
+    var reading = true;
     try {
       final result = await service
           .read(
@@ -98,6 +99,7 @@ class ControllerContentPerformance extends SafeChangeNotifier {
             period: period,
             keyword: search,
             statisticsOnly: true,
+            shouldContinue: () => reading && _isCurrentRequest(request),
           )
           .timeout(requestTimeout);
       if (_isCurrentRequest(request)) {
@@ -113,6 +115,9 @@ class ControllerContentPerformance extends SafeChangeNotifier {
         );
       }
     } finally {
+      // Future.timeout does not abort the underlying HTTP request. Stop its
+      // pagination when it eventually returns, including after a timeout.
+      reading = false;
       if (_isCurrentRequest(request)) {
         loading = false;
         notifyListeners();

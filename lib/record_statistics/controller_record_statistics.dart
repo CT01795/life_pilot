@@ -99,6 +99,7 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
     if (!_isCurrentRequest(request, storage)) {
       return;
     }
+    var reading = true;
     try {
       final totalFuture = history
           ? Future<num?>.value(null)
@@ -111,8 +112,9 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
               kind: kind,
               currency: currency,
             );
-      // Attach both listeners together so a failed total request is observed
-      // even while its independent month-page request is still in flight.
+      // Observe both requests immediately and fail fast. Future.wait still
+      // consumes late errors; finally closes pagination without waiting for
+      // the unrelated request to complete or time out.
       final results = await Future.wait<Object?>([
         service.read(
           owner: _owner,
@@ -122,9 +124,10 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
           currency: currency,
           now: now,
           history: history,
+          shouldContinue: () => reading && _isCurrentRequest(request, storage),
         ),
         totalFuture,
-      ]).timeout(requestTimeout);
+      ], eagerError: true).timeout(requestTimeout);
       if (!_isCurrentRequest(request, storage)) {
         return;
       }
@@ -139,6 +142,9 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
         data = null;
       }
     } finally {
+      // A timed-out Future leaves its HTTP work alive; prevent it from
+      // requesting another page when the in-flight response eventually returns.
+      reading = false;
       if (_isCurrentRequest(request, storage)) {
         loading = false;
         notifyListeners();

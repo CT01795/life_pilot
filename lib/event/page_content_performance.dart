@@ -65,10 +65,15 @@ class _PageContentPerformanceState extends State<PageContentPerformance> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.attractions
-              ? loc.attractionPerformance
-              : loc.activityPerformance,
+        title: Tooltip(
+          message: widget.attractions
+              ? loc.personalAttractionPerformanceHint
+              : loc.personalActivityPerformanceHint,
+          child: Text(
+            widget.attractions
+                ? loc.attractionPerformance
+                : loc.activityPerformance,
+          ),
         ),
       ),
       body: Align(

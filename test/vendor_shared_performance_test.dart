@@ -21,6 +21,7 @@ class _Performance extends ServiceContentPerformance {
     ContentPerformancePeriod? period,
     String keyword = '',
     bool statisticsOnly = false,
+    bool Function()? shouldContinue,
   }) async {
     calls.add((owner, attractions, includeSubmissionDetails));
     return ModelContentPerformance([
@@ -110,7 +111,14 @@ void main() {
           final loc = AppLocalizations.of(
             tester.element(find.byType(Wrap).first),
           )!;
-          expect(find.byTooltip(loc.viewPerformance), findsNWidgets(2));
+          expect(
+            find.byTooltip(loc.personalActivityPerformanceHint),
+            findsOneWidget,
+          );
+          expect(
+            find.byTooltip(loc.personalAttractionPerformanceHint),
+            findsOneWidget,
+          );
           expect(
             performance.calls,
             isEmpty,
@@ -128,6 +136,17 @@ void main() {
                 )
                 .attractions,
             attractions,
+          );
+          expect(
+            find.descendant(
+              of: find.byType(AppBar),
+              matching: find.byTooltip(
+                attractions
+                    ? loc.personalAttractionPerformanceHint
+                    : loc.personalActivityPerformanceHint,
+              ),
+            ),
+            findsOneWidget,
           );
           await tester.scrollUntilVisible(
             find.text(attractions ? 'My attraction' : 'My activity'),

@@ -2,15 +2,20 @@ typedef FetchRows = Future<List<dynamic>> Function(int offset, int limit);
 
 /// Reads complete result sets even when the server caps responses below the
 /// requested size. Callers retain query, authorization and timeout ownership.
+/// An expired scope returns no rows (never a partial aggregate); callers must
+/// still guard publication. An already-sent fetch is not physically aborted.
 Future<List<Map<String, dynamic>>> readAllPagedRows({
   required FetchRows fetch,
   int batchSize = 500,
+  bool Function()? shouldContinue,
 }) async {
   if (batchSize < 1) throw ArgumentError.value(batchSize, 'batchSize');
   final rows = <Map<String, dynamic>>[];
   final seen = <String>{};
   while (true) {
+    if (shouldContinue?.call() == false) return [];
     final batch = await fetch(rows.length, batchSize);
+    if (shouldContinue?.call() == false) return [];
     if (batch.isEmpty) return rows;
     for (final value in batch) {
       final row = Map<String, dynamic>.from(value as Map);

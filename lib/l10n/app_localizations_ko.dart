@@ -3173,6 +3173,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get viewPerformance => '성과 보기';
 
   @override
+  String get personalActivityPerformanceHint => '내가 등록한 활동의 성과';
+
+  @override
+  String get personalAttractionPerformanceHint => '내가 등록한 명소의 성과';
+
+  @override
   String get performanceActive => '기간 미종료';
 
   @override

@@ -13,6 +13,25 @@ enum ContentPerformanceMetric {
   const ContentPerformanceMetric(this.column);
 }
 
+/// Locale-independent presentation data; icon/label/number formatting stays in
+/// the View. Keep the same metric order and omit only exact zero values.
+class ContentPerformanceMetricValue {
+  final ContentPerformanceMetric metric;
+  final int count;
+  const ContentPerformanceMetricValue(this.metric, this.count);
+}
+
+List<ContentPerformanceMetricValue> _nonZeroMetricValues(
+  int Function(ContentPerformanceMetric) countFor,
+) {
+  final values = <ContentPerformanceMetricValue>[];
+  for (final metric in ContentPerformanceMetric.values) {
+    final count = countFor(metric);
+    if (count != 0) values.add(ContentPerformanceMetricValue(metric, count));
+  }
+  return List.unmodifiable(values);
+}
+
 final contentPerformanceColumns = List<String>.unmodifiable(
   ContentPerformanceMetric.values.map((metric) => metric.column),
 );
@@ -41,6 +60,8 @@ class ModelContentPerformance {
   final List<ContentPerformanceItem> items;
   final Map<String, int> totals;
   int totalFor(ContentPerformanceMetric metric) => totals[metric.column]!;
+  late final List<ContentPerformanceMetricValue> visibleMetrics =
+      _nonZeroMetricValues(totalFor);
 
   /// Share of the same metric across this query's filtered result, not people.
   double shareFor(
@@ -90,6 +111,8 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
       ends != null && ends!.year < 2100 ? ends : null;
   final List<int> counts;
   int countFor(ContentPerformanceMetric metric) => counts[metric.index];
+  late final List<ContentPerformanceMetricValue> visibleMetrics =
+      _nonZeroMetricValues(countFor);
   final int maximum;
   bool get hasStatistics => counts.any((value) => value != 0);
   ContentPerformanceItem._(

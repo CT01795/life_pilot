@@ -168,9 +168,13 @@ void main() {
     late List<Uri> requests;
     late List<Map<String, dynamic>> rows;
     bool duplicate = false;
+    bool active = true;
+    bool expireOnResponse = false;
     setUp(() async {
       requests = [];
       duplicate = false;
+      active = true;
+      expireOnResponse = false;
       rows = [
         for (var i = 0; i < 3; i++) {'id': '$i', 'name': '$i', 'page_views': i},
       ];
@@ -179,6 +183,7 @@ void main() {
         'test-key',
         httpClient: MockClient((request) async {
           requests.add(request.url);
+          if (expireOnResponse) active = false;
           final offset = int.parse(
             request.url.queryParameters['offset'] ?? '0',
           );
@@ -208,6 +213,32 @@ void main() {
       );
     });
     tearDown(() => client.dispose());
+    test('inactive performance query sends no database request', () async {
+      active = false;
+      final result = await ServiceContentPerformance().read(
+        owner: 'one@example.com',
+        attractions: false,
+        shouldContinue: () => active,
+      );
+      expect(requests, isEmpty);
+      expect(result.items, isEmpty);
+    });
+    for (final attractions in [false, true]) {
+      test(
+        '$attractions expired HTTP response does not trigger another page',
+        () async {
+          expireOnResponse = true;
+          final result = await ServiceContentPerformance().read(
+            owner: 'one@example.com',
+            attractions: attractions,
+            shouldContinue: () => active,
+          );
+          expect(requests.length, 1);
+          expect(result.items, isEmpty);
+          expect(result.totals.values.every((value) => value == 0), true);
+        },
+      );
+    }
     test(
       'statistics-only search keeps author, date, keyword and six nonzero counters as mandatory groups',
       () async {

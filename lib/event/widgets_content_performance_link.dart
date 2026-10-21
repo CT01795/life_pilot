@@ -22,7 +22,9 @@ class ContentPerformanceLink extends StatelessWidget {
       (auth) => auth.currentAccount,
     );
     return Tooltip(
-      message: loc.viewPerformance,
+      message: attractions
+          ? loc.personalAttractionPerformanceHint
+          : loc.personalActivityPerformanceHint,
       child: TextButton.icon(
         icon: const Icon(Icons.insights),
         label: Text(

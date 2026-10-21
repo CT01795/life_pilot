@@ -3173,6 +3173,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewPerformance => 'View insights';
 
   @override
+  String get personalActivityPerformanceHint => 'Insights for activities you created';
+
+  @override
+  String get personalAttractionPerformanceHint => 'Insights for attractions you created';
+
+  @override
   String get performanceActive => 'Not expired';
 
   @override

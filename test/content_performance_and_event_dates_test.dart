@@ -16,6 +16,7 @@ class PerformanceTestService extends ServiceContentPerformance {
   final periods = <ContentPerformancePeriod?>[];
   final keywords = <String>[];
   final statisticsOnlyRequests = <bool>[];
+  final activeRequests = <bool Function()?>[];
   @override
   Future<ModelContentPerformance> read({
     required String owner,
@@ -24,12 +25,14 @@ class PerformanceTestService extends ServiceContentPerformance {
     ContentPerformancePeriod? period,
     String keyword = '',
     bool statisticsOnly = false,
+    bool Function()? shouldContinue,
   }) {
     owners.add(owner);
     kinds.add(attractions);
     periods.add(period);
     keywords.add(keyword);
     statisticsOnlyRequests.add(statisticsOnly);
+    activeRequests.add(shouldContinue);
     final result = Completer<ModelContentPerformance>();
     pending.add(result);
     return result.future;
@@ -111,11 +114,52 @@ void main() {
       );
       test('dispose ignores response', () async {
         final pending = controller.load();
+        expect(service.activeRequests.single!(), true);
         controller.dispose();
+        expect(service.activeRequests.single!(), false);
         service.pending.single.complete(ModelContentPerformance([]));
         await pending;
         expect(controller.data, null);
       });
+      test(
+        'changing search and month invalidates old pagination predicates',
+        () async {
+          final first = controller.load();
+          final second = controller.search('new');
+          expect(service.activeRequests[0]!(), false);
+          expect(service.activeRequests[1]!(), true);
+          final third = controller.selectMonth(DateTime(2026, 7));
+          expect(service.activeRequests[1]!(), false);
+          expect(service.activeRequests[2]!(), true);
+          for (final pending in service.pending) {
+            pending.complete(ModelContentPerformance([]));
+          }
+          await Future.wait([first, second, third]);
+          expect(service.activeRequests.every((active) => !active!()), true);
+        },
+      );
+      test(
+        'timeout closes the pagination predicate before a late HTTP result',
+        () async {
+          controller.dispose();
+          controller = ControllerContentPerformance(
+            auth: auth,
+            attractions: attractions,
+            service: service,
+            requestTimeout: const Duration(milliseconds: 5),
+          );
+          await controller.load();
+          expect(controller.error, isA<TimeoutException>());
+          expect(service.activeRequests.single!(), false);
+          service.pending.single.complete(
+            ModelContentPerformance([
+              {'name': 'late'},
+            ]),
+          );
+          await Future<void>.delayed(Duration.zero);
+          expect(controller.data, null);
+        },
+      );
       test('failure provides retry state', () async {
         final pending = controller.load();
         service.pending.single.completeError(StateError('offline'));

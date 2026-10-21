@@ -3173,6 +3173,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get viewPerformance => '檢視成效';
 
   @override
+  String get personalActivityPerformanceHint => '個人建立的活動成效';
+
+  @override
+  String get personalAttractionPerformanceHint => '個人建立的景點成效';
+
+  @override
   String get performanceActive => '尚未到期';
 
   @override

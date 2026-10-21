@@ -124,38 +124,37 @@ class _ContentPerformanceMetrics extends StatelessWidget {
             spacing: 12,
             runSpacing: 12,
             children: [
-              for (final metric in ContentPerformanceMetric.values)
-                if (item.countFor(metric) != 0)
-                  ConstrainedBox(
-                    key: ValueKey(('performance-metric', item.id, metric)),
-                    constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-                    child: Tooltip(
-                      message: loc.performanceMetricShareLabel(
-                        metric.label(loc),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 48,
-                            height: 40,
-                            child: Icon(
-                              metric.icon,
-                              size: 24,
-                              color: theme.colorScheme.primary,
-                            ),
+              for (final value in item.visibleMetrics)
+                ConstrainedBox(
+                  key: ValueKey(('performance-metric', item.id, value.metric)),
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                  child: Tooltip(
+                    message: loc.performanceMetricShareLabel(
+                      value.metric.label(loc),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 48,
+                          height: 40,
+                          child: Icon(
+                            value.metric.icon,
+                            size: 24,
+                            color: theme.colorScheme.primary,
                           ),
-                          Text(
-                            '${format.format(item.countFor(metric))}/${format.format(performance.totalFor(metric))}',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                        ),
+                        Text(
+                          '${format.format(value.count)}/${format.format(performance.totalFor(value.metric))}',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
+                ),
             ],
           ),
         ),

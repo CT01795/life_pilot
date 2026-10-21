@@ -26,6 +26,7 @@ class _Records extends ServiceRecordStatistics {
     required DateTime now,
     String? currency,
     bool history = false,
+    bool Function()? shouldContinue,
   }) async {
     if (fail) throw StateError('offline');
     return rows;
@@ -41,6 +42,7 @@ class _Performance extends ServiceContentPerformance {
     ContentPerformancePeriod? period,
     String keyword = '',
     bool statisticsOnly = false,
+    bool Function()? shouldContinue,
   }) async => ModelContentPerformance([]);
 }
 

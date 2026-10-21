@@ -26,6 +26,7 @@ class StatisticsTestService extends ServiceRecordStatistics {
   final reads = <Completer<List<Map<String, dynamic>>>>[];
   final totals = <Completer<num>>[];
   final scopes = <(String, DataStorageLocation, String, bool)>[];
+  final activeRequests = <bool Function()?>[];
   @override
   Future<List<Map<String, dynamic>>> read({
     required String owner,
@@ -35,8 +36,10 @@ class StatisticsTestService extends ServiceRecordStatistics {
     required DateTime now,
     String? currency,
     bool history = false,
+    bool Function()? shouldContinue,
   }) {
     scopes.add((owner, storage, accountId, history));
+    activeRequests.add(shouldContinue);
     final result = Completer<List<Map<String, dynamic>>>();
     reads.add(result);
     return result.future;
@@ -334,11 +337,53 @@ void main() {
     );
     test('dispose safely ignores pending responses', () async {
       final pending = controller.load();
+      expect(service.activeRequests.single!(), true);
       controller.dispose();
+      expect(service.activeRequests.single!(), false);
       service.finish(0);
       await pending;
       expect(controller.data, null);
     });
+
+    for (final kind in RecordStatisticsKind.values) {
+      test('$kind history predicate expires on owner switch', () async {
+        controller.dispose();
+        controller = ControllerRecordStatistics(
+          auth: auth,
+          accountId: 'a',
+          kind: kind,
+          history: true,
+          service: service,
+        );
+        final pending = controller.load();
+        expect(service.activeRequests.single!(), true);
+        auth.change(account: 'two@example.com');
+        expect(service.activeRequests.single!(), false);
+        service.reads.single.complete([]);
+        await pending;
+        expect(controller.data, null);
+      });
+      test(
+        '$kind timeout stops history pagination before a late result',
+        () async {
+          controller.dispose();
+          controller = ControllerRecordStatistics(
+            auth: auth,
+            accountId: 'a',
+            kind: kind,
+            history: true,
+            service: service,
+            requestTimeout: const Duration(milliseconds: 5),
+          );
+          await controller.load();
+          expect(controller.error, isA<TimeoutException>());
+          expect(service.activeRequests.single!(), false);
+          service.reads.single.complete([row(DateTime.now(), 999)]);
+          await Future<void>.delayed(Duration.zero);
+          expect(controller.data, null);
+        },
+      );
+    }
     test('failed reads expose retry state and retry can recover', () async {
       final pending = controller.load();
       service.reads[0].completeError(StateError('offline'));
@@ -352,6 +397,58 @@ void main() {
       expect(controller.error, null);
       expect(controller.data, isNotNull);
     });
+
+    for (final kind in RecordStatisticsKind.values) {
+      for (final totalFailsFirst in [false, true]) {
+        test(
+          '$kind fail-fast totalFirst=$totalFailsFirst allows retry while old request is pending',
+          () async {
+            controller.dispose();
+            controller = ControllerRecordStatistics(
+              auth: auth,
+              accountId: 'a',
+              kind: kind,
+              service: service,
+            );
+            final first = controller.load();
+            final failure = StateError('first failure');
+            if (totalFailsFirst) {
+              service.totals.first.completeError(failure);
+            } else {
+              service.reads.first.completeError(failure);
+            }
+            // The other request intentionally remains unresolved. No real clock
+            // delay is needed to release loading; timeout guards a regression.
+            await first.timeout(const Duration(seconds: 2));
+            expect(controller.loading, false);
+            expect(controller.error, same(failure));
+            expect(service.activeRequests.first!(), false);
+            expect(controller.data, null);
+
+            final retry = controller.load();
+            expect(service.reads.length, 2);
+            expect(service.totals.length, 2);
+            service.reads.last.complete([row(DateTime.now(), 3)]);
+            service.totals.last.complete(17);
+            await retry;
+            expect(controller.data!.total, 17);
+            expect(controller.error, null);
+
+            // Late failures from the abandoned sibling must be observed but
+            // cannot erase the successful retry or create an unhandled error.
+            if (totalFailsFirst) {
+              service.reads.first.completeError(StateError('late old detail'));
+            } else {
+              service.totals.first.completeError(StateError('late old total'));
+            }
+            await Future<void>.delayed(Duration.zero);
+            expect(controller.data!.total, 17);
+            expect(controller.error, null);
+            expect(controller.loading, false);
+          },
+        );
+      }
+    }
     test('synchronous logout notification starts no remote work', () async {
       controller.addListener(() {
         if (controller.loading) auth.change(account: 'other@example.com');

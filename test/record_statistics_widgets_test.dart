@@ -39,6 +39,7 @@ class _Records extends ServiceRecordStatistics {
     required DateTime now,
     String? currency,
     bool history = false,
+    bool Function()? shouldContinue,
   }) async {
     calls++;
     return [

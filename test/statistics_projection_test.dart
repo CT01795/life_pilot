@@ -3,6 +3,118 @@ import 'package:life_pilot/event/model_content_performance.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 
 void main() {
+  test('zero-only performance has no visible overview or item metrics', () {
+    final model = ModelContentPerformance([{}]);
+    expect(model.visibleMetrics, isEmpty);
+    expect(model.items.single.visibleMetrics, isEmpty);
+  });
+
+  test(
+    'nonzero metric projections keep enum order, negatives and immutable identity',
+    () {
+      final model = ModelContentPerformance([
+        {
+          'dislike_counts': 4,
+          'like_counts': 0,
+          'saves': 2,
+          'page_views': '10',
+          'card_clicks': -1,
+        },
+      ]);
+      final item = model.items.single;
+      final expected = [
+        ContentPerformanceMetric.pageViews,
+        ContentPerformanceMetric.navigationClicks,
+        ContentPerformanceMetric.saves,
+        ContentPerformanceMetric.dislikes,
+      ];
+      expect(item.visibleMetrics.map((value) => value.metric), expected);
+      expect(model.visibleMetrics.map((value) => value.metric), expected);
+      expect(item.visibleMetrics.map((value) => value.count), [10, -1, 2, 4]);
+      expect(identical(item.visibleMetrics, item.visibleMetrics), true);
+      expect(identical(model.visibleMetrics, model.visibleMetrics), true);
+      expect(() => item.visibleMetrics.clear(), throwsUnsupportedError);
+      expect(() => model.visibleMetrics.clear(), throwsUnsupportedError);
+    },
+  );
+
+  test(
+    'new response rebuilds nonzero lists without changing old snapshots',
+    () {
+      final row = <String, dynamic>{'page_views': 2, 'saves': 0};
+      final old = ModelContentPerformance([row]);
+      final oldMetrics = old.visibleMetrics;
+      row['page_views'] = 0;
+      row['saves'] = 7;
+      final fresh = ModelContentPerformance([row]);
+      expect(oldMetrics.single.metric, ContentPerformanceMetric.pageViews);
+      expect(old.items.single.visibleMetrics.single.count, 2);
+      expect(
+        fresh.visibleMetrics.single.metric,
+        ContentPerformanceMetric.saves,
+      );
+      expect(fresh.items.single.visibleMetrics.single.count, 7);
+    },
+  );
+
+  test(
+    'zero aggregate metric stays hidden while individual nonzero values remain',
+    () {
+      final model = ModelContentPerformance([
+        {'page_views': 5},
+        {'page_views': -5},
+      ]);
+      expect(model.visibleMetrics, isEmpty);
+      expect(model.items.first.visibleMetrics.single.count, 5);
+      expect(model.items.last.visibleMetrics.single.count, -5);
+      expect(model.totalFor(ContentPerformanceMetric.pageViews), 0);
+    },
+  );
+
+  test('metric denominator remains the filtered result total', () {
+    final all = ModelContentPerformance([
+      {'page_views': 3},
+      {'page_views': 7},
+    ]);
+    final filtered = ModelContentPerformance([
+      {'page_views': 3},
+    ]);
+    expect(all.visibleMetrics.single.count, 10);
+    expect(filtered.visibleMetrics.single.count, 3);
+    expect(
+      all.shareFor(all.items.first, ContentPerformanceMetric.pageViews),
+      0.3,
+    );
+    expect(
+      filtered.shareFor(
+        filtered.items.first,
+        ContentPerformanceMetric.pageViews,
+      ),
+      1,
+    );
+  });
+
+  test(
+    'statistics-only filtering and null/string counters preserve visible metrics',
+    () {
+      final model = ModelContentPerformance([
+        {'id': 'empty'},
+        {
+          'id': 'used',
+          'page_views': null,
+          'saves': '8',
+          'like_counts': 'invalid',
+          'dislike_counts': '2',
+        },
+      ], statisticsOnly: true);
+      expect(model.items.single.id, 'used');
+      expect(model.visibleMetrics.map((value) => value.count), [8, 2]);
+      expect(model.items.single.visibleMetrics.map((value) => value.metric), [
+        ContentPerformanceMetric.saves,
+        ContentPerformanceMetric.dislikes,
+      ]);
+    },
+  );
   test(
     'chart modes cache separate immutable projections without changing chronological totals',
     () {
