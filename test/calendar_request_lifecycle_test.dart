@@ -15,6 +15,7 @@ import 'package:life_pilot/utils/service/service_weather.dart';
 class _Model extends ModelCalendar {
   final requests = <Completer<List<EventItem>>>[];
   final months = <DateTime>[];
+  final previews = <void Function(List<EventItem>)?>[];
 }
 
 class _Loader extends ServiceCalendarMonth {
@@ -24,9 +25,11 @@ class _Loader extends ServiceCalendarMonth {
   Future<List<EventItem>> loadMonth(
     ModelCalendarMonthQuery query, {
     bool Function()? shouldContinue,
+    void Function(List<EventItem>)? onEventsReady,
   }) {
     final pending = Completer<List<EventItem>>();
     model.months.add(query.month);
+    model.previews.add(onEventsReady);
     model.requests.add(pending);
     return pending.future;
   }
@@ -77,6 +80,60 @@ void main() {
       expect(model.events, isEmpty);
     },
   );
+
+  test(
+    'preview is visible in the grid before the complete month returns',
+    () async {
+      final month = DateTime(2026, 10);
+      controller.currentMonth = month;
+      final pending = controller.reloadEvents(month: month);
+      var updates = 0;
+      controller.addListener(() => updates++);
+      model.previews.single!(rows());
+      expect(model.events.single.id, 'old');
+      expect(model.eventsForMonth(month).single.id, 'old');
+      expect(model.getEventsOfDay(DateTime(2026, 10, 1)).single.id, 'old');
+      expect(updates, 1);
+      model.requests.single.complete([
+        ...rows(),
+        EventItem(
+          id: 'holiday',
+          name: 'Holiday',
+          startDate: DateTime(2026, 10, 2),
+        ),
+      ]);
+      await pending;
+      expect(model.eventsForMonth(month).length, 2);
+    },
+  );
+
+  test(
+    'failed provisional month is retried instead of treated as complete cache',
+    () async {
+      final month = DateTime(2026, 10);
+      controller.currentMonth = month;
+      final pending = controller.reloadEvents(month: month);
+      model.previews.single!(rows());
+      final failed = expectLater(pending, throwsStateError);
+      model.requests.single.completeError(StateError('holidays failed'));
+      await failed;
+      final retry = controller.goToMonth(month: month);
+      expect(model.requests.length, 2);
+      controller.dispose();
+      model.requests.last.complete([]);
+      await retry;
+    },
+  );
+
+  test('late previews cannot publish after scope reset', () async {
+    final pending = controller.reloadEvents();
+    controller.clearAll(notify: false);
+    model.previews.single!(rows());
+    expect(model.events, isEmpty);
+    expect(model.cachedEvents, isEmpty);
+    model.requests.single.complete(rows());
+    await pending;
+  });
 
   test('disposed calendar does not start another service read', () async {
     controller.dispose();

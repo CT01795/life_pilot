@@ -85,6 +85,24 @@ void main() {
 
   for (final section in DashboardSection.values) {
     test(
+      'refreshAll releases completed sections while $section remains pending',
+      () async {
+        repository.target = section;
+        final pending = controller.refreshAll(account: 'user');
+        await Future<void>.delayed(Duration.zero);
+        for (final other in DashboardSection.values) {
+          expect(
+            controller.isLoading(other),
+            other == section,
+            reason: '$other',
+          );
+        }
+        repository.pending.single.succeed();
+        await pending;
+        expect(controller.loading, false);
+      },
+    );
+    test(
       'late $section failure cannot mark a newer successful refresh failed',
       () async {
         repository.target = section;
@@ -98,6 +116,31 @@ void main() {
         repository.pending.first.fail();
         await first;
         expect(controller.hasFailed(section), false);
+        expect(controller.loading, false);
+      },
+    );
+  }
+
+  for (final section in [
+    DashboardSection.todaySchedule,
+    DashboardSection.accounting,
+    DashboardSection.points,
+  ]) {
+    test(
+      'refreshCore releases other summaries while $section is pending',
+      () async {
+        repository.target = section;
+        final pending = controller.refreshCore(account: 'user');
+        await Future<void>.delayed(Duration.zero);
+        for (final other in [
+          DashboardSection.todaySchedule,
+          DashboardSection.accounting,
+          DashboardSection.points,
+        ]) {
+          expect(controller.isLoading(other), other == section);
+        }
+        repository.pending.single.succeed();
+        await pending;
         expect(controller.loading, false);
       },
     );

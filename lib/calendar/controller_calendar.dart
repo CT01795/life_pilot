@@ -50,6 +50,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   // 狀態
   // ------------------------
   final Map<String, int> _reloadTokensByMonth = {};
+  final Set<String> _previewMonths = {};
   int _dataGeneration = 0;
   String? _dataScopeKey;
   bool _isChangingMonth = false;
@@ -154,7 +155,7 @@ class ControllerCalendar extends SafeChangeNotifier {
 
   Future<void> init() async {
     _modelCalendar.isInitialized = true; // 提前鎖
-    await goToMonth(month: currentMonth, notify: false);
+    await goToMonth(month: currentMonth, notify: true);
     await checkAndGenerateNextEvents();
     notifyListeners();
   }
@@ -171,6 +172,9 @@ class ControllerCalendar extends SafeChangeNotifier {
     final myToken = (_reloadTokensByMonth[monthKey] ?? 0) + 1;
     _reloadTokensByMonth[monthKey] = myToken;
     final weeks = _modelCalendar.getWeeks(targetMonth);
+    bool isCurrent() =>
+        _isCurrentDataScope(requestGeneration, requestScope) &&
+        _reloadTokensByMonth[monthKey] == myToken;
     final result = await _monthLoader.loadMonth(
       ModelCalendarMonthQuery(
         month: targetMonth,
@@ -181,9 +185,19 @@ class ControllerCalendar extends SafeChangeNotifier {
         locale: _localeProvider.locale,
         tableName: _tableName,
       ),
-      shouldContinue: () =>
-          _isCurrentDataScope(requestGeneration, requestScope) &&
-          _reloadTokensByMonth[monthKey] == myToken,
+      shouldContinue: isCurrent,
+      onEventsReady: (events) {
+        // The grid reads month snapshots too. Mark this snapshot provisional
+        // so a later visit still retries the complete event/holiday load.
+        if (!notify || !isCurrent() || currentMonth.toMonthKey() != monthKey) {
+          return;
+        }
+        final ordered = ModelCalendar.orderedEvents(events);
+        _previewMonths.add(monthKey);
+        _modelCalendar.cacheMonthEvents(targetMonth, ordered);
+        _modelCalendar.setEvents(ordered);
+        notifyListeners();
+      },
     );
 
     if (!_isCurrentDataScope(requestGeneration, requestScope) ||
@@ -195,6 +209,7 @@ class ControllerCalendar extends SafeChangeNotifier {
     final ordered = ModelCalendar.orderedEvents(result);
     unawaited(_warmUpWeather(ordered));
     _modelCalendar.cacheMonthEvents(targetMonth, ordered);
+    _previewMonths.remove(monthKey);
     final isCurrentMonth = currentMonth.toMonthKey() == monthKey;
     if (isCurrentMonth) {
       _modelCalendar.setEvents(ordered);
@@ -292,7 +307,8 @@ class ControllerCalendar extends SafeChangeNotifier {
       final targetMonth = DateTimeFormatter.dateOnly(month);
       final key = targetMonth.toMonthKey();
       currentMonth = targetMonth;
-      if (_modelCalendar.cachedEvents.containsKey(key)) {
+      if (_modelCalendar.cachedEvents.containsKey(key) &&
+          !_previewMonths.contains(key)) {
         // ✅ 同步更新 events
         _modelCalendar.setMonthFromCache(key);
         if (notify) notifyListeners();
@@ -767,6 +783,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   // 工具
   // ------------------------
   void clearAll({bool notify = true}) {
+    _previewMonths.clear();
     _dataGeneration++;
     _monthChangeToken++;
     _isChangingMonth = false;

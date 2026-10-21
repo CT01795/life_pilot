@@ -223,6 +223,7 @@ class ControllerDashboard extends SafeChangeNotifier {
 
   Future<void> refreshAll({required String account}) async {
     const sections = DashboardSection.values;
+    final pendingSections = sections.toSet();
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
     final scheduleRequest = ++_todayScheduleRequest;
@@ -240,6 +241,7 @@ class ControllerDashboard extends SafeChangeNotifier {
             DashboardSection.todaySchedule,
             scheduleRequest,
             () => repository.loadTodayEvents(account),
+            pendingSections: pendingSections,
           ).then((todayEvents) {
             if (_isCurrentRequest(account, generation) &&
                 scheduleRequest == _todayScheduleRequest &&
@@ -257,6 +259,7 @@ class ControllerDashboard extends SafeChangeNotifier {
             DashboardSection.recommendEvents,
             recommendEventRequest,
             () => repository.loadRecommendEvents(setting.recommendEventCity),
+            pendingSections: pendingSections,
           ).then((events) {
             if (!_isCurrentRequest(account, generation)) return;
             if (recommendEventRequest == _recommendEventRequest &&
@@ -270,6 +273,7 @@ class ControllerDashboard extends SafeChangeNotifier {
             DashboardSection.recommendPlaces,
             recommendPlaceRequest,
             () => repository.loadRecommendPlaces(setting.recommendPlaceCity),
+            pendingSections: pendingSections,
           ).then((places) {
             if (!_isCurrentRequest(account, generation)) return;
             if (recommendPlaceRequest == _recommendPlaceRequest &&
@@ -285,6 +289,7 @@ class ControllerDashboard extends SafeChangeNotifier {
             () => repository.loadAccountingSummary(
               accountId: setting.accountingAccountId ?? '',
             ),
+            pendingSections: pendingSections,
           ).then((accounting) {
             if (!_isCurrentRequest(account, generation)) return;
             if (accountingRequest == _accountingRequest && accounting != null) {
@@ -304,6 +309,7 @@ class ControllerDashboard extends SafeChangeNotifier {
             () => repository.loadPointSummary(
               accountId: setting.pointAccountId ?? '',
             ),
+            pendingSections: pendingSections,
           ).then((points) {
             if (!_isCurrentRequest(account, generation)) return;
             if (pointsRequest == _pointsRequest && points != null) {
@@ -325,7 +331,7 @@ class ControllerDashboard extends SafeChangeNotifier {
       ]);
     } finally {
       if (_isCurrentRequest(account, generation)) {
-        _endLoading(sections);
+        _endLoading(pendingSections);
         notifyListeners();
       }
     }
@@ -340,6 +346,7 @@ class ControllerDashboard extends SafeChangeNotifier {
       DashboardSection.accounting,
       if (includePoints) DashboardSection.points,
     ];
+    final pendingSections = sections.toSet();
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
     final scheduleRequest = ++_todayScheduleRequest;
@@ -355,6 +362,7 @@ class ControllerDashboard extends SafeChangeNotifier {
             DashboardSection.todaySchedule,
             scheduleRequest,
             () => repository.loadTodayEvents(account),
+            pendingSections: pendingSections,
           ).then((todayEvents) {
             if (_isCurrentRequest(account, generation) &&
                 scheduleRequest == _todayScheduleRequest &&
@@ -374,6 +382,7 @@ class ControllerDashboard extends SafeChangeNotifier {
             () => repository.loadAccountingSummary(
               accountId: setting.accountingAccountId ?? '',
             ),
+            pendingSections: pendingSections,
           ).then((accounting) {
             if (_isCurrentRequest(account, generation) &&
                 accountingRequest == _accountingRequest &&
@@ -394,6 +403,7 @@ class ControllerDashboard extends SafeChangeNotifier {
               () => repository.loadPointSummary(
                 accountId: setting.pointAccountId ?? '',
               ),
+              pendingSections: pendingSections,
             ).then((points) {
               if (_isCurrentRequest(account, generation) &&
                   pointsRequest == _pointsRequest &&
@@ -410,7 +420,7 @@ class ControllerDashboard extends SafeChangeNotifier {
       await Future.wait([todayEventsFuture, accountingFuture, pointsFuture]);
     } finally {
       if (_isCurrentRequest(account, generation)) {
-        _endLoading(sections);
+        _endLoading(pendingSections);
         notifyListeners();
       }
     }
@@ -427,8 +437,9 @@ class ControllerDashboard extends SafeChangeNotifier {
   Future<T?> _loadSection<T>(
     DashboardSection section,
     int request,
-    Future<T> Function() loader,
-  ) async {
+    Future<T> Function() loader, {
+    required Set<DashboardSection> pendingSections,
+  }) async {
     final generation = _accountGeneration;
     final account = _activeAccount;
     bool isCurrent() =>
@@ -449,6 +460,15 @@ class ControllerDashboard extends SafeChangeNotifier {
       );
       _failedSections.add(section);
       return null;
+    } finally {
+      // Each batch owns one loading count per section. Release it as soon as
+      // that section settles, without consuming a concurrent refresh's count.
+      if (account != null &&
+          _isCurrentRequest(account, generation) &&
+          pendingSections.remove(section)) {
+        _endLoading([section]);
+        notifyListeners();
+      }
     }
   }
 

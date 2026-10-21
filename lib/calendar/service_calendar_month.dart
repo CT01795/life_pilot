@@ -26,18 +26,26 @@ class ServiceCalendarMonth {
   Future<List<EventItem>> loadMonth(
     ModelCalendarMonthQuery query, {
     bool Function()? shouldContinue,
+    void Function(List<EventItem>)? onEventsReady,
   }) async {
     if (shouldContinue?.call() == false) return [];
     try {
       final results = await Future.wait<List<EventItem>?>([
-        _events.getEvents(
-          tableName: query.tableName,
-          dateS: query.start,
-          dateE: query.end,
-          inputUser: query.account,
-          storageLocation: query.storage,
-          shouldContinue: shouldContinue,
-        ),
+        _events
+            .getEvents(
+              tableName: query.tableName,
+              dateS: query.start,
+              dateE: query.end,
+              inputUser: query.account,
+              storageLocation: query.storage,
+              shouldContinue: shouldContinue,
+            )
+            .then((events) {
+              if (shouldContinue?.call() != false) {
+                onEventsReady?.call(events ?? []);
+              }
+              return events;
+            }),
         _holidays(
           query.start.subtract(const Duration(days: 2)),
           query.end.add(const Duration(days: 2)),

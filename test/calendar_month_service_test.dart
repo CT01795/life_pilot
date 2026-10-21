@@ -133,6 +133,43 @@ void main() {
     expect(holidayCalls, isEmpty);
   });
 
+  test(
+    'events publish before slow holidays and final result includes both',
+    () async {
+      final previews = <List<EventItem>>[];
+      final pending = service.loadMonth(
+        _query(null),
+        onEventsReady: previews.add,
+      );
+      final event = EventItem(id: 'event', name: 'event');
+      events.response.complete([event]);
+      await Future<void>.delayed(Duration.zero);
+      expect(previews.single, [event]);
+      final holiday = EventItem(id: 'holiday', name: 'holiday');
+      holidays.complete([holiday]);
+      expect(await pending, [event, holiday]);
+    },
+  );
+
+  test(
+    'stale event preview is suppressed while holidays are pending',
+    () async {
+      var active = true;
+      final previews = <List<EventItem>>[];
+      final pending = service.loadMonth(
+        _query(null),
+        shouldContinue: () => active,
+        onEventsReady: previews.add,
+      );
+      active = false;
+      events.response.complete([]);
+      await Future<void>.delayed(Duration.zero);
+      expect(previews, isEmpty);
+      holidays.complete([]);
+      expect(await pending, isEmpty);
+    },
+  );
+
   test('scope predicate is forwarded and late results are discarded', () async {
     var active = true;
     final pending = service.loadMonth(

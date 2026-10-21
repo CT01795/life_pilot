@@ -43,6 +43,7 @@ class _Loader extends ServiceCalendarMonth {
   Future<List<EventItem>> loadMonth(
     ModelCalendarMonthQuery query, {
     bool Function()? shouldContinue,
+    void Function(List<EventItem>)? onEventsReady,
   }) async {
     model.requests.add(query.month);
     return List.of(model.saved);
