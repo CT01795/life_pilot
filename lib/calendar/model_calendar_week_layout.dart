@@ -19,20 +19,39 @@ class ModelCalendarWeekLayout {
   final List<EventItem> source;
   final List<_EventRange> _ranges;
   final Map<(DateTime, DateTime), List<EventWithRow>> _weeks = {};
+  late final bool _canUseRowTail = _hasChronologicalRanges();
+
+  bool _hasChronologicalRanges() {
+    DateTime? previous;
+    for (final range in _ranges) {
+      if (range.end.isBefore(range.start) ||
+          (previous != null && range.start.isBefore(previous))) {
+        return false;
+      }
+      previous = range.start;
+    }
+    return true;
+  }
 
   List<EventWithRow> forWeek(DateTime start, DateTime end) =>
       _weeks.putIfAbsent((start, end), () => _build(start, end));
 
   List<EventWithRow> _build(DateTime start, DateTime end) {
     final rows = <List<_EventRange>>[];
+    final useRowTail = _canUseRowTail;
     for (final range in _ranges) {
       if (range.end.isBefore(start) || range.start.isAfter(end)) continue;
       final available = rows.indexWhere(
-        (row) => !row.any(
-          (other) =>
-              !(range.end.isBefore(other.start) ||
-                  range.start.isAfter(other.end)),
-        ),
+        // Ordered valid ranges placed in a row cannot overlap. Its last range
+        // therefore has the latest end; keep the original first-free-row rule.
+        // Unordered or reversed ranges retain the previous full overlap check.
+        (row) => useRowTail
+            ? row.last.end.isBefore(range.start)
+            : !row.any(
+                (other) =>
+                    !(range.end.isBefore(other.start) ||
+                        range.start.isAfter(other.end)),
+              ),
       );
       if (available >= 0) {
         rows[available].add(range);

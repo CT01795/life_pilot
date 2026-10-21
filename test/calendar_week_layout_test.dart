@@ -55,6 +55,134 @@ List<(String, int)> _reference(List<EventItem> events, List<DateTime> week) {
 }
 
 void main() {
+  test('ordered fast path matches original first-fit rows in 100 batches', () {
+    final random = Random(53);
+    final calendar = ModelCalendar();
+    for (var batch = 0; batch < 100; batch++) {
+      final month = DateTime(2026, batch % 12 + 1);
+      final events = List.generate(120, (i) {
+        final start = month.add(Duration(days: random.nextInt(50) - 10));
+        return EventItem(
+          id: '$i',
+          name: '$i',
+          startDate: start,
+          endDate: random.nextBool()
+              ? null
+              : start.add(Duration(days: random.nextInt(15))),
+        );
+      })..sort((a, b) => a.startDate!.compareTo(b.startDate!));
+      final layout = ModelCalendarWeekLayout(events);
+      for (final week in calendar.getWeeks(month)) {
+        expect(
+          layout
+              .forWeek(week.first, week.last)
+              .map((e) => (e.event.id, e.rowIndex)),
+          _reference(events, week),
+          reason: 'batch $batch',
+        );
+      }
+    }
+  });
+  test(
+    'ordered placement reuses the first free row, not earliest ending row',
+    () {
+      final start = DateTime(2026, 10, 4);
+      final week = List.generate(7, (i) => start.add(Duration(days: i)));
+      final events = [
+        EventItem(
+          id: 'a',
+          name: 'a',
+          startDate: start,
+          endDate: start.add(const Duration(days: 2)),
+        ),
+        EventItem(
+          id: 'b',
+          name: 'b',
+          startDate: start,
+          endDate: start.add(const Duration(days: 1)),
+        ),
+        EventItem(
+          id: 'c',
+          name: 'c',
+          startDate: start.add(const Duration(days: 3)),
+        ),
+      ];
+      final result = ModelCalendarWeekLayout(
+        events,
+      ).forWeek(week.first, week.last);
+      expect(result.map((e) => (e.event.id, e.rowIndex)), [
+        ('a', 0),
+        ('c', 0),
+        ('b', 1),
+      ]);
+    },
+  );
+  test('same-day touching ranges stay on separate rows', () {
+    final start = DateTime(2026, 10, 4);
+    final events = [
+      EventItem(
+        id: 'a',
+        name: 'a',
+        startDate: start,
+        endDate: start.add(const Duration(days: 1)),
+      ),
+      EventItem(
+        id: 'b',
+        name: 'b',
+        startDate: start.add(const Duration(days: 1)),
+      ),
+    ];
+    final result = ModelCalendarWeekLayout(
+      events,
+    ).forWeek(start, start.add(const Duration(days: 6)));
+    expect(result.map((e) => e.rowIndex), [0, 1]);
+  });
+  test('unordered inputs retain original row allocation and source order', () {
+    final start = DateTime(2026, 10, 4);
+    final week = List.generate(7, (i) => start.add(Duration(days: i)));
+    final events = [
+      EventItem(id: 'late', name: 'late', startDate: week[5]),
+      EventItem(
+        id: 'early',
+        name: 'early',
+        startDate: week[0],
+        endDate: week[2],
+      ),
+      EventItem(
+        id: 'middle',
+        name: 'middle',
+        startDate: week[1],
+        endDate: week[4],
+      ),
+    ];
+    expect(
+      ModelCalendarWeekLayout(
+        events,
+      ).forWeek(week.first, week.last).map((e) => (e.event.id, e.rowIndex)),
+      _reference(events, week),
+    );
+    expect(events.map((e) => e.id), ['late', 'early', 'middle']);
+  });
+  test('reversed ranges use the original comparison semantics', () {
+    final start = DateTime(2026, 10, 4);
+    final week = List.generate(7, (i) => start.add(Duration(days: i)));
+    final events = [
+      EventItem(id: 'a', name: 'a', startDate: week[0], endDate: week[2]),
+      EventItem(
+        id: 'reversed',
+        name: 'reversed',
+        startDate: week[3],
+        endDate: week[1],
+      ),
+      EventItem(id: 'b', name: 'b', startDate: week[4]),
+    ];
+    expect(
+      ModelCalendarWeekLayout(
+        events,
+      ).forWeek(week.first, week.last).map((e) => (e.event.id, e.rowIndex)),
+      _reference(events, week),
+    );
+  });
   test('repeat and other-week layouts do not normalize event dates again', () {
     final event = _DateReadEvent();
     final layout = ModelCalendarWeekLayout([event]);

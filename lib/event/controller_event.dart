@@ -875,8 +875,10 @@ class ControllerEvent extends SafeChangeNotifier {
           [];
       if (!_isCurrentDataScope(generation)) return;
       nextPage = _acceptCloudPage(nextPage, offset: _nextCloudOffset);
-      _modelEvent.appendEvents(nextPage);
-      _sortRecommendedContent();
+      _modelEvent.appendRecommendedEvents(
+        nextPage,
+        isEvent: _tableName == TableNames.recommendEvents,
+      );
       // Appending preserves existing event instances; their cached models
       // remain valid. Replaced rows, locale and permission changes are checked
       // by the cache, while full reloads still explicitly clear it.

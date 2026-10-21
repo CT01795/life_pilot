@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/calendar/model_calendar_week_layout.dart';
 import 'package:life_pilot/calendar/model_calendar_day_grouping.dart';
+import 'package:life_pilot/calendar/model_calendar_event_ordering.dart';
+import 'package:life_pilot/calendar/model_calendar_day_lookup.dart';
 
 class ModelCalendar {
   List<EventItem> _events = [];
@@ -94,25 +95,7 @@ class ModelCalendar {
 
   /// Orders a private copy; storage and request orchestration live elsewhere.
   static List<EventItem> orderedEvents(Iterable<EventItem> events) =>
-      events.toList()..sort(_compareEventSchedule);
-
-  static int _compareEventSchedule(EventItem left, EventItem right) {
-    var comparison = (left.startDate ?? DateTime(9999)).compareTo(
-      right.startDate ?? DateTime(9999),
-    );
-    if (comparison != 0) return comparison;
-    comparison = _timeMinutes(
-      left.startTime,
-    ).compareTo(_timeMinutes(right.startTime));
-    if (comparison != 0) return comparison;
-    comparison = left.city.compareTo(right.city);
-    if (comparison != 0) return comparison;
-    comparison = left.location.compareTo(right.location);
-    return comparison != 0 ? comparison : left.name.compareTo(right.name);
-  }
-
-  static int _timeMinutes(TimeOfDay? time) =>
-      time == null ? 24 * 60 : time.hour * 60 + time.minute;
+      ModelCalendarEventOrdering.ordered(events);
 
   void cacheMonthEvents(DateTime month, List<EventItem> inEvents) {
     final key = month.toMonthKey();
@@ -135,33 +118,21 @@ class ModelCalendar {
 
   // 查詢特定日期的事件
   List<EventItem> getEventsOfDay(DateTime date) {
-    final key = date.toMonthKey();
-    Map<int, Map<int, List<EventItem>>> weeks = cachedEvents[key] ?? {};
-
-    if (weeks.isEmpty) {
-      // 嘗試查前一月或後一月
-      final DateTime prev = DateTime(date.year, date.month - 1);
-      final DateTime next = DateTime(date.year, date.month + 1);
-      if (cachedEvents.containsKey(next.toMonthKey())) {
-        weeks = cachedEvents[next.toMonthKey()] ?? {};
-      } else if (cachedEvents.containsKey(prev.toMonthKey())) {
-        weeks = cachedEvents[prev.toMonthKey()] ?? {};
-      }
-    }
-
-    if (weeks.isEmpty) return [];
-
-    // 計算該日期在月曆中是第幾週第幾天
-    final calendarWeeks = weeksCache[key] ?? getWeeks(date);
-    for (int weekIndex = 0; weekIndex < calendarWeeks.length; weekIndex++) {
-      for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
-        final day = calendarWeeks[weekIndex][dayIndex];
-        if (day.year == date.year &&
-            day.month == date.month &&
-            day.day == date.day) {
-          return weeks[weekIndex]?[dayIndex] ?? [];
-        }
-      }
+    // Prefer the date's own month, then the existing next/previous fallback
+    // order. Each event snapshot must be paired with its own calendar grid.
+    for (final month in [
+      date,
+      DateTime(date.year, date.month + 1),
+      DateTime(date.year, date.month - 1),
+    ]) {
+      final grouped = cachedEvents[month.toMonthKey()];
+      if (grouped == null || grouped.isEmpty) continue;
+      final events = ModelCalendarDayLookup.find(
+        date: date,
+        weeks: getWeeks(month),
+        eventsByWeek: grouped,
+      );
+      if (events != null) return events;
     }
     return [];
   }

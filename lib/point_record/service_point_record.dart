@@ -9,11 +9,20 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
+import 'package:life_pilot/utils/model_record_entry_defaults.dart';
+import 'package:life_pilot/utils/model_local_record_page.dart';
+import 'package:life_pilot/utils/model_local_account_list.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
+import 'package:life_pilot/local_storage/repository_local_event_account.dart';
+import 'package:life_pilot/local_storage/repository_local_record_history.dart';
+import 'package:life_pilot/local_storage/repository_local_record_editor.dart';
 
 class ServicePointRecord {
+  final _localEventAccounts = RepositoryLocalEventAccount();
+  final _localHistory = RepositoryLocalRecordHistory();
+  final _localEditor = RepositoryLocalRecordEditor();
   String? get _localOwner => supabase.auth.currentUser?.email?.toLowerCase();
 
   Future<bool> get _storesLocally async {
@@ -32,12 +41,9 @@ class ServicePointRecord {
   }) async {
     Map<String, dynamic>? row;
     if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.list(
+      row = await _localHistory.latestRecord(
         owner: _localOwner!,
         resource: TableNames.pointRecordDetail,
-      );
-      row = latestRecordRowForAccountAndType(
-        rows,
         accountId: accountId,
         type: type,
       );
@@ -51,12 +57,7 @@ class ServicePointRecord {
           .limit(1);
       if (rows.isNotEmpty) row = Map<String, dynamic>.from(rows.first);
     }
-    if (row == null) return null;
-    final value = parseNumValue(row['value']);
-    return (
-      value >= 0,
-      parseStringValue(row['primary_category'], fallback: 'uncategorized'),
-    );
+    return ModelRecordEntryDefaults.pointDirectionAndCategory(row);
   }
 
   // ===== 帳戶 =====
@@ -80,36 +81,12 @@ class ServicePointRecord {
   }) async {
     try {
       if (await _storesLocally) {
-        final rows = await LocalDataStore.instance.list(
+        final response = await _localEventAccounts.find(
           owner: _localOwner!,
-          resource: TableNames.pointRecordAccount,
+          eventId: eventId,
+          accountResource: TableNames.pointRecordAccount,
+          detailResource: TableNames.pointRecordDetail,
         );
-        final matchingAccount = rows
-            .where(
-              (row) =>
-                  parseStringValue(row[Fields.id]) == eventId &&
-                  row[Fields.isValid] == true,
-            )
-            .firstOrNull;
-        String? accountId = parseOptionalStringValue(
-          matchingAccount?[Fields.id],
-        );
-        if (accountId == null) {
-          final details = await LocalDataStore.instance.list(
-            owner: _localOwner!,
-            resource: TableNames.pointRecordDetail,
-          );
-          accountId = parseOptionalStringValue(
-            latestRecordRowForEvent(details, eventId)?['account_id'],
-          );
-        }
-        final response = rows
-            .where(
-              (row) =>
-                  parseStringValue(row[Fields.id]) == accountId &&
-                  row[Fields.isValid] == true,
-            )
-            .firstOrNull;
         if (response == null) return null;
         return ModelPointRecordAccount(
           id: response[Fields.id],
@@ -180,38 +157,24 @@ class ServicePointRecord {
   }) async {
     try {
       if (await _storesLocally) {
-        var rows = await LocalDataStore.instance.list(
-          owner: _localOwner!,
-          resource: TableNames.pointRecordAccount,
+        final owner = _localOwner!;
+        final snapshots = await Future.wait([
+          LocalDataStore.instance.readOnlyRows(
+            owner: owner,
+            resource: TableNames.pointRecordAccount,
+          ),
+          LocalDataStore.instance.readOnlyRows(
+            owner: owner,
+            resource: TableNames.pointRecordDetail,
+          ),
+        ]);
+        final page = ModelLocalAccountList.points(
+          snapshots[0],
+          snapshots[1],
+          category: category,
+          projectLimit: projectLimit,
         );
-        final details = await LocalDataStore.instance.list(
-          owner: _localOwner!,
-          resource: TableNames.pointRecordDetail,
-        );
-        rows = rows
-            .where(
-              (row) =>
-                  row[Fields.isValid] == true &&
-                  (category == null ||
-                      parseStringValue(row['category']) == category),
-            )
-            .toList();
-        if (category == null && projectLimit != null) {
-          final personal = rows.where(
-            (r) => r['category'] == AccountCategory.personal.name,
-          );
-          final projects =
-              rows
-                  .where((r) => r['category'] == AccountCategory.project.name)
-                  .toList()
-                ..sort(
-                  (a, b) => parseStringValue(
-                    b[Fields.createdAt],
-                  ).compareTo(parseStringValue(a[Fields.createdAt])),
-                );
-          rows = [...personal, ...projects.take(projectLimit)];
-        }
-        return rows
+        return page.rows
             .map(
               (e) => ModelPointRecordAccount(
                 id: e[Fields.id],
@@ -220,13 +183,7 @@ class ServicePointRecord {
                 masterGraphUrl: includeGraph
                     ? parseMasterGraph(e['master_graph_url'])
                     : null,
-                points: details
-                    .where(
-                      (d) =>
-                          parseStringValue(d['account_id']) ==
-                          parseStringValue(e[Fields.id]),
-                    )
-                    .fold<int>(0, (sum, d) => sum + parseIntValue(d['value'])),
+                points: page.totalFor(e).toInt(),
               ),
             )
             .toList();
@@ -449,23 +406,12 @@ class ServicePointRecord {
   ) async {
     try {
       if (await _storesLocally) {
-        final rows = await LocalDataStore.instance.list(
-          owner: _localOwner!,
-          resource: TableNames.pointRecordAccount,
-        );
-        final matches = rows.where(
-          (row) => parseStringValue(row[Fields.id]) == accountId,
-        );
-        if (matches.isEmpty) {
-          throw StateError('point_account_not_found');
-        }
-        final row = matches.first;
-        await LocalDataStore.instance.put(
+        await _localEditor.updateFields(
           owner: _localOwner!,
           resource: TableNames.pointRecordAccount,
           id: accountId,
-          data: {...row, 'master_graph_url': base64Encode(imageBytes)},
-          syncState: LocalSyncState.modifiedLocally,
+          fields: {'master_graph_url': base64Encode(imageBytes)},
+          notFoundMessage: 'point_account_not_found',
         );
         return imageBytes;
       }
@@ -498,27 +444,20 @@ class ServicePointRecord {
     bool includeReservedRecords = true,
   }) async {
     if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.list(
+      final rows = await LocalDataStore.instance.readOnlyRows(
         owner: _localOwner!,
         resource: TableNames.pointRecordDetail,
       );
-      final accountRows = rows.where(
-        (row) =>
-            parseStringValue(row['account_id']) == accountId &&
-            parseStringValue(row['type']).toLowerCase() == type.toLowerCase(),
-      );
-      final points = accountRows.fold<int>(
-        0,
-        (sum, row) => sum + parseIntValue(row['value']),
-      );
-      final filtered = filterRecordRows(
-        accountRows,
+      final page = ModelLocalRecordPage.points(
+        rows,
+        accountId: accountId,
+        type: type,
         from: dateFrom,
         to: dateTo,
         includeLatestFallback: includeLatestFallback,
         includeReservedRecords: includeReservedRecords,
       );
-      return filtered.map((detail) {
+      return page.rows.map((detail) {
         return ModelPointRecordDetail(
           id: parseStringValue(detail[Fields.id]),
           accountId: parseStringValue(detail['account_id']),
@@ -533,7 +472,7 @@ class ServicePointRecord {
           description: parseStringValue(detail['description']),
           type: parseStringValue(detail['type']),
           value: parseIntValue(detail['value']),
-          points: points,
+          points: page.total.toInt(),
         );
       }).toList();
     }
@@ -640,19 +579,12 @@ class ServicePointRecord {
     required DateTime before,
   }) async {
     if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.list(
+      return _localHistory.hasRecordsBefore(
         owner: _localOwner!,
         resource: TableNames.pointRecordDetail,
-      );
-      return hasRecordRowBefore(
-        rows.where(
-          (row) => recordRowMatchesAccountAndType(
-            row,
-            accountId: accountId,
-            type: type,
-          ),
-        ),
-        before,
+        accountId: accountId,
+        type: type,
+        before: before,
       );
     }
     final rows = await supabase
@@ -672,19 +604,12 @@ class ServicePointRecord {
     required DateTime before,
   }) async {
     if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.list(
+      return _localHistory.latestRecordDateBefore(
         owner: _localOwner!,
         resource: TableNames.pointRecordDetail,
-      );
-      return latestRecordRowDateBefore(
-        rows.where(
-          (row) => recordRowMatchesAccountAndType(
-            row,
-            accountId: accountId,
-            type: type,
-          ),
-        ),
-        before,
+        accountId: accountId,
+        type: type,
+        before: before,
       );
     }
     final rows = await supabase
@@ -770,30 +695,18 @@ class ServicePointRecord {
         if (owner == null) {
           throw StateError('Local point owner is unavailable.');
         }
-        final rows = await LocalDataStore.instance.list(
-          owner: owner,
-          resource: TableNames.pointRecordDetail,
-        );
-        final matches = rows.where(
-          (item) => parseStringValue(item[Fields.id]) == detailId,
-        );
-        if (matches.isEmpty) {
-          throw StateError('point_detail_not_found');
-        }
-        final row = matches.first;
-        await LocalDataStore.instance.put(
+        await _localEditor.updateFields(
           owner: owner,
           resource: TableNames.pointRecordDetail,
           id: detailId,
-          data: {
-            ...row,
+          fields: {
             'value': newValue,
             'description': newDescription,
             'date': newDate.toUtc().toIso8601String(),
             'primary_category': newPrimaryCategory,
             'group': parseStringValue(newSecondaryCategory).trim(),
           },
-          syncState: LocalSyncState.modifiedLocally,
+          notFoundMessage: 'point_detail_not_found',
         );
         return;
       }

@@ -21,6 +21,7 @@ class ModelEvent {
   final _searchTextIndex = ModelEventSearchIndex();
   String? _parsedKeywords;
   ModelEventSearchQuery? _parsedQuery;
+  (bool, DateTime)? _recommendedOrder;
 
   ModelEventSearchQuery _queryForCurrentKeywords() {
     final keywords = _searchFilter.keywords;
@@ -62,6 +63,7 @@ class ModelEvent {
     if (index != -1) {
       final previous = _events[index];
       _events[index] = updatedEvent;
+      _recommendedOrder = null;
       _searchTextIndex.invalidate([previous, updatedEvent]);
       _invalidateFilteredEvents();
     }
@@ -133,6 +135,7 @@ class ModelEvent {
 
   //--------------------------- 核心方法 ---------------------------
   void removeEvent(EventItem event) {
+    _recommendedOrder = null;
     final removed = <EventItem>[];
     _events.removeWhere((existing) {
       if (existing.id != event.id) return false;
@@ -144,8 +147,27 @@ class ModelEvent {
   }
 
   void sortRecommendedContent({required bool isEvent, DateTime? now}) {
-    ModelEventOrdering.sortRecommended(_events, isEvent: isEvent, now: now);
+    final current = now ?? DateTime.now();
+    ModelEventOrdering.sortRecommended(_events, isEvent: isEvent, now: current);
+    _recommendedOrder = (
+      isEvent,
+      DateTime(current.year, current.month, current.day),
+    );
     _invalidateFilteredEvents();
+  }
+
+  /// Preserve sorted/filter projections for unchanged pages on the same day.
+  /// After midnight, ongoing activities still need their effective date updated.
+  void appendRecommendedEvents(
+    List<EventItem> list, {
+    required bool isEvent,
+    DateTime? now,
+  }) {
+    final current = now ?? DateTime.now();
+    final added = _appendUniqueEvents(list);
+    final order = (isEvent, DateTime(current.year, current.month, current.day));
+    if (!added && _recommendedOrder == order) return;
+    sortRecommendedContent(isEvent: isEvent, now: current);
   }
 
   void clearAll() {
@@ -178,6 +200,7 @@ class ModelEvent {
       return;
     }
     _events = list;
+    _recommendedOrder = null;
     if (preserveSearchIndex) {
       _searchTextIndex.retainEvents(list);
       _invalidateFilteredEvents();
@@ -208,10 +231,12 @@ class ModelEvent {
       _events.add(event);
       added = true;
     }
+    if (added) _recommendedOrder = null;
     return added;
   }
 
   void sortMemoryEvents() {
+    _recommendedOrder = null;
     ModelEventOrdering.sortMemory(_events);
     _invalidateFilteredEvents();
   }
@@ -222,6 +247,7 @@ class ModelEvent {
   }
 
   void _invalidateEventData() {
+    _recommendedOrder = null;
     _searchTextIndex.clear();
     _invalidateFilteredEvents();
   }

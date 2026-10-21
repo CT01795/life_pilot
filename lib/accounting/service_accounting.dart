@@ -9,11 +9,20 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
+import 'package:life_pilot/utils/model_record_entry_defaults.dart';
+import 'package:life_pilot/utils/model_local_record_page.dart';
+import 'package:life_pilot/utils/model_local_account_list.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
+import 'package:life_pilot/local_storage/repository_local_event_account.dart';
+import 'package:life_pilot/local_storage/repository_local_record_history.dart';
+import 'package:life_pilot/local_storage/repository_local_record_editor.dart';
 
 class ServiceAccounting {
+  final _localEventAccounts = RepositoryLocalEventAccount();
+  final _localHistory = RepositoryLocalRecordHistory();
+  final _localEditor = RepositoryLocalRecordEditor();
   String? get _localOwner => supabase.auth.currentUser?.email?.toLowerCase();
 
   Future<bool> get _storesLocally async {
@@ -32,12 +41,9 @@ class ServiceAccounting {
   }) async {
     Map<String, dynamic>? row;
     if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.list(
+      row = await _localHistory.latestRecord(
         owner: _localOwner!,
         resource: TableNames.accountingDetail,
-      );
-      row = latestRecordRowForAccountAndType(
-        rows,
         accountId: accountId,
         type: type,
       );
@@ -51,12 +57,7 @@ class ServiceAccounting {
           .limit(1);
       if (rows.isNotEmpty) row = Map<String, dynamic>.from(rows.first);
     }
-    if (row == null) return null;
-    final value = parseNumValue(row['value']);
-    return (
-      value > 0,
-      parseStringValue(row['primary_category'], fallback: 'uncategorized'),
-    );
+    return ModelRecordEntryDefaults.accountingDirectionAndCategory(row);
   }
 
   // ===== 帳戶 =====
@@ -80,36 +81,12 @@ class ServiceAccounting {
   }) async {
     try {
       if (await _storesLocally) {
-        final accounts = await LocalDataStore.instance.list(
+        final response = await _localEventAccounts.find(
           owner: _localOwner!,
-          resource: TableNames.accountingAccount,
+          eventId: eventId,
+          accountResource: TableNames.accountingAccount,
+          detailResource: TableNames.accountingDetail,
         );
-        final matchingAccount = accounts
-            .where(
-              (row) =>
-                  parseStringValue(row[Fields.id]) == eventId &&
-                  row[Fields.isValid] == true,
-            )
-            .firstOrNull;
-        String? accountId = parseOptionalStringValue(
-          matchingAccount?[Fields.id],
-        );
-        if (accountId == null) {
-          final details = await LocalDataStore.instance.list(
-            owner: _localOwner!,
-            resource: TableNames.accountingDetail,
-          );
-          accountId = parseOptionalStringValue(
-            latestRecordRowForEvent(details, eventId)?['account_id'],
-          );
-        }
-        final response = accounts
-            .where(
-              (row) =>
-                  parseStringValue(row[Fields.id]) == accountId &&
-                  row[Fields.isValid] == true,
-            )
-            .firstOrNull;
         if (response == null) return null;
         return ModelAccountingAccount(
           id: response[Fields.id],
@@ -183,38 +160,24 @@ class ServiceAccounting {
   }) async {
     try {
       if (await _storesLocally) {
-        var rows = await LocalDataStore.instance.list(
-          owner: _localOwner!,
-          resource: TableNames.accountingAccount,
+        final owner = _localOwner!;
+        final snapshots = await Future.wait([
+          LocalDataStore.instance.readOnlyRows(
+            owner: owner,
+            resource: TableNames.accountingAccount,
+          ),
+          LocalDataStore.instance.readOnlyRows(
+            owner: owner,
+            resource: TableNames.accountingDetail,
+          ),
+        ]);
+        final page = ModelLocalAccountList.accounting(
+          snapshots[0],
+          snapshots[1],
+          category: category,
+          projectLimit: projectLimit,
         );
-        final details = await LocalDataStore.instance.list(
-          owner: _localOwner!,
-          resource: TableNames.accountingDetail,
-        );
-        rows = rows
-            .where(
-              (row) =>
-                  row[Fields.isValid] == true &&
-                  (category == null ||
-                      parseStringValue(row['category']) == category),
-            )
-            .toList();
-        if (category == null && projectLimit != null) {
-          final personal = rows.where(
-            (r) => r['category'] == AccountCategory.personal.name,
-          );
-          final projects =
-              rows
-                  .where((r) => r['category'] == AccountCategory.project.name)
-                  .toList()
-                ..sort(
-                  (a, b) => parseStringValue(
-                    b[Fields.createdAt],
-                  ).compareTo(parseStringValue(a[Fields.createdAt])),
-                );
-          rows = [...personal, ...projects.take(projectLimit)];
-        }
-        return rows
+        return page.rows
             .map(
               (e) => ModelAccountingAccount(
                 id: e[Fields.id],
@@ -223,15 +186,7 @@ class ServiceAccounting {
                 masterGraphUrl: includeGraph
                     ? parseMasterGraph(e['master_graph_url'])
                     : null,
-                balance: details
-                    .where(
-                      (d) =>
-                          parseStringValue(d['account_id']) ==
-                              parseStringValue(e[Fields.id]) &&
-                          parseStringValue(d['currency']) ==
-                              parseStringValue(e['main_currency']),
-                    )
-                    .fold<num>(0, (sum, d) => sum + parseNumValue(d['value'])),
+                balance: page.totalFor(e),
                 currency: e['main_currency'],
                 exchangeRate: e['exchange_rate'],
               ),
@@ -475,23 +430,12 @@ class ServiceAccounting {
     // Mobile / Web 統一存 bytea (Uint8List)
     try {
       if (await _storesLocally) {
-        final rows = await LocalDataStore.instance.list(
-          owner: _localOwner!,
-          resource: TableNames.accountingAccount,
-        );
-        final matches = rows.where(
-          (row) => parseStringValue(row[Fields.id]) == accountId,
-        );
-        if (matches.isEmpty) {
-          throw StateError('accounting_account_not_found');
-        }
-        final row = matches.first;
-        await LocalDataStore.instance.put(
+        await _localEditor.updateFields(
           owner: _localOwner!,
           resource: TableNames.accountingAccount,
           id: accountId,
-          data: {...row, 'master_graph_url': base64Encode(imageBytes)},
-          syncState: LocalSyncState.modifiedLocally,
+          fields: {'master_graph_url': base64Encode(imageBytes)},
+          notFoundMessage: 'accounting_account_not_found',
         );
         return imageBytes;
       }
@@ -522,27 +466,20 @@ class ServiceAccounting {
     bool includeReservedRecords = true,
   }) async {
     if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.list(
+      final rows = await LocalDataStore.instance.readOnlyRows(
         owner: _localOwner!,
         resource: TableNames.accountingDetail,
       );
-      final accountRows = rows.where(
-        (row) =>
-            parseStringValue(row['account_id']) == accountId &&
-            parseStringValue(row['type']).toLowerCase() == type.toLowerCase(),
-      );
-      final balance = accountRows.fold<num>(
-        0,
-        (sum, row) => sum + parseNumValue(row['value']),
-      );
-      final filtered = filterRecordRows(
-        accountRows,
+      final page = ModelLocalRecordPage.accounting(
+        rows,
+        accountId: accountId,
+        type: type,
         from: dateFrom,
         to: dateTo,
         includeLatestFallback: includeLatestFallback,
         includeReservedRecords: includeReservedRecords,
       );
-      return filtered.map((row) => _mapDetail(row, balance)).toList();
+      return page.rows.map((row) => _mapDetail(row, page.total)).toList();
     }
     final upperBound = recordDayUpperBound(dateTo);
     var query = supabase
@@ -627,19 +564,12 @@ class ServiceAccounting {
     required DateTime before,
   }) async {
     if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.list(
+      return _localHistory.hasRecordsBefore(
         owner: _localOwner!,
         resource: TableNames.accountingDetail,
-      );
-      return hasRecordRowBefore(
-        rows.where(
-          (row) => recordRowMatchesAccountAndType(
-            row,
-            accountId: accountId,
-            type: type,
-          ),
-        ),
-        before,
+        accountId: accountId,
+        type: type,
+        before: before,
       );
     }
     final rows = await supabase
@@ -659,19 +589,12 @@ class ServiceAccounting {
     required DateTime before,
   }) async {
     if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.list(
+      return _localHistory.latestRecordDateBefore(
         owner: _localOwner!,
         resource: TableNames.accountingDetail,
-      );
-      return latestRecordRowDateBefore(
-        rows.where(
-          (row) => recordRowMatchesAccountAndType(
-            row,
-            accountId: accountId,
-            type: type,
-          ),
-        ),
-        before,
+        accountId: accountId,
+        type: type,
+        before: before,
       );
     }
     final rows = await supabase
@@ -781,23 +704,11 @@ class ServiceAccounting {
         if (owner == null) {
           throw StateError('Local accounting owner is unavailable.');
         }
-        final rows = await LocalDataStore.instance.list(
-          owner: owner,
-          resource: TableNames.accountingDetail,
-        );
-        final matches = rows.where(
-          (item) => parseStringValue(item[Fields.id]) == detailId,
-        );
-        if (matches.isEmpty) {
-          throw StateError('accounting_detail_not_found');
-        }
-        final row = matches.first;
-        await LocalDataStore.instance.put(
+        await _localEditor.updateFields(
           owner: owner,
           resource: TableNames.accountingDetail,
           id: detailId,
-          data: {
-            ...row,
+          fields: {
             'value': newValue,
             'currency': newCurrency,
             'description': newDescription,
@@ -805,7 +716,7 @@ class ServiceAccounting {
             'primary_category': newPrimaryCategory,
             'group': parseStringValue(newSecondaryCategory).trim(),
           },
-          syncState: LocalSyncState.modifiedLocally,
+          notFoundMessage: 'accounting_detail_not_found',
         );
         return;
       }
@@ -832,29 +743,11 @@ class ServiceAccounting {
   }) async {
     try {
       if (await _storesLocally) {
-        final rows = await LocalDataStore.instance.list(
+        final rows = await LocalDataStore.instance.readOnlyRows(
           owner: _localOwner!,
           resource: TableNames.accountingAccount,
         );
-        final matching =
-            rows
-                .where(
-                  (row) =>
-                      row[Fields.isValid] == true &&
-                      parseStringValue(row['category']) == category,
-                )
-                .toList()
-              ..sort(
-                (a, b) => parseStringValue(
-                  b[Fields.createdAt],
-                ).compareTo(parseStringValue(a[Fields.createdAt])),
-              );
-        return matching.isEmpty
-            ? 'TWD'
-            : parseStringValue(
-                matching.first['main_currency'],
-                fallback: 'TWD',
-              );
+        return ModelRecordEntryDefaults.latestAccountCurrency(rows, category);
       }
       final response = await supabase
           .from(TableNames.accountingAccount)
