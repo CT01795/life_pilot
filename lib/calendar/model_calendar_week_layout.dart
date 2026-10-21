@@ -20,6 +20,47 @@ class ModelCalendarWeekLayout {
   final List<_EventRange> _ranges;
   final Map<(DateTime, DateTime), List<EventWithRow>> _weeks = {};
   late final bool _canUseRowTail = _hasChronologicalRanges();
+  late final List<DateTime> _latestEnds = _buildLatestEnds();
+
+  List<DateTime> _buildLatestEnds() {
+    final ends = <DateTime>[];
+    DateTime? latest;
+    for (final range in _ranges) {
+      latest = latest == null || range.end.isAfter(latest) ? range.end : latest;
+      ends.add(latest);
+    }
+    return ends;
+  }
+
+  // Prefix maxima retain early-starting, long-running events. Searching only
+  // start dates would incorrectly omit those events from later weeks.
+  int _firstPossibleOverlap(DateTime start) {
+    var low = 0;
+    var high = _ranges.length;
+    while (low < high) {
+      final middle = low + (high - low) ~/ 2;
+      if (_latestEnds[middle].isBefore(start)) {
+        low = middle + 1;
+      } else {
+        high = middle;
+      }
+    }
+    return low;
+  }
+
+  int _afterLastPossibleOverlap(DateTime end) {
+    var low = 0;
+    var high = _ranges.length;
+    while (low < high) {
+      final middle = low + (high - low) ~/ 2;
+      if (_ranges[middle].start.isAfter(end)) {
+        high = middle;
+      } else {
+        low = middle + 1;
+      }
+    }
+    return low;
+  }
 
   bool _hasChronologicalRanges() {
     DateTime? previous;
@@ -39,7 +80,12 @@ class ModelCalendarWeekLayout {
   List<EventWithRow> _build(DateTime start, DateTime end) {
     final rows = <List<_EventRange>>[];
     final useRowTail = _canUseRowTail;
-    for (final range in _ranges) {
+    final first = useRowTail ? _firstPossibleOverlap(start) : 0;
+    final afterLast = useRowTail
+        ? _afterLastPossibleOverlap(end)
+        : _ranges.length;
+    for (var index = first; index < afterLast; index++) {
+      final range = _ranges[index];
       if (range.end.isBefore(start) || range.start.isAfter(end)) continue;
       final available = rows.indexWhere(
         // Ordered valid ranges placed in a row cannot overlap. Its last range

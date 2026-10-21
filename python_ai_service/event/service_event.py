@@ -97,7 +97,8 @@ def _cleanup_recommended_events_once_per_day() -> bool:
         db.execute(
             text(
                 "select public.cleanup_recommended_events("
-                "((now() at time zone 'Asia/Taipei')::date - 2)::date)"
+                "(((now() at time zone 'Asia/Taipei')::date "
+                "- interval '1 year')::date))"
             )
         )
         subscription_cleanup_count = db.execute(

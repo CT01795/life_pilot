@@ -3200,7 +3200,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get performanceContents => '콘텐츠 상세';
 
   @override
-  String get performancePeriodHint => '이번 달은 아직 종료되지 않은 모든 콘텐츠를, 다른 달은 해당 월에 종료되는 콘텐츠를 표시합니다. 수치는 누적 합계입니다.';
+  String get performancePeriodHint => '월을 선택하면 해당 월에 종료되는 콘텐츠만 표시합니다. 미종료를 선택하면 월 선택을 지우고 모든 미종료 콘텐츠를 표시합니다. 수치는 누적 합계입니다.';
 
   @override
   String get performanceNoExpiry => '종료일 미설정';

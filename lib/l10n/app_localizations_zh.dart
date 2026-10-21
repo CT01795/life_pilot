@@ -3200,7 +3200,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get performanceContents => '內容明細';
 
   @override
-  String get performancePeriodHint => '本月顯示全部未到期內容；其他月份顯示該月到期內容。數據為累計互動。';
+  String get performancePeriodHint => '選擇月份只顯示該月到期內容；「尚未到期」顯示所有未到期內容並清除月份。數據為累計互動。';
 
   @override
   String get performanceNoExpiry => '未設定到期日';

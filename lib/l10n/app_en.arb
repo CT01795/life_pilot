@@ -2021,7 +2021,7 @@
   "@performanceOverview": {"description": "Content performance filters and layout"},
   "performanceContents": "Content details",
   "@performanceContents": {"description": "Content performance filters and layout"},
-  "performancePeriodHint": "This month shows all unexpired content; other months show content expiring in that month. Metrics are lifetime totals.",
+  "performancePeriodHint": "Select a month to show content expiring that month. Unexpired shows all unexpired content and clears the month. Metrics are lifetime totals.",
   "@performancePeriodHint": {"description": "Content performance filters and layout"},
   "performanceNoExpiry": "No expiry date",
   "@performanceNoExpiry": {"description": "Content performance filters and layout"},

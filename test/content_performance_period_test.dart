@@ -104,16 +104,18 @@ void main() {
   });
 
   test(
-    'selecting the current month means all unexpired content, including later months',
+    'selecting the current month includes only that month expirations, including past days',
     () {
       final period = ContentPerformancePeriod(
         month: DateTime(2026, 10),
         now: now,
       );
-      expect(period.month, null);
-      expect(period.matches(dates(end: DateTime(2027, 7))), true);
-      expect(period.matches(dates(end: DateTime(2026, 10, 18))), false);
-      expect(period.databaseFilter, isNot(contains('.lt.')));
+      expect(period.month, DateTime(2026, 10));
+      expect(period.matches(dates(end: DateTime(2027, 7))), false);
+      expect(period.matches(dates(end: DateTime(2026, 10, 18))), true);
+      expect(period.matches(dates(end: DateTime(2026, 10, 31, 23, 59))), true);
+      expect(period.matches(dates(end: DateTime(2026, 11))), false);
+      expect(period.databaseFilter, contains('.lt.'));
     },
   );
   test(

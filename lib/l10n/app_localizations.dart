@@ -6120,7 +6120,7 @@ abstract class AppLocalizations {
   /// Content performance filters and layout
   ///
   /// In en, this message translates to:
-  /// **'This month shows all unexpired content; other months show content expiring in that month. Metrics are lifetime totals.'**
+  /// **'Select a month to show content expiring that month. Unexpired shows all unexpired content and clears the month. Metrics are lifetime totals.'**
   String get performancePeriodHint;
 
   /// Content performance filters and layout

@@ -11,6 +11,75 @@ import 'content_performance_and_event_dates_test.dart'
     show PerformanceTestService;
 
 void main() {
+  for (final attractions in [false, true]) {
+    for (final locale in ['zh', 'en', 'ja', 'ko']) {
+      testWidgets(
+        '$attractions/$locale: current month and unexpired are exclusive and clear the month label',
+        (tester) async {
+          final auth = StatisticsTestAuth();
+          addTearDown(auth.dispose);
+          final service = PerformanceTestService();
+          await tester.pumpWidget(
+            ChangeNotifierProvider<ControllerAuth>.value(
+              value: auth,
+              child: MaterialApp(
+                locale: Locale(locale),
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                home: PageContentPerformance(
+                  attractions: attractions,
+                  service: service,
+                ),
+              ),
+            ),
+          );
+          service.pending.single.complete(ModelContentPerformance([]));
+          await tester.pumpAndSettle();
+          final loc = AppLocalizations.of(
+            tester.element(find.byType(PageContentPerformance)),
+          )!;
+          expect(
+            tester.widget<ChoiceChip>(find.byType(ChoiceChip)).selected,
+            true,
+          );
+          await tester.tap(find.text(loc.performanceExpiryMonth));
+          await tester.pumpAndSettle();
+          final now = DateTime.now();
+          final month = DateTime(now.year, now.month);
+          await tester.tap(
+            find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.text(DateFormat.MMM(loc.localeName).format(month)),
+            ),
+          );
+          await tester.pump();
+          expect(service.periods.last!.month, month);
+          service.pending.last.complete(ModelContentPerformance([]));
+          await tester.pumpAndSettle();
+          expect(
+            tester.widget<ChoiceChip>(find.byType(ChoiceChip)).selected,
+            false,
+          );
+          final label =
+              '${loc.performanceExpiryMonth} · ${DateFormat.yMMM(loc.localeName).format(month)}';
+          expect(find.text(label), findsOneWidget);
+          await tester.tap(find.text(loc.performanceActive));
+          await tester.pump();
+          expect(service.periods.last!.month, null);
+          service.pending.last.complete(ModelContentPerformance([]));
+          await tester.pumpAndSettle();
+          expect(
+            tester.widget<ChoiceChip>(find.byType(ChoiceChip)).selected,
+            true,
+          );
+          expect(find.text(label), findsNothing);
+          expect(find.text(loc.performanceExpiryMonth), findsOneWidget);
+          expect(tester.takeException(), null);
+          await tester.pumpWidget(const SizedBox());
+        },
+      );
+    }
+  }
   for (final locale in ['zh', 'en', 'ja', 'ko']) {
     testWidgets(
       '$locale: expiry month and title/city search work together and remain usable with empty results',

@@ -376,6 +376,9 @@ class EventProxyAuthorizationTest(unittest.TestCase):
         self.assertEqual(db.execute.call_count, 7)
         executed_sql = [str(call.args[0]) for call in db.execute.call_args_list]
         self.assertIn("cleanup_recommended_events", executed_sql[2])
+        self.assertIn("interval '1 year'", executed_sql[2])
+        self.assertIn("Asia/Taipei", executed_sql[2])
+        self.assertNotIn("::date - 2", executed_sql[2])
         self.assertIn(
             "cleanup_expired_subscription_overages",
             executed_sql[3],

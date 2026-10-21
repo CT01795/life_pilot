@@ -2021,7 +2021,7 @@
   "@performanceOverview": {"description": "Content performance filters and layout"},
   "performanceContents": "內容明細",
   "@performanceContents": {"description": "Content performance filters and layout"},
-  "performancePeriodHint": "本月顯示全部未到期內容；其他月份顯示該月到期內容。數據為累計互動。",
+  "performancePeriodHint": "選擇月份只顯示該月到期內容；「尚未到期」顯示所有未到期內容並清除月份。數據為累計互動。",
   "@performancePeriodHint": {"description": "Content performance filters and layout"},
   "performanceNoExpiry": "未設定到期日",
   "@performanceNoExpiry": {"description": "Content performance filters and layout"},

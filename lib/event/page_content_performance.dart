@@ -121,10 +121,7 @@ class _PageContentPerformanceState extends State<PageContentPerformance> {
                             children: [
                               ChoiceChip(
                                 label: Text(loc.performanceActive),
-                                selected:
-                                    month == null ||
-                                    (month.year == DateTime.now().year &&
-                                        month.month == DateTime.now().month),
+                                selected: month == null,
                                 onSelected: (_) => controller.selectMonth(
                                   null,
                                   keyword: _search.text,

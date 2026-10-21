@@ -1,16 +1,12 @@
 import 'package:life_pilot/utils/value_parser.dart';
 
 /// Null month means content that has not expired, including today.
-/// Selecting this month also means all not-yet-expired content.
-/// Other months match expiration dates in that calendar month only.
+/// Every explicit month matches expiration dates in that calendar month only.
 class ContentPerformancePeriod {
   final DateTime? month;
   final DateTime today;
   ContentPerformancePeriod({DateTime? month, required DateTime now})
-    : month =
-          month == null || (month.year == now.year && month.month == now.month)
-          ? null
-          : DateTime(month.year, month.month),
+    : month = month == null ? null : DateTime(month.year, month.month),
       today = DateTime(now.year, now.month, now.day);
 
   static DateTime? expiration(Map<String, dynamic> row) =>

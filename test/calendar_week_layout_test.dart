@@ -55,6 +55,86 @@ List<(String, int)> _reference(List<EventItem> events, List<DateTime> week) {
 }
 
 void main() {
+  test('indexed weeks retain early long spans and inclusive boundaries', () {
+    final start = DateTime(2026, 10, 4);
+    final week = List.generate(7, (i) => start.add(Duration(days: i)));
+    final events = [
+      EventItem(
+        id: 'long',
+        name: 'long',
+        startDate: DateTime(2025),
+        endDate: week.last,
+      ),
+      for (var i = 0; i < 100; i++)
+        EventItem(
+          id: 'old$i',
+          name: 'old',
+          startDate: DateTime(2025, 2, i + 1),
+        ),
+      EventItem(
+        id: 'before',
+        name: 'before',
+        startDate: week.first.subtract(const Duration(days: 1)),
+      ),
+      EventItem(id: 'first', name: 'first', startDate: week.first),
+      EventItem(id: 'last', name: 'last', startDate: week.last),
+      EventItem(
+        id: 'after',
+        name: 'after',
+        startDate: week.last.add(const Duration(days: 1)),
+      ),
+    ];
+    final layout = ModelCalendarWeekLayout(events);
+    expect(
+      layout
+          .forWeek(week.first, week.last)
+          .map((e) => (e.event.id, e.rowIndex)),
+      _reference(events, week),
+    );
+    expect(layout.forWeek(week.first, week.last).map((e) => e.event.id), [
+      'long',
+      'first',
+      'last',
+    ]);
+  });
+
+  test('indexed weeks match full scans across sparse multi-year snapshots', () {
+    final random = Random(902);
+    final origin = DateTime(2024);
+    final events = List.generate(600, (i) {
+      final start = origin.add(Duration(days: random.nextInt(1100)));
+      return EventItem(
+        id: '$i',
+        name: '$i',
+        startDate: start,
+        endDate: i % 4 == 0
+            ? null
+            : start.add(Duration(days: random.nextInt(180))),
+      );
+    })..sort((a, b) => a.startDate!.compareTo(b.startDate!));
+    final layout = ModelCalendarWeekLayout(events);
+    for (var day = -14; day < 1400; day += 17) {
+      final week = List.generate(7, (i) => origin.add(Duration(days: day + i)));
+      expect(
+        layout
+            .forWeek(week.first, week.last)
+            .map((e) => (e.event.id, e.rowIndex)),
+        _reference(events, week),
+        reason: 'day $day',
+      );
+    }
+  });
+
+  test('empty snapshots and weeks outside a sorted snapshot stay empty', () {
+    final start = DateTime(2026, 10, 4);
+    expect(ModelCalendarWeekLayout([]).forWeek(start, start), isEmpty);
+    final layout = ModelCalendarWeekLayout([
+      EventItem(id: 'one', name: 'one', startDate: start),
+    ]);
+    expect(layout.forWeek(DateTime(2025), DateTime(2025, 12, 31)), isEmpty);
+    expect(layout.forWeek(DateTime(2027), DateTime(2027, 12, 31)), isEmpty);
+  });
+
   test('ordered fast path matches original first-fit rows in 100 batches', () {
     final random = Random(53);
     final calendar = ModelCalendar();

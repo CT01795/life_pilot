@@ -3200,7 +3200,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get performanceContents => 'Content details';
 
   @override
-  String get performancePeriodHint => 'This month shows all unexpired content; other months show content expiring in that month. Metrics are lifetime totals.';
+  String get performancePeriodHint => 'Select a month to show content expiring that month. Unexpired shows all unexpired content and clears the month. Metrics are lifetime totals.';
 
   @override
   String get performanceNoExpiry => 'No expiry date';

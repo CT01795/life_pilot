@@ -3200,7 +3200,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get performanceContents => 'コンテンツ詳細';
 
   @override
-  String get performancePeriodHint => '今月は期限前の全コンテンツ、他の月はその月に終了するものを表示します。数値は累計です。';
+  String get performancePeriodHint => '月を選ぶと、その月に終了する内容のみ表示します。「期限前」は月の選択を解除し、期限前の全内容を表示します。数値は累計です。';
 
   @override
   String get performanceNoExpiry => '終了日未設定';
