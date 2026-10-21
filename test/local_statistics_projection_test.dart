@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sembast/sembast_memory.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
@@ -6,6 +7,35 @@ import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:life_pilot/record_statistics/model_local_record_statistics.dart';
 import 'package:life_pilot/record_statistics/service_record_statistics.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/value_parser.dart';
+
+class _CountedDate implements DateTime {
+  final DateTime value;
+  int reads = 0;
+  _CountedDate(this.value);
+  @override
+  DateTime toLocal() => this;
+  @override
+  int get year {
+    reads++;
+    return value.year;
+  }
+
+  @override
+  int get month {
+    reads++;
+    return value.month;
+  }
+
+  @override
+  bool isBefore(DateTime other) {
+    reads++;
+    return value.isBefore(other);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class _CountedRow extends MapBase<String, dynamic> {
   final Map<String, dynamic> data;
@@ -99,6 +129,182 @@ void main() {
       expect(model.rows(now: now), hasLength(2));
     },
   );
+
+  for (final kind in RecordStatisticsKind.values) {
+    test(
+      '$kind month buckets match legacy filtering across randomized data',
+      () {
+        final random = Random(43);
+        for (var batch = 0; batch < 80; batch++) {
+          final source = List<Map<String, dynamic>>.generate(
+            150,
+            (index) => {
+              'id': '$index',
+              'account_id': index % 7 == 0 ? 'b' : 'a',
+              'currency': index % 4 == 0 ? 'USD' : 'TWD',
+              'date': index % 17 == 0
+                  ? 'invalid'
+                  : DateTime(
+                      2025,
+                      1 + random.nextInt(36),
+                      1 + random.nextInt(28),
+                    ).toUtc().toIso8601String(),
+              'value': index % 9 == 0 ? '2.3456' : random.nextInt(2000) - 1000,
+            },
+          );
+          for (final currency in <String?>['TWD', null]) {
+            final matching = source
+                .where(
+                  (row) =>
+                      row['account_id'] == 'a' &&
+                      (kind == RecordStatisticsKind.points ||
+                          currency == null ||
+                          row['currency'] == currency),
+                )
+                .toList();
+            final model = ModelLocalRecordStatistics(
+              source,
+              accountId: 'a',
+              kind: kind,
+              currency: currency,
+            );
+            expect(
+              model.total,
+              matching.fold<num>(
+                0,
+                (sum, row) => sum + parseNumValue(row['value']),
+              ),
+            );
+            expect(
+              model.rows(now: now, history: true),
+              matching.where(
+                (row) =>
+                    tryParseDateTimeValue(row['date'], toLocal: true) != null,
+              ),
+            );
+            for (final month in [
+              DateTime(2025),
+              DateTime(2026, 10),
+              DateTime(2027, 12),
+            ]) {
+              final end = DateTime(month.year, month.month + 1);
+              final expected = matching.where((row) {
+                final date = tryParseDateTimeValue(row['date'], toLocal: true);
+                return date != null &&
+                    !date.isBefore(month) &&
+                    date.isBefore(end);
+              });
+              expect(model.rows(now: month), expected);
+            }
+          }
+        }
+      },
+    );
+  }
+
+  test('repeated month lookups never revisit parsed historical dates', () {
+    final dates = List.generate(
+      2400,
+      (index) => _CountedDate(DateTime(2000 + index ~/ 12, index % 12 + 1)),
+    );
+    final source = List<Map<String, dynamic>>.generate(
+      dates.length,
+      (index) => {
+        'account_id': 'a',
+        'currency': 'TWD',
+        'value': 1,
+        'date': dates[index],
+      },
+    );
+    final model = ModelLocalRecordStatistics(
+      source,
+      accountId: 'a',
+      kind: RecordStatisticsKind.accounting,
+      currency: 'TWD',
+    );
+    final reads = dates.fold<int>(0, (sum, date) => sum + date.reads);
+    for (var index = 0; index < 100; index++) {
+      expect(model.rows(now: DateTime(2026, 10)), hasLength(1));
+      expect(model.rows(now: DateTime(3000)), isEmpty);
+    }
+    expect(dates.fold<int>(0, (sum, date) => sum + date.reads), reads);
+  });
+
+  test('month boundaries use parsed local dates and preserve input order', () {
+    final first = DateTime(2026, 10);
+    final source = <Map<String, dynamic>>[
+      {
+        'id': 'end',
+        'account_id': 'a',
+        'date': DateTime(
+          2026,
+          11,
+        ).subtract(const Duration(microseconds: 1)).toUtc(),
+        'value': -2,
+      },
+      {
+        'id': 'before',
+        'account_id': 'a',
+        'date': first.subtract(const Duration(microseconds: 1)).toUtc(),
+        'value': 3,
+      },
+      {
+        'id': 'first',
+        'account_id': 'a',
+        'date': first.toUtc().toIso8601String(),
+        'value': 4,
+      },
+      {
+        'id': 'next',
+        'account_id': 'a',
+        'date': DateTime(2026, 11).toUtc(),
+        'value': 5,
+      },
+    ];
+    final model = ModelLocalRecordStatistics(
+      source,
+      accountId: 'a',
+      kind: RecordStatisticsKind.points,
+    );
+    expect(model.rows(now: now).map((row) => row['id']), ['end', 'first']);
+    expect(identical(model.rows(now: now).first, source.first), true);
+  });
+
+  test(
+    'mutating returned month and history lists cannot alter bucket contents',
+    () {
+      final source = List<Map<String, dynamic>>.unmodifiable([
+        row('a', 1),
+        row('b', 2, date: '2025-12-01'),
+      ]);
+      final model = ModelLocalRecordStatistics(
+        source,
+        accountId: 'a',
+        kind: RecordStatisticsKind.points,
+      );
+      model.rows(now: now).add(row('injected', 99));
+      model.rows(now: now, history: true).clear();
+      expect(model.rows(now: now).map((row) => row['id']), ['a']);
+      expect(model.rows(now: now, history: true).map((row) => row['id']), [
+        'a',
+        'b',
+      ]);
+      expect(model.total, 3);
+      expect(source.length, 2);
+    },
+  );
+
+  test('empty buckets and empty sources return independent mutable lists', () {
+    final model = ModelLocalRecordStatistics(
+      [],
+      accountId: 'a',
+      kind: RecordStatisticsKind.points,
+    );
+    model.rows(now: now).add(row('new', 1));
+    expect(model.rows(now: now), isEmpty);
+    expect(model.rows(now: now, history: true), isEmpty);
+    expect(model.total, 0);
+  });
   group('service snapshot reuse and invalidation', () {
     late Database db;
     late _SnapshotStore store;

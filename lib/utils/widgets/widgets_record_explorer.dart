@@ -96,64 +96,44 @@ class _WidgetsRecordExplorerState extends State<WidgetsRecordExplorer> {
                 onChanged: widget.onSearchChanged,
               ),
               Gaps.h8,
-              Scrollbar(
+              _RecordHorizontalLane(
                 controller: _categoryScrollController,
-                thumbVisibility: true,
-                thickness: 4,
-                scrollbarOrientation: ScrollbarOrientation.bottom,
-                child: SingleChildScrollView(
-                  controller: _categoryScrollController,
-                  scrollDirection: Axis.horizontal,
-                  // Reserve a dedicated lane below the chips so the visible
-                  // scrollbar never covers their labels.
-                  padding: const EdgeInsets.only(bottom: 28),
-                  child: Row(
-                    children: [
-                      for (final category in widget.categories) ...[
-                        FilterChip(
-                          selected: widget.selectedCategory == category.value,
-                          label: Text(category.label),
-                          onSelected: (_) =>
-                              widget.onCategorySelected(category.value),
-                        ),
-                        Gaps.w8,
-                      ],
+                child: Row(
+                  children: [
+                    for (final category in widget.categories) ...[
+                      FilterChip(
+                        selected: widget.selectedCategory == category.value,
+                        label: Text(category.label),
+                        onSelected: (_) =>
+                            widget.onCategorySelected(category.value),
+                      ),
+                      Gaps.w8,
                     ],
-                  ),
+                  ],
                 ),
               ),
               Gaps.h8,
               LayoutBuilder(
                 builder: (context, constraints) {
                   if (constraints.maxWidth < 420) {
-                    return Scrollbar(
+                    return _RecordHorizontalLane(
                       controller: _metricScrollController,
-                      thumbVisibility: true,
-                      thickness: 4,
-                      scrollbarOrientation: ScrollbarOrientation.bottom,
-                      child: SingleChildScrollView(
-                        controller: _metricScrollController,
-                        scrollDirection: Axis.horizontal,
-                        // Keep the scrollbar below the metric text instead of
-                        // drawing it over the last line on narrow screens.
-                        padding: const EdgeInsets.only(bottom: 28),
-                        child: Row(
-                          children: [
-                            for (
-                              var index = 0;
-                              index < widget.metrics.length;
-                              index++
-                            ) ...[
-                              if (index > 0) Gaps.w8,
-                              SizedBox(
-                                width: 128,
-                                child: _RecordMetricTile(
-                                  metric: widget.metrics[index],
-                                ),
+                      child: Row(
+                        children: [
+                          for (
+                            var index = 0;
+                            index < widget.metrics.length;
+                            index++
+                          ) ...[
+                            if (index > 0) Gaps.w8,
+                            SizedBox(
+                              width: 128,
+                              child: _RecordMetricTile(
+                                metric: widget.metrics[index],
                               ),
-                            ],
+                            ),
                           ],
-                        ),
+                        ],
                       ),
                     );
                   }
@@ -184,6 +164,46 @@ class _WidgetsRecordExplorerState extends State<WidgetsRecordExplorer> {
       ),
     );
   }
+}
+
+/// Keep a single scrollbar OUTSIDE the text viewport, after every label/value.
+/// Desktop's automatic scrollbar is disabled only for this explicit lane.
+class _RecordHorizontalLane extends StatelessWidget {
+  const _RecordHorizontalLane({required this.controller, required this.child});
+
+  final ScrollController controller;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => MediaQuery.removePadding(
+    context: context,
+    // This lane is inside the page, not at the physical screen edge. The
+    // scrollbar's inherited bottom safe area would move its thumb over text.
+    removeBottom: true,
+    child: Scrollbar(
+      controller: controller,
+      thumbVisibility: true,
+      thickness: 4,
+      scrollbarOrientation: ScrollbarOrientation.bottom,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ScrollConfiguration(
+            behavior: ScrollConfiguration.of(
+              context,
+            ).copyWith(scrollbars: false),
+            child: SingleChildScrollView(
+              controller: controller,
+              scrollDirection: Axis.horizontal,
+              child: child,
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    ),
+  );
 }
 
 class _RecordMetricTile extends StatelessWidget {

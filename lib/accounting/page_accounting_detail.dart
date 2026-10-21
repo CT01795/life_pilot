@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
+import 'package:life_pilot/record_statistics/model_record_explorer_metrics.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_detail.dart';
@@ -274,18 +275,14 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     final loc = AppLocalizations.of(context)!;
     final colors = Theme.of(context).colorScheme;
     final currency = controller.currentCurrency ?? account.currency ?? '';
-    final metricRecords = currency.isEmpty
-        ? visibleRecords
-        : visibleRecords
-              .where((record) => record.currency == currency)
-              .toList(growable: false);
-    final income = metricRecords
-        .where((record) => record.value > 0)
-        .fold<num>(0, (sum, record) => sum + record.value);
-    final expense = metricRecords
-        .where((record) => record.value < 0)
-        .fold<num>(0, (sum, record) => sum + record.value.abs());
-    final net = income - expense;
+    final metrics = ModelRecordExplorerMetrics.from<ModelAccountingDetail>(
+      visibleRecords,
+      valueOf: (record) => record.value,
+      include: currency.isEmpty
+          ? null
+          : (record) => record.currency == currency,
+    );
+    final net = metrics.net;
     final presentCategories = loadedRecords
         .map((record) => record.primaryCategory)
         .toSet();
@@ -315,13 +312,13 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         RecordExplorerMetric(
           icon: Icons.south_west,
           label: loc.eventIncome,
-          value: metricValue(income),
+          value: metricValue(metrics.positive),
           color: Colors.green,
         ),
         RecordExplorerMetric(
           icon: Icons.north_east,
           label: loc.eventExpense,
-          value: metricValue(expense),
+          value: metricValue(metrics.negativeMagnitude),
           color: colors.error,
         ),
         RecordExplorerMetric(

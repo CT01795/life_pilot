@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
+import 'package:life_pilot/record_statistics/model_record_explorer_metrics.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -263,13 +264,11 @@ class _PagePointRecordDetailViewState
   ) {
     final loc = AppLocalizations.of(context)!;
     final colors = Theme.of(context).colorScheme;
-    final increase = visibleRecords
-        .where((record) => record.value > 0)
-        .fold<int>(0, (sum, record) => sum + record.value);
-    final decrease = visibleRecords
-        .where((record) => record.value < 0)
-        .fold<int>(0, (sum, record) => sum + record.value.abs());
-    final net = increase - decrease;
+    final metrics = ModelRecordExplorerMetrics.from<ModelPointRecordDetail>(
+      visibleRecords,
+      valueOf: (record) => record.value,
+    );
+    final net = metrics.net.toInt();
     final presentCategories = loadedRecords
         .map((record) => record.primaryCategory)
         .toSet();
@@ -297,13 +296,13 @@ class _PagePointRecordDetailViewState
         RecordExplorerMetric(
           icon: Icons.add_circle_outline,
           label: loc.eventPointIncrease,
-          value: metricValue(increase),
+          value: metricValue(metrics.positive.toInt()),
           color: Colors.green,
         ),
         RecordExplorerMetric(
           icon: Icons.remove_circle_outline,
           label: loc.eventPointDecrease,
-          value: metricValue(decrease),
+          value: metricValue(metrics.negativeMagnitude.toInt()),
           color: colors.error,
         ),
         RecordExplorerMetric(
