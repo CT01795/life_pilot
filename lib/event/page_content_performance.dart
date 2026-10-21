@@ -71,8 +71,10 @@ class _PageContentPerformanceState extends State<PageContentPerformance> {
               : loc.personalActivityPerformanceHint,
           child: Text(
             widget.attractions
-                ? loc.attractionPerformance
-                : loc.activityPerformance,
+                ? loc.personalAttractionPerformanceTitle
+                : loc.personalActivityPerformanceTitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ),
@@ -98,7 +100,17 @@ class _PageContentPerformanceState extends State<PageContentPerformance> {
                           Text(
                             loc.performanceHideZeroHint,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                              color: theme.colorScheme.error,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            loc.performancePeriodHint,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.error,
+                              fontWeight: FontWeight.w600,
+                              height: 1.5,
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -164,14 +176,6 @@ class _PageContentPerformanceState extends State<PageContentPerformance> {
                                   ],
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            loc.performancePeriodHint,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                              height: 1.5,
                             ),
                           ),
                         ],

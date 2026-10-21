@@ -2611,6 +2611,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get recordPleaseConfirm => '확인해 주세요';
 
   @override
+  String get tapToEditRecordHint => '탭하여 내역 편집';
+
+  @override
   String get recordPrimaryCategory => '1차 분류';
 
   @override
@@ -3176,7 +3179,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get personalActivityPerformanceHint => '내가 등록한 활동의 성과';
 
   @override
+  String get personalActivityPerformanceTitle => '내 활동 성과';
+
+  @override
   String get personalAttractionPerformanceHint => '내가 등록한 명소의 성과';
+
+  @override
+  String get personalAttractionPerformanceTitle => '내 명소 성과';
 
   @override
   String get performanceActive => '기간 미종료';

@@ -2611,6 +2611,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get recordPleaseConfirm => '確認してください';
 
   @override
+  String get tapToEditRecordHint => 'タップしてデータを編集';
+
+  @override
   String get recordPrimaryCategory => 'カテゴリ';
 
   @override
@@ -3176,7 +3179,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get personalActivityPerformanceHint => '自分が作成した活動の効果';
 
   @override
+  String get personalActivityPerformanceTitle => '自分の活動の効果';
+
+  @override
   String get personalAttractionPerformanceHint => '自分が作成したスポットの効果';
+
+  @override
+  String get personalAttractionPerformanceTitle => '自分のスポットの効果';
 
   @override
   String get performanceActive => '期限前';

@@ -22,6 +22,7 @@ import 'package:life_pilot/utils/record_filter.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/utils/widgets/widgets_record_explorer.dart';
 import 'package:life_pilot/utils/widgets/widgets_record_input.dart';
+import 'package:life_pilot/utils/widgets/widgets_record_preview_tile.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
@@ -153,9 +154,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   final timeText = MaterialLocalizations.of(
                     context,
                   ).formatTimeOfDay(TimeOfDay.fromDateTime(recordDate));
-                  return ListTile(
-                    dense: true,
-                    isThreeLine: true,
+                  return WidgetsRecordPreviewTile(
                     onTap: () async {
                       // 點整個 ListTile 都能編輯
                       final updated = await _showEditDetailDialog(context, p);

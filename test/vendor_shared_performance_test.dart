@@ -148,6 +148,38 @@ void main() {
             ),
             findsOneWidget,
           );
+          expect(
+            find.descendant(
+              of: find.byType(AppBar),
+              matching: find.text(
+                attractions
+                    ? loc.personalAttractionPerformanceTitle
+                    : loc.personalActivityPerformanceTitle,
+              ),
+            ),
+            findsOneWidget,
+          );
+          final errorColor = Theme.of(
+            tester.element(find.byType(PageContentPerformance)),
+          ).colorScheme.error;
+          for (final message in [
+            loc.performanceHideZeroHint,
+            loc.performancePeriodHint,
+          ]) {
+            final text = tester.widget<Text>(find.text(message));
+            expect(text.style!.color, errorColor);
+            expect(text.style!.fontWeight, FontWeight.w600);
+          }
+          expect(
+            tester.getBottomLeft(find.text(loc.performanceHideZeroHint)).dy,
+            lessThan(
+              tester.getTopLeft(find.text(loc.performancePeriodHint)).dy,
+            ),
+          );
+          expect(
+            tester.getBottomLeft(find.text(loc.performancePeriodHint)).dy,
+            lessThan(tester.getTopLeft(find.text(loc.performanceActive)).dy),
+          );
           await tester.scrollUntilVisible(
             find.text(attractions ? 'My attraction' : 'My activity'),
             180,

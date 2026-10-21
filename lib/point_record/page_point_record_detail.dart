@@ -20,6 +20,7 @@ import 'package:life_pilot/utils/record_date_time.dart';
 import 'package:life_pilot/utils/record_filter.dart';
 import 'package:life_pilot/utils/widgets/widgets_record_explorer.dart';
 import 'package:life_pilot/utils/widgets/widgets_record_input.dart';
+import 'package:life_pilot/utils/widgets/widgets_record_preview_tile.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
@@ -154,9 +155,7 @@ class _PagePointRecordDetailViewState
                   final timeText = MaterialLocalizations.of(
                     context,
                   ).formatTimeOfDay(TimeOfDay.fromDateTime(recordDate));
-                  return ListTile(
-                    dense: true,
-                    isThreeLine: true,
+                  return WidgetsRecordPreviewTile(
                     onTap: () async {
                       final updated = await _showEditDetailDialog(context, p);
                       if (updated != null) {

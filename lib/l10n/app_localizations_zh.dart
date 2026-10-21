@@ -2611,6 +2611,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recordPleaseConfirm => '請確認';
 
   @override
+  String get tapToEditRecordHint => '點一下可以編輯資料';
+
+  @override
   String get recordPrimaryCategory => '一級分類';
 
   @override
@@ -3176,7 +3179,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get personalActivityPerformanceHint => '個人建立的活動成效';
 
   @override
+  String get personalActivityPerformanceTitle => '個人活動成效';
+
+  @override
   String get personalAttractionPerformanceHint => '個人建立的景點成效';
+
+  @override
+  String get personalAttractionPerformanceTitle => '個人景點成效';
 
   @override
   String get performanceActive => '尚未到期';
@@ -3200,7 +3209,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get performanceSearchHint => '名稱或縣市';
 
   @override
-  String get performanceHideZeroHint => '尚未有統計資料的不顯示';
+  String get performanceHideZeroHint => '尚未有統計資料的不顯示。';
 
   @override
   String get performanceTimeout => '查詢逾時，請重試或縮小搜尋範圍。';

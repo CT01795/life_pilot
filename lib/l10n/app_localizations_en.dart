@@ -2611,6 +2611,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recordPleaseConfirm => 'Please confirm';
 
   @override
+  String get tapToEditRecordHint => 'Click or tap to edit this entry';
+
+  @override
   String get recordPrimaryCategory => 'Category';
 
   @override
@@ -3176,7 +3179,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get personalActivityPerformanceHint => 'Insights for activities you created';
 
   @override
+  String get personalActivityPerformanceTitle => 'My Activity Insights';
+
+  @override
   String get personalAttractionPerformanceHint => 'Insights for attractions you created';
+
+  @override
+  String get personalAttractionPerformanceTitle => 'My Attraction Insights';
 
   @override
   String get performanceActive => 'Not expired';

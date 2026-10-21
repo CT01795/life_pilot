@@ -14,7 +14,6 @@ import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
-import 'package:life_pilot/utils/load_timing.dart';
 
 import '../utils/widgets/widgets_appbar.dart';
 
@@ -63,8 +62,6 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
   late DataStorageLocation _loadedStorage;
   final _regions = ModelEventRegions();
   bool _hasLoaded = false; // ✅ 避免重複觸發 loadEvents()
-  LoadTiming? _entryTiming;
-  bool _contentFrameScheduled = false;
 
   ControllerEvent get _controller => widget.controllerEvent;
 
@@ -99,16 +96,12 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
 
   Future<void> _safeLoadEvents() async {
     if (_hasLoaded) return;
-    final timing = _entryTiming = LoadTiming('page');
-    _contentFrameScheduled = false;
-    timing.mark('load_start');
     if (mounted) {
       setState(() => _hasLoaded = true);
     } else {
       _hasLoaded = true;
     }
     await _controller.initializePage();
-    timing.mark('initialization_complete');
   }
 
   Future<void> _reloadAfterStorageChange() async {
@@ -180,17 +173,6 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
         controller.isLoadingMemoryRecords,
       ),
     );
-    if (loadState.$3 && !_contentFrameScheduled) {
-      _contentFrameScheduled = true;
-      final timing = _entryTiming;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted &&
-            identical(_entryTiming, timing) &&
-            _controller.hasLoadedEventsSuccessfully) {
-          timing?.mark('first_content_frame', once: true);
-        }
-      });
-    }
 
     return Scaffold(
       appBar: widgetsWhiteAppBar(

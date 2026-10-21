@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:life_pilot/utils/paged_row_reader.dart';
 
 import 'package:flutter/material.dart';
-import 'package:life_pilot/utils/load_timing.dart';
 import 'package:life_pilot/event/event_save_exception.dart';
 import 'package:life_pilot/event/event_delete_exception.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -147,11 +146,7 @@ class ServiceEvent {
     bool Function()? shouldContinue,
   }) async {
     if (shouldContinue?.call() == false) return [];
-    final timing = tableName == TableNames.memoryTrace
-        ? LoadTiming('query')
-        : null;
     final loadPolicy = ModelEventLoadPolicy.forTable(tableName);
-    timing?.mark('start');
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     if (tableName == TableNames.recommendEvents) {
       unawaited(_cleanupRecommendedEventsOncePerDay(today));
@@ -175,13 +170,11 @@ class ServiceEvent {
       inputUser,
       storageLocation,
     );
-    timing?.mark(useLocal ? 'mode_local' : 'mode_cloud');
     if (shouldContinue?.call() == false) return [];
     if (useLocal) {
       final localRows = await LocalDataStore.instance
           .readOnlyRows(owner: inputUser!, resource: tableName)
           .timeout(const Duration(seconds: 15));
-      timing?.mark('local_rows_read', rows: localRows.length);
       if (shouldContinue?.call() == false) return [];
       final selected = ModelLocalEventQuery.iterate(
         localRows,
@@ -197,7 +190,6 @@ class ServiceEvent {
       );
       if (onPartialEvents == null) {
         final events = selected.toList();
-        timing?.mark('decoded', rows: events.length);
         return events;
       }
       final events = <EventItem>[];
@@ -205,7 +197,6 @@ class ServiceEvent {
         if (shouldContinue?.call() == false) return [];
         events.add(event);
         if (events.length == loadPolicy.previewBatchSize) {
-          timing?.mark('first_batch_decoded', rows: events.length);
           onPartialEvents(List<EventItem>.unmodifiable(events));
           // Let the first cards render before decoding the remaining history.
           await Future<void>.delayed(Duration.zero);
@@ -213,7 +204,6 @@ class ServiceEvent {
           await Future<void>.delayed(Duration.zero);
         }
       }
-      timing?.mark('decoded', rows: events.length);
       return events;
     }
 
@@ -232,7 +222,6 @@ class ServiceEvent {
         payload['inputoffset'] = offset;
       }
       Future<List<dynamic>> fetchRows(int pageOffset, int pageLimit) async {
-        timing?.mark('rpc_start');
         final response = await supabase.rpc(
           'get_filtered_$tableName',
           params: {
@@ -243,7 +232,6 @@ class ServiceEvent {
             },
           },
         );
-        timing?.mark('rpc_returned', rows: (response as List).length);
         return response as List<dynamic>;
       }
 
@@ -252,11 +240,9 @@ class ServiceEvent {
         for (final row in rows.skip(decoded.length)) {
           decoded.add(_decodeEventRow(row as Map<String, dynamic>));
         }
-        timing?.mark('batch_decoded', rows: decoded.length);
         onPartialEvents?.call(List<EventItem>.unmodifiable(decoded));
       }
 
-      if (limit == null) timing?.mark('rpc_start');
       final response = limit == null
           ? await supabase.rpc(
               'get_filtered_$tableName',
@@ -276,9 +262,6 @@ class ServiceEvent {
               shouldContinue: shouldContinue,
             );
       if (shouldContinue?.call() == false) return [];
-      if (limit == null) {
-        timing?.mark('rpc_returned', rows: (response as List).length);
-      }
 
       final events = onPartialEvents != null && limit != null
           ? decoded
@@ -286,7 +269,6 @@ class ServiceEvent {
                 .map((row) => _decodeEventRow(row as Map<String, dynamic>))
                 .toList();
 
-      timing?.mark('complete', rows: events.length);
       return events;
     } catch (ex, st) {
       logger.e(ex, stackTrace: st);

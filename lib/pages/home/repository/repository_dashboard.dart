@@ -11,7 +11,6 @@ import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
-import 'package:life_pilot/utils/load_timing.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/service/network_availability.dart';
 
@@ -252,17 +251,13 @@ class DashboardRepository {
     required String accountId,
   }) async {
     if (accountId.isEmpty) return const AccountingDashboardSummary.empty();
-    final timing = LoadTiming('accounting_source', group: 'DashboardLoad');
-    timing.mark('start');
     final localOwner = _localOwner;
     if (localOwner != null && await _storesLocally) {
-      timing.mark('mode_local');
       final account = await LocalDataStore.instance.readOnlyRow(
         owner: localOwner,
         resource: TableNames.accountingAccount,
         id: accountId,
       );
-      timing.mark('account_returned');
       if (account == null || account[Fields.isValid] != true) {
         return const AccountingDashboardSummary.empty();
       }
@@ -276,7 +271,6 @@ class DashboardRepository {
         accountId: accountId,
         currency: currency,
       );
-      timing.mark('details_returned');
       return AccountingDashboardSummary(
         records: details.previewRows.map(IncomeExpenseItem.fromJson).toList(),
         total: parseNumValue(account['balance']),
@@ -284,15 +278,12 @@ class DashboardRepository {
         currency: currency,
       );
     }
-    timing.mark('mode_cloud');
     final accountResult = await supabase
         .from(TableNames.accountingAccount)
         .select('id,main_currency,balance')
         .eq(Fields.id, accountId)
         .eq(Fields.isValid, true)
         .maybeSingle();
-
-    timing.mark('account_returned');
 
     if (accountResult == null) {
       return const AccountingDashboardSummary.empty();
@@ -312,7 +303,6 @@ class DashboardRepository {
         .order('date', ascending: false);
 
     final rows = result as List;
-    timing.mark('details_returned', rows: rows.length);
     final records = rows
         .take(5)
         .map((e) => IncomeExpenseItem.fromJson(e))
@@ -332,17 +322,13 @@ class DashboardRepository {
     required String accountId,
   }) async {
     if (accountId.isEmpty) return const PointDashboardSummary.empty();
-    final timing = LoadTiming('points_source', group: 'DashboardLoad');
-    timing.mark('start');
     final localOwner = _localOwner;
     if (localOwner != null && await _storesLocally) {
-      timing.mark('mode_local');
       final account = await LocalDataStore.instance.readOnlyRow(
         owner: localOwner,
         resource: TableNames.pointRecordAccount,
         id: accountId,
       );
-      timing.mark('account_returned');
       if (account == null || account[Fields.isValid] != true) {
         return const PointDashboardSummary.empty();
       }
@@ -351,22 +337,18 @@ class DashboardRepository {
         resource: TableNames.pointRecordDetail,
         accountId: accountId,
       );
-      timing.mark('details_returned');
       return PointDashboardSummary(
         records: details.previewRows.map(PointRecordItem.fromJson).toList(),
         total: parseIntValue(account['points']),
         todayTotal: details.todayTotal.toInt(),
       );
     }
-    timing.mark('mode_cloud');
     final accountResult = await supabase
         .from(TableNames.pointRecordAccount)
         .select('id,points')
         .eq(Fields.id, accountId)
         .eq(Fields.isValid, true)
         .maybeSingle();
-
-    timing.mark('account_returned');
 
     if (accountResult == null) {
       return const PointDashboardSummary.empty();
@@ -384,7 +366,6 @@ class DashboardRepository {
         .order('date', ascending: false);
 
     final rows = result as List;
-    timing.mark('details_returned', rows: rows.length);
     final records = rows
         .take(5)
         .map((e) => PointRecordItem.fromJson(e))

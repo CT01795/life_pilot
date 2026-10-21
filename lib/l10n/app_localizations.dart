@@ -4995,6 +4995,12 @@ abstract class AppLocalizations {
   /// **'Please confirm'**
   String get recordPleaseConfirm;
 
+  /// Tooltip on editable record rows in the voice-entry confirmation dialog, excluding action buttons.
+  ///
+  /// In en, this message translates to:
+  /// **'Click or tap to edit this entry'**
+  String get tapToEditRecordHint;
+
   /// Label for recordPrimaryCategory
   ///
   /// In en, this message translates to:
@@ -6069,11 +6075,23 @@ abstract class AppLocalizations {
   /// **'Insights for activities you created'**
   String get personalActivityPerformanceHint;
 
+  /// Page title for insights about activities created by the signed-in user.
+  ///
+  /// In en, this message translates to:
+  /// **'My Activity Insights'**
+  String get personalActivityPerformanceTitle;
+
   /// Tooltip clarifying that attraction insights cover only content created by the signed-in user.
   ///
   /// In en, this message translates to:
   /// **'Insights for attractions you created'**
   String get personalAttractionPerformanceHint;
+
+  /// Page title for insights about attractions created by the signed-in user.
+  ///
+  /// In en, this message translates to:
+  /// **'My Attraction Insights'**
+  String get personalAttractionPerformanceTitle;
 
   /// Content performance filters and layout
   ///
