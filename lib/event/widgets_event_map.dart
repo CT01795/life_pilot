@@ -16,25 +16,11 @@ class WidgetsEventMap extends StatelessWidget {
 
   static const _positions = eventRegionPositions;
 
-  static const _outlyingCities = {'連江', '澎湖', '金門'};
-
   @override
   Widget build(BuildContext context) {
-    final counts = regionData.counts;
-    final mapCounts = Map.fromEntries(
-      counts.entries.where(
-        (entry) =>
-            _positions.containsKey(entry.key) &&
-            !_outlyingCities.contains(entry.key),
-      ),
-    );
-    final otherCounts = Map.fromEntries(
-      counts.entries.where(
-        (entry) =>
-            !_positions.containsKey(entry.key) ||
-            _outlyingCities.contains(entry.key),
-      ),
-    );
+    final groups = regionData.mapCounts;
+    final mapCounts = groups.mainland;
+    final otherCounts = groups.other;
 
     return ColoredBox(
       color: const Color(0xFFE8F7FA),

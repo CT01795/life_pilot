@@ -8,8 +8,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/date_time.dart'
-    show DateTimeCompare, DateTimeFormatter;
+import 'package:life_pilot/utils/date_time.dart' show DateTimeCompare;
 import 'package:life_pilot/utils/extension.dart';
 import 'package:provider/provider.dart';
 
@@ -366,23 +365,8 @@ class WeekRow extends StatelessWidget {
                     final event = eventWithRow.event;
                     final rowIndex = eventWithRow.rowIndex;
 
-                    final start = DateTimeFormatter.dateOnly(event.startDate!);
-                    final end = DateTimeFormatter.dateOnly(
-                      event.endDate ?? event.startDate!,
-                    );
-                    final weekStart = week.first;
-                    final weekEnd = week.last;
-
-                    final visibleStart = start.isBefore(weekStart)
-                        ? weekStart
-                        : start;
-                    final visibleEnd = end.isAfter(weekEnd) ? weekEnd : end;
-
-                    final startIndex = visibleStart
-                        .difference(weekStart)
-                        .inDays;
-                    final spanDays =
-                        visibleEnd.difference(visibleStart).inDays + 1;
+                    final startIndex = eventWithRow.startIndex;
+                    final spanDays = eventWithRow.spanDays;
 
                     return PositionedDirectional(
                       top:
@@ -397,12 +381,8 @@ class WeekRow extends StatelessWidget {
                         onTapDown: (details) async {
                           // 算出第幾格（哪一天）
                           final tapX = details.localPosition.dx;
-                          final tappedOffset = (tapX / cellWidth).floor().clamp(
-                            0,
-                            spanDays - 1,
-                          );
-                          final tappedDate = visibleStart.add(
-                            Duration(days: tappedOffset),
+                          final tappedDate = eventWithRow.dateAtOffset(
+                            (tapX / cellWidth).floor(),
                           );
                           // 4. 呼叫 dialog，並傳入正確的日期
                           await openDayDialog(
@@ -421,10 +401,10 @@ class WeekRow extends StatelessWidget {
                                           event,
                                         )),
                             borderRadius: BorderRadiusDirectional.horizontal(
-                              start: (start.isAtSameMomentAs(visibleStart)
+                              start: (eventWithRow.startsHere
                                   ? const Radius.circular(2)
                                   : Radius.zero),
-                              end: (end.isAtSameMomentAs(visibleEnd)
+                              end: (eventWithRow.endsHere
                                   ? const Radius.circular(2)
                                   : Radius.zero),
                             ),

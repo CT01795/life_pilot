@@ -107,8 +107,28 @@ class ModelCalendarWeekLayout {
     }
     return List<EventWithRow>.unmodifiable([
       for (var index = 0; index < rows.length; index++)
-        for (final range in rows[index])
-          EventWithRow(event: range.event, rowIndex: index),
+        for (final range in rows[index]) _place(range, index, start, end),
     ]);
+  }
+
+  EventWithRow _place(
+    _EventRange range,
+    int rowIndex,
+    DateTime weekStart,
+    DateTime weekEnd,
+  ) {
+    final visibleStart = range.start.isBefore(weekStart)
+        ? weekStart
+        : range.start;
+    final visibleEnd = range.end.isAfter(weekEnd) ? weekEnd : range.end;
+    return EventWithRow(
+      event: range.event,
+      rowIndex: rowIndex,
+      visibleStart: visibleStart,
+      startIndex: visibleStart.difference(weekStart).inDays,
+      spanDays: visibleEnd.difference(visibleStart).inDays + 1,
+      startsHere: range.start.isAtSameMomentAs(visibleStart),
+      endsHere: range.end.isAtSameMomentAs(visibleEnd),
+    );
   }
 }

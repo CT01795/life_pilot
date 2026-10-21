@@ -3,6 +3,8 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart'
+    show DataStorageLocation;
 
 class ModelAuthView extends SafeChangeNotifier {
   final ControllerAuth _auth;
@@ -21,6 +23,14 @@ class ModelAuthView extends SafeChangeNotifier {
   bool get isLoading => _auth.isLoading;
   bool get isLoggedIn => _auth.isLoggedIn;
   String? get account => _auth.currentAccount;
+
+  /// Snapshot for view-owned asynchronous navigation, not a storage query.
+  ({String? account, DataStorageLocation storage, int revision})
+  get dataScope => (
+    account: _auth.currentAccount,
+    storage: _auth.preferredStorage,
+    revision: _auth.personalDataRevision,
+  );
   String get registrationAccountType => _auth.registrationAccountType;
   bool get quotaFreePeriodActive => _auth.quotaFreePeriodActive;
   int? get quotaFreePeriodEndingInDays => _auth.quotaFreePeriodEndingInDays;

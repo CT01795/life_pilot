@@ -415,8 +415,26 @@ class EventItem implements EventBase {
 class EventWithRow {
   final EventItem event;
   final int rowIndex;
+  final DateTime visibleStart;
+  final int startIndex;
+  final int spanDays;
+  final bool startsHere;
+  final bool endsHere;
 
-  EventWithRow({required this.event, required this.rowIndex});
+  /// Calendar-week snapshot. Logical placement belongs in Model; physical
+  /// dimensions and pointer-to-column conversion stay in View.
+  EventWithRow({
+    required this.event,
+    required this.rowIndex,
+    required this.visibleStart,
+    required this.startIndex,
+    required this.spanDays,
+    required this.startsHere,
+    required this.endsHere,
+  });
+
+  DateTime dateAtOffset(int offset) =>
+      visibleStart.add(Duration(days: offset.clamp(0, spanDays - 1)));
 }
 
 class EventViewModel {
@@ -492,7 +510,16 @@ class EventViewModel {
     this.lng,
   });
 
+  // These fields are immutable snapshots. Normalize the real date once rather
+  // than parsing presentation text on every card/weather rebuild.
+  late final DateTime? _startDay = startDate == null
+      ? null
+      : DateTimeFormatter.dateOnly(startDate!);
+
   DateTime get firstEventDate {
+    final start = _startDay;
+    if (start != null) return start;
+    // Preserve legacy undated-view fallbacks, including their current-year rule.
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final tmpDate = DateTimeFormatter.formatDateRange(now, dateRange);
     return tryParseDateTimeValue(tmpDate) ?? now.add(const Duration(days: 1));

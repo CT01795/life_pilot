@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:life_pilot/event/content_performance_formats.dart';
 import 'package:life_pilot/event/model_content_performance.dart';
 import 'package:life_pilot/event/content_performance_metric_presentation.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -11,7 +11,7 @@ class WidgetsContentPerformanceOverview extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final format = NumberFormat.decimalPattern(loc.localeName);
+    final formats = ContentPerformanceFormats.forLocale(loc.localeName);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -58,7 +58,7 @@ class WidgetsContentPerformanceOverview extends StatelessWidget {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              format.format(value.count),
+                              formats.count(value.count),
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),

@@ -8,10 +8,48 @@ import 'package:life_pilot/point_record/page_point_record_detail.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:provider/provider.dart';
 
+/// Navigation stays in View; discard results from an obsolete user, storage
+/// snapshot or account selection before opening a route or refreshing home.
+class _HomeRecordScope {
+  _HomeRecordScope(this.auth, this.dashboard, {required this.points})
+    : dataScope = auth.dataScope,
+      selection = points
+          ? (
+              dashboard.setting.pointAccountId,
+              dashboard.setting.pointAccountName,
+            )
+          : (
+              dashboard.setting.accountingAccountId,
+              dashboard.setting.accountingAccountName,
+            );
+
+  final ModelAuthView auth;
+  final ControllerDashboard dashboard;
+  final bool points;
+  final Object dataScope;
+  final (String?, String?) selection;
+
+  bool get isCurrent =>
+      !auth.notifierDisposed &&
+      !dashboard.notifierDisposed &&
+      auth.dataScope == dataScope &&
+      selection ==
+          (points
+              ? (
+                  dashboard.setting.pointAccountId,
+                  dashboard.setting.pointAccountName,
+                )
+              : (
+                  dashboard.setting.accountingAccountId,
+                  dashboard.setting.accountingAccountName,
+                ));
+}
+
 Future<void> openHomeAccountingQuickAdd(BuildContext context) async {
   final loc = AppLocalizations.of(context)!;
   final dashboard = context.read<ControllerDashboard>();
   final auth = context.read<ModelAuthView>();
+  final scope = _HomeRecordScope(auth, dashboard, points: false);
   final accountId = dashboard.setting.accountingAccountId;
   final user = auth.account;
   if (accountId == null || user == null) {
@@ -23,9 +61,11 @@ Future<void> openHomeAccountingQuickAdd(BuildContext context) async {
 
   final service = context.read<ServiceAccounting>();
   final accounts = await service.fetchAccounts(user: user, includeGraph: false);
-  if (!context.mounted) return;
-  final matches = accounts.where((account) => account.id == accountId);
-  if (matches.isEmpty) {
+  if (!context.mounted || !scope.isCurrent) return;
+  final account = accounts
+      .where((account) => account.id == accountId)
+      .firstOrNull;
+  if (account == null) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(loc.accountListLoadFailed)));
@@ -36,12 +76,12 @@ Future<void> openHomeAccountingQuickAdd(BuildContext context) async {
     MaterialPageRoute(
       builder: (_) => PageAccountingDetail(
         service: service,
-        account: matches.first,
+        account: account,
         returnAfterSubmit: true,
       ),
     ),
   );
-  if (saved == true && context.mounted) {
+  if (saved == true && context.mounted && scope.isCurrent) {
     await dashboard.refreshAccounting(accountId: accountId);
   }
 }
@@ -49,13 +89,14 @@ Future<void> openHomeAccountingQuickAdd(BuildContext context) async {
 Future<void> openHomeAccountingDetails(BuildContext context) async {
   final dashboard = context.read<ControllerDashboard>();
   final auth = context.read<ModelAuthView>();
+  final scope = _HomeRecordScope(auth, dashboard, points: false);
   final accountId = dashboard.setting.accountingAccountId;
   final accountName = dashboard.setting.accountingAccountName;
   final user = auth.account;
   if ((accountId == null && accountName == null) || user == null) return;
   final service = context.read<ServiceAccounting>();
   final accounts = await service.fetchAccounts(user: user, includeGraph: false);
-  if (!context.mounted) return;
+  if (!context.mounted || !scope.isCurrent) return;
   final account = accounts
       .where((item) => item.id == accountId || item.accountName == accountName)
       .firstOrNull;
@@ -71,6 +112,7 @@ Future<void> openHomePointQuickAdd(BuildContext context) async {
   final loc = AppLocalizations.of(context)!;
   final dashboard = context.read<ControllerDashboard>();
   final auth = context.read<ModelAuthView>();
+  final scope = _HomeRecordScope(auth, dashboard, points: true);
   final accountId = dashboard.setting.pointAccountId;
   final user = auth.account;
   if (accountId == null || user == null) {
@@ -82,9 +124,11 @@ Future<void> openHomePointQuickAdd(BuildContext context) async {
 
   final service = context.read<ServicePointRecord>();
   final accounts = await service.fetchAccounts(user: user, includeGraph: false);
-  if (!context.mounted) return;
-  final matches = accounts.where((account) => account.id == accountId);
-  if (matches.isEmpty) {
+  if (!context.mounted || !scope.isCurrent) return;
+  final account = accounts
+      .where((account) => account.id == accountId)
+      .firstOrNull;
+  if (account == null) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(loc.accountListLoadFailed)));
@@ -95,12 +139,12 @@ Future<void> openHomePointQuickAdd(BuildContext context) async {
     MaterialPageRoute(
       builder: (_) => PagePointRecordDetail(
         service: service,
-        account: matches.first,
+        account: account,
         returnAfterSubmit: true,
       ),
     ),
   );
-  if (saved == true && context.mounted) {
+  if (saved == true && context.mounted && scope.isCurrent) {
     await dashboard.refreshPoints(accountId: accountId);
   }
 }
@@ -108,13 +152,14 @@ Future<void> openHomePointQuickAdd(BuildContext context) async {
 Future<void> openHomePointDetails(BuildContext context) async {
   final dashboard = context.read<ControllerDashboard>();
   final auth = context.read<ModelAuthView>();
+  final scope = _HomeRecordScope(auth, dashboard, points: true);
   final accountId = dashboard.setting.pointAccountId;
   final accountName = dashboard.setting.pointAccountName;
   final user = auth.account;
   if ((accountId == null && accountName == null) || user == null) return;
   final service = context.read<ServicePointRecord>();
   final accounts = await service.fetchAccounts(user: user, includeGraph: false);
-  if (!context.mounted) return;
+  if (!context.mounted || !scope.isCurrent) return;
   final account = accounts
       .where((item) => item.id == accountId || item.accountName == accountName)
       .firstOrNull;

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:life_pilot/event/content_performance_formats.dart';
 import 'package:life_pilot/event/model_content_performance.dart';
 import 'package:life_pilot/event/content_performance_metric_presentation.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -20,7 +20,7 @@ class WidgetsContentPerformanceCard extends StatelessWidget {
     final theme = Theme.of(context);
     final starts = item.starts;
     final ends = item.visibleEndDate;
-    final dateFormat = DateFormat.yMd(loc.localeName);
+    final formats = ContentPerformanceFormats.forLocale(loc.localeName);
     final city = item.city;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -49,12 +49,12 @@ class WidgetsContentPerformanceCard extends StatelessWidget {
               if (city.isNotEmpty) Text(city, style: theme.textTheme.bodySmall),
               if (starts != null)
                 Text(
-                  '${loc.startDate} · ${dateFormat.format(starts)}',
+                  '${loc.startDate} · ${formats.date(starts)}',
                   style: theme.textTheme.bodySmall,
                 ),
               if (ends != null)
                 Text(
-                  '${loc.endDate} · ${dateFormat.format(ends)}',
+                  '${loc.endDate} · ${formats.date(ends)}',
                   style: theme.textTheme.bodySmall,
                 ),
               if (starts == null && item.ends == null)
@@ -92,7 +92,7 @@ class _ContentPerformanceMetrics extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final format = NumberFormat.decimalPattern(loc.localeName);
+    final formats = ContentPerformanceFormats.forLocale(loc.localeName);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -145,7 +145,7 @@ class _ContentPerformanceMetrics extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '${format.format(value.count)}/${format.format(performance.totalFor(value.metric))}',
+                          '${formats.count(value.count)}/${formats.count(performance.totalFor(value.metric))}',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w700,

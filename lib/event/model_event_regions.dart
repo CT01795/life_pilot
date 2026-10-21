@@ -56,7 +56,7 @@ class EventRegionData {
       });
     return EventRegionData._(
       source: events,
-      counts: counts,
+      counts: Map.unmodifiable(counts),
       eventsByRegion: eventsByRegion,
       sortedRegions: sortedRegions,
     );
@@ -66,6 +66,29 @@ class EventRegionData {
   final Map<String, int> counts;
   final Map<String, List<EventItem>> eventsByRegion;
   final List<String> sortedRegions;
+
+  /// Computed only when a map is shown, then reused for this snapshot.
+  /// Island/unknown regions stay in the separate chip area, in source order.
+  late final ({Map<String, int> mainland, Map<String, int> other}) mapCounts =
+      _partitionMapCounts();
+
+  ({Map<String, int> mainland, Map<String, int> other}) _partitionMapCounts() {
+    const islands = {'連江', '澎湖', '金門'};
+    final mainland = <String, int>{};
+    final other = <String, int>{};
+    for (final entry in counts.entries) {
+      final target =
+          eventRegionPositions.containsKey(entry.key) &&
+              !islands.contains(entry.key)
+          ? mainland
+          : other;
+      target[entry.key] = entry.value;
+    }
+    return (
+      mainland: Map.unmodifiable(mainland),
+      other: Map.unmodifiable(other),
+    );
+  }
 
   List<EventItem> eventsFor(String? region) =>
       region == null ? source : eventsByRegion[region] ?? const [];

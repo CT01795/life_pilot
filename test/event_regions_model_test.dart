@@ -18,6 +18,68 @@ EventItem item(String id, String city) =>
     EventItem(id: id, name: id, city: city);
 
 void main() {
+  test('map partitions merge aliases and preserve each group source order', () {
+    final data = EventRegionData.fromEvents([
+      item('a', 'Singapore'),
+      item('b', '澎湖縣'),
+      item('c', '高雄'),
+      item('d', '臺北市'),
+      item('e', '台北'),
+      item('f', '連江縣'),
+      item('g', '金門縣'),
+      item('h', 'Tokyo'),
+      item('i', ' '),
+    ]);
+    expect(data.mapCounts.mainland, {'高雄': 1, '台北': 2});
+    expect(data.mapCounts.mainland.keys, ['高雄', '台北']);
+    expect(data.mapCounts.other, {
+      'Singapore': 1,
+      '澎湖': 1,
+      '連江': 1,
+      '金門': 1,
+      'Tokyo': 1,
+    });
+    expect(data.mapCounts.other.keys, ['Singapore', '澎湖', '連江', '金門', 'Tokyo']);
+    expect({...data.mapCounts.mainland, ...data.mapCounts.other}, data.counts);
+  });
+
+  test('repeated map projections reuse immutable count maps', () {
+    final event = _CountedEvent('a', '台北');
+    final data = EventRegionData.fromEvents([event]);
+    final first = data.mapCounts;
+    for (var i = 0; i < 20; i++) {
+      expect(data.mapCounts.mainland, same(first.mainland));
+      expect(data.mapCounts.other, same(first.other));
+    }
+    expect(event.cityReads, 1);
+    expect(() => data.counts.clear(), throwsUnsupportedError);
+    expect(() => first.mainland.clear(), throwsUnsupportedError);
+    expect(() => first.other['Tokyo'] = 1, throwsUnsupportedError);
+  });
+
+  test('replacement and explicit clear rebuild map groups after edits', () {
+    final event = item('a', '台北');
+    final source = [event];
+    final model = ModelEventRegions();
+    final old = model.select(source).mapCounts;
+    event.city = 'Singapore';
+    final replacement = model.select([...source]).mapCounts;
+    expect(replacement.mainland, isEmpty);
+    expect(replacement.other, {'Singapore': 1});
+    expect(old.mainland, {'台北': 1});
+    event.city = '高雄';
+    model.clear();
+    final refreshed = model.select(source).mapCounts;
+    expect(refreshed.mainland, {'高雄': 1});
+    expect(refreshed.other, isEmpty);
+  });
+
+  test('empty map projections have no mainland or other counts', () {
+    final data = EventRegionData.fromEvents([]);
+    expect(data.mapCounts.mainland, isEmpty);
+    expect(data.mapCounts.other, isEmpty);
+  });
+
   test('known aliases and invisible whitespace preserve region keys', () {
     const aliases = {
       '臺北市': '台北',

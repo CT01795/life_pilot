@@ -9,6 +9,7 @@ import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
+import 'package:life_pilot/utils/model_keyword_projection.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
@@ -35,6 +36,9 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
   final _receivedSearchController = TextEditingController();
   final _eventSearchController = TextEditingController();
   final _dialogScrollController = ScrollController();
+  final _sentSearch = ModelKeywordProjection<CalendarShareInvitation>();
+  final _receivedSearch = ModelKeywordProjection<CalendarShareInvitation>();
+  final _eventSearch = ModelKeywordProjection<CalendarShareableEvent>();
   late Future<CalendarSharingState> _state;
   bool _submitting = false;
   bool _silentlyRefreshing = false;
@@ -246,31 +250,23 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
             }
             final state = snapshot.data!;
             final auth = context.watch<ControllerAuth>();
-            final sent = state.sent
-                .where(
-                  (item) => _matchesKeyword(
-                    item.invitedEmail,
-                    _sentSearchController.text,
-                  ),
-                )
-                .toList(growable: false);
-            final received = state.received
-                .where(
-                  (item) => _matchesKeyword(
-                    item.sharedBy,
-                    _receivedSearchController.text,
-                  ),
-                )
-                .toList(growable: false);
-            final shareableEvents = state.shareableEvents
-                .where(
-                  (event) => _matchesEventKeyword(
-                    context,
-                    event,
-                    _eventSearchController.text,
-                  ),
-                )
-                .toList(growable: false);
+            final sent = _sentSearch.select(
+              source: state.sent,
+              keyword: _sentSearchController.text,
+              valuesOf: (item) => [item.invitedEmail],
+            );
+            final received = _receivedSearch.select(
+              source: state.received,
+              keyword: _receivedSearchController.text,
+              valuesOf: (item) => [item.sharedBy],
+            );
+            final material = MaterialLocalizations.of(context);
+            final shareableEvents = _eventSearch.select(
+              source: state.shareableEvents,
+              keyword: _eventSearchController.text,
+              presentationKey: material,
+              valuesOf: (event) => _eventSearchValues(event, material),
+            );
             return ConstrainedBox(
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.sizeOf(context).height * 0.7,
@@ -457,28 +453,19 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     );
   }
 
-  bool _matchesKeyword(String value, String keyword) {
-    final normalized = normalizeText(keyword);
-    return normalized.isEmpty || normalizeText(value).contains(normalized);
-  }
-
-  bool _matchesEventKeyword(
-    BuildContext context,
+  Iterable<String> _eventSearchValues(
     CalendarShareableEvent event,
-    String keyword,
+    MaterialLocalizations material,
   ) {
-    final normalized = normalizeText(keyword);
-    if (normalized.isEmpty) return true;
     final date = event.startDate?.toLocal();
-    final values = <String>[
+    return <String>[
       event.name,
       if (date != null) ...[
-        MaterialLocalizations.of(context).formatShortDate(date),
+        material.formatShortDate(date),
         '${date.year}-${padIntValue(date.month)}-${padIntValue(date.day)}',
         '${date.year}/${date.month}/${date.day}',
       ],
     ];
-    return values.any((value) => normalizeText(value).contains(normalized));
   }
 
   Widget _keywordField({
