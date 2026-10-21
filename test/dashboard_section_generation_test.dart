@@ -10,6 +10,7 @@ import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
 import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
+import 'package:life_pilot/utils/load_timing.dart';
 
 DashboardSetting _setting() => DashboardSetting(
   recommendEventCity: '',
@@ -82,6 +83,40 @@ void main() {
     controller.dispose();
     locale.dispose();
   });
+
+  test(
+    'timing distinguishes settings and sections without logging account data',
+    () async {
+      controller.dispose();
+      final messages = <String>[];
+      controller = ControllerDashboard(
+        repository: repository,
+        localeProvider: locale,
+        timingFactory: (label) =>
+            LoadTiming(label, group: 'DashboardLoad', log: messages.add),
+      )..switchAccount('private@example.com');
+      await controller.refreshCore(account: 'private@example.com');
+      for (final label in [
+        'settings',
+        'todaySchedule',
+        'accounting',
+        'points',
+      ]) {
+        expect(
+          messages.any(
+            (message) =>
+                message.contains('[DashboardLoad $label#') &&
+                message.contains('read_complete'),
+          ),
+          true,
+        );
+      }
+      expect(
+        messages.any((message) => message.contains('private@example.com')),
+        false,
+      );
+    },
+  );
 
   for (final section in DashboardSection.values) {
     test(

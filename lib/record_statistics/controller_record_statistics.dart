@@ -54,7 +54,7 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
     }
   }
 
-  Future<void> load({bool force = false}) {
+  Future<void> load({bool force = false, num? knownTotal}) {
     if (notifierDisposed ||
         accountId.isEmpty ||
         _owner == null ||
@@ -79,11 +79,11 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
       if (notifierDisposed || !identical(loads, _loads)) {
         return Future<void>.value();
       }
-      return _load(now);
+      return _load(now, knownTotal: knownTotal);
     }, force: force);
   }
 
-  Future<void> _load(DateTime now) async {
+  Future<void> _load(DateTime now, {num? knownTotal}) async {
     if (notifierDisposed ||
         accountId.isEmpty ||
         _owner == null ||
@@ -102,6 +102,8 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
     try {
       final totalFuture = history
           ? Future<num?>.value(null)
+          : knownTotal != null && storage == DataStorageLocation.cloud
+          ? Future<num?>.value(knownTotal)
           : service.readTotal(
               owner: _owner,
               storage: storage,

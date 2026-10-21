@@ -9,6 +9,7 @@ import 'package:life_pilot/pages/home/model/dashboard/dashboard_state.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/load_timing.dart';
 
 enum DashboardSection {
   todaySchedule,
@@ -23,12 +24,20 @@ enum DashboardSection {
 class ControllerDashboard extends SafeChangeNotifier {
   final DashboardRepository repository;
   final ProviderLocale localeProvider;
+  final LoadTiming Function(String) _timingFactory;
   int _accountGeneration = 0;
   String? _activeAccount;
   Future<DashboardSetting>? _settingsLoad;
   int _settingsRequest = 0;
 
-  ControllerDashboard({required this.repository, required this.localeProvider});
+  ControllerDashboard({
+    required this.repository,
+    required this.localeProvider,
+    LoadTiming Function(String)? timingFactory,
+  }) : _timingFactory = timingFactory ?? _defaultTiming;
+
+  static LoadTiming _defaultTiming(String label) =>
+      LoadTiming(label, group: 'DashboardLoad');
 
   final Map<DashboardSection, int> _sectionLoadingCounts = {};
   final Map<DashboardSection, int> _retryRequests = {};
@@ -137,7 +146,10 @@ class ControllerDashboard extends SafeChangeNotifier {
   ) async {
     var setting = _setting;
     try {
-      final loaded = await repository.loadDashboardSetting(account: account);
+      final loaded = await _timingFactory('settings').measure(
+        'read',
+        () => repository.loadDashboardSetting(account: account),
+      );
       setting = loaded.copyWith(language: localeProvider.locale.languageCode);
     } catch (error, stackTrace) {
       logger.e(
@@ -450,7 +462,7 @@ class ControllerDashboard extends SafeChangeNotifier {
     // Do not start superseded section reads or publish their late failures.
     if (!isCurrent()) return null;
     try {
-      return await loader();
+      return await _timingFactory(section.name).measure('read', loader);
     } catch (error, stackTrace) {
       if (!isCurrent()) return null;
       logger.e(

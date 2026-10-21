@@ -17,6 +17,7 @@ import 'content_performance_and_event_dates_test.dart'
 
 class _Records extends ServiceRecordStatistics {
   int calls = 0;
+  int totalCalls = 0;
   @override
   Future<num> readTotal({
     required String owner,
@@ -24,7 +25,11 @@ class _Records extends ServiceRecordStatistics {
     required String accountId,
     required RecordStatisticsKind kind,
     String? currency,
-  }) async => 1234.5678;
+  }) async {
+    totalCalls++;
+    return 1234.5678;
+  }
+
   @override
   Future<List<Map<String, dynamic>>> read({
     required String owner,
@@ -48,6 +53,44 @@ class _Records extends ServiceRecordStatistics {
 }
 
 void main() {
+  for (final kind in RecordStatisticsKind.values) {
+    testWidgets(
+      '$kind account card uses supplied total and refreshes after changes',
+      (tester) async {
+        final auth = StatisticsTestAuth();
+        addTearDown(auth.dispose);
+        final records = _Records();
+        Widget page(num total) => ChangeNotifierProvider<ControllerAuth>.value(
+          value: auth,
+          child: MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: WidgetsRecordTotals(
+                accountId: 'a',
+                kind: kind,
+                total: total,
+                currency: 'TWD',
+                service: records,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpWidget(page(4321));
+        await tester.pumpAndSettle();
+        expect(records.calls, 1);
+        expect(records.totalCalls, 0);
+        expect(find.textContaining('4,321'), findsOneWidget);
+        await tester.pumpWidget(page(5432));
+        await tester.pumpAndSettle();
+        expect(records.calls, 2);
+        expect(records.totalCalls, 0);
+        expect(find.textContaining('5,432'), findsOneWidget);
+        expect(tester.takeException(), null);
+      },
+    );
+  }
   for (final language in ['zh', 'en', 'ja', 'ko']) {
     testWidgets('$language: narrow summary and chart switch have no overflow', (
       tester,

@@ -42,4 +42,65 @@ void main() {
     timing.mark('complete', rows: 100);
     expect(messages, isEmpty);
   });
+
+  test('custom group retains stage timing without changing the default', () {
+    final messages = <String>[];
+    LoadTiming(
+      'settings',
+      group: 'DashboardLoad',
+      log: messages.add,
+    ).mark('read');
+    expect(messages.single, contains('[DashboardLoad settings#'));
+  });
+
+  test(
+    'measure preserves returned identity and invokes operation once',
+    () async {
+      final messages = <String>[];
+      final timing = LoadTiming(
+        'settings',
+        group: 'DashboardLoad',
+        log: messages.add,
+      );
+      final result = <String>[];
+      var calls = 0;
+      expect(
+        await timing.measure('read', () async {
+          calls++;
+          return result;
+        }),
+        same(result),
+      );
+      expect(calls, 1);
+      expect(messages.first, contains('read_start'));
+      expect(messages.last, contains('read_complete'));
+    },
+  );
+
+  for (final synchronous in [false, true]) {
+    test('measure rethrows original error, synchronous=$synchronous', () async {
+      final messages = <String>[];
+      final timing = LoadTiming('settings', log: messages.add);
+      final error = StateError('test failure');
+      await expectLater(
+        timing.measure<void>('read', () {
+          if (synchronous) throw error;
+          return Future.error(error);
+        }),
+        throwsA(same(error)),
+      );
+      expect(messages.last, contains('read_failed'));
+      expect(messages.any((line) => line.contains('test failure')), false);
+    });
+  }
+
+  test(
+    'disabled measure still runs the original operation without logs',
+    () async {
+      final messages = <String>[];
+      final timing = LoadTiming('settings', enabled: false, log: messages.add);
+      expect(await timing.measure('read', () async => 42), 42);
+      expect(messages, isEmpty);
+    },
+  );
 }

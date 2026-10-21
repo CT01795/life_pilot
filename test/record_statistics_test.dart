@@ -214,6 +214,69 @@ void main() {
       await second;
       expect(controller.data!.total, 200);
     });
+
+    for (final total in <num>[0, -1234.5678, 9876]) {
+      test(
+        'cloud summary reuses supplied account total $total without rereading it',
+        () async {
+          final pending = controller.load(knownTotal: total);
+          expect(service.reads.length, 1);
+          expect(service.totals, isEmpty);
+          service.reads.single.complete([row(DateTime.now(), 5)]);
+          await pending;
+          expect(controller.data!.total, total);
+          expect(controller.data!.month, 5);
+          expect(controller.loading, false);
+        },
+      );
+    }
+
+    test(
+      'retry without supplied total still obtains a fresh authoritative total',
+      () async {
+        final pending = controller.load(knownTotal: 123);
+        service.reads.single.completeError(StateError('month failed'));
+        await pending;
+        expect(controller.error, isNotNull);
+        final retry = controller.load();
+        expect(service.totals.length, 1);
+        service.reads.last.complete([]);
+        service.totals.single.complete(456);
+        await retry;
+        expect(controller.data!.total, 456);
+        expect(controller.error, null);
+      },
+    );
+
+    test(
+      'mode switch does not reuse cloud total for local statistics',
+      () async {
+        final old = controller.load(knownTotal: 999);
+        auth.change(location: DataStorageLocation.local);
+        expect(service.scopes.last.$2, DataStorageLocation.local);
+        expect(service.totals.length, 1);
+        service.reads.last.complete([]);
+        service.totals.single.complete(20);
+        await Future<void>.delayed(Duration.zero);
+        service.reads.first.complete([]);
+        await old;
+        expect(controller.data!.total, 20);
+      },
+    );
+
+    test(
+      'local load retains its own total calculation even if total is supplied',
+      () async {
+        auth.change(location: DataStorageLocation.local);
+        service.finish(0, total: 7);
+        await Future<void>.delayed(Duration.zero);
+        final pending = controller.load(knownTotal: 999);
+        expect(service.totals.length, 2);
+        service.finish(1, total: 8);
+        await pending;
+        expect(controller.data!.total, 8);
+      },
+    );
     test(
       'ordinary concurrent loads share one month query and one total query',
       () async {

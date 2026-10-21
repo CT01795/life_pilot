@@ -14,7 +14,7 @@ class WidgetsRecordTotals extends StatefulWidget {
   final String accountName;
   final RecordStatisticsKind kind;
   final String? currency;
-  final num total;
+  final num? total;
   final Object? revision;
   final bool showStatistics;
   final bool monthOnly;
@@ -25,7 +25,7 @@ class WidgetsRecordTotals extends StatefulWidget {
     this.accountName = '',
     required this.kind,
     this.currency,
-    this.total = 0,
+    this.total,
     this.revision,
     this.showStatistics = true,
     this.monthOnly = false,
@@ -47,7 +47,7 @@ class _WidgetsRecordTotalsState extends State<WidgetsRecordTotals> {
       currency: widget.currency,
       service: widget.service,
     );
-    unawaited(controller.load());
+    unawaited(controller.load(knownTotal: widget.total));
   }
 
   @override
@@ -73,7 +73,7 @@ class _WidgetsRecordTotalsState extends State<WidgetsRecordTotals> {
         scheduleMicrotask(() {
           if (!mounted || !identical(target, controller)) return;
           _reloadScheduled = false;
-          unawaited(controller.load(force: true));
+          unawaited(controller.load(force: true, knownTotal: widget.total));
         });
       }
     }
