@@ -187,9 +187,11 @@ class ServiceEvent {
         id: id,
         offset: offset,
         limit: limit,
+        shouldContinue: shouldContinue,
       );
       if (onPartialEvents == null) {
         final events = selected.toList();
+        if (shouldContinue?.call() == false) return [];
         return events;
       }
       final events = <EventItem>[];
@@ -204,6 +206,7 @@ class ServiceEvent {
           await Future<void>.delayed(Duration.zero);
         }
       }
+      if (shouldContinue?.call() == false) return [];
       return events;
     }
 
@@ -288,18 +291,22 @@ class ServiceEvent {
     required DateTime before,
     String? inputUser,
     DataStorageLocation? storageLocation,
+    bool Function()? shouldContinue,
   }) async {
-    if (await _usesLocalStorage(tableName, inputUser, storageLocation)) {
+    if (shouldContinue?.call() == false) return false;
+    final local = await _usesLocalStorage(
+      tableName,
+      inputUser,
+      storageLocation,
+    );
+    if (shouldContinue?.call() == false) return false;
+    if (local) {
       final rows = await LocalDataStore.instance.readOnlyRows(
         owner: inputUser!,
         resource: tableName,
       );
-      return rows.any((row) {
-        final date = tryParseDateTimeValue(
-          parseStringValue(row[EventFields.startDate]),
-        );
-        return date != null && date.isBefore(before);
-      });
+      if (shouldContinue?.call() == false) return false;
+      return ModelLocalEventQuery.hasRowsBefore(rows, before);
     }
     var query = supabase
         .from(tableName)
@@ -309,6 +316,7 @@ class ServiceEvent {
       query = query.eq(Fields.account, inputUser);
     }
     final rows = await query.limit(1);
+    if (shouldContinue?.call() == false) return false;
     return rows.isNotEmpty;
   }
 
@@ -318,12 +326,21 @@ class ServiceEvent {
     String? inputUser,
     DataStorageLocation? storageLocation,
     void Function(EventItem event)? onLatestEvent,
+    bool Function()? shouldContinue,
   }) async {
-    if (await _usesLocalStorage(tableName, inputUser, storageLocation)) {
+    if (shouldContinue?.call() == false) return null;
+    final local = await _usesLocalStorage(
+      tableName,
+      inputUser,
+      storageLocation,
+    );
+    if (shouldContinue?.call() == false) return null;
+    if (local) {
       final rows = await LocalDataStore.instance.readOnlyRows(
         owner: inputUser!,
         resource: tableName,
       );
+      if (shouldContinue?.call() == false) return null;
       final latest = ModelLocalEventQuery.latestRowBefore(rows, before);
       if (latest == null) return null;
       onLatestEvent?.call(_decodeEventRow(latest));
@@ -343,6 +360,7 @@ class ServiceEvent {
     final rows = await query
         .order(EventFields.startDate, ascending: false)
         .limit(1);
+    if (shouldContinue?.call() == false) return null;
     if (rows.isEmpty) return null;
     onLatestEvent?.call(_decodeEventRow(rows.first));
     return tryParseDateTimeValue(

@@ -17,7 +17,11 @@ void main() {
   late List<Map<String, dynamic>> response;
   late List<Uri> requests;
   late List<({int offset, int limit})> pages;
+  var active = true;
+  var cancelOnResponse = false;
   setUp(() {
+    active = true;
+    cancelOnResponse = false;
     requests = [];
     pages = [];
     response = [
@@ -33,6 +37,7 @@ void main() {
       'test-key',
       httpClient: MockClient((request) async {
         requests.add(request.url);
+        if (cancelOnResponse) active = false;
         var returnedRows = response;
         if (request.method == 'POST' && request.url.path.contains('/rpc/')) {
           final payload = (jsonDecode(request.body) as Map)['payload'] as Map;
@@ -54,6 +59,86 @@ void main() {
     api.supabase = client;
   });
   tearDown(() => client.dispose());
+
+  test('cancelled history checks skip all network requests', () async {
+    active = false;
+    final service = ServiceEvent();
+    expect(
+      await service.hasEventsBefore(
+        tableName: TableNames.memoryTrace,
+        before: DateTime(2026, 10),
+        storageLocation: DataStorageLocation.cloud,
+        shouldContinue: () => active,
+      ),
+      isFalse,
+    );
+    expect(
+      await service.latestEventDateBefore(
+        tableName: TableNames.memoryTrace,
+        before: DateTime(2026, 10),
+        storageLocation: DataStorageLocation.cloud,
+        shouldContinue: () => active,
+        onLatestEvent: (_) => fail('Cancelled preview'),
+      ),
+      isNull,
+    );
+    expect(requests, isEmpty);
+  });
+  test(
+    'cancellation while resolving storage skips the history request',
+    () async {
+      final pending = ServiceEvent().latestEventDateBefore(
+        tableName: TableNames.memoryTrace,
+        before: DateTime(2026, 10),
+        storageLocation: DataStorageLocation.cloud,
+        shouldContinue: () => active,
+        onLatestEvent: (_) => fail('Cancelled preview'),
+      );
+      active = false;
+      expect(await pending, isNull);
+      expect(requests, isEmpty);
+    },
+  );
+  test(
+    'late latest-history responses do not publish previews and can retry',
+    () async {
+      cancelOnResponse = true;
+      var previews = 0;
+      final service = ServiceEvent();
+      Future<DateTime?> read() => service.latestEventDateBefore(
+        tableName: TableNames.memoryTrace,
+        before: DateTime(2026, 10),
+        storageLocation: DataStorageLocation.cloud,
+        shouldContinue: () => active,
+        onLatestEvent: (_) => previews++,
+      );
+      expect(await read(), isNull);
+      expect(previews, 0);
+      expect(requests, hasLength(1));
+      active = true;
+      cancelOnResponse = false;
+      expect(await read(), isNotNull);
+      expect(previews, 1);
+    },
+  );
+  test(
+    'late history-availability responses are discarded and can retry',
+    () async {
+      cancelOnResponse = true;
+      final service = ServiceEvent();
+      Future<bool> read() => service.hasEventsBefore(
+        tableName: TableNames.memoryTrace,
+        before: DateTime(2026, 10),
+        storageLocation: DataStorageLocation.cloud,
+        shouldContinue: () => active,
+      );
+      expect(await read(), isFalse);
+      expect(requests, hasLength(1));
+      active = true;
+      cancelOnResponse = false;
+      expect(await read(), isTrue);
+    },
+  );
 
   test(
     'memory publishes the configured photo preview before the rest',

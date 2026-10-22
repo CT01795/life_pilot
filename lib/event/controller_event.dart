@@ -608,6 +608,7 @@ class ControllerEvent extends SafeChangeNotifier {
           inputUser: auth.currentAccount,
           storageLocation: auth.preferredStorage,
           onLatestEvent: (event) => publishMemoryPreview([event]),
+          shouldContinue: () => _isCurrentDataScope(generation),
         );
         if (!_isCurrentDataScope(generation)) return;
         if (latestOlder != null) {
@@ -741,6 +742,7 @@ class ControllerEvent extends SafeChangeNotifier {
     required DateTime before,
   }) async {
     if (!_isCurrentDataScope(generation)) return;
+    var reading = true;
     try {
       final hasOlder = await _serviceEvent
           .hasEventsBefore(
@@ -748,6 +750,7 @@ class ControllerEvent extends SafeChangeNotifier {
             before: before,
             inputUser: auth.currentAccount,
             storageLocation: auth.preferredStorage,
+            shouldContinue: () => reading && _isCurrentDataScope(generation),
           )
           .timeout(const Duration(seconds: 10));
       if (!_isCurrentDataScope(generation)) return;
@@ -760,6 +763,8 @@ class ControllerEvent extends SafeChangeNotifier {
         error: error,
         stackTrace: stackTrace,
       );
+    } finally {
+      reading = false;
     }
   }
 
@@ -808,6 +813,7 @@ class ControllerEvent extends SafeChangeNotifier {
         before: loadedStart,
         inputUser: auth.currentAccount,
         storageLocation: auth.preferredStorage,
+        shouldContinue: () => _isCurrentDataScope(generation),
       );
       if (!_isCurrentDataScope(generation)) return;
       if (latestOlder == null) {

@@ -11,6 +11,7 @@ typedef EventSearchLabels = ({
 /// Event edits must invalidate this index because EventItem is mutable.
 class ModelEventSearchIndex {
   final _entries = Map<EventItem, _SearchTextEntry>.identity();
+  final _baseText = Map<EventItem, String>.identity();
   EventSearchLabels? _labels;
 
   /// [word] is a normalized query token with no whitespace.
@@ -25,7 +26,7 @@ class ModelEventSearchIndex {
     }
     final entry = _entries.putIfAbsent(
       event,
-      () => _SearchTextEntry(_text(event, labels)),
+      () => _SearchTextEntry(_textFor(event, labels)),
     );
     if (entry.parent.contains(word)) return true;
 
@@ -36,7 +37,9 @@ class ModelEventSearchIndex {
       // invalidate a cached parent, without decoding untouched parents.
       final children = event.subEvents.toList(growable: false);
       entry.childEvents = children;
-      entry.children = children.map((child) => _text(child, labels)).join('\n');
+      entry.children = children
+          .map((child) => _textFor(child, labels))
+          .join('\n');
     }
     return entry.children!.contains(word);
   }
@@ -46,6 +49,9 @@ class ModelEventSearchIndex {
   void invalidate(Iterable<EventItem> events) {
     final changed = Set<EventItem>.identity()..addAll(events);
     if (changed.isEmpty) return;
+    // A parent edit may include mutable child edits. Drop shared base text,
+    // while preserving unaffected complete entries and their deferred state.
+    _baseText.clear();
     _entries.removeWhere(
       (event, entry) =>
           changed.contains(event) ||
@@ -55,6 +61,7 @@ class ModelEventSearchIndex {
 
   void clear() {
     _entries.clear();
+    _baseText.clear();
     _labels = null;
   }
 
@@ -64,7 +71,11 @@ class ModelEventSearchIndex {
     if (_entries.isEmpty) return;
     final active = Set<EventItem>.identity()..addAll(events);
     _entries.removeWhere((event, _) => !active.contains(event));
+    _baseText.removeWhere((event, _) => !active.contains(event));
   }
+
+  String _textFor(EventItem event, EventSearchLabels labels) =>
+      _baseText.putIfAbsent(event, () => _text(event, labels));
 
   static String _text(EventItem event, EventSearchLabels labels) => <String>[
     event.city,

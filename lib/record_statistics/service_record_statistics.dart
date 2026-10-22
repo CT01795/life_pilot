@@ -14,16 +14,20 @@ class ServiceRecordStatistics {
   ServiceRecordStatistics({LocalDataStore? localStore})
     : localStore = localStore ?? LocalDataStore.instance;
 
-  Future<ModelLocalRecordStatistics> _readLocal({
+  Future<ModelLocalRecordStatistics?> _readLocal({
     required String owner,
     required String accountId,
     required RecordStatisticsKind kind,
     String? currency,
+    bool Function()? shouldContinue,
   }) async {
     final table = kind == RecordStatisticsKind.accounting
         ? TableNames.accountingDetail
         : TableNames.pointRecordDetail;
     final source = await localStore.readOnlyRows(owner: owner, resource: table);
+    // A scope change/timeout may occur while opening the local database.
+    // Check before scanning values/dates or replacing the cached projection.
+    if (shouldContinue?.call() == false) return null;
     final zone = DateTime.now();
     final scope = (
       owner.toLowerCase(),
@@ -63,7 +67,7 @@ class ServiceRecordStatistics {
         kind: kind,
         currency: currency,
       );
-      return projection.total;
+      return projection!.total;
     }
     if (supabase.auth.currentUser?.email?.toLowerCase() !=
         owner.toLowerCase()) {
@@ -105,8 +109,9 @@ class ServiceRecordStatistics {
         accountId: accountId,
         kind: kind,
         currency: currency,
+        shouldContinue: shouldContinue,
       );
-      if (shouldContinue?.call() == false) return [];
+      if (projection == null || shouldContinue?.call() == false) return [];
       return projection.rows(now: now, history: history);
     }
     return readAllPagedRows(

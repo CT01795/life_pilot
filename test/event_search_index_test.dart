@@ -45,6 +45,62 @@ String legacyText(EventItem event, EventSearchLabels labels) {
 }
 
 void main() {
+  test(
+    'shared child text is prepared once across multiple parent searches',
+    () {
+      final child = _CountedEvent('shared', 'needle');
+      final first = _CountedEvent('first', 'plain', children: [child]);
+      final second = _CountedEvent('second', 'plain', children: [child]);
+      final index = ModelEventSearchIndex();
+      expect(index.contains(first, 'needle', labels: labels), isTrue);
+      expect(index.contains(second, 'needle', labels: labels), isTrue);
+      expect(child.reads, 1);
+    },
+  );
+  test('an event used both as a parent row and a child reuses base text', () {
+    final child = _CountedEvent('shared', 'needle');
+    final parent = _CountedEvent('parent', 'plain', children: [child]);
+    final index = ModelEventSearchIndex();
+    expect(index.contains(child, 'needle', labels: labels), isTrue);
+    expect(index.contains(parent, 'needle', labels: labels), isTrue);
+    expect(child.reads, 1);
+  });
+  test('parent invalidation cannot reuse stale shared child text', () {
+    final child = _CountedEvent('shared', 'before');
+    final parent = _CountedEvent('parent', 'plain', children: [child]);
+    final index = ModelEventSearchIndex();
+    index.contains(child, 'before', labels: labels);
+    child.description = 'after';
+    index.invalidate([parent]);
+    expect(index.contains(parent, 'after', labels: labels), isTrue);
+    expect(child.reads, 2);
+  });
+  test('child edits invalidate both parents and rebuild shared text once', () {
+    final child = _CountedEvent('shared', 'before');
+    final first = _CountedEvent('first', 'plain', children: [child]);
+    final second = _CountedEvent('second', 'plain', children: [child]);
+    final index = ModelEventSearchIndex();
+    index.contains(first, 'before', labels: labels);
+    index.contains(second, 'before', labels: labels);
+    child.description = 'after';
+    index.invalidate([child]);
+    expect(index.contains(first, 'before', labels: labels), isFalse);
+    expect(index.contains(second, 'after', labels: labels), isTrue);
+    expect(child.reads, 2);
+  });
+  test('different objects with matching IDs never share child text', () {
+    final firstChild = _CountedEvent('same', 'first');
+    final secondChild = _CountedEvent('same', 'second');
+    final index = ModelEventSearchIndex();
+    final parent = _CountedEvent(
+      'parent',
+      'plain',
+      children: [firstChild, secondChild],
+    );
+    expect(index.contains(parent, 'first', labels: labels), isTrue);
+    expect(index.contains(parent, 'second', labels: labels), isTrue);
+    expect([firstChild.reads, secondChild.reads], [1, 1]);
+  });
   test('retaining unchanged rows preserves deferred child text', () {
     final child = _CountedEvent('child', 'needle');
     final parent = _CountedEvent('parent', 'other', children: [child]);

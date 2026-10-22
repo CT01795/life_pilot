@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
@@ -60,12 +61,18 @@ class _CountedRow extends MapBase<String, dynamic> {
 
 class _SnapshotStore extends LocalDataStore {
   List<Map<String, dynamic>> snapshot = const [];
+  Completer<void>? gate;
+  int reads = 0;
   _SnapshotStore(super.database) : super.withDatabase();
   @override
   Future<List<Map<String, dynamic>>> readOnlyRows({
     required String owner,
     required String resource,
-  }) async => snapshot;
+  }) async {
+    reads++;
+    await gate?.future;
+    return snapshot;
+  }
 }
 
 void main() {
@@ -335,6 +342,80 @@ void main() {
       currency: 'TWD',
       now: now,
     );
+    for (final kind in RecordStatisticsKind.values) {
+      test(
+        '$kind: cancellation during local IO skips projection work',
+        () async {
+          final source = _CountedRow(row('a', 12));
+          store.snapshot = List.unmodifiable([source]);
+          store.gate = Completer<void>();
+          var active = true;
+          final pending = service.read(
+            owner: 'one@example.com',
+            storage: DataStorageLocation.local,
+            accountId: 'a',
+            kind: kind,
+            currency: 'TWD',
+            now: now,
+            shouldContinue: () => active,
+          );
+          active = false;
+          store.gate!.complete();
+          expect(await pending, isEmpty);
+          expect(source.reads, 0);
+          store.gate = null;
+          expect(await total(kind: kind), 12);
+          expect(source.reads, greaterThan(0));
+        },
+      );
+      test(
+        '$kind: cancelled replacement cannot corrupt the previous cache',
+        () async {
+          final old = _CountedRow(row('a', 10));
+          final previous = List<Map<String, dynamic>>.unmodifiable([old]);
+          store.snapshot = previous;
+          expect(await total(kind: kind), 10);
+          final previousReads = old.reads;
+          final replacement = _CountedRow(row('a', 20));
+          store.snapshot = List.unmodifiable([replacement]);
+          store.gate = Completer<void>();
+          var active = true;
+          final pending = service.read(
+            owner: 'one@example.com',
+            storage: DataStorageLocation.local,
+            accountId: 'a',
+            kind: kind,
+            currency: 'TWD',
+            now: now,
+            shouldContinue: () => active,
+          );
+          active = false;
+          store.gate!.complete();
+          expect(await pending, isEmpty);
+          expect(replacement.reads, 0);
+          store.gate = null;
+          store.snapshot = previous;
+          expect(await total(kind: kind), 10);
+          expect(old.reads, previousReads);
+          store.snapshot = List.unmodifiable([replacement]);
+          expect(await total(kind: kind), 20);
+        },
+      );
+    }
+    test('already cancelled local reads perform no database request', () async {
+      expect(
+        await service.read(
+          owner: 'one@example.com',
+          storage: DataStorageLocation.local,
+          accountId: 'a',
+          kind: RecordStatisticsKind.accounting,
+          now: now,
+          shouldContinue: () => false,
+        ),
+        isEmpty,
+      );
+      expect(store.reads, 0);
+    });
     test(
       'parallel total and monthly read scan the same immutable snapshot only once',
       () async {

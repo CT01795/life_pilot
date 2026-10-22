@@ -25,9 +25,190 @@ class _Row extends MapBase<String, dynamic> {
   dynamic remove(Object? key) => data.remove(key);
 }
 
+class _StoredDate implements DateTime {
+  final DateTime value;
+  _StoredDate(this.value);
+  @override
+  bool isBefore(DateTime other) => value.isBefore(other);
+  @override
+  String toString() => throw StateError('Do not stringify stored DateTime');
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final start = DateTime(2026, 10, 1), end = DateTime(2026, 10, 15);
+  test('cancelled local iteration decodes no first event', () {
+    final rows = [_Row('a', '2026-10-10')];
+    expect(
+      ModelLocalEventQuery.select(
+        rows,
+        start: start,
+        end: end,
+        shouldContinue: () => false,
+      ),
+      isEmpty,
+    );
+    expect(rows.single.decodes, 0);
+  });
+  test('cancellation after preview prevents decoding the next event', () {
+    final rows = List.generate(20, (i) => _Row('$i', '2026-10-10'));
+    var active = true;
+    final iterator = ModelLocalEventQuery.iterate(
+      rows,
+      start: start,
+      end: end,
+      shouldContinue: () => active,
+    ).iterator;
+    expect(iterator.moveNext(), isTrue);
+    expect(iterator.current.id, '0');
+    active = false;
+    expect(iterator.moveNext(), isFalse);
+    expect(rows.fold<int>(0, (sum, row) => sum + row.decodes), 1);
+  });
+  test('cancellation while skipping offset never decodes skipped rows', () {
+    final rows = List.generate(20, (i) => _Row('$i', '2026-10-10'));
+    var checks = 0;
+    expect(
+      ModelLocalEventQuery.select(
+        rows,
+        start: start,
+        end: end,
+        offset: 10,
+        shouldContinue: () => ++checks <= 3,
+      ),
+      isEmpty,
+    );
+    expect(rows.every((row) => row.decodes == 0), isTrue);
+  });
+  test('a cancelled query can be traversed again for a fresh active scope', () {
+    final rows = [_Row('old', '2020-01-01'), _Row('wanted', '2026-10-10')];
+    var active = false;
+    final query = ModelLocalEventQuery.iterate(
+      rows,
+      start: start,
+      end: end,
+      id: 'old',
+      shouldContinue: () => active,
+    );
+    expect(query, isEmpty);
+    active = true;
+    expect(query.single.id, 'old');
+    expect(rows.map((row) => row.decodes), [1, 0]);
+  });
+  test('repeated date runs preserve filtering order and pagination', () {
+    final rows = [
+      for (var i = 0; i < 100; i++) _Row('old-$i', '2020-01-01'),
+      for (var i = 0; i < 100; i++) _Row('visible-$i', '2026-10-10'),
+      for (var i = 0; i < 100; i++) _Row('future-$i', '2027-01-01'),
+    ];
+    final result = ModelLocalEventQuery.select(
+      rows,
+      start: start,
+      end: end,
+      offset: 2,
+      limit: 3,
+    );
+    expect(result.map((event) => event.id), [
+      'visible-2',
+      'visible-3',
+      'visible-4',
+    ]);
+    expect(rows.fold<int>(0, (sum, row) => sum + row.decodes), 3);
+  });
+  test('each traversal resets date memo after a row is edited', () {
+    final row = _Row('a', '2026-10-10');
+    final query = ModelLocalEventQuery.iterate([row], start: start, end: end);
+    expect(query.single.id, 'a');
+    row.data['start_date'] = '2020-01-01';
+    expect(query, isEmpty);
+    row.data['start_date'] = '2026-10-10';
+    expect(query.single.id, 'a');
+  });
+  test('different iterators cannot share a previous date decision', () {
+    final rows = [_Row('a', '2026-10-10'), _Row('b', '2020-01-01')];
+    final visible = ModelLocalEventQuery.iterate(
+      rows,
+      start: start,
+      end: end,
+    ).iterator;
+    final old = ModelLocalEventQuery.iterate(
+      rows,
+      start: DateTime(2020),
+      end: DateTime(2020, 1, 2),
+    ).iterator;
+    expect(visible.moveNext(), isTrue);
+    expect(visible.current.id, 'a');
+    expect(old.moveNext(), isTrue);
+    expect(old.current.id, 'b');
+    expect(visible.moveNext(), isFalse);
+    expect(old.moveNext(), isFalse);
+  });
+  test('runs of missing and invalid dates stay included', () {
+    final rows = [
+      _Row('n1', null),
+      _Row('n2', null),
+      _Row('b1', 'bad'),
+      _Row('b2', 'bad'),
+      _Row('old', '2020-01-01'),
+      _Row('visible', '2026-10-10'),
+    ];
+    expect(
+      ModelLocalEventQuery.select(
+        rows,
+        start: start,
+        end: end,
+      ).map((event) => event.id),
+      ['n1', 'n2', 'b1', 'b2', 'visible'],
+    );
+  });
+  test('history metadata directly compares stored DateTime values', () {
+    final row = _Row('stored', null);
+    row.data['start_date'] = _StoredDate(DateTime(2026, 9, 30));
+    expect(ModelLocalEventQuery.hasRowsBefore([row], start), isTrue);
+    expect(ModelLocalEventQuery.latestRowBefore([row], start), same(row));
+    expect(row.decodes, 0);
+  });
+  test('history availability stops after the first matching row', () {
+    Iterable<Map<String, dynamic>> rows() sync* {
+      yield _Row('match', '2026-09-30');
+      throw StateError('Do not continue scanning after a match');
+    }
+
+    expect(ModelLocalEventQuery.hasRowsBefore(rows(), start), isTrue);
+  });
+  test('history metadata excludes equal, future and malformed dates', () {
+    final rows = [
+      _Row('equal', '2026-10-01'),
+      _Row('future', '2026-10-02'),
+      _Row('invalid', 'invalid'),
+      _Row('missing', null),
+    ];
+    expect(ModelLocalEventQuery.hasRowsBefore(rows, start), isFalse);
+    expect(ModelLocalEventQuery.latestRowBefore(rows, start), isNull);
+    expect(ModelLocalEventQuery.hasRowsBefore([], start), isFalse);
+    expect(rows.every((row) => row.decodes == 0), isTrue);
+  });
+  test('history existence compares instants rather than date text', () {
+    final row = _Row('offset', '2026-09-30T23:00:00-02:00');
+    expect(
+      ModelLocalEventQuery.hasRowsBefore([row], DateTime.utc(2026, 10, 1)),
+      isFalse,
+    );
+    expect(
+      ModelLocalEventQuery.hasRowsBefore([row], DateTime.utc(2026, 10, 1, 2)),
+      isTrue,
+    );
+  });
+  test('latest equal-date ties keep the original first row', () {
+    final first = _Row('first', '2026-09-30');
+    final second = _Row('second', '2026-09-30');
+    expect(
+      ModelLocalEventQuery.latestRowBefore([first, second], start),
+      same(first),
+    );
+  });
   test('latest fallback accepts legacy DateTime fields as well as text', () {
     final row = _Row('legacy', null);
     row.data['start_date'] = DateTime.utc(2026, 9, 30);

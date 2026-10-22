@@ -74,6 +74,7 @@ class _Service extends ServiceEvent {
     String? inputUser,
     DataStorageLocation? storageLocation,
     void Function(EventItem event)? onLatestEvent,
+    bool Function()? shouldContinue,
   }) async {
     if (latest != null && rows.isNotEmpty) onLatestEvent?.call(rows.first);
     return latest;
@@ -85,6 +86,7 @@ class _Service extends ServiceEvent {
     required DateTime before,
     String? inputUser,
     DataStorageLocation? storageLocation,
+    bool Function()? shouldContinue,
   }) {
     boundaries.add(before);
     final check = Completer<bool>();
