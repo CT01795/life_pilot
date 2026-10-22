@@ -52,6 +52,63 @@ ModelDashboardDetailQuery _query({String? currency, int previewLimit = 5}) =>
     );
 
 void main() {
+  test(
+    'full preview retains newest rows while all older values enter total',
+    () {
+      final rows = List.generate(
+        1000,
+        (i) =>
+            _row(i, date: _today.add(Duration(seconds: 2000 - i)), value: 1.9),
+      );
+      final accounting = _query().selectAccounting(rows);
+      final points = _query().selectPoints(rows);
+      expect(accounting.previewRows, rows.take(5));
+      expect(points.previewRows, rows.take(5));
+      expect(accounting.todayTotal, closeTo(1900, 0.00000001));
+      expect(points.todayTotal, 1000);
+    },
+  );
+
+  test(
+    'cutoff ties keep earlier rows after a newer record displaces the tail',
+    () {
+      final rows = [
+        _row(0, date: _today.add(const Duration(hours: 18))),
+        _row(1, date: _today.add(const Duration(hours: 17))),
+        _row(2, date: _today.add(const Duration(hours: 17))),
+        _row(3, date: _today.add(const Duration(hours: 17))),
+        _row(4, date: _today.add(const Duration(hours: 19))),
+        _row(5, date: _today.add(const Duration(hours: 17))),
+      ];
+      final result = _query(previewLimit: 3).selectAccounting(rows);
+      expect(result.previewRows, [rows[4], rows[0], rows[1]]);
+      expect(result.todayTotal, 6);
+    },
+  );
+
+  test('cutoff preserves stable full-sort results across preview sizes', () {
+    final random = Random(20261022);
+    final rows = List.generate(
+      300,
+      (i) => _row(i, date: _today.add(Duration(minutes: random.nextInt(10)))),
+    );
+    final indexed = rows.asMap().entries.toList()
+      ..sort((a, b) {
+        final order = (b.value['date'] as String).compareTo(
+          a.value['date'] as String,
+        );
+        return order != 0 ? order : a.key.compareTo(b.key);
+      });
+    for (final limit in [0, 1, 5, 50, 500]) {
+      final result = _query(previewLimit: limit).selectAccounting(rows);
+      expect(
+        result.previewRows,
+        indexed.take(limit).map((entry) => entry.value),
+      );
+      expect(result.todayTotal, 300);
+    }
+  });
+
   test('total includes all matching records, not only the latest five', () {
     final rows = List.generate(10, (i) => _row(i, value: i + 1));
     final result = _query(currency: 'TWD').selectAccounting(rows);

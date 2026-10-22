@@ -70,22 +70,29 @@ class ModelRecordStatistics {
     final dayStart = DateTime(now.year, now.month, now.day);
     final nextDay = DateTime(now.year, now.month, now.day + 1);
     final firstMonth = DateTime(now.year, now.month - 11);
+    final firstMonthNumber = firstMonth.year * 12 + firstMonth.month;
     final totals = List<num>.filled(12, 0);
     num total = 0, month = 0, today = 0, opening = 0;
     var hasChartData = false;
     for (final row in rows) {
       final date = tryParseDateTimeValue(row['date'], toLocal: true);
       if (date == null) continue;
-      if (date.isBefore(nextMonth)) hasChartData = true;
+      final beforeNextMonth = date.isBefore(nextMonth);
+      if (beforeNextMonth) hasChartData = true;
       final value = parseNumValue(row['value']);
       total += value;
-      if (!date.isBefore(monthStart) && date.isBefore(nextMonth)) {
-        month += value;
+      // Future months contribute only to total. Older opening history does not
+      // need month/day checks or a chart bucket index for every retained row.
+      if (!beforeNextMonth) continue;
+      if (date.isBefore(firstMonth)) {
+        opening += value;
+        continue;
       }
-      if (!date.isBefore(dayStart) && date.isBefore(nextDay)) today += value;
-      if (date.isBefore(firstMonth)) opening += value;
-      final index =
-          (date.year - firstMonth.year) * 12 + date.month - firstMonth.month;
+      if (!date.isBefore(monthStart)) {
+        month += value;
+        if (!date.isBefore(dayStart) && date.isBefore(nextDay)) today += value;
+      }
+      final index = date.year * 12 + date.month - firstMonthNumber;
       if (index >= 0 && index < 12) totals[index] += value;
     }
     var cumulative = opening;

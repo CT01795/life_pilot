@@ -80,16 +80,17 @@ class ModelContentPerformance {
     bool statisticsOnly = false,
   }) {
     final items = <ContentPerformanceItem>[];
-    final totals = {for (final column in contentPerformanceColumns) column: 0};
+    // Metric indexes are shared with item counts. Avoid repeated string-key
+    // lookups for every row; publish the existing named-column API only once.
+    final totalCounts = List<int>.filled(contentPerformanceColumns.length, 0);
     for (final row in rows) {
       final metrics = _ContentMetricCounts(row);
       // Excluded rows need neither date parsing nor a retained source copy.
       if (statisticsOnly && !metrics.hasStatistics) continue;
       final item = ContentPerformanceItem._fromCounts(row, metrics);
       items.add(item);
-      for (var i = 0; i < contentPerformanceColumns.length; i++) {
-        totals[contentPerformanceColumns[i]] =
-            totals[contentPerformanceColumns[i]]! + item.counts[i];
+      for (var i = 0; i < totalCounts.length; i++) {
+        totalCounts[i] += item.counts[i];
       }
     }
     if (sortByExpiry) {
@@ -98,7 +99,10 @@ class ModelContentPerformance {
     return ModelContentPerformance._(
       List.unmodifiable(items.map((item) => item.source)),
       List.unmodifiable(items),
-      Map.unmodifiable(totals),
+      Map.unmodifiable({
+        for (var i = 0; i < totalCounts.length; i++)
+          contentPerformanceColumns[i]: totalCounts[i],
+      }),
     );
   }
 }

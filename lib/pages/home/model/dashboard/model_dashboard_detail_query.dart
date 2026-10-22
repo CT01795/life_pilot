@@ -58,6 +58,13 @@ class ModelDashboardDetailQuery {
       final date = tryParseDateTimeValue(dateText, toLocal: true);
       if (date == null || date.isBefore(start) || !date.isBefore(end)) continue;
       total += valueOf(row['value']);
+      if (previewLimit == 0) continue;
+      // Once full, an older/equal key cannot enter the preview. Equal keys
+      // follow existing rows, preserving the original source-order tie rule.
+      if (latest.length == previewLimit &&
+          dateText.compareTo(latest.last.date) <= 0) {
+        continue;
+      }
       // Preserve the previous local date-string ordering. Keep source order
       // for equal keys, without retaining the rest of today's detail rows.
       var index = 0;
