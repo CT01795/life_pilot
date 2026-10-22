@@ -7,9 +7,14 @@ EventItem _event(String id, DateTime? date, {String city = ''}) =>
 
 class _LightEvent implements EventBase {
   final DateTime? date;
+  int dateReads = 0;
   _LightEvent(this.date);
   @override
-  DateTime? get startDate => date;
+  DateTime? get startDate {
+    dateReads++;
+    return date;
+  }
+
   @override
   String get city => ' Taipei ';
   @override
@@ -17,8 +22,83 @@ class _LightEvent implements EventBase {
       throw StateError('Unexpected heavy field: ${invocation.memberName}');
 }
 
+class _CountedDate implements DateTime {
+  final DateTime value;
+  int yearReads = 0;
+  int monthReads = 0;
+  int dayReads = 0;
+  _CountedDate(this.value);
+  @override
+  int get year {
+    yearReads++;
+    return value.year;
+  }
+
+  @override
+  int get month {
+    monthReads++;
+    return value.month;
+  }
+
+  @override
+  int get day {
+    dayReads++;
+    return value.day;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw StateError('Unexpected date conversion: ${invocation.memberName}');
+}
+
 void main() {
   final day = DateTime(2026, 10, 20);
+  test('one date decomposition supplies both day and month group keys', () {
+    final date = _CountedDate(day);
+    final event = _LightEvent(date);
+    final model = ModelMemoryTimeline.fromEvents([event]);
+    expect(event.dateReads, 1);
+    expect([date.yearReads, date.monthReads, date.dayReads], [1, 1, 1]);
+    expect(model.countForDay(day), 1);
+    expect(model.countForMonth(day), 1);
+    expect(model.headerAt(0)!.date, same(date));
+  });
+
+  test('unchanged display snapshot reuses its model and date projection', () {
+    final date = _CountedDate(day);
+    final rows = List<EventItem>.unmodifiable([_event('a', date)]);
+    final first = ModelMemoryTimeline.forSnapshot(rows);
+    expect(ModelMemoryTimeline.forSnapshot(rows), same(first));
+    expect([date.yearReads, date.monthReads, date.dayReads], [1, 1, 1]);
+  });
+
+  test('replacement snapshot after editing rebuilds counts and headers', () {
+    final event = _event('a', day, city: 'Taipei');
+    final first = ModelMemoryTimeline.forSnapshot([event]);
+    final next = DateTime(2027, 1, 2);
+    event.startDate = next;
+    event.city = '';
+    final updated = ModelMemoryTimeline.forSnapshot([event]);
+    expect(updated, isNot(same(first)));
+    expect(updated.countForDay(day), 0);
+    expect(updated.countForDay(next), 1);
+    expect(updated.headerAt(0)!.date, next);
+    expect(updated.cityCount, 0);
+    expect(first.countForDay(day), 1);
+    expect(first.headerAt(0)!.date, day);
+    expect(first.cityCount, 1);
+  });
+
+  test('different snapshots with identical IDs never share a projection', () {
+    final first = ModelMemoryTimeline.forSnapshot([_event('same', day)]);
+    final second = ModelMemoryTimeline.forSnapshot([
+      _event('same', DateTime(2025)),
+    ]);
+    expect(second, isNot(same(first)));
+    expect(second.countForDay(day), 0);
+    expect(first.countForDay(day), 1);
+  });
+
   test('headers distinguish first, same day, next day and next month', () {
     final nextDay = DateTime(2026, 10, 21);
     final nextMonth = DateTime(2026, 11, 1);

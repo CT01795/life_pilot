@@ -22,15 +22,40 @@ class ModelUpcomingSchedule {
         if (existing.id != event.id) _UpcomingOrderKey(existing),
       _UpcomingOrderKey(event),
     ];
-    keys.sort((left, right) {
-      final date = left.date.compareTo(right.date);
-      return date != 0 ? date : left.minutes.compareTo(right.minutes);
-    });
+    if (!_insertIntoStrictOrder(keys)) keys.sort(_compare);
     return List<CalendarEvent>.generate(
       keys.length,
       (i) => keys[i].event,
       growable: false,
     );
+  }
+
+  static int _compare(_UpcomingOrderKey left, _UpcomingOrderKey right) {
+    final date = left.date.compareTo(right.date);
+    return date != 0 ? date : left.minutes.compareTo(right.minutes);
+  }
+
+  /// The last key is the new event. Use linear validation plus insertion only
+  /// for unique sort keys; ties/unordered input retain the original full sort.
+  static bool _insertIntoStrictOrder(List<_UpcomingOrderKey> keys) {
+    final existingCount = keys.length - 1;
+    for (var i = 1; i < existingCount; i++) {
+      if (_compare(keys[i - 1], keys[i]) >= 0) return false;
+    }
+    final added = keys.last;
+    var low = 0, high = existingCount;
+    while (low < high) {
+      final middle = low + ((high - low) ~/ 2);
+      if (_compare(keys[middle], added) < 0) {
+        low = middle + 1;
+      } else {
+        high = middle;
+      }
+    }
+    if (low < existingCount && _compare(keys[low], added) == 0) return false;
+    keys.removeLast();
+    keys.insert(low, added);
+    return true;
   }
 }
 

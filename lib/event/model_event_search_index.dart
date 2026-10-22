@@ -32,16 +32,24 @@ class ModelEventSearchIndex {
 
     // Query tokens contain no whitespace, so no token can span the newline
     // separating parent and child fields. Indexing them separately is safe.
-    if (entry.children == null) {
+    if (entry.childEvents == null) {
       // Keep the already-decoded membership so changing a child can also
       // invalidate a cached parent, without decoding untouched parents.
       final children = event.subEvents.toList(growable: false);
       entry.childEvents = children;
-      entry.children = children
-          .map((child) => _textFor(child, labels))
-          .join('\n');
     }
-    return entry.children!.contains(word);
+    // Retain references to each child's text instead of a second concatenated
+    // copy per parent. A match need not prepare later child descriptions.
+    for (final text in entry.childTexts) {
+      if (text.contains(word)) return true;
+    }
+    final children = entry.childEvents!;
+    while (entry.childTexts.length < children.length) {
+      final text = _textFor(children[entry.childTexts.length], labels);
+      entry.childTexts.add(text);
+      if (text.contains(word)) return true;
+    }
+    return false;
   }
 
   /// Preserves unaffected entries, including their deferred child text.
@@ -92,7 +100,7 @@ class ModelEventSearchIndex {
 
 class _SearchTextEntry {
   final String parent;
-  String? children;
+  final childTexts = <String>[];
   List<EventItem>? childEvents;
 
   _SearchTextEntry(this.parent);

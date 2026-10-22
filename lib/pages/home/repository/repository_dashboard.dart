@@ -58,43 +58,6 @@ class DashboardRepository {
     return query.decodeRows((result as List).cast<Map<String, dynamic>>());
   }
 
-  Future<List<CalendarEvent>> getSpecificEvent(
-    String eventId,
-    String account,
-  ) async {
-    final localOwner = _localOwner;
-    if (localOwner != null && await _storesLocally) {
-      final rows = await LocalDataStore.instance.readOnlyRows(
-        owner: localOwner,
-        resource: TableNames.calendarEvents,
-      );
-      final filtered =
-          rows
-              .where((row) => parseStringValue(row[Fields.id]) == eventId)
-              .toList()
-            ..sort((a, b) {
-              final dateComparison = parseStringValue(
-                a['start_date'],
-              ).compareTo(parseStringValue(b['start_date']));
-              if (dateComparison != 0) return dateComparison;
-              return parseStringValue(
-                a['start_time'],
-              ).compareTo(parseStringValue(b['start_time']));
-            });
-      return filtered.map(CalendarEvent.fromJson).toList();
-    }
-
-    final result = await supabase
-        .from(TableNames.calendarEvents)
-        .select()
-        .eq(Fields.account, account)
-        .eq(Fields.id, eventId)
-        .order('start_date', ascending: true)
-        .order('start_time', ascending: true);
-
-    return (result as List).map((e) => CalendarEvent.fromJson(e)).toList();
-  }
-
   Future<void> completeEvent({
     required String id,
     required String account,

@@ -45,6 +45,65 @@ String legacyText(EventItem event, EventSearchLabels labels) {
 }
 
 void main() {
+  test('early child match defers later descriptions until needed', () {
+    final children = [
+      _CountedEvent('first', 'needle'),
+      _CountedEvent('second', 'park'),
+      _CountedEvent('third', 'museum'),
+    ];
+    final parent = _CountedEvent('parent', 'plain', children: children);
+    final index = ModelEventSearchIndex();
+    expect(index.contains(parent, 'needle', labels: labels), isTrue);
+    expect(children.map((child) => child.reads), [1, 0, 0]);
+    expect(index.contains(parent, 'needle', labels: labels), isTrue);
+    expect(children.map((child) => child.reads), [1, 0, 0]);
+    expect(index.contains(parent, 'park', labels: labels), isTrue);
+    expect(children.map((child) => child.reads), [1, 1, 0]);
+    expect(index.contains(parent, 'missing', labels: labels), isFalse);
+    expect(children.map((child) => child.reads), [1, 1, 1]);
+    expect(index.contains(parent, 'museum', labels: labels), isTrue);
+    expect(children.map((child) => child.reads), [1, 1, 1]);
+  });
+
+  test('editing an unindexed child invalidates its partial parent index', () {
+    final first = _CountedEvent('first', 'needle');
+    final later = _CountedEvent('later', 'before');
+    final parent = _CountedEvent('parent', 'plain', children: [first, later]);
+    final index = ModelEventSearchIndex();
+    expect(index.contains(parent, 'needle', labels: labels), isTrue);
+    expect(later.reads, 0);
+    later.description = 'after';
+    index.invalidate([later]);
+    expect(index.contains(parent, 'after', labels: labels), isTrue);
+    expect(index.contains(parent, 'before', labels: labels), isFalse);
+    expect(later.reads, 1);
+  });
+
+  test('progressive retention preserves a partially prepared child index', () {
+    final first = _CountedEvent('first', 'needle');
+    final later = _CountedEvent('later', 'park');
+    final parent = _CountedEvent('parent', 'plain', children: [first, later]);
+    final index = ModelEventSearchIndex();
+    index.contains(parent, 'needle', labels: labels);
+    index.retainEvents([parent]);
+    expect(index.contains(parent, 'needle', labels: labels), isTrue);
+    expect([first.reads, later.reads], [1, 0]);
+    expect(index.contains(parent, 'park', labels: labels), isTrue);
+    expect([first.reads, later.reads], [1, 1]);
+  });
+
+  test('locale changes discard partially prepared child text', () {
+    final first = EventItem(id: 'first', name: '', isFree: true);
+    final later = EventItem(id: 'later', name: '', isOutdoor: true);
+    final parent = EventItem(id: 'parent', name: '', subEvents: [first, later]);
+    final index = ModelEventSearchIndex();
+    expect(index.contains(parent, 'free', labels: labels), isTrue);
+    const chinese = (free: '免費', pay: '付費', outdoor: '戶外', indoor: '室內');
+    expect(index.contains(parent, '戶外', labels: chinese), isTrue);
+    expect(index.contains(parent, 'free', labels: chinese), isFalse);
+    expect(index.contains(parent, '免費', labels: chinese), isTrue);
+  });
+
   test(
     'shared child text is prepared once across multiple parent searches',
     () {

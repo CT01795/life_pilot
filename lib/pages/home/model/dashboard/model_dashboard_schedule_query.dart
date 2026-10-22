@@ -27,12 +27,13 @@ class ModelDashboardScheduleQuery {
       parseStringValue(row['start_date']),
       toLocal: true,
     );
-    if (start == null) return false;
+    // A future start cannot intersect this window, regardless of its end.
+    if (start == null || !start.isBefore(rangeEnd)) return false;
     final end = tryParseDateTimeValue(
       parseStringValue(row['end_date']),
       toLocal: true,
     );
-    return !(end ?? start).isBefore(today) && start.isBefore(rangeEnd);
+    return !(end ?? start).isBefore(today);
   }
 
   static int _compare(CalendarEvent left, CalendarEvent right) {

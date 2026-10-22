@@ -8,6 +8,7 @@ class ModelEventOrdering {
     required bool isEvent,
     DateTime? now,
   }) {
+    if (events.length < 2) return;
     final current = now ?? DateTime.now();
     final today = DateTime(current.year, current.month, current.day);
     final keys = <_EventOrderKey>[];
@@ -37,7 +38,7 @@ class ModelEventOrdering {
         ),
       );
     }
-    keys.sort((left, right) {
+    _sortIfNeeded(events, keys, (left, right) {
       var comparison = left.preference.compareTo(right.preference);
       if (comparison != 0) return comparison;
       if (isEvent) {
@@ -52,10 +53,10 @@ class ModelEventOrdering {
       }
       return _comparePlace(left, right);
     });
-    _writeOrder(events, keys);
   }
 
   static void sortMemory(List<EventItem> events) {
+    if (events.length < 2) return;
     final keys = <_EventOrderKey>[
       for (var i = 0; i < events.length; i++)
         _EventOrderKey(
@@ -64,13 +65,12 @@ class ModelEventOrdering {
           date: events[i].startDate ?? DateTime.fromMillisecondsSinceEpoch(0),
         ),
     ];
-    keys.sort((left, right) {
+    _sortIfNeeded(events, keys, (left, right) {
       var comparison = right.date!.compareTo(left.date!);
       if (comparison != 0) return comparison;
       comparison = right.time.compareTo(left.time);
       return comparison != 0 ? comparison : _comparePlace(left, right);
     });
-    _writeOrder(events, keys);
   }
 
   static int _comparePlace(_EventOrderKey left, _EventOrderKey right) {
@@ -82,7 +82,21 @@ class ModelEventOrdering {
     return comparison != 0 ? comparison : left.index.compareTo(right.index);
   }
 
-  static void _writeOrder(List<EventItem> events, List<_EventOrderKey> keys) {
+  static void _sortIfNeeded(
+    List<EventItem> events,
+    List<_EventOrderKey> keys,
+    int Function(_EventOrderKey, _EventOrderKey) compare,
+  ) {
+    // Keys are fresh for this call: edits and effective dates still participate.
+    // Already ordered progressive batches need neither a sort nor list writes.
+    var needsSort = false;
+    for (var i = 1; i < keys.length; i++) {
+      if (compare(keys[i - 1], keys[i]) <= 0) continue;
+      needsSort = true;
+      break;
+    }
+    if (!needsSort) return;
+    keys.sort(compare);
     for (var i = 0; i < keys.length; i++) {
       events[i] = keys[i].event;
     }

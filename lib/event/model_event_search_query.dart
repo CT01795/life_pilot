@@ -31,7 +31,11 @@ class ModelEventSearchQuery {
   ModelEventSearchQuery._(List<String> words)
     : tokens = List.unmodifiable(words),
       _terms = words
-          .map((word) => _SearchTerm(word.toLowerCase()))
+          .map((word) => word.toLowerCase())
+          // AND-ing the same normalized condition again cannot change a match.
+          // Keep first-occurrence order; display tokens above remain untouched.
+          .toSet()
+          .map(_SearchTerm.new)
           .toList(growable: false);
 
   bool get isEmpty => _terms.isEmpty;

@@ -81,16 +81,23 @@ class CalendarSharingState {
     required Iterable<SharedCalendarEvent> sharedEvents,
     required Iterable<EventItem> visibleEvents,
   }) {
+    final owner = normalizeText(currentEmail);
+    // Many visible events share an author. Keep normalization local to this
+    // projection so neither account changes nor edits can reuse old ownership.
+    final normalizedAccounts = <String?, String>{};
+    bool belongsToCurrentAccount(String? account) =>
+        (normalizedAccounts[account] ??= normalizeText(account)) == owner;
+
     final sent = <CalendarShareInvitation>[];
     final received = <CalendarShareInvitation>[];
     final activeSentIds = <String>{};
     for (final invitation in invitations) {
       if (!invitation.isPending && !invitation.isAccepted) continue;
-      if (normalizedTextEquals(invitation.sharedBy, currentEmail)) {
+      if (belongsToCurrentAccount(invitation.sharedBy)) {
         sent.add(invitation);
         activeSentIds.add(invitation.id);
       }
-      if (normalizedTextEquals(invitation.invitedEmail, currentEmail)) {
+      if (belongsToCurrentAccount(invitation.invitedEmail)) {
         received.add(invitation);
       }
     }
@@ -98,8 +105,7 @@ class CalendarSharingState {
     // while its original insertion position is retained, as before.
     final byId = <String, EventItem>{};
     for (final event in visibleEvents) {
-      if (normalizedTextEquals(event.account, currentEmail) &&
-          event.startDate != null) {
+      if (belongsToCurrentAccount(event.account) && event.startDate != null) {
         byId[event.id] = event;
       }
     }

@@ -1,25 +1,16 @@
 import 'dart:ui';
 
-import 'package:life_pilot/apps/config_app.dart';
+import 'package:life_pilot/calendar/model_calendar_holidays.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/api.dart';
-import 'package:life_pilot/utils/holidays.dart';
-import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
 
 import '../utils/logger.dart';
 
-class _HolidayRecord {
-  final DateTime date;
-  final String summary;
-
-  const _HolidayRecord({required this.date, required this.summary});
-}
-
 class ServiceCalendar {
   static final Uuid _uuid = const Uuid();
   static const Set<String> _supportedLanguages = {'zh', 'en', 'ja', 'ko'};
-  static final Map<String, Future<List<_HolidayRecord>>> _yearCache = {};
+  static final Map<String, Future<List<CalendarHolidayRecord>>> _yearCache = {};
   static DateTime? _cacheUtcDate;
 
   static Future<List<EventItem>> fetchHolidays(
@@ -47,9 +38,9 @@ class ServiceCalendar {
       if (!endDate.isAfter(startDate)) return holidays;
 
       final lastIncludedDate = endDate.subtract(const Duration(days: 1));
-      final records = <_HolidayRecord>[];
+      final records = <List<CalendarHolidayRecord>>[];
       for (int year = startDate.year; year <= lastIncludedDate.year; year++) {
-        records.addAll(
+        records.add(
           await _getHolidayYear(
             year: year,
             languageCode: languageCode,
@@ -57,23 +48,12 @@ class ServiceCalendar {
           ),
         );
       }
-      records.sort((a, b) => a.date.compareTo(b.date));
-
-      EventItem? lastMergedHoliday;
-
-      for (final record in records) {
-        if (record.date.isBefore(startDate) || !record.date.isBefore(endDate)) {
-          continue;
-        }
-
-        lastMergedHoliday = _processHolidayItem(
-          record.date,
-          record.summary,
-          lastMergedHoliday,
-          holidays,
-        );
-      }
-      return holidays;
+      return ModelCalendarHolidays.project(
+        records: records.expand((year) => year),
+        start: startDate,
+        end: endDate,
+        createId: () => 'holiday_${_uuid.v4()}',
+      );
     } catch (e, stack) {
       logger.e('Fetch holidays failed', error: e, stackTrace: stack);
       return [];
@@ -89,7 +69,7 @@ class ServiceCalendar {
     }
   }
 
-  static Future<List<_HolidayRecord>> _getHolidayYear({
+  static Future<List<CalendarHolidayRecord>> _getHolidayYear({
     required int year,
     required String languageCode,
     required String accessToken,
@@ -114,7 +94,7 @@ class ServiceCalendar {
     }
   }
 
-  static Future<List<_HolidayRecord>> _loadHolidayYear({
+  static Future<List<CalendarHolidayRecord>> _loadHolidayYear({
     required int year,
     required String languageCode,
     required String accessToken,
@@ -129,62 +109,6 @@ class ServiceCalendar {
     final items = data is Map<String, dynamic> && data['items'] is List
         ? data['items'] as List
         : const [];
-    final records = <_HolidayRecord>[];
-
-    for (final item in items) {
-      if (item is! Map<String, dynamic>) continue;
-      final rawDate = item['date'];
-      final rawSummary = item['summary'];
-      if (rawDate is! String || rawSummary is! String) continue;
-
-      final parsedDate = tryParseDateTimeValue(rawDate);
-      if (parsedDate == null) continue;
-      records.add(
-        _HolidayRecord(
-          date: DateTime(parsedDate.year, parsedDate.month, parsedDate.day),
-          summary: rawSummary,
-        ),
-      );
-    }
-
-    return records;
-  }
-
-  // 處理單筆假日，若需合併連假則更新 lastMergedHoliday
-  static EventItem? _processHolidayItem(
-    DateTime date,
-    String summary,
-    EventItem? lastMerged,
-    List<EventItem> output,
-  ) {
-    final mappedSummary = CalendarConfig.taiwanHolidays.firstWhere(
-      (holidayName) => summary.contains(holidayName) && !summary.contains("補假"),
-      orElse: () => summary,
-    );
-
-    final bool isTaiwanHoliday = CalendarConfig.taiwanHolidays.any(
-      (name) => mappedSummary.contains(name),
-    );
-
-    // 若需要合併連假，且 lastMerged 同名，延長結束日期
-    if (lastMerged != null &&
-        Holidays.shouldMergeHoliday(mappedSummary) &&
-        lastMerged.name == mappedSummary) {
-      lastMerged.endDate = date;
-      return lastMerged;
-    } else {
-      final newHoliday = EventItem(
-        id: 'holiday_${_uuid.v4()}',
-        startDate: date,
-        endDate: date,
-        startTime: null,
-        endTime: null,
-        name: mappedSummary,
-        isTaiwanHoliday: isTaiwanHoliday,
-        isHoliday: true,
-      );
-      output.add(newHoliday);
-      return Holidays.shouldMergeHoliday(mappedSummary) ? newHoliday : null;
-    }
+    return ModelCalendarHolidays.parseRows(items);
   }
 }

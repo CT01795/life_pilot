@@ -2,18 +2,14 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/calendar/model_calendar_sharing.dart';
+import 'package:life_pilot/calendar/model_calendar_sharing_failure.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 
 // Keep existing imports source-compatible while models live outside Service.
 export 'package:life_pilot/calendar/model_calendar_sharing.dart';
-
-class CalendarSharingFailure implements Exception {
-  const CalendarSharingFailure(this.code, [this.details]);
-  final String code;
-  final String? details;
-}
+export 'package:life_pilot/calendar/model_calendar_sharing_failure.dart';
 
 class ServiceCalendarSharing {
   ServiceCalendarSharing({LocalDataStore? localStore})
@@ -129,38 +125,11 @@ class ServiceCalendarSharing {
     }
   }
 
-  CalendarSharingFailure _translateFailure(PostgrestException error) {
-    final rawMessage = [
-      error.message,
-      error.details,
-      error.hint,
-      error.code,
-    ].whereType<Object>().join(' ');
-    final message = rawMessage.toUpperCase();
-    if (message.contains('QUOTA_REACHED') ||
-        message.contains('RENEWAL_REQUIRED')) {
-      return const CalendarSharingFailure('quota');
-    }
-    if (message.contains('DUPLICATE_INVITATION')) {
-      return const CalendarSharingFailure('duplicate');
-    }
-    if (message.contains('ACCOUNT_NOT_FOUND')) {
-      return const CalendarSharingFailure('account_not_found');
-    }
-    if (message.contains('INVALID EMAIL')) {
-      return const CalendarSharingFailure('invalid_email');
-    }
-    if (message.contains('CANNOT INVITE YOURSELF')) {
-      return const CalendarSharingFailure('self_invite');
-    }
-    if (message.contains('NO OWNED EVENTS SELECTED') ||
-        message.contains('SHARED EVENT NOT FOUND')) {
-      return const CalendarSharingFailure('event_unavailable');
-    }
-    if (message.contains('INVITATION CANNOT BE UPDATED') ||
-        message.contains('INVITATION NOT FOUND')) {
-      return const CalendarSharingFailure('stale_invitation');
-    }
-    return CalendarSharingFailure('unknown', rawMessage);
-  }
+  CalendarSharingFailure _translateFailure(PostgrestException error) =>
+      CalendarSharingFailure.fromFields(
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      );
 }

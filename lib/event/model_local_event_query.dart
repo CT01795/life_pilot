@@ -5,16 +5,14 @@ import 'package:life_pilot/utils/value_parser.dart';
 
 /// Filter lightweight row fields before decoding descriptions/sub-events.
 class ModelLocalEventQuery {
-  static DateTime? _startDate(Map<String, dynamic> row) =>
-      tryParseDateTimeValue(row[EventFields.startDate]);
-
   /// Stop at the first eligible date; never decode event content for metadata.
   static bool hasRowsBefore(
     Iterable<Map<String, dynamic>> rows,
     DateTime before,
   ) {
+    final dates = _LocalHistoryDateReader();
     for (final row in rows) {
-      final date = _startDate(row);
+      final date = dates.read(row[EventFields.startDate]);
       if (date != null && date.isBefore(before)) return true;
     }
     return false;
@@ -25,10 +23,11 @@ class ModelLocalEventQuery {
     Iterable<Map<String, dynamic>> rows,
     DateTime before,
   ) {
+    final dates = _LocalHistoryDateReader();
     Map<String, dynamic>? latest;
     DateTime? latestDate;
     for (final row in rows) {
-      final date = _startDate(row);
+      final date = dates.read(row[EventFields.startDate]);
       if (date == null || !date.isBefore(before)) continue;
       if (latestDate == null || date.isAfter(latestDate)) {
         latestDate = date;
@@ -104,5 +103,22 @@ class ModelLocalEventQuery {
       }
       if (previousMatch) yield row;
     }
+  }
+}
+
+/// One string entry per metadata query, including failed parses. Do not retain
+/// rows or share decisions between queries with different history boundaries.
+class _LocalHistoryDateReader {
+  String? _text;
+  DateTime? _date;
+
+  DateTime? read(Object? raw) {
+    // Legacy stored DateTime values must not be stringified or normalized.
+    if (raw is! String) return tryParseDateTimeValue(raw);
+    if (raw != _text) {
+      _text = raw;
+      _date = tryParseDateTimeValue(raw);
+    }
+    return _date;
   }
 }

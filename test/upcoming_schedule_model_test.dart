@@ -54,6 +54,64 @@ List<CalendarEvent> legacy(List<CalendarEvent> source, CalendarEvent added) =>
     });
 
 void main() {
+  test(
+    'strictly ordered lists retain original results at every insertion point',
+    () {
+      final rows = List<CalendarEvent>.unmodifiable(
+        List.generate(100, (i) => event('existing-$i', minute: i * 2 + 1)),
+      );
+      for (var minute = 0; minute <= 200; minute += 2) {
+        final added = event('new', minute: minute);
+        expect(
+          ModelUpcomingSchedule.withEvent(events: rows, event: added, now: now),
+          orderedEquals(legacy(rows, added)),
+          reason: 'minute $minute',
+        );
+      }
+      expect(rows.first.id, 'existing-0');
+      expect(rows.last.id, 'existing-99');
+    },
+  );
+  test(
+    'ties in existing rows or the added row retain legacy sort behavior',
+    () {
+      for (final repeated in [true, false]) {
+        final rows = List.generate(
+          100,
+          (i) => event('existing-$i', minute: repeated ? (i ~/ 3) * 2 : i * 2),
+        );
+        for (final minute in [0, 20, 51, 200]) {
+          final added = event('new', minute: minute);
+          expect(
+            ModelUpcomingSchedule.withEvent(
+              events: rows,
+              event: added,
+              now: now,
+            ),
+            orderedEquals(legacy(rows, added)),
+            reason: 'repeated=$repeated minute=$minute',
+          );
+        }
+      }
+    },
+  );
+  test(
+    'moving an existing ID within a sorted list preserves replacement rules',
+    () {
+      final rows = List.generate(80, (i) => event('$i', minute: i * 3));
+      for (final minute in [0, 61, 400]) {
+        final updated = event('40', minute: minute);
+        final result = ModelUpcomingSchedule.withEvent(
+          events: rows,
+          event: updated,
+          now: now,
+        )!;
+        expect(result, orderedEquals(legacy(rows, updated)));
+        expect(result.where((e) => e.id == '40').single, same(updated));
+        expect(rows[40].startTime, const TimeOfDay(hour: 2, minute: 0));
+      }
+    },
+  );
   for (final day in [19, 20, 21]) {
     test('day $day remains inside the three-day dashboard window', () {
       final added = event('new', day: day);

@@ -5,6 +5,13 @@ typedef MemoryTimelineHeader = ({DateTime date, bool month, bool day});
 /// Counts the currently displayed records only. No storage, formatting or UI.
 /// Rebuild after edits; EventItem itself is mutable.
 class ModelMemoryTimeline {
+  static final _snapshots = Expando<ModelMemoryTimeline>();
+
+  /// Reuses a projection for an unchanged display-list snapshot. Replace the
+  /// list after edits; mutable event fields cannot invalidate an identity key.
+  static ModelMemoryTimeline forSnapshot(List<EventItem> events) =>
+      _snapshots[events] ??= ModelMemoryTimeline.fromEvents(events);
+
   final Map<int, int> daily;
   final Map<int, int> monthly;
   final int memoryCount;
@@ -42,8 +49,8 @@ class ModelMemoryTimeline {
         previousMonth = null;
         continue;
       }
-      final day = _dayKey(date);
       final month = _monthKey(date);
+      final day = month * 100 + date.day;
       if (previousDay != day) {
         headers[count - 1] = (
           date: date,

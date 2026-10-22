@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/event/model_event_ordering.dart';
@@ -34,8 +35,74 @@ EventItem event(
 List<String> ids(List<EventItem> events) =>
     events.map((event) => event.id).toList();
 
+class _WriteCountedEvents extends ListBase<EventItem> {
+  final List<EventItem> source;
+  int writes = 0;
+  _WriteCountedEvents(this.source);
+  @override
+  int get length => source.length;
+  @override
+  set length(int value) => source.length = value;
+  @override
+  EventItem operator [](int index) => source[index];
+  @override
+  void operator []=(int index, EventItem value) {
+    writes++;
+    source[index] = value;
+  }
+}
+
 void main() {
   for (final mode in ['events', 'places', 'memory']) {
+    void sort(List<EventItem> rows) {
+      if (mode == 'memory') {
+        ModelEventOrdering.sortMemory(rows);
+      } else {
+        ModelEventOrdering.sortRecommended(
+          rows,
+          isEvent: mode == 'events',
+          now: today,
+        );
+      }
+    }
+
+    test('$mode does not rewrite already ordered rows or equal-key ties', () {
+      final rows = _WriteCountedEvents([
+        event('first', name: 'Same', date: today),
+        event('second', name: 'Same', date: today),
+        event('third', name: 'Z', date: today),
+      ]);
+      sort(rows);
+      sort(rows);
+      expect(rows.writes, 0);
+      expect(ids(rows), ['first', 'second', 'third']);
+    });
+
+    test('$mode still sorts when only the final pair is out of order', () {
+      final rows = _WriteCountedEvents([
+        event('first', name: 'A', date: today),
+        event('last', name: 'Z', date: today),
+        event('middle', name: 'M', date: today),
+      ]);
+      sort(rows);
+      expect(ids(rows), ['first', 'middle', 'last']);
+      expect(rows.writes, 3);
+      sort(rows);
+      expect(rows.writes, 3);
+    });
+
+    test('$mode rebuilds keys after editing an already ordered event', () {
+      final rows = _WriteCountedEvents([
+        event('a', name: 'A', date: today),
+        event('b', name: 'B', date: today),
+      ]);
+      sort(rows);
+      rows[1].name = '0';
+      sort(rows);
+      expect(ids(rows), ['b', 'a']);
+      expect(rows.writes, 2);
+    });
+
     test('$mode matches original ordering for 100 generated batches', () {
       final random = Random(84);
       for (var sample = 0; sample < 100; sample++) {

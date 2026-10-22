@@ -18,6 +18,64 @@ EventItem item(String id, String city) =>
     EventItem(id: id, name: id, city: city);
 
 void main() {
+  test(
+    'interleaved cached aliases retain group and record insertion order',
+    () {
+      final rows = [
+        item('a', '臺北市'),
+        item('b', 'Tokyo'),
+        item('c', '台北'),
+        item('d', 'Taipei City'),
+        item('e', 'Tokyo'),
+        item('f', '臺北市'),
+        item('g', 'Taipei City'),
+        item('h', '台北'),
+      ];
+      final data = EventRegionData.fromEvents(rows);
+      expect(data.eventsByRegion.keys, ['台北', 'Tokyo']);
+      expect(data.eventsFor('台北'), [
+        rows[0],
+        rows[2],
+        rows[3],
+        rows[5],
+        rows[6],
+        rows[7],
+      ]);
+      expect(data.eventsFor('Tokyo'), [rows[1], rows[4]]);
+      expect(data.counts, {'台北': 6, 'Tokyo': 2});
+    },
+  );
+
+  test(
+    'large repeated raw names read each city once and omit blank groups',
+    () {
+      const names = ['臺北市', '台北', 'Taipei City', '', ' ', '\u200B'];
+      final rows = List.generate(
+        6000,
+        (i) => _CountedEvent('$i', names[i % names.length]),
+      );
+      final data = EventRegionData.fromEvents(List.unmodifiable(rows));
+      expect(data.counts, {'台北': 3000});
+      expect(data.eventsFor('台北').length, 3000);
+      expect(data.eventsFor('台北').take(3), rows.take(3));
+      expect(rows.every((row) => row.cityReads == 1), isTrue);
+      expect(data.eventsFor(''), isEmpty);
+    },
+  );
+
+  test('raw-city bucket references do not survive across projections', () {
+    final a = item('a', '台北');
+    final b = item('b', '台北');
+    final previous = EventRegionData.fromEvents([a, b]);
+    a.city = 'Tokyo';
+    final current = EventRegionData.fromEvents([a]);
+    expect(current.counts, {'Tokyo': 1});
+    expect(current.eventsFor('Tokyo'), [a]);
+    expect(current.eventsFor('台北'), isEmpty);
+    expect(previous.counts, {'台北': 2});
+    expect(previous.eventsFor('台北'), [a, b]);
+  });
+
   test('selected city ordering is reused without changing base ordering', () {
     final data = EventRegionData.fromEvents([
       item('a', 'Tokyo'),

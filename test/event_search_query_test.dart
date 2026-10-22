@@ -41,6 +41,108 @@ bool legacyMatch(EventItem event, String text, String word) {
 }
 
 void main() {
+  test(
+    'duplicate normalized words are checked once in first-occurrence order',
+    () {
+      final query = ModelEventSearchQuery('MUSIC music，Taipei,MUSIC TAIPEI');
+      final checked = <String>[];
+      expect(
+        query.matchesWithText(
+          EventItem(id: 'e', name: ''),
+          containsText: (word) {
+            checked.add(word);
+            return true;
+          },
+        ),
+        isTrue,
+      );
+      expect(checked, ['music', 'taipei']);
+      expect(query.tokens, ['MUSIC', 'music', 'Taipei', 'MUSIC', 'TAIPEI']);
+      expect(() => query.tokens.clear(), throwsUnsupportedError);
+    },
+  );
+
+  test('deduplication does not collapse distinct numeric literal forms', () {
+    final query = ModelEventSearchQuery(r'100 $100 100 $100');
+    final checked = <String>[];
+    expect(
+      query.matchesWithText(
+        EventItem(id: 'e', name: '', priceMin: 500, priceMax: 600),
+        containsText: (word) {
+          checked.add(word);
+          return true;
+        },
+      ),
+      isTrue,
+    );
+    expect(checked, ['100', r'$100']);
+  });
+
+  test(
+    'deduplicated queries retain short-circuit AND matching on every call',
+    () {
+      final query = ModelEventSearchQuery('first FIRST second SECOND');
+      final checked = <String>[];
+      final event = EventItem(id: 'e', name: '');
+      expect(
+        query.matchesWithText(
+          event,
+          containsText: (word) {
+            checked.add(word);
+            return false;
+          },
+        ),
+        isFalse,
+      );
+      expect(checked, ['first']);
+      checked.clear();
+      expect(
+        query.matchesWithText(
+          event,
+          containsText: (word) {
+            checked.add(word);
+            return true;
+          },
+        ),
+        isTrue,
+      );
+      expect(checked, ['first', 'second']);
+    },
+  );
+
+  test('duplicate age and price conditions retain child metadata fallback', () {
+    final event = EventItem(
+      id: 'parent',
+      name: '',
+      ageMin: 30,
+      ageMax: 40,
+      priceMin: 500,
+      priceMax: 600,
+      subEvents: [
+        EventItem(
+          id: 'child',
+          name: '',
+          ageMin: 5,
+          ageMax: 10,
+          priceMin: 100,
+          priceMax: 200,
+        ),
+      ],
+    );
+    final checked = <String>[];
+    expect(
+      ModelEventSearchQuery('8y 8Y 150 150').matchesWithText(
+        event,
+        containsText: (word) {
+          checked.add(word);
+          return false;
+        },
+      ),
+      isTrue,
+    );
+    expect(checked, ['8y', '150']);
+  });
+
   test('trim-only Unicode whitespace retains the original token behavior', () {
     final query = ModelEventSearchQuery('\u0085MUSIC\u0085');
     expect(

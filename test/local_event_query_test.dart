@@ -39,6 +39,52 @@ class _StoredDate implements DateTime {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final start = DateTime(2026, 10, 1), end = DateTime(2026, 10, 15);
+  test('history date runs preserve strict boundaries and first-row ties', () {
+    final first = _Row('first', '2026-09-30T23:00:00Z');
+    final rows = [
+      for (var i = 0; i < 100; i++) _Row('invalid-$i', 'invalid'),
+      for (var i = 0; i < 100; i++) _Row('future-$i', '2027-01-01'),
+      for (var i = 0; i < 100; i++) _Row('old-$i', '2020-01-01'),
+      first,
+      _Row('same-instant', '2026-10-01T01:00:00+02:00'),
+      for (var i = 0; i < 100; i++) _Row('boundary-$i', '2026-10-01T00:00:00Z'),
+    ];
+    final before = DateTime.utc(2026, 10, 1);
+    expect(ModelLocalEventQuery.hasRowsBefore(rows, before), isTrue);
+    expect(ModelLocalEventQuery.latestRowBefore(rows, before), same(first));
+    expect(rows.every((row) => row.decodes == 0), isTrue);
+  });
+
+  test('metadata date memo never carries boundaries or edits across calls', () {
+    final row = _Row('event', '2026-09-30');
+    final rows = [row, row];
+    expect(ModelLocalEventQuery.hasRowsBefore(rows, start), isTrue);
+    expect(ModelLocalEventQuery.hasRowsBefore(rows, DateTime(2020)), isFalse);
+    row.data['start_date'] = '2027-01-01';
+    expect(ModelLocalEventQuery.latestRowBefore(rows, start), isNull);
+    row.data['start_date'] = '2020-01-01';
+    expect(ModelLocalEventQuery.latestRowBefore(rows, start), same(row));
+    expect(row.decodes, 0);
+  });
+
+  test('metadata supports mixed stored dates, strings and invalid runs', () {
+    final legacy = _Row('legacy', null)
+      ..data['start_date'] = DateTime.utc(2026, 9, 30, 23, 30);
+    final rows = [
+      _Row('old', '2026-09-30T22:00:00Z'),
+      _Row('bad', 'bad'),
+      _Row('bad-again', 'bad'),
+      legacy,
+      _Row('older', '2026-09-30T22:00:00Z'),
+      _Row('missing', null),
+    ];
+    expect(
+      ModelLocalEventQuery.latestRowBefore(rows, DateTime.utc(2026, 10, 1)),
+      same(legacy),
+    );
+    expect(rows.every((row) => row.decodes == 0), isTrue);
+  });
+
   test('cancelled local iteration decodes no first event', () {
     final rows = [_Row('a', '2026-10-10')];
     expect(

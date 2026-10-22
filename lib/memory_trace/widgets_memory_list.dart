@@ -19,7 +19,6 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
 class WidgetsMemoryList extends StatelessWidget {
-  static final Expando<ModelMemoryTimeline> _timelineCountsCache = Expando();
   static final Map<String, _MemoryDateFormats> _dateFormatsCache = {};
 
   final ControllerAuth auth;
@@ -38,8 +37,7 @@ class WidgetsMemoryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final timelineCounts = _timelineCountsCache[filteredEvents] ??=
-        ModelMemoryTimeline.fromEvents(filteredEvents);
+    final timelineCounts = ModelMemoryTimeline.forSnapshot(filteredEvents);
     final dateFormats = _dateFormatsCache.putIfAbsent(
       loc.localeName,
       () => _MemoryDateFormats(loc.localeName),

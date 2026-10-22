@@ -29,6 +29,102 @@ EventItem event(
 }) => EventItem(id: id, name: name ?? id, startDate: date, account: account);
 
 void main() {
+  test('missing and blank authors cannot match a signed-in account', () {
+    final missing = event('missing', DateTime(2026))..account = null;
+    final state = CalendarSharingState.fromData(
+      currentEmail: owner,
+      invitations: [],
+      sharedEvents: [],
+      visibleEvents: [
+        missing,
+        missing,
+        event('blank', DateTime(2026), account: ' '),
+        event('own', DateTime(2026)),
+      ],
+    );
+    expect(state.shareableEvents.map((e) => e.id), ['own']);
+  });
+
+  test(
+    'current email and repeated account variants use the same owner rule',
+    () {
+      final state = CalendarSharingState.fromData(
+        currentEmail: ' ONE@EXAMPLE.COM ',
+        invitations: [
+          invitation('sent', owner, 'other@example.com', 'pending'),
+          invitation(
+            'received',
+            'other@example.com',
+            ' One@Example.com ',
+            'accepted',
+          ),
+          invitation('closed', owner, 'other@example.com', 'rejected'),
+        ],
+        sharedEvents: [shared('sent', 'detail'), shared('closed', 'old')],
+        visibleEvents: [
+          for (var i = 0; i < 1000; i++)
+            event(
+              '$i',
+              DateTime(2026),
+              account: i.isEven ? owner : ' ONE@example.com ',
+            ),
+          event('foreign', DateTime(2026), account: 'other@example.com'),
+        ],
+      );
+      expect(state.sent.map((e) => e.id), ['sent']);
+      expect(state.received.map((e) => e.id), ['received']);
+      expect(state.shareableEvents.length, 1000);
+      expect(state.shareableEvents.any((e) => e.id == 'foreign'), isFalse);
+      expect(state.sharedEvents.map((e) => e.eventId), ['detail']);
+    },
+  );
+
+  test(
+    'account normalization never carries ownership into a later projection',
+    () {
+      final rows = [
+        event('one', DateTime(2026)),
+        event('two', DateTime(2026), account: 'two@example.com'),
+      ];
+      final invitations = [
+        invitation('share', owner, 'two@example.com', 'accepted'),
+      ];
+      CalendarSharingState project(String email) =>
+          CalendarSharingState.fromData(
+            currentEmail: email,
+            invitations: invitations,
+            sharedEvents: [shared('share', 'one')],
+            visibleEvents: rows,
+          );
+      final first = project(owner);
+      final second = project(' TWO@EXAMPLE.COM ');
+      expect(first.sent, hasLength(1));
+      expect(first.shareableEvents.single.id, 'one');
+      expect(second.sent, isEmpty);
+      expect(second.received, hasLength(1));
+      expect(second.shareableEvents.single.id, 'two');
+      expect(second.sharedEvents, isEmpty);
+    },
+  );
+
+  test(
+    'rebuilt projection sees changed event owners rather than cached owners',
+    () {
+      final row = event('event', DateTime(2026));
+      CalendarSharingState project() => CalendarSharingState.fromData(
+        currentEmail: owner,
+        invitations: [],
+        sharedEvents: [],
+        visibleEvents: [row],
+      );
+      expect(project().shareableEvents, hasLength(1));
+      row.account = 'other@example.com';
+      expect(project().shareableEvents, isEmpty);
+      row.account = ' ONE@example.com ';
+      expect(project().shareableEvents, hasLength(1));
+    },
+  );
+
   test('empty inputs produce empty sharing lists', () {
     final state = CalendarSharingState.fromData(
       currentEmail: owner,

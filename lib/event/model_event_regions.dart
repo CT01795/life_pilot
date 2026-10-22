@@ -35,16 +35,18 @@ class EventRegionData {
   });
 
   factory EventRegionData.fromEvents(List<EventItem> events) {
-    final normalizedCities = <String, String>{};
+    // Resolve each raw name to its destination once. Aliases share a bucket;
+    // null also caches blank names without creating an empty display region.
+    final groupsByRawCity = <String, List<EventItem>?>{};
     final eventsByRegion = <String, List<EventItem>>{};
     for (final event in events) {
       final city = event.city;
-      final region = normalizedCities.putIfAbsent(
-        city,
-        () => eventRegionKey(city),
-      );
-      if (region.isEmpty) continue;
-      eventsByRegion.putIfAbsent(region, () => []).add(event);
+      final group = groupsByRawCity.putIfAbsent(city, () {
+        final region = eventRegionKey(city);
+        if (region.isEmpty) return null;
+        return eventsByRegion.putIfAbsent(region, () => []);
+      });
+      group?.add(event);
     }
     final counts = eventsByRegion.map(
       (region, items) => MapEntry(region, items.length),

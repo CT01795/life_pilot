@@ -26,10 +26,12 @@ Map<String, dynamic> _row(
 class _CountedRow extends MapBase<String, dynamic> {
   final Map<String, dynamic> data;
   int decodes = 0;
+  int endReads = 0;
   _CountedRow(this.data);
   @override
   dynamic operator [](Object? key) {
     if (key == 'sub_events') decodes++;
+    if (key == 'end_date') endReads++;
     return data[key];
   }
 
@@ -87,6 +89,23 @@ void main() {
   test('malformed end date retains single-day fallback', () {
     final row = _row('single')..['end_date'] = 'invalid';
     expect(query.selectLocal([row]).single.id, 'single');
+  });
+
+  test('out-of-window starts skip end dates and full event decoding', () {
+    final rows = [
+      _CountedRow(_row('boundary', start: query.rangeEnd)),
+      _CountedRow(_row('future', start: DateTime(2100))),
+      _CountedRow(_row('invalid')..['start_date'] = 'invalid'),
+      _CountedRow(_row('done', completed: true)),
+      _CountedRow(_row('visible')),
+    ];
+    expect(query.selectLocal(rows).single.id, 'visible');
+    for (final row in rows.take(4)) {
+      expect(row.endReads, 0);
+      expect(row.decodes, 0);
+    }
+    expect(rows.last.endReads, greaterThan(0));
+    expect(rows.last.decodes, 1);
   });
 
   test('timezone-bearing timestamps are compared as instants', () {
