@@ -57,8 +57,12 @@ class EventRegionData {
     return EventRegionData._(
       source: events,
       counts: Map.unmodifiable(counts),
-      eventsByRegion: eventsByRegion,
-      sortedRegions: sortedRegions,
+      eventsByRegion: Map.unmodifiable(
+        eventsByRegion.map(
+          (key, value) => MapEntry(key, List<EventItem>.unmodifiable(value)),
+        ),
+      ),
+      sortedRegions: List.unmodifiable(sortedRegions),
     );
   }
 
@@ -66,6 +70,26 @@ class EventRegionData {
   final Map<String, int> counts;
   final Map<String, List<EventItem>> eventsByRegion;
   final List<String> sortedRegions;
+
+  String? _firstRegion;
+  List<String>? _displayRegions;
+
+  /// Keep only the current selection's order, not a list for every city.
+  /// The source count/name ordering remains unchanged for all other regions.
+  List<String> regionsWithFirst(String? region) {
+    if (region == null ||
+        (sortedRegions.isNotEmpty && sortedRegions.first == region)) {
+      return sortedRegions;
+    }
+    if (_firstRegion == region) return _displayRegions!;
+    final ordered = List<String>.unmodifiable([
+      region,
+      for (final other in sortedRegions)
+        if (other != region) other,
+    ]);
+    _firstRegion = region;
+    return _displayRegions = ordered;
+  }
 
   /// Computed only when a map is shown, then reused for this snapshot.
   /// Island/unknown regions stay in the separate chip area, in source order.

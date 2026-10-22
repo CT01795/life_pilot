@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class ModelPointRecordAccount {
   final String id;
@@ -14,6 +15,19 @@ class ModelPointRecordAccount {
     this.masterGraphUrl,
     this.points = 0,
   });
+
+  /// Row mapping only; never decode image payloads or recalculate local totals.
+  factory ModelPointRecordAccount.fromRow(
+    Map<String, dynamic> row, {
+    Uint8List? masterGraphUrl,
+    int? pointsOverride,
+  }) => ModelPointRecordAccount(
+    id: row['id'],
+    accountName: row['account'],
+    category: row['category'],
+    masterGraphUrl: masterGraphUrl,
+    points: pointsOverride ?? parseIntValue(row['points']),
+  );
 
   ModelPointRecordAccount copyWith({
     String? id,

@@ -248,12 +248,9 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                               cityCounts.containsKey(_selectedCity)
                           ? _selectedCity
                           : null;
-                      final displayedCities = [...cities];
-                      if (effectiveCity != null) {
-                        displayedCities
-                          ..remove(effectiveCity)
-                          ..insert(0, effectiveCity);
-                      }
+                      final displayedCities = regionData.regionsWithFirst(
+                        effectiveCity,
+                      );
                       if (_selectedCity != effectiveCity) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (mounted) {

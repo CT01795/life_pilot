@@ -19,6 +19,57 @@ class _LightEvent implements EventBase {
 
 void main() {
   final day = DateTime(2026, 10, 20);
+  test('headers distinguish first, same day, next day and next month', () {
+    final nextDay = DateTime(2026, 10, 21);
+    final nextMonth = DateTime(2026, 11, 1);
+    final model = ModelMemoryTimeline.fromEvents([
+      _event('a', day),
+      _event('b', day.add(const Duration(hours: 1))),
+      _event('c', nextDay),
+      _event('d', nextMonth),
+    ]);
+    expect(model.headerAt(0), (date: day, month: true, day: true));
+    expect(model.headerAt(1), isNull);
+    expect(model.headerAt(2), (date: nextDay, month: false, day: true));
+    expect(model.headerAt(3), (date: nextMonth, month: true, day: true));
+    expect(model.headerAt(-1), isNull);
+    expect(model.headerAt(4), isNull);
+  });
+  test('undated rows reset adjacent header boundaries', () {
+    final model = ModelMemoryTimeline.fromEvents([
+      _event('a', day),
+      _event('b', null),
+      _event('c', day),
+    ]);
+    expect(model.headerAt(1), isNull);
+    expect(model.headerAt(2), (date: day, month: true, day: true));
+  });
+  test('noncontiguous dates use adjacent rows rather than global counts', () {
+    final other = DateTime(2026, 11, 1);
+    final model = ModelMemoryTimeline.fromEvents([
+      _event('a', day),
+      _event('b', other),
+      _event('c', day),
+    ]);
+    expect(model.headerAt(2), (date: day, month: true, day: true));
+    expect(model.countForDay(day), 2);
+  });
+  test('equal month and day numbers in different years still have headers', () {
+    final nextYear = DateTime(2027, 10, 20);
+    final model = ModelMemoryTimeline.fromEvents([
+      _event('a', day),
+      _event('b', nextYear),
+    ]);
+    expect(model.headerAt(1), (date: nextYear, month: true, day: true));
+  });
+  test('edited dates get new headers without changing the previous model', () {
+    final event = _event('a', day);
+    final previous = ModelMemoryTimeline.fromEvents([event]);
+    event.startDate = DateTime(2026, 11, 1);
+    final updated = ModelMemoryTimeline.fromEvents([event]);
+    expect(previous.headerAt(0)!.date, day);
+    expect(updated.headerAt(0)!.date, event.startDate);
+  });
   test('empty timeline returns zero rather than invented counts', () {
     final model = ModelMemoryTimeline.fromEvents([]);
     expect(model.memoryCount, 0);

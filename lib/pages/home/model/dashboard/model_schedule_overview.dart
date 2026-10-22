@@ -6,6 +6,13 @@ typedef _ScheduledEvent = ({
   DateTime start,
   _ScheduleInterval? interval,
 });
+typedef _PreparedSchedule = ({
+  DateTime day,
+  List<_ScheduledEvent> today,
+  List<_ScheduledEvent> tomorrow,
+  int todayConflicts,
+  int tomorrowConflicts,
+});
 
 /// Home schedule analysis only; presentation and persistence stay outside.
 class ModelScheduleOverview {
@@ -23,24 +30,30 @@ class ModelScheduleOverview {
   factory ModelScheduleOverview.from(List<CalendarEvent> events, DateTime now) {
     final minuteKey = now.millisecondsSinceEpoch ~/ 60000;
     final cached = _cache[events];
-    if (cached != null &&
-        cached.matches(events, minuteKey, now.timeZoneOffset)) {
+    final reusable =
+        cached != null &&
+        cached.matches(events, now.timeZoneOffset) &&
+        cached.prepared.day == _dateOnly(now);
+    if (reusable && cached.minuteKey == minuteKey) {
       return cached.overview;
     }
-    final overview = ModelScheduleOverview._build(events, now);
+    // Immutable events permit reusing intervals/order across minutes, but a
+    // new day, timezone or changed membership must prepare a fresh schedule.
+    final prepared = reusable ? cached.prepared : _prepare(events, now);
+    final overview = ModelScheduleOverview._fromPrepared(prepared, now);
     _cache[events] = _ScheduleOverviewCache(
       minuteKey: minuteKey,
       offset: now.timeZoneOffset,
-      events: List<CalendarEvent>.of(events, growable: false),
+      events: reusable
+          ? cached.events
+          : List<CalendarEvent>.of(events, growable: false),
       overview: overview,
+      prepared: prepared,
     );
     return overview;
   }
 
-  factory ModelScheduleOverview._build(
-    List<CalendarEvent> events,
-    DateTime now,
-  ) {
+  static _PreparedSchedule _prepare(List<CalendarEvent> events, DateTime now) {
     final today = _dateOnly(now);
     final tomorrow = today.add(const Duration(days: 1));
     final todayEvents = <_ScheduledEvent>[];
@@ -63,13 +76,29 @@ class ModelScheduleOverview {
     }
     todayEvents.sort((a, b) => a.start.compareTo(b.start));
     tomorrowEvents.sort((a, b) => a.start.compareTo(b.start));
+    // Conflicts depend on schedule data, not the current minute.
+    return (
+      day: today,
+      today: todayEvents,
+      tomorrow: tomorrowEvents,
+      todayConflicts: _countConflicts(todayEvents),
+      tomorrowConflicts: _countConflicts(tomorrowEvents),
+    );
+  }
+
+  factory ModelScheduleOverview._fromPrepared(
+    _PreparedSchedule prepared,
+    DateTime now,
+  ) {
+    final todayEvents = prepared.today;
+    final tomorrowEvents = prepared.tomorrow;
     final next = todayEvents.firstOrNull;
     return ModelScheduleOverview(
       todayCount: todayEvents.length,
       tomorrowCount: tomorrowEvents.length,
       overdueCount: todayEvents.where((event) => _hasEnded(event, now)).length,
-      todayConflictCount: _countConflicts(todayEvents),
-      tomorrowConflictCount: _countConflicts(tomorrowEvents),
+      todayConflictCount: prepared.todayConflicts,
+      tomorrowConflictCount: prepared.tomorrowConflicts,
       nextEvent: next?.event,
       nextEventNeedsReview: next != null && _hasEnded(next, now),
       nextFreeAt: _findNextFreeHour(todayEvents, now),
@@ -198,20 +227,16 @@ class _ScheduleOverviewCache {
     required this.offset,
     required this.events,
     required this.overview,
+    required this.prepared,
   });
   final int minuteKey;
   final Duration offset;
   final List<CalendarEvent> events;
   final ModelScheduleOverview overview;
+  final _PreparedSchedule prepared;
 
-  bool matches(
-    List<CalendarEvent> current,
-    int minute,
-    Duration currentOffset,
-  ) {
-    if (minute != minuteKey ||
-        currentOffset != offset ||
-        current.length != events.length) {
+  bool matches(List<CalendarEvent> current, Duration currentOffset) {
+    if (currentOffset != offset || current.length != events.length) {
       return false;
     }
     // CalendarEvent is immutable; identity detects replacements and reordering.

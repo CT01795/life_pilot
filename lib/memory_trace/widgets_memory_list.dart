@@ -90,12 +90,7 @@ class WidgetsMemoryList extends StatelessWidget {
           event: event,
           loc: loc,
         );
-        final date = eventViewModel.startDate;
-        final previousDate = index == 0
-            ? null
-            : filteredEvents[index - 1].startDate;
-        final showMonthHeader = date != null && !_sameMonth(date, previousDate);
-        final showDateHeader = date != null && !_sameDay(date, previousDate);
+        final header = timelineCounts.headerAt(index);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,7 +101,7 @@ class WidgetsMemoryList extends StatelessWidget {
                 dayCount: timelineCounts.dayCount,
                 cityCount: timelineCounts.cityCount,
               ),
-            if (showMonthHeader)
+            if (header != null && header.month)
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.fromLTRB(12, 20, 12, 0),
@@ -127,14 +122,14 @@ class WidgetsMemoryList extends StatelessWidget {
                     Gaps.w8,
                     Expanded(
                       child: Text(
-                        dateFormats.month.format(date),
+                        dateFormats.month.format(header.date),
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                     ),
                     Text(
                       loc.memoryCountForMonth(
-                        timelineCounts.countForMonth(date, fallback: 1),
+                        timelineCounts.countForMonth(header.date, fallback: 1),
                       ),
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.w700,
@@ -143,14 +138,14 @@ class WidgetsMemoryList extends StatelessWidget {
                   ],
                 ),
               ),
-            if (showDateHeader)
+            if (header != null && header.day)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 12, 2),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
-                        dateFormats.day.format(date),
+                        dateFormats.day.format(header.date),
                         style: const TextStyle(
                           color: Color(0xFF6D4876),
                           fontSize: 18,
@@ -169,7 +164,7 @@ class WidgetsMemoryList extends StatelessWidget {
                       ),
                       child: Text(
                         loc.memoryCountForDay(
-                          timelineCounts.countForDay(date, fallback: 1),
+                          timelineCounts.countForDay(header.date, fallback: 1),
                         ),
                         style: const TextStyle(
                           color: Color(0xFF6D4876),
@@ -272,16 +267,6 @@ class WidgetsMemoryList extends StatelessWidget {
       },
     );
   }
-
-  bool _sameDay(DateTime date, DateTime? other) {
-    return other != null &&
-        date.year == other.year &&
-        date.month == other.month &&
-        date.day == other.day;
-  }
-
-  bool _sameMonth(DateTime date, DateTime? other) =>
-      other != null && date.year == other.year && date.month == other.month;
 
   void _showEventDialog({
     required BuildContext context,

@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/record_statistics/controller_record_statistics.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:life_pilot/record_statistics/service_record_statistics.dart';
+import 'package:life_pilot/record_statistics/record_statistics_formats.dart';
 
 class PageRecordStatistics extends StatefulWidget {
   final String accountId;
@@ -53,12 +53,13 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final formatter = NumberFormat('#,##0.####', loc.localeName);
+    final formats = RecordStatisticsFormats.forLocale(loc.localeName);
     return Scaffold(
       appBar: AppBar(title: Text(loc.recordStatistics)),
       body: AnimatedBuilder(
         animation: controller,
         builder: (context, _) {
+          final currentYear = DateTime.now().year;
           final data = controller.data;
           if (controller.loading) {
             return const Center(child: CircularProgressIndicator());
@@ -124,7 +125,7 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
                           Expanded(
                             child: Tooltip(
                               message:
-                                  '${DateFormat.yMMM(loc.localeName).format(months[i].month)}: ${formatter.format(values[i])}',
+                                  '${formats.month(months[i].month)}: ${formats.value(values[i])}',
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -135,7 +136,7 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
                                         'record-chart-value',
                                         months[i].month,
                                       )),
-                                      formatter.format(values[i]),
+                                      formats.value(values[i]),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       textAlign: TextAlign.center,
@@ -188,10 +189,10 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
                                       'record-axis-month',
                                       months[i].month,
                                     )),
-                                    (months[i].month.year == DateTime.now().year
-                                            ? DateFormat.MMM(loc.localeName)
-                                            : DateFormat.yMMM(loc.localeName))
-                                        .format(months[i].month),
+                                    formats.axisMonth(
+                                      months[i].month,
+                                      currentYear: currentYear,
+                                    ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -209,11 +210,9 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
               for (var i = 0; i < 12; i++)
                 ListTile(
                   key: ValueKey(('record-month-row', months[i].month)),
-                  title: Text(
-                    DateFormat.yMMM(loc.localeName).format(months[i].month),
-                  ),
+                  title: Text(formats.month(months[i].month)),
                   subtitle: Text(
-                    formatter.format(values[i]),
+                    formats.value(values[i]),
                     style: TextStyle(
                       color: values[i] < 0
                           ? Theme.of(context).colorScheme.error

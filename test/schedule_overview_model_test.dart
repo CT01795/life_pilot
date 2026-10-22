@@ -5,6 +5,24 @@ import 'package:life_pilot/pages/home/model/dashboard/model_schedule_overview.da
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 
 final day = DateTime(2026, 10, 15);
+
+class _ObservedEvent extends CalendarEvent {
+  _ObservedEvent()
+    : super(
+        id: 'observed',
+        name: 'observed',
+        startDate: day,
+        startTime: const TimeOfDay(hour: 8, minute: 0),
+        endTime: const TimeOfDay(hour: 9, minute: 0),
+      );
+  int timeReads = 0;
+  @override
+  TimeOfDay? get startTime {
+    timeReads++;
+    return super.startTime;
+  }
+}
+
 CalendarEvent event(
   String id, {
   int offset = 0,
@@ -38,6 +56,111 @@ void compareLegacy(List<CalendarEvent> events, DateTime now) {
 }
 
 void main() {
+  test(
+    'conflict counts persist while overdue state changes across minutes',
+    () {
+      final events = [
+        event('first', start: 480, end: 540),
+        event('overlap', start: 510, end: 570),
+        event('tomorrow1', offset: 1, start: 600, end: 660),
+        event('tomorrow2', offset: 1, start: 630, end: 690),
+      ];
+      final before = ModelScheduleOverview.from(
+        events,
+        DateTime(2026, 10, 15, 8),
+      );
+      final after = ModelScheduleOverview.from(
+        events,
+        DateTime(2026, 10, 15, 10),
+      );
+      expect(before.overdueCount, 0);
+      expect(after.overdueCount, 2);
+      expect(after.todayConflictCount, 2);
+      expect(after.tomorrowConflictCount, 2);
+      compareLegacy(events, DateTime(2026, 10, 15, 10, 1));
+    },
+  );
+  test('marking one overlapping event complete refreshes cached counts', () {
+    final events = [
+      event('first', start: 480, end: 600),
+      event('second', start: 540, end: 660),
+    ];
+    expect(ModelScheduleOverview.from(events, day).todayConflictCount, 2);
+    events[1] = event('second', start: 540, end: 660, completed: true);
+    expect(ModelScheduleOverview.from(events, day).todayConflictCount, 0);
+  });
+  test('midnight shifts cached tomorrow conflicts to today', () {
+    final events = [
+      event('today1', start: 480, end: 600),
+      event('today2', start: 540, end: 660),
+      event('tomorrow1', offset: 1, start: 600, end: 660),
+      event('tomorrow2', offset: 1, start: 630, end: 690),
+      event('tomorrow3', offset: 1, start: 640, end: 700),
+    ];
+    final before = ModelScheduleOverview.from(
+      events,
+      DateTime(2026, 10, 15, 23, 59),
+    );
+    expect(before.todayConflictCount, 2);
+    expect(before.tomorrowConflictCount, 3);
+    final after = ModelScheduleOverview.from(events, DateTime(2026, 10, 16));
+    expect(after.todayConflictCount, 3);
+    expect(after.tomorrowConflictCount, 0);
+  });
+  test(
+    'new minutes reuse prepared intervals but refresh time-based results',
+    () {
+      final observed = _ObservedEvent();
+      final events = [observed];
+      final first = ModelScheduleOverview.from(
+        events,
+        DateTime(2026, 10, 15, 8, 59),
+      );
+      final reads = observed.timeReads;
+      expect(first.overdueCount, 0);
+      expect(reads, greaterThan(0));
+      final next = ModelScheduleOverview.from(
+        events,
+        DateTime(2026, 10, 15, 9),
+      );
+      expect(next, isNot(same(first)));
+      expect(next.overdueCount, 1);
+      expect(next.nextEventNeedsReview, isTrue);
+      expect(next.nextFreeAt, DateTime(2026, 10, 15, 9));
+      expect(observed.timeReads, reads);
+    },
+  );
+  test('midnight rebuilds today and tomorrow membership', () {
+    final events = [event('today'), event('tomorrow', offset: 1)];
+    ModelScheduleOverview.from(events, DateTime(2026, 10, 15, 23, 59));
+    compareLegacy(events, DateTime(2026, 10, 16));
+    expect(
+      ModelScheduleOverview.from(events, DateTime(2026, 10, 16)).nextEvent?.id,
+      'tomorrow',
+    );
+  });
+  test('changed membership between minutes cannot reuse old intervals', () {
+    final events = [event('old', start: 480, end: 540)];
+    ModelScheduleOverview.from(events, DateTime(2026, 10, 15, 8));
+    events[0] = event('replacement', start: 600, end: 660);
+    compareLegacy(events, DateTime(2026, 10, 15, 8, 1));
+    events.add(event('added', start: 540, end: 660));
+    compareLegacy(events, DateTime(2026, 10, 15, 8, 2));
+    events.clear();
+    compareLegacy(events, DateTime(2026, 10, 15, 8, 3));
+  });
+  test('reused schedules match original rules across a whole day', () {
+    final events = [
+      event('early', start: 480, end: 540),
+      event('long', start: 600, end: 900),
+      event('nested', start: 660, end: 720),
+      event('done', start: 480, end: 1320, completed: true),
+      event('tomorrow', offset: 1, start: 600, end: 660),
+    ];
+    for (var minute = 0; minute < 1440; minute += 7) {
+      compareLegacy(events, day.add(Duration(minutes: minute)));
+    }
+  });
   test('empty schedule starts free hour at eight', () {
     final result = ModelScheduleOverview.from([], DateTime(2026, 10, 15, 7));
     expect(result.todayCount, 0);

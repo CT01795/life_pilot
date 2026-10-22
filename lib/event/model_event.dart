@@ -85,29 +85,38 @@ class ModelEvent {
   }
 
   void updateSearchKeywords(String? keywords) {
-    _searchFilter.keywords = keywords ?? '';
+    final next = keywords ?? '';
+    final changed = _searchFilter.keywords != next;
+    _searchFilter.keywords = next;
+    // Tags are mutable presentation data: restore them even for equal input.
     _searchFilter.tags = List.of(_queryForCurrentKeywords().tokens);
-    _invalidateFilteredEvents();
+    if (changed) _invalidateFilteredEvents();
   }
 
   void updateStartDate(DateTime? date) {
+    final previous = (_searchFilter.startDate, _searchFilter.endDate);
     if (_searchFilter.endDate != null &&
         date != null &&
         date.isAfter(_searchFilter.endDate!)) {
       _searchFilter.endDate = date;
     }
     _searchFilter.startDate = date;
-    _invalidateFilteredEvents();
+    if (previous != (_searchFilter.startDate, _searchFilter.endDate)) {
+      _invalidateFilteredEvents();
+    }
   }
 
   void updateEndDate(DateTime? date) {
+    final previous = (_searchFilter.startDate, _searchFilter.endDate);
     if (_searchFilter.startDate != null &&
         date != null &&
         _searchFilter.startDate!.isAfter(date)) {
       _searchFilter.startDate = date;
     }
     _searchFilter.endDate = date;
-    _invalidateFilteredEvents();
+    if (previous != (_searchFilter.startDate, _searchFilter.endDate)) {
+      _invalidateFilteredEvents();
+    }
   }
 
   void toggleEventSelection(String eventId, bool isSelected) {

@@ -82,8 +82,10 @@ class ModelContentPerformance {
     final items = <ContentPerformanceItem>[];
     final totals = {for (final column in contentPerformanceColumns) column: 0};
     for (final row in rows) {
-      final item = ContentPerformanceItem(row);
-      if (statisticsOnly && !item.hasStatistics) continue;
+      final metrics = _ContentMetricCounts(row);
+      // Excluded rows need neither date parsing nor a retained source copy.
+      if (statisticsOnly && !metrics.hasStatistics) continue;
+      final item = ContentPerformanceItem._fromCounts(row, metrics);
       items.add(item);
       for (var i = 0; i < contentPerformanceColumns.length; i++) {
         totals[contentPerformanceColumns[i]] =
@@ -128,15 +130,14 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
     this.maximum,
   );
   factory ContentPerformanceItem(Map<String, dynamic> row) {
+    return ContentPerformanceItem._fromCounts(row, _ContentMetricCounts(row));
+  }
+  factory ContentPerformanceItem._fromCounts(
+    Map<String, dynamic> row,
+    _ContentMetricCounts metrics,
+  ) {
     final starts = tryParseDateTimeValue(row['start_date'], toLocal: true);
     final ends = tryParseDateTimeValue(row['end_date'], toLocal: true);
-    final counts = <int>[];
-    var maximum = 1;
-    for (final column in contentPerformanceColumns) {
-      final value = parseIntValue(row[column]);
-      counts.add(value);
-      if (value > maximum) maximum = value;
-    }
     return ContentPerformanceItem._(
       Map.unmodifiable(row),
       parseStringValue(row['id']),
@@ -146,8 +147,8 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
       ends ?? starts,
       starts,
       ends,
-      List.unmodifiable(counts),
-      maximum,
+      metrics.values,
+      metrics.maximum,
     );
   }
   @override
@@ -169,5 +170,29 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
     if (order != 0) return order;
     order = name.compareTo(other.name);
     return order != 0 ? order : id.compareTo(other.id);
+  }
+}
+
+/// Parse metric columns once, before deciding whether full row data is needed.
+class _ContentMetricCounts {
+  final List<int> values;
+  final int maximum;
+  final bool hasStatistics;
+  _ContentMetricCounts._(this.values, this.maximum, this.hasStatistics);
+  factory _ContentMetricCounts(Map<String, dynamic> row) {
+    final values = <int>[];
+    var maximum = 1;
+    var hasStatistics = false;
+    for (final column in contentPerformanceColumns) {
+      final value = parseIntValue(row[column]);
+      values.add(value);
+      if (value != 0) hasStatistics = true;
+      if (value > maximum) maximum = value;
+    }
+    return _ContentMetricCounts._(
+      List<int>.unmodifiable(values),
+      maximum,
+      hasStatistics,
+    );
   }
 }

@@ -60,11 +60,11 @@ Future<void> openHomeAccountingQuickAdd(BuildContext context) async {
   }
 
   final service = context.read<ServiceAccounting>();
-  final accounts = await service.fetchAccounts(user: user, includeGraph: false);
+  final account = await service.fetchAccountById(
+    user: user,
+    accountId: accountId,
+  );
   if (!context.mounted || !scope.isCurrent) return;
-  final account = accounts
-      .where((account) => account.id == accountId)
-      .firstOrNull;
   if (account == null) {
     ScaffoldMessenger.of(
       context,
@@ -123,11 +123,11 @@ Future<void> openHomePointQuickAdd(BuildContext context) async {
   }
 
   final service = context.read<ServicePointRecord>();
-  final accounts = await service.fetchAccounts(user: user, includeGraph: false);
+  final account = await service.fetchAccountById(
+    user: user,
+    accountId: accountId,
+  );
   if (!context.mounted || !scope.isCurrent) return;
-  final account = accounts
-      .where((account) => account.id == accountId)
-      .firstOrNull;
   if (account == null) {
     ScaffoldMessenger.of(
       context,

@@ -18,8 +18,10 @@ import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/local_storage/repository_local_event_account.dart';
 import 'package:life_pilot/local_storage/repository_local_record_history.dart';
 import 'package:life_pilot/local_storage/repository_local_record_editor.dart';
+import 'package:life_pilot/local_storage/repository_local_account_summary.dart';
 
 class ServiceAccounting {
+  final _localAccountSummary = RepositoryLocalAccountSummary();
   final _localEventAccounts = RepositoryLocalEventAccount();
   final _localHistory = RepositoryLocalRecordHistory();
   final _localEditor = RepositoryLocalRecordEditor();
@@ -88,14 +90,9 @@ class ServiceAccounting {
           detailResource: TableNames.accountingDetail,
         );
         if (response == null) return null;
-        return ModelAccountingAccount(
-          id: response[Fields.id],
-          accountName: response[Fields.account],
-          category: response['category'],
+        return ModelAccountingAccount.fromRow(
+          response,
           masterGraphUrl: parseMasterGraph(response['master_graph_url']),
-          balance: parseNumValue(response['balance']),
-          currency: response['main_currency'],
-          exchangeRate: response['exchange_rate'],
         );
       }
       var response = await supabase
@@ -138,18 +135,42 @@ class ServiceAccounting {
         );
       }
 
-      return ModelAccountingAccount(
-        id: response[Fields.id],
-        accountName: response[Fields.account],
-        category: response['category'],
-        masterGraphUrl: bytes,
-        balance: parseNumValue(response['balance']),
-        currency: response['main_currency'],
-        exchangeRate: response['exchange_rate'],
-      );
+      return ModelAccountingAccount.fromRow(response, masterGraphUrl: bytes);
     } on Exception {
       return null;
     }
+  }
+
+  /// Lightweight exact lookup for home quick entry; no account images.
+  Future<ModelAccountingAccount?> fetchAccountById({
+    required String user,
+    required String accountId,
+  }) async {
+    if (accountId.isEmpty) return null;
+    final local = await _storesLocally;
+    Map<String, dynamic>? row;
+    num? localTotal;
+    if (local) {
+      if (_localOwner != user.toLowerCase()) return null;
+      final result = await _localAccountSummary.read(
+        owner: user.toLowerCase(),
+        accountId: accountId,
+        points: false,
+      );
+      if (result == null) return null;
+      row = result.row;
+      localTotal = result.total;
+    } else {
+      row = await supabase
+          .from(TableNames.accountingAccount)
+          .select('id,account,category,balance,main_currency,exchange_rate')
+          .eq(Fields.id, accountId)
+          .eq(Fields.createdBy, user)
+          .eq(Fields.isValid, true)
+          .maybeSingle();
+    }
+    if (row == null) return null;
+    return ModelAccountingAccount.fromRow(row, balanceOverride: localTotal);
   }
 
   Future<List<ModelAccountingAccount>> fetchAccounts({
@@ -171,24 +192,21 @@ class ServiceAccounting {
             resource: TableNames.accountingDetail,
           ),
         ]);
-        final page = ModelLocalAccountList.accounting(
-          snapshots[0],
-          snapshots[1],
+        final page = ModelLocalAccountList.fromSnapshots(
+          accounts: snapshots[0],
+          details: snapshots[1],
+          points: false,
           category: category,
           projectLimit: projectLimit,
         );
         return page.rows
             .map(
-              (e) => ModelAccountingAccount(
-                id: e[Fields.id],
-                accountName: e[Fields.account],
-                category: e['category'],
+              (e) => ModelAccountingAccount.fromRow(
+                e,
                 masterGraphUrl: includeGraph
                     ? parseMasterGraph(e['master_graph_url'])
                     : null,
-                balance: page.totalFor(e),
-                currency: e['main_currency'],
-                exchangeRate: e['exchange_rate'],
+                balanceOverride: page.totalFor(e),
               ),
             )
             .toList();
@@ -228,6 +246,9 @@ class ServiceAccounting {
         list = await query.order(Fields.account, ascending: true);
       }
 
+      if (!includeGraph) {
+        return list.map((row) => ModelAccountingAccount.fromRow(row)).toList();
+      }
       return await Future.wait(
         list.map((e) async {
           final graph = e['master_graph_url'];
@@ -238,15 +259,7 @@ class ServiceAccounting {
                   graph,
                 );
 
-          return ModelAccountingAccount(
-            id: e[Fields.id],
-            accountName: e[Fields.account],
-            category: e['category'],
-            masterGraphUrl: bytes,
-            balance: parseNumValue(e['balance']),
-            currency: e['main_currency'],
-            exchangeRate: e['exchange_rate'],
-          );
+          return ModelAccountingAccount.fromRow(e, masterGraphUrl: bytes);
         }),
       );
     } on Exception catch (exception) {

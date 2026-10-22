@@ -18,6 +18,54 @@ EventItem item(String id, String city) =>
     EventItem(id: id, name: id, city: city);
 
 void main() {
+  test('selected city ordering is reused without changing base ordering', () {
+    final data = EventRegionData.fromEvents([
+      item('a', 'Tokyo'),
+      item('b', 'Tokyo'),
+      item('c', 'Singapore'),
+      item('d', '高雄'),
+    ]);
+    final original = [...data.sortedRegions];
+    final first = data.regionsWithFirst('高雄');
+    expect(first, ['高雄', ...original.where((city) => city != '高雄')]);
+    expect(data.regionsWithFirst('高雄'), same(first));
+    expect(data.sortedRegions, original);
+    final changed = data.regionsWithFirst('Singapore');
+    expect(changed.first, 'Singapore');
+    expect(data.regionsWithFirst('Singapore'), same(changed));
+    expect(first.first, '高雄');
+    expect(() => changed.clear(), throwsUnsupportedError);
+  });
+  test('all and first selections reuse the base order', () {
+    final data = EventRegionData.fromEvents([item('a', 'Tokyo')]);
+    for (final city in [null, 'Tokyo']) {
+      expect(data.regionsWithFirst(city), same(data.sortedRegions));
+    }
+    final empty = EventRegionData.fromEvents([]);
+    expect(empty.regionsWithFirst(null), same(empty.sortedRegions));
+    expect(empty.regionsWithFirst('missing'), ['missing']);
+    expect(data.regionsWithFirst('missing'), ['missing', 'Tokyo']);
+  });
+  test('region group collections are read-only but retain event identity', () {
+    final event = item('a', 'Tokyo');
+    final data = EventRegionData.fromEvents([event]);
+    expect(data.eventsFor('Tokyo').single, same(event));
+    expect(() => data.eventsByRegion.clear(), throwsUnsupportedError);
+    expect(() => data.eventsFor('Tokyo').clear(), throwsUnsupportedError);
+    expect(() => data.sortedRegions.clear(), throwsUnsupportedError);
+  });
+  test(
+    'replacement snapshots cannot inherit a previous selected-city order',
+    () {
+      final model = ModelEventRegions();
+      final original = model.select([item('a', 'Tokyo'), item('b', '高雄')]);
+      original.regionsWithFirst('高雄');
+      final replaced = model.select([item('c', 'Singapore')]);
+      expect(replaced.regionsWithFirst('高雄'), ['高雄', 'Singapore']);
+      expect(replaced.regionsWithFirst(null), ['Singapore']);
+      expect(original.regionsWithFirst('高雄').first, '高雄');
+    },
+  );
   test('map partitions merge aliases and preserve each group source order', () {
     final data = EventRegionData.fromEvents([
       item('a', 'Singapore'),

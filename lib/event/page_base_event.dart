@@ -338,15 +338,11 @@ class _GenericEventPageState extends State<GenericEventPage> {
                           );
                           final regionData = _regions.select(pageEvents);
                           final cityCounts = regionData.counts;
-                          final cities = regionData.sortedRegions;
                           // A city may exist on a page that has not been fetched yet.
                           final effectiveCity = _selectedCity;
-                          final displayedCities = [...cities];
-                          if (effectiveCity != null) {
-                            displayedCities
-                              ..remove(effectiveCity)
-                              ..insert(0, effectiveCity);
-                          }
+                          final displayedCities = regionData.regionsWithFirst(
+                            effectiveCity,
+                          );
                           final visibleEvents = effectiveCity == null
                               ? pageEvents
                               : regionData.eventsFor(effectiveCity);

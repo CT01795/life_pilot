@@ -18,8 +18,10 @@ import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/local_storage/repository_local_event_account.dart';
 import 'package:life_pilot/local_storage/repository_local_record_history.dart';
 import 'package:life_pilot/local_storage/repository_local_record_editor.dart';
+import 'package:life_pilot/local_storage/repository_local_account_summary.dart';
 
 class ServicePointRecord {
+  final _localAccountSummary = RepositoryLocalAccountSummary();
   final _localEventAccounts = RepositoryLocalEventAccount();
   final _localHistory = RepositoryLocalRecordHistory();
   final _localEditor = RepositoryLocalRecordEditor();
@@ -88,12 +90,9 @@ class ServicePointRecord {
           detailResource: TableNames.pointRecordDetail,
         );
         if (response == null) return null;
-        return ModelPointRecordAccount(
-          id: response[Fields.id],
-          accountName: response[Fields.account],
-          category: response['category'],
+        return ModelPointRecordAccount.fromRow(
+          response,
           masterGraphUrl: parseMasterGraph(response['master_graph_url']),
-          points: parseIntValue(response['points']),
         );
       }
       var response = await supabase
@@ -136,17 +135,43 @@ class ServicePointRecord {
         );
       }
 
-      return ModelPointRecordAccount(
-        id: response[Fields.id],
-        accountName: response[Fields.account],
-        category: response['category'],
-        masterGraphUrl: bytes,
-        points: parseIntValue(response['points']),
-      );
+      return ModelPointRecordAccount.fromRow(response, masterGraphUrl: bytes);
     } on Exception catch (exception) {
       logger.e(exception);
       return null;
     }
+  }
+
+  /// Lightweight exact lookup for home quick entry; no account images.
+  Future<ModelPointRecordAccount?> fetchAccountById({
+    required String user,
+    required String accountId,
+  }) async {
+    if (accountId.isEmpty) return null;
+    final local = await _storesLocally;
+    Map<String, dynamic>? row;
+    int? localTotal;
+    if (local) {
+      if (_localOwner != user.toLowerCase()) return null;
+      final result = await _localAccountSummary.read(
+        owner: user.toLowerCase(),
+        accountId: accountId,
+        points: true,
+      );
+      if (result == null) return null;
+      row = result.row;
+      localTotal = result.total.toInt();
+    } else {
+      row = await supabase
+          .from(TableNames.pointRecordAccount)
+          .select('id,account,category,points')
+          .eq(Fields.id, accountId)
+          .eq(Fields.createdBy, user)
+          .eq(Fields.isValid, true)
+          .maybeSingle();
+    }
+    if (row == null) return null;
+    return ModelPointRecordAccount.fromRow(row, pointsOverride: localTotal);
   }
 
   Future<List<ModelPointRecordAccount>> fetchAccounts({
@@ -168,22 +193,21 @@ class ServicePointRecord {
             resource: TableNames.pointRecordDetail,
           ),
         ]);
-        final page = ModelLocalAccountList.points(
-          snapshots[0],
-          snapshots[1],
+        final page = ModelLocalAccountList.fromSnapshots(
+          accounts: snapshots[0],
+          details: snapshots[1],
+          points: true,
           category: category,
           projectLimit: projectLimit,
         );
         return page.rows
             .map(
-              (e) => ModelPointRecordAccount(
-                id: e[Fields.id],
-                accountName: e[Fields.account],
-                category: e['category'],
+              (e) => ModelPointRecordAccount.fromRow(
+                e,
                 masterGraphUrl: includeGraph
                     ? parseMasterGraph(e['master_graph_url'])
                     : null,
-                points: page.totalFor(e).toInt(),
+                pointsOverride: page.totalFor(e).toInt(),
               ),
             )
             .toList();
@@ -222,6 +246,9 @@ class ServicePointRecord {
       }
 
       if (list.isEmpty) return [];
+      if (!includeGraph) {
+        return list.map((row) => ModelPointRecordAccount.fromRow(row)).toList();
+      }
       return await Future.wait(
         list.map((e) async {
           final graph = e['master_graph_url'];
@@ -231,13 +258,7 @@ class ServicePointRecord {
                   decodeBase64InIsolate,
                   graph,
                 );
-          return ModelPointRecordAccount(
-            id: e[Fields.id],
-            accountName: e[Fields.account],
-            category: e['category'],
-            masterGraphUrl: bytes,
-            points: parseIntValue(e['points']),
-          );
+          return ModelPointRecordAccount.fromRow(e, masterGraphUrl: bytes);
         }),
       );
     } on Exception catch (exception) {
