@@ -9,13 +9,14 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
 class PageBusinessPlan extends StatelessWidget {
-  const PageBusinessPlan({super.key});
+  const PageBusinessPlan({super.key, this.service});
+  final ServiceBusinessPlan? service;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider.value(value: ServiceBusinessPlan()),
+        Provider.value(value: service ?? ServiceBusinessPlan()),
         ChangeNotifierProxyProvider<ControllerAuth, ControllerBusinessPlan>(
           create: (context) => ControllerBusinessPlan(
             service: context.read<ServiceBusinessPlan>(),
@@ -58,6 +59,17 @@ class _PageBusinessPlanState extends State<_PageBusinessPlanBody> {
 
     final loc = AppLocalizations.of(context)!;
     final visiblePlans = c.visiblePlans;
+    if (c.plansLoadError != null && c.plans.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(loc.dashboardLoadFailed),
+            TextButton(onPressed: c.loadPlans, child: Text(loc.retry)),
+          ],
+        ),
+      );
+    }
     return Scaffold(
       body: Column(
         children: [
@@ -86,34 +98,20 @@ class _PageBusinessPlanState extends State<_PageBusinessPlanBody> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(loc.noData),
-                        if (c.hasMorePlans) ...[
+                        if (c.hasPlanHistoryAction) ...[
                           Gaps.h8,
-                          c.isLoadingMorePlans
-                              ? const CircularProgressIndicator()
-                              : TextButton(
-                                  onPressed: c.loadMorePlans,
-                                  child: Text(loc.clickHereToSeeMore),
-                                ),
+                          _buildPlanHistoryAction(context, c),
                         ],
                       ],
                     ),
                   )
                 : ListView.builder(
                     itemCount:
-                        visiblePlans.length +
-                        ((c.hasMorePlans || c.isLoadingMorePlans) ? 1 : 0),
+                        visiblePlans.length + (c.hasPlanHistoryAction ? 1 : 0),
                     itemBuilder: (_, i) {
                       if (i == visiblePlans.length) {
                         return Center(
-                          child: c.isLoadingMorePlans
-                              ? const Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: CircularProgressIndicator(),
-                                )
-                              : TextButton(
-                                  onPressed: c.loadMorePlans,
-                                  child: Text(loc.clickHereToSeeMore),
-                                ),
+                          child: _buildPlanHistoryAction(context, c),
                         );
                       }
                       final plan = visiblePlans[i];
@@ -188,6 +186,34 @@ class _PageBusinessPlanState extends State<_PageBusinessPlanBody> {
       ),
     );
   }
+}
+
+Widget _buildPlanHistoryAction(BuildContext context, ControllerBusinessPlan c) {
+  final loc = AppLocalizations.of(context)!;
+  if (c.isCheckingPlanHistory || c.isLoadingMorePlans) {
+    return const Padding(
+      padding: EdgeInsets.all(16),
+      child: CircularProgressIndicator(),
+    );
+  }
+  if (c.planHistoryError != null) {
+    return TextButton.icon(
+      onPressed: c.retryPlanHistory,
+      icon: const Icon(Icons.refresh),
+      label: Text(loc.retry),
+    );
+  }
+  if (c.loadMorePlansError != null) {
+    return TextButton.icon(
+      onPressed: c.loadMorePlans,
+      icon: const Icon(Icons.refresh),
+      label: Text(loc.retry),
+    );
+  }
+  return TextButton(
+    onPressed: c.loadMorePlans,
+    child: Text(loc.clickHereToSeeMore),
+  );
 }
 
 class InlineEditableTitle extends StatefulWidget {

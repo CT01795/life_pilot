@@ -22,6 +22,7 @@ class PagePlanPreview extends StatefulWidget {
 class _PagePlanPreviewState extends State<PagePlanPreview> {
   bool editingTitle = false;
   final _titleKey = GlobalKey<_EditablePlanTitleState>();
+  PlanPreviewIndex? _previewIndex;
 
   @override
   void initState() {
@@ -35,37 +36,6 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
     });
   }
 
-  // 1️⃣ 計算總 item 數量
-  int _totalItemCount(ModelBusinessPlan plan) {
-    if (plan.sections.isEmpty) return 1; // skeleton
-    int count = 0;
-    for (var s in plan.sections) {
-      count += 1; // section title
-      count += s.questions.length; // questions
-    }
-    return count;
-  }
-
-  // 2️⃣ 依 index 取得 item
-  PlanPreviewItem _itemAtIndex(ModelBusinessPlan plan, int index) {
-    if (plan.sections.isEmpty) {
-      return PlanSectionItem(AppLocalizations.of(context)!.loadingSections);
-    }
-
-    int counter = 0;
-    for (int s = 0; s < plan.sections.length; s++) {
-      if (counter == index) return PlanSectionItem(plan.sections[s].title);
-      counter++;
-      for (int q = 0; q < plan.sections[s].questions.length; q++) {
-        if (counter == index) {
-          return PlanQuestionItem(s, q, plan.sections[s].questions[q]);
-        }
-        counter++;
-      }
-    }
-    return PlanSectionItem(AppLocalizations.of(context)!.loading); // fallback
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<ControllerBusinessPlan>(
@@ -75,6 +45,7 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
         if (controller.isPlanDetailLoading ||
             controller.planDetailError != null ||
             plan == null) {
+          _previewIndex = null;
           return Scaffold(
             appBar: AppBar(title: Text(loc.businessPlan)),
             body: controller.isPlanDetailLoading
@@ -91,6 +62,11 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
                 : Center(child: Text(loc.noData)),
           );
         }
+        var preview = _previewIndex;
+        if (preview == null || !preview.matches(plan)) {
+          _previewIndex = preview = PlanPreviewIndex(plan);
+        }
+        final items = preview.items;
         return Scaffold(
           appBar: AppBar(
             title: EditablePlanTitle(
@@ -141,9 +117,9 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
               ? Center(child: Text(loc.noData))
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: _totalItemCount(plan),
+                  itemCount: items.length,
                   itemBuilder: (_, i) {
-                    final item = _itemAtIndex(plan, i);
+                    final item = items[i];
                     if (item is PlanSectionItem) {
                       return Container(
                         width: double.infinity,
@@ -168,18 +144,6 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
                     }
 
                     final q = item as PlanQuestionItem;
-                    // 如果 sections 尚未 load → skeleton tile
-                    if (plan.sections.isEmpty) {
-                      return Container(
-                        margin: Insets.directionalB12,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      );
-                    }
-
                     return _ExpandableQuestionTile(
                       sectionIndex: q.sectionIndex,
                       questionIndex: q.questionIndex,

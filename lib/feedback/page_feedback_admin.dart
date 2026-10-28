@@ -1,12 +1,10 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/feedback/controller_feedback_admin.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
+import 'package:life_pilot/feedback/widgets_feedback_screenshots.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -15,7 +13,8 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
 class PageFeedbackAdmin extends StatelessWidget {
-  const PageFeedbackAdmin({super.key});
+  const PageFeedbackAdmin({super.key, this.service});
+  final ServiceFeedback? service;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +28,8 @@ class PageFeedbackAdmin extends StatelessWidget {
 
     return ChangeNotifierProvider(
       create: (_) =>
-          ControllerFeedbackAdmin(ServiceFeedback(), auth)..loadFeedback(),
+          ControllerFeedbackAdmin(service ?? ServiceFeedback(), auth)
+            ..loadFeedback(),
       child: Consumer<ControllerFeedbackAdmin>(
         builder: (context, controller, _) {
           final visibleFeedback = controller.visibleFeedback;
@@ -58,9 +58,7 @@ class PageFeedbackAdmin extends StatelessWidget {
                     itemCount:
                         visibleFeedback.length +
                         1 +
-                        ((controller.hasMore || controller.isLoadingMore)
-                            ? 1
-                            : 0),
+                        (controller.hasHistoryAction ? 1 : 0),
                     separatorBuilder: (_, _) => const Divider(),
                     itemBuilder: (context, index) {
                       if (index == 0) {
@@ -96,10 +94,24 @@ class PageFeedbackAdmin extends StatelessWidget {
                       index--;
                       if (index == visibleFeedback.length) {
                         return Center(
-                          child: controller.isLoadingMore
+                          child:
+                              controller.isLoadingMore ||
+                                  controller.isCheckingHistory
                               ? const Padding(
                                   padding: EdgeInsets.all(16),
                                   child: CircularProgressIndicator(),
+                                )
+                              : controller.historyError != null
+                              ? TextButton.icon(
+                                  onPressed: controller.retryHistory,
+                                  icon: const Icon(Icons.refresh),
+                                  label: Text(loc.retry),
+                                )
+                              : controller.loadMoreError != null
+                              ? TextButton.icon(
+                                  onPressed: controller.loadMore,
+                                  icon: const Icon(Icons.refresh),
+                                  label: Text(loc.retry),
                                 )
                               : TextButton(
                                   onPressed: controller.loadMore,
@@ -203,94 +215,9 @@ class PageFeedbackAdmin extends StatelessWidget {
                                       children: [
                                         Text(feedback.content),
                                         Gaps.h8,
-                                        // ✅ 多張截圖縮圖化顯示
-                                        if (feedback.screenshot != null &&
-                                            feedback.screenshot!.isNotEmpty)
-                                          SizedBox(
-                                            height: 120,
-                                            child: ListView.separated(
-                                              scrollDirection: Axis.horizontal,
-                                              scrollCacheExtent:
-                                                  const ScrollCacheExtent.pixels(
-                                                    0,
-                                                  ),
-                                              addAutomaticKeepAlives: false,
-                                              addRepaintBoundaries: true,
-                                              itemCount:
-                                                  feedback.screenshot!.length,
-                                              separatorBuilder: (_, _) =>
-                                                  Gaps.w8,
-                                              itemBuilder: (context, index) {
-                                                return RepaintBoundary(
-                                                  child: FutureBuilder<Uint8List?>(
-                                                    future: feedback
-                                                        .decodeScreenshotAsync(
-                                                          index,
-                                                        ),
-                                                    builder: (context, snapshot) {
-                                                      final bytes =
-                                                          snapshot.data;
-                                                      if (snapshot
-                                                              .connectionState !=
-                                                          ConnectionState
-                                                              .done) {
-                                                        return const SizedBox.square(
-                                                          dimension: 120,
-                                                          child: Center(
-                                                            child:
-                                                                CircularProgressIndicator(),
-                                                          ),
-                                                        );
-                                                      }
-                                                      if (bytes == null) {
-                                                        return SizedBox.square(
-                                                          dimension: 120,
-                                                          child: Icon(
-                                                            Icons
-                                                                .broken_image_outlined,
-                                                            size: 44,
-                                                            color: Theme.of(
-                                                              context,
-                                                            ).colorScheme.error,
-                                                          ),
-                                                        );
-                                                      }
-                                                      final cacheSize =
-                                                          (120 *
-                                                                  MediaQuery.devicePixelRatioOf(
-                                                                    context,
-                                                                  ))
-                                                              .round();
-                                                      return GestureDetector(
-                                                        onTap: () => showDialog(
-                                                          context: context,
-                                                          builder: (_) => Dialog(
-                                                            child: InteractiveViewer(
-                                                              child:
-                                                                  Image.memory(
-                                                                    bytes,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        child: Image.memory(
-                                                          bytes,
-                                                          width: 120,
-                                                          height: 120,
-                                                          fit: BoxFit.cover,
-                                                          cacheWidth: cacheSize,
-                                                          cacheHeight:
-                                                              cacheSize,
-                                                          filterQuality:
-                                                              FilterQuality.low,
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ),
+                                        WidgetsFeedbackScreenshots(
+                                          feedback: feedback,
+                                        ),
                                         Gaps.h8,
                                         if (feedback.isOk == true)
                                           Text(

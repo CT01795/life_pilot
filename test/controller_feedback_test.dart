@@ -15,6 +15,10 @@ class _Auth extends ControllerAuth {
   String account = 'a@example.com';
   @override
   String get currentAccount => account;
+  void switchTo(String next) {
+    account = next;
+    notifyListeners();
+  }
 }
 
 class _Service extends ServiceFeedback {
@@ -68,6 +72,143 @@ ControllerFeedback _controller(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+    'account change clears draft and screenshots, same-account notifications do not',
+    () async {
+      final auth = _Auth();
+      final c = _controller(_Service(), auth: auth)..ccRaw = 'cc@example.com';
+      addTearDown(c.dispose);
+      await c.captureScreenshot();
+      final images = c.screenshot;
+      expect(c.screenshot, same(images));
+      auth.switchTo(auth.account);
+      expect(c.subject, 'Subject');
+      expect(c.screenshot, hasLength(1));
+      auth.switchTo('b@example.com');
+      expect(c.subject, '');
+      expect(c.content, '');
+      expect(c.ccRaw, isNull);
+      expect(c.screenshot, isEmpty);
+      expect(c.draftRevision, 1);
+    },
+  );
+
+  test(
+    'old submit completion cannot release the new account busy state',
+    () async {
+      final auth = _Auth();
+      final old = Completer<void>(), fresh = Completer<void>();
+      final service = _Service()..pending = old;
+      final c = _controller(service, auth: auth);
+      addTearDown(c.dispose);
+      final first = c.submit();
+      auth.switchTo('b@example.com');
+      c.subject = 'New subject';
+      c.content = 'New content';
+      service.pending = fresh;
+      final second = c.submit();
+      old.complete();
+      expect(await first, isNull);
+      expect(c.isSending, isTrue);
+      expect(c.content, 'New content');
+      fresh.complete();
+      expect((await second)!.status, FeedbackSubmissionStatus.sent);
+      expect(c.isSending, isFalse);
+      expect(service.calls.map((call) => call['account']), [
+        'a@example.com',
+        'b@example.com',
+      ]);
+    },
+  );
+
+  test(
+    'old screenshot cannot append images or release a new capture',
+    () async {
+      final auth = _Auth();
+      final old = Completer<Uint8List?>(), fresh = Completer<Uint8List?>();
+      final screenshot = _Screenshot()..pending = old;
+      final c = _controller(_Service(), auth: auth, screenshot: screenshot);
+      addTearDown(c.dispose);
+      final first = c.captureScreenshot();
+      auth.switchTo('b@example.com');
+      screenshot.pending = fresh;
+      final second = c.captureScreenshot();
+      old.complete(Uint8List.fromList([1]));
+      expect(await first, isNull);
+      expect(c.isCapturing, isTrue);
+      expect(c.screenshot, isEmpty);
+      fresh.complete(Uint8List.fromList([2]));
+      expect(await second, isTrue);
+      expect(c.screenshot.single, [2]);
+      expect(c.isCapturing, isFalse);
+    },
+  );
+
+  test(
+    'returning to the original account cannot revive its previous submission',
+    () async {
+      final auth = _Auth();
+      final service = _Service()..pending = Completer<void>();
+      final c = _controller(service, auth: auth);
+      addTearDown(c.dispose);
+      final first = c.submit();
+      auth.switchTo('b@example.com');
+      auth.switchTo('a@example.com');
+      service.pending!.complete();
+      expect(await first, isNull);
+      expect(c.subject, '');
+      expect(c.draftRevision, 2);
+    },
+  );
+
+  test(
+    'account change during start notification prevents an obsolete send',
+    () async {
+      final auth = _Auth(), service = _Service();
+      final c = _controller(service, auth: auth);
+      addTearDown(c.dispose);
+      var switched = false;
+      c.addListener(() {
+        if (switched || !c.isSending) return;
+        switched = true;
+        auth.switchTo('b@example.com');
+      });
+      expect(await c.submit(), isNull);
+      expect(service.calls, isEmpty);
+    },
+  );
+
+  testWidgets('switching account resets the visible feedback input fields', (
+    tester,
+  ) async {
+    final auth = _Auth();
+    final c = _controller(_Service(), auth: auth);
+    addTearDown(c.dispose);
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: c,
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const PageFeedbackBody(),
+        ),
+      ),
+    );
+    await tester.enterText(find.byType(TextField).at(0), 'Old subject');
+    await tester.enterText(find.byType(TextField).at(1), 'Old content');
+    auth.switchTo('b@example.com');
+    await tester.pumpAndSettle();
+    for (final editable in tester.widgetList<EditableText>(
+      find.byType(EditableText),
+    )) {
+      expect(editable.controller.text, '');
+    }
+    expect(c.subject, '');
+    expect(c.content, '');
+    expect(tester.takeException(), isNull);
+  });
+
   test('blank input returns validation result without sending', () async {
     final service = _Service();
     final c = _controller(service)..subject = '   ';

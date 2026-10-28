@@ -2,6 +2,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/business_plan/model_business_plan.dart';
+import 'package:life_pilot/business_plan/model_business_plan_list.dart';
+import 'package:life_pilot/business_plan/model_plan_answers.dart';
 import 'package:life_pilot/business_plan/model_plan_question.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
@@ -19,6 +21,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   final Map<String, ModelBusinessPlan> _planCache = {};
   final Set<String> _loadedPlanDetails = {};
   final Map<String, Future<ModelBusinessPlan>> _detailRequests = {};
+  final _answerSaves = <(String, String, String), _PlanAnswerSaveQueue>{};
   int _detailSelectionRevision = 0;
   bool isPlanDetailLoading = false;
   Object? planDetailError;
@@ -39,6 +42,11 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   int questionIndex = 0;
 
   bool isPlansLoading = false; // 列表用
+  Object? plansLoadError;
+  bool isCheckingPlanHistory = false;
+  Object? planHistoryError;
+  Object? loadMorePlansError;
+  int _planListRevision = 0;
   bool isTemplateLoading = false;
   Object? templateLoadError;
   bool isLoadingMorePlans = false;
@@ -58,9 +66,11 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     if (_accountKey == nextAccount) return;
     _accountKey = nextAccount;
     _accountGeneration++;
+    _planListRevision++;
     _detailSelectionRevision++;
     _loadedPlanDetails.clear();
     _detailRequests.clear();
+    _answerSaves.clear();
     isPlanDetailLoading = false;
     planDetailError = null;
     isCreatingPlan = false;
@@ -76,6 +86,10 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     sectionIndex = 0;
     questionIndex = 0;
     isPlansLoading = false;
+    plansLoadError = null;
+    isCheckingPlanHistory = false;
+    planHistoryError = null;
+    loadMorePlansError = null;
     isLoadingMorePlans = false;
     hasMorePlans = false;
     _plansStartDate = null;
@@ -198,38 +212,102 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   }
 
   Future<void> loadPlans() async {
+    if (notifierDisposed ||
+        isPlansLoading ||
+        isCheckingPlanHistory ||
+        isLoadingMorePlans) {
+      return;
+    }
     final generation = _accountGeneration;
+    final revision = ++_planListRevision;
+    final user = auth?.currentAccount ?? AuthConstants.guest;
     isPlansLoading = true;
+    plansLoadError = null;
+    planHistoryError = null;
+    loadMorePlansError = null;
     safeNotify();
     try {
       final now = DateTime.now();
       final dateTo = DateTime(now.year, now.month, now.day + 1);
-      _plansStartDate = dateTo.subtract(const Duration(days: 360));
-      final user = auth?.currentAccount ?? AuthConstants.guest;
+      final dateFrom = dateTo.subtract(const Duration(days: 360));
+      if (!_isPlanListCurrent(generation, revision)) return;
       final loadedPlans = await _service.fetchPlans(
         user: user,
-        dateFrom: _plansStartDate!,
+        dateFrom: dateFrom,
         dateTo: dateTo,
       );
-      if (generation != _accountGeneration) return;
+      if (!_isPlanListCurrent(generation, revision)) return;
       plans = loadedPlans;
+      _plansStartDate = dateFrom;
       _sortAndDeduplicatePlans();
-      final loadedHasMore = await _service.hasPlansBefore(
-        user: user,
-        before: _plansStartDate!,
-      );
-      if (generation != _accountGeneration) return;
-      hasMorePlans = loadedHasMore;
+      // Publish useful content before waiting for the optional history probe.
+      isPlansLoading = false;
+      await _checkPlanHistory(user, dateFrom, generation, revision);
+    } catch (error) {
+      if (_isPlanListCurrent(generation, revision)) plansLoadError = error;
     } finally {
-      if (generation == _accountGeneration) {
+      if (_isPlanListCurrent(generation, revision)) {
         isPlansLoading = false;
         safeNotify();
       }
     }
   }
 
+  bool _isPlanListCurrent(int generation, int revision) =>
+      !notifierDisposed &&
+      generation == _accountGeneration &&
+      revision == _planListRevision;
+
+  Future<void> _checkPlanHistory(
+    String user,
+    DateTime before,
+    int generation,
+    int revision,
+  ) async {
+    if (!_isPlanListCurrent(generation, revision)) return;
+    isCheckingPlanHistory = true;
+    planHistoryError = null;
+    safeNotify();
+    try {
+      if (!_isPlanListCurrent(generation, revision)) return;
+      final hasMore = await _service.hasPlansBefore(user: user, before: before);
+      if (_isPlanListCurrent(generation, revision)) hasMorePlans = hasMore;
+    } catch (error) {
+      if (_isPlanListCurrent(generation, revision)) planHistoryError = error;
+    } finally {
+      if (_isPlanListCurrent(generation, revision)) {
+        isCheckingPlanHistory = false;
+        safeNotify();
+      }
+    }
+  }
+
+  Future<void> retryPlanHistory() async {
+    final before = _plansStartDate;
+    if (notifierDisposed ||
+        before == null ||
+        isPlansLoading ||
+        isLoadingMorePlans ||
+        isCheckingPlanHistory) {
+      return;
+    }
+    await _checkPlanHistory(
+      auth?.currentAccount ?? AuthConstants.guest,
+      before,
+      _accountGeneration,
+      _planListRevision,
+    );
+  }
+
   List<ModelBusinessPlan> get visiblePlans =>
       plans.where((plan) => selectedStatuses.contains(plan.status)).toList();
+
+  bool get hasPlanHistoryAction =>
+      hasMorePlans ||
+      isLoadingMorePlans ||
+      isCheckingPlanHistory ||
+      planHistoryError != null ||
+      loadMorePlansError != null;
 
   void toggleStatus(String status) {
     selectedStatuses.contains(status)
@@ -239,17 +317,29 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   }
 
   Future<void> loadMorePlans() async {
-    if (isLoadingMorePlans || !hasMorePlans || _plansStartDate == null) return;
+    if (notifierDisposed ||
+        isPlansLoading ||
+        isCheckingPlanHistory ||
+        isLoadingMorePlans ||
+        !hasMorePlans ||
+        _plansStartDate == null) {
+      return;
+    }
     final generation = _accountGeneration;
+    final revision = _planListRevision;
+    final before = _plansStartDate!;
+    final user = auth?.currentAccount ?? AuthConstants.guest;
     isLoadingMorePlans = true;
+    loadMorePlansError = null;
+    planHistoryError = null;
     safeNotify();
     try {
-      final user = auth?.currentAccount ?? AuthConstants.guest;
+      if (!_isPlanListCurrent(generation, revision)) return;
       final latestOlder = await _service.latestPlanDateBefore(
         user: user,
-        before: _plansStartDate!,
+        before: before,
       );
-      if (generation != _accountGeneration) return;
+      if (!_isPlanListCurrent(generation, revision)) return;
       if (latestOlder == null) {
         hasMorePlans = false;
         return;
@@ -265,18 +355,18 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
         dateFrom: dateFrom,
         dateTo: dateTo,
       );
-      if (generation != _accountGeneration) return;
-      plans.addAll(loadedPlans);
+      if (!_isPlanListCurrent(generation, revision)) return;
+      plans = [...plans, ...loadedPlans];
+      // Advance only after a successful page read, so failures can retry the
+      // same date window without skipping older records.
       _plansStartDate = dateFrom;
       _sortAndDeduplicatePlans();
-      final loadedHasMore = await _service.hasPlansBefore(
-        user: user,
-        before: dateFrom,
-      );
-      if (generation != _accountGeneration) return;
-      hasMorePlans = loadedHasMore;
+      isLoadingMorePlans = false;
+      await _checkPlanHistory(user, dateFrom, generation, revision);
+    } catch (error) {
+      if (_isPlanListCurrent(generation, revision)) loadMorePlansError = error;
     } finally {
-      if (generation == _accountGeneration) {
+      if (_isPlanListCurrent(generation, revision)) {
         isLoadingMorePlans = false;
         safeNotify();
       }
@@ -302,21 +392,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   }
 
   void _sortAndDeduplicatePlans() {
-    final unique = <String, ModelBusinessPlan>{
-      for (final plan in plans) plan.id: plan,
-    };
-    int rank(String status) => switch (status) {
-      'in_progress' => 0,
-      'not_started' => 1,
-      _ => 2,
-    };
-    plans = unique.values.toList()
-      ..sort((a, b) {
-        final statusOrder = rank(a.status).compareTo(rank(b.status));
-        return statusOrder != 0
-            ? statusOrder
-            : b.createdAt.compareTo(a.createdAt);
-      });
+    plans = ModelBusinessPlanList.ordered(plans);
   }
 
   Future<void> loadPlanDetailIfNeeded(String inputPlanId) async {
@@ -462,41 +538,81 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   }
 
   Future<void> commitCurrentAnswer(String answer) async {
-    final section = currentPlan!.sections[sectionIndex];
+    final plan = currentPlan;
+    if (notifierDisposed || plan == null) return;
+    final section = plan.sections[sectionIndex];
     final question = section.questions[questionIndex];
-
+    final key = (plan.id, section.id, question.id);
+    if (question.answer == answer) {
+      await _answerSaves[key]?.tail;
+      return;
+    }
+    final generation = _accountGeneration;
+    final queue = _answerSaves.putIfAbsent(
+      key,
+      () => _PlanAnswerSaveQueue(question.answer),
+    );
+    final revision = ++queue.revision;
     final notifier = answerNotifier(sectionIndex, questionIndex);
-    notifier.value = answer;
-    _syncAnswerNotifier(sectionIndex, questionIndex, answer);
-
-    final questions = [...section.questions];
-
-    questions[questionIndex] = questions[questionIndex].copyWith(
+    currentPlan = ModelPlanAnswers.replace(
+      plan,
+      sectionId: section.id,
+      questionId: question.id,
       answer: answer,
     );
-
-    final newSections = [...currentPlan!.sections];
-    newSections[sectionIndex] = section.copyWith(questions: questions);
-
-    currentPlan = currentPlan!.copyWith(sections: newSections);
-    _planCache[currentPlan!.id] = currentPlan!;
-
+    _planCache[plan.id] = currentPlan!;
+    bool isActive() => !notifierDisposed && generation == _accountGeneration;
+    // Serialize only this question; unrelated questions can save independently.
+    final operation = queue.tail.then((_) async {
+      if (!isActive()) return;
+      try {
+        await _service.upsertAnswer(
+          planId: plan.id,
+          sectionId: section.id,
+          questionId: question.id,
+          answer: answer,
+        );
+        if (isActive()) queue.confirmedAnswer = answer;
+      } catch (_) {
+        if (!isActive() || revision != queue.revision) return;
+        final cached = _planCache[plan.id];
+        if (cached != null) {
+          _planCache[plan.id] = ModelPlanAnswers.replace(
+            cached,
+            sectionId: section.id,
+            questionId: question.id,
+            answer: queue.confirmedAnswer,
+            expectedAnswer: answer,
+          );
+        }
+        final active = currentPlan;
+        if (active == null || active.id != plan.id) return;
+        final restored = ModelPlanAnswers.replace(
+          active,
+          sectionId: section.id,
+          questionId: question.id,
+          answer: queue.confirmedAnswer,
+          expectedAnswer: answer,
+        );
+        if (identical(restored, active)) return;
+        currentPlan = restored;
+        final s = restored.sections.indexWhere((item) => item.id == section.id);
+        final q = restored.sections[s].questions.indexWhere(
+          (item) => item.id == question.id,
+        );
+        _syncAnswerNotifier(s, q, queue.confirmedAnswer);
+        safeNotify();
+      }
+    });
+    queue.tail = operation;
+    notifier.value = answer;
     try {
-      await _service.upsertAnswer(
-        planId: currentPlan!.id,
-        sectionId: section.id,
-        questionId: question.id,
-        answer: answer,
-      );
-    } catch (e) {
-      // 回滾到舊資料
-      questions[questionIndex] = questions[questionIndex].copyWith(
-        answer: question.answer,
-      );
-      newSections[sectionIndex] = section.copyWith(questions: questions);
-      currentPlan = currentPlan!.copyWith(sections: newSections);
-      notifier.value = question.answer;
-      safeNotify();
+      await operation;
+    } finally {
+      if (identical(_answerSaves[key], queue) &&
+          identical(queue.tail, operation)) {
+        _answerSaves.remove(key);
+      }
     }
   }
 
@@ -510,4 +626,11 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
       notifyListeners();
     }
   }
+}
+
+class _PlanAnswerSaveQueue {
+  _PlanAnswerSaveQueue(this.confirmedAnswer);
+  String confirmedAnswer;
+  int revision = 0;
+  Future<void> tail = Future<void>.value();
 }

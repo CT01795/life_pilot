@@ -1,5 +1,6 @@
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/feedback/model_feedback.dart';
+import 'package:life_pilot/feedback/model_feedback_list.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 
@@ -34,6 +35,9 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     isLoadingMore = false;
     hasMore = false;
     loadError = null;
+    historyError = null;
+    loadMoreError = null;
+    isCheckingHistory = false;
     _selectedStatuses
       ..clear()
       ..addAll({'pending', 'in_progress'});
@@ -50,6 +54,9 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   List<ModelFeedback> get feedbackList => _feedbackList;
   bool isLoading = false;
   Object? loadError;
+  Object? historyError;
+  Object? loadMoreError;
+  bool isCheckingHistory = false;
   bool isLoadingMore = false;
   bool hasMore = false;
   DateTime? _loadedStartDate;
@@ -62,11 +69,15 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     isLoadingMore = false;
     isLoading = true;
     loadError = null;
+    historyError = null;
+    loadMoreError = null;
+    isCheckingHistory = false;
     notifyListeners();
     try {
       final now = DateTime.now();
       final dateTo = DateTime(now.year, now.month, now.day + 1);
       final loadedStartDate = dateTo.subtract(const Duration(days: 30));
+      if (!_active(revision)) return;
       final res = await _service.loadFeedback(
         dateFrom: loadedStartDate,
         dateTo: dateTo,
@@ -75,12 +86,11 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
       final loadedFeedback = res
           .map((e) => ModelFeedback.fromMap(e as Map<String, dynamic>))
           .toList();
-      final loadedHasMore = await _service.hasFeedbackBefore(loadedStartDate);
-      if (!_active(revision)) return;
       _feedbackList = loadedFeedback;
       _loadedStartDate = loadedStartDate;
-      hasMore = loadedHasMore;
       _sortAndDeduplicate();
+      isLoading = false;
+      await _checkHistory(loadedStartDate, revision);
     } catch (error) {
       if (_active(revision)) loadError = error;
     } finally {
@@ -90,6 +100,44 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
       }
     }
   }
+
+  Future<void> _checkHistory(DateTime before, int revision) async {
+    if (!_active(revision)) return;
+    isCheckingHistory = true;
+    historyError = null;
+    notifyListeners();
+    try {
+      if (!_active(revision)) return;
+      final more = await _service.hasFeedbackBefore(before);
+      if (_active(revision)) hasMore = more;
+    } catch (error) {
+      if (_active(revision)) historyError = error;
+    } finally {
+      if (_active(revision)) {
+        isCheckingHistory = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> retryHistory() async {
+    final before = _loadedStartDate;
+    if (notifierDisposed ||
+        before == null ||
+        isLoading ||
+        isLoadingMore ||
+        isCheckingHistory) {
+      return;
+    }
+    await _checkHistory(before, _revision);
+  }
+
+  bool get hasHistoryAction =>
+      hasMore ||
+      isLoadingMore ||
+      isCheckingHistory ||
+      historyError != null ||
+      loadMoreError != null;
 
   List<ModelFeedback> get visibleFeedback =>
       _visibleCache ??= List.unmodifiable(
@@ -110,6 +158,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   Future<void> loadMore() async {
     if (notifierDisposed ||
         isLoading ||
+        isCheckingHistory ||
         isLoadingMore ||
         _updating.isNotEmpty ||
         !hasMore ||
@@ -117,13 +166,14 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
       return;
     }
     final revision = _revision;
+    final before = _loadedStartDate!;
     isLoadingMore = true;
-    loadError = null;
+    loadMoreError = null;
+    historyError = null;
     notifyListeners();
     try {
-      final latestOlder = await _service.latestFeedbackDateBefore(
-        _loadedStartDate!,
-      );
+      if (!_active(revision)) return;
+      final latestOlder = await _service.latestFeedbackDateBefore(before);
       if (!_active(revision)) return;
       if (latestOlder == null) {
         hasMore = false;
@@ -140,8 +190,6 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
         dateTo: dateTo,
       );
       if (!_active(revision)) return;
-      final loadedHasMore = await _service.hasFeedbackBefore(dateFrom);
-      if (!_active(revision)) return;
       _feedbackList = [
         ...feedbackList,
         ...rows.map(
@@ -150,9 +198,10 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
       ];
       _loadedStartDate = dateFrom;
       _sortAndDeduplicate();
-      hasMore = loadedHasMore;
+      isLoadingMore = false;
+      await _checkHistory(dateFrom, revision);
     } catch (error) {
-      if (_active(revision)) loadError = error;
+      if (_active(revision)) loadMoreError = error;
     } finally {
       if (_active(revision)) {
         isLoadingMore = false;
@@ -201,22 +250,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
 
   void _sortAndDeduplicate() {
     _visibleCache = null;
-    final unique = <int, ModelFeedback>{
-      for (final feedback in feedbackList) feedback.id: feedback,
-    };
-    int rank(String status) => switch (status) {
-      'in_progress' => 0,
-      'pending' => 1,
-      _ => 2,
-    };
-    final sorted = unique.values.toList()
-      ..sort((a, b) {
-        final statusOrder = rank(a.status).compareTo(rank(b.status));
-        return statusOrder != 0
-            ? statusOrder
-            : b.createdAt.compareTo(a.createdAt);
-      });
-    _feedbackList = List.unmodifiable(sorted);
+    _feedbackList = ModelFeedbackList.ordered(feedbackList);
   }
 
   Future<void> markAsDone(ModelFeedback feedback, String adminAccount) async {

@@ -71,6 +71,7 @@ class PageFeedbackBody extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(2),
         child: ListView(
+          key: ValueKey(controller.draftRevision),
           children: [
             TextField(
               enabled: !controller.isSending,

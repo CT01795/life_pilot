@@ -35,6 +35,13 @@ class _Service extends ServiceBusinessPlan {
   bool failRead = false;
   bool failCreate = false;
   @override
+  Future<void> upsertAnswer({
+    required String planId,
+    required String sectionId,
+    required String questionId,
+    required String answer,
+  }) async {}
+  @override
   Future<ModelBusinessPlan> fetchPlanDetail({required String planId}) async {
     reads.add(planId);
     if (failRead) throw StateError('offline');
@@ -72,6 +79,51 @@ Widget _app(ControllerBusinessPlan controller, Widget child) =>
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets('preview index refreshes after plan edits and saved answers', (
+    tester,
+  ) async {
+    final service = _Service()
+      ..planFactory = (id) => _plan(id).copyWith(
+        sections: [
+          ModelPlanSection(
+            id: 's',
+            title: 'Section before',
+            questions: [
+              ModelPlanQuestion(
+                id: 'q',
+                prompt: 'Question',
+                answer: 'Answer before',
+                sortOrder: 0,
+              ),
+            ],
+          ),
+        ],
+      );
+    final c = ControllerBusinessPlan(service: service, auth: _Auth())
+      ..setCurrentPlanSummary(_plan('a'));
+    addTearDown(c.dispose);
+    await tester.pumpWidget(_app(c, const PagePlanPreview()));
+    await tester.pumpAndSettle();
+    expect(find.text('Section before'), findsOneWidget);
+    expect(find.text('Answer before'), findsOneWidget);
+    c.currentPlan = c.currentPlan!.copyWith(
+      sections: [
+        c.currentPlan!.sections.first.copyWith(title: 'Section after'),
+      ],
+    );
+    c.safeNotify();
+    await tester.pumpAndSettle();
+    expect(find.text('Section before'), findsNothing);
+    expect(find.text('Section after'), findsOneWidget);
+    await c.commitCurrentAnswer('Answer after');
+    c.safeNotify();
+    await tester.pumpAndSettle();
+    expect(find.text('Answer before'), findsNothing);
+    expect(find.text('Answer after'), findsOneWidget);
+    expect(service.reads, ['a']);
+    expect(tester.takeException(), isNull);
+  });
+
   test(
     'creation skips empty sections when choosing the first editable question',
     () async {
