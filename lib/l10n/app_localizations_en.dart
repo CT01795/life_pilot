@@ -2963,6 +2963,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stockForeignSell => 'Net foreign sell ranking';
 
   @override
+  String get stockReadTimeout => 'Loading timed out. Please retry.';
+
+  @override
+  String get stockSourceCloud => 'Cloud data';
+
+  @override
+  String get stockSourceBackend => 'Server data';
+
+  @override
   String get stockLoadFailed => 'Stock data could not be loaded. Please try again.';
 
   @override

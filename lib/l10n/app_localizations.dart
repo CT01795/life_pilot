@@ -5667,6 +5667,24 @@ abstract class AppLocalizations {
   /// **'Net foreign sell ranking'**
   String get stockForeignSell;
 
+  /// Stock section read timed out
+  ///
+  /// In en, this message translates to:
+  /// **'Loading timed out. Please retry.'**
+  String get stockReadTimeout;
+
+  /// Stock snapshot read from Supabase
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud data'**
+  String get stockSourceCloud;
+
+  /// Stock snapshot read from the update server
+  ///
+  /// In en, this message translates to:
+  /// **'Server data'**
+  String get stockSourceBackend;
+
   /// Stock page initial load failure
   ///
   /// In en, this message translates to:

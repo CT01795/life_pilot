@@ -2963,6 +2963,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get stockForeignSell => '외국인 순매도 순위';
 
   @override
+  String get stockReadTimeout => '불러오기 시간이 초과되었습니다. 다시 시도해 주세요.';
+
+  @override
+  String get stockSourceCloud => '클라우드 데이터';
+
+  @override
+  String get stockSourceBackend => '서버 데이터';
+
+  @override
   String get stockLoadFailed => '주식 데이터를 불러오지 못했습니다. 다시 시도해 주세요.';
 
   @override

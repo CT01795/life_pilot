@@ -8,6 +8,7 @@ import 'package:life_pilot/record_statistics/controller_record_statistics.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:life_pilot/record_statistics/service_record_statistics.dart';
 import 'package:life_pilot/record_statistics/record_statistics_formats.dart';
+import 'package:life_pilot/record_statistics/record_statistics_presentation.dart';
 
 class PageRecordStatistics extends StatefulWidget {
   final String accountId;
@@ -30,6 +31,7 @@ class PageRecordStatistics extends StatefulWidget {
 class _PageRecordStatisticsState extends State<PageRecordStatistics> {
   late final ControllerRecordStatistics controller;
   bool cumulative = true;
+  RecordStatisticsPresentation? _presentation;
   @override
   void initState() {
     super.initState();
@@ -62,9 +64,11 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
           final currentYear = DateTime.now().year;
           final data = controller.data;
           if (controller.loading) {
+            _presentation = null;
             return const Center(child: CircularProgressIndicator());
           }
           if (data == null) {
+            _presentation = null;
             return Center(
               child: TextButton(
                 onPressed: () => controller.load(),
@@ -73,6 +77,7 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
             );
           }
           if (!data.hasChartData) {
+            _presentation = null;
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -81,9 +86,22 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
             );
           }
           final series = data.series(cumulative: cumulative);
-          final months = series.months;
           final values = series.values;
           final maximum = series.maximum;
+          var presentation = _presentation;
+          if (presentation == null ||
+              !presentation.matches(
+                series: series,
+                formats: formats,
+                currentYear: currentYear,
+              )) {
+            _presentation = presentation = RecordStatisticsPresentation(
+              series: series,
+              formats: formats,
+              currentYear: currentYear,
+            );
+          }
+          final rows = presentation.rows;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -121,11 +139,11 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        for (var i = 0; i < 12; i++)
+                        for (var i = 0; i < rows.length; i++)
                           Expanded(
                             child: Tooltip(
                               message:
-                                  '${formats.month(months[i].month)}: ${formats.value(values[i])}',
+                                  '${rows[i].monthLabel}: ${rows[i].valueLabel}',
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -134,9 +152,9 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
                                     child: Text(
                                       key: ValueKey((
                                         'record-chart-value',
-                                        months[i].month,
+                                        rows[i].month,
                                       )),
-                                      formats.value(values[i]),
+                                      rows[i].valueLabel,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       textAlign: TextAlign.center,
@@ -187,12 +205,9 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
                                   Text(
                                     key: ValueKey((
                                       'record-axis-month',
-                                      months[i].month,
+                                      rows[i].month,
                                     )),
-                                    formats.axisMonth(
-                                      months[i].month,
-                                      currentYear: currentYear,
-                                    ),
+                                    rows[i].axisLabel,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -207,12 +222,12 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
                 ),
               ),
               const SizedBox(height: 12),
-              for (var i = 0; i < 12; i++)
+              for (var i = 0; i < rows.length; i++)
                 ListTile(
-                  key: ValueKey(('record-month-row', months[i].month)),
-                  title: Text(formats.month(months[i].month)),
+                  key: ValueKey(('record-month-row', rows[i].month)),
+                  title: Text(rows[i].monthLabel),
                   subtitle: Text(
-                    formats.value(values[i]),
+                    rows[i].valueLabel,
                     style: TextStyle(
                       color: values[i] < 0
                           ? Theme.of(context).colorScheme.error

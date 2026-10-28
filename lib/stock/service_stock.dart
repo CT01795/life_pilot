@@ -5,13 +5,21 @@ import 'dart:convert';
 import 'package:flutter/material.dart' hide Element;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/stock/model_stock.dart';
+import 'package:life_pilot/stock/model_stock_predictions.dart';
+import 'package:life_pilot/stock/model_stock_strategy.dart';
+import 'package:life_pilot/stock/model_stock_futures.dart';
 import 'package:life_pilot/stock/stock_parser.dart';
+import 'package:life_pilot/stock/repository_stock_futures.dart';
+import 'package:life_pilot/stock/repository_stock_predictions.dart';
+import 'package:life_pilot/stock/repository_stock_institutionals.dart';
 
 export 'package:life_pilot/stock/stock_parser.dart';
+export 'package:life_pilot/stock/model_stock_strategy.dart' show SimpleStrategy;
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:life_pilot/utils/service/service_api.dart';
+import 'package:life_pilot/utils/service/service_api.dart'
+    show ServiceApiException;
 import 'package:life_pilot/utils/value_parser.dart';
 
 class ServiceStock {
@@ -20,10 +28,19 @@ class ServiceStock {
   static const _modelTrainingTimeout = Duration(hours: 2);
   static const _maxFuturesLookbackDays = 14;
 
-  final ServiceApi _supabaseApi;
+  final RepositoryStockFutures _futuresRepository;
+  final RepositoryStockPredictions _predictionsRepository;
+  final RepositoryStockInstitutionals _institutionalsRepository;
 
-  ServiceStock({ServiceApi? supabaseApi})
-    : _supabaseApi = supabaseApi ?? apiSupabase;
+  ServiceStock({
+    RepositoryStockFutures? futuresRepository,
+    RepositoryStockPredictions? predictionsRepository,
+    RepositoryStockInstitutionals? institutionalsRepository,
+  }) : _futuresRepository = futuresRepository ?? RepositoryStockFutures(),
+       _predictionsRepository =
+           predictionsRepository ?? RepositoryStockPredictions(),
+       _institutionalsRepository =
+           institutionalsRepository ?? RepositoryStockInstitutionals();
 
   List<ModelStock> stocks = [];
   int? stocksLength;
@@ -415,17 +432,10 @@ class ServiceStock {
     DateTime date,
   ) async {
     try {
-      final result = await supabase
-          .from(TableNames.stockInstitutional)
-          .select()
-          .eq('date', DateFormat('yyyy-MM-dd').format(date));
-
-      return (result as List)
-          .map<ModelInstitutional>((e) => ModelInstitutional.fromJson(e))
-          .toList();
+      return await _institutionalsRepository.readDate(date);
     } catch (e, st) {
       logger.e('selectStockInstitutional failed: $e', stackTrace: st);
-      return [];
+      rethrow;
     }
   }
 
@@ -504,66 +514,14 @@ class ServiceStock {
   }
 
   Future<List<ModelFuture>> selectFutures(DateTime date) async {
-    final result = await _supabaseApi.post(
-      'stock/select_futures_institutional',
-      {'date': DateFormat('yyyy-MM-dd').format(date)},
+    final result = await _futuresRepository.readDate(date);
+    if (result.isEmpty) return [];
+    final result2 = await _futuresRepository.readPreviousDate(
+      date,
+      lookbackDays: _maxFuturesLookbackDays,
     );
-    DateTime tmpDate = date;
-    List result2 = [];
-    try {
-      for (
-        int daysBack = 1;
-        daysBack <= _maxFuturesLookbackDays && result2.isEmpty;
-        daysBack++
-      ) {
-        tmpDate = tmpDate.subtract(Duration(days: 1));
-        result2 = await _supabaseApi.post(
-          'stock/select_futures_institutional',
-          {'date': DateFormat('yyyy-MM-dd').format(tmpDate)},
-        );
-      }
-    } catch (ex) {
-      logger.e(ex);
-    }
 
-    final Map<String, int> yesterdayMap = {
-      for (var e in result2)
-        "${e['product_name']}_${e['identity_type']}": e['oi_net_qty'] ?? 0,
-    };
-
-    return result
-        .where((e) {
-          if (![
-            '臺股期貨',
-            '小型臺指期貨',
-            '微型臺指期貨',
-            '金融期貨',
-            '小型金融期貨',
-            '電子期貨',
-            '小型電子期貨',
-            '非金電期貨',
-          ].contains(e['product_name'])) {
-            return false;
-          }
-          final key = "${e['product_name']}_${e['identity_type']}";
-
-          final todayQty = e['oi_net_qty'] ?? 0;
-          final yQty = yesterdayMap[key] ?? todayQty;
-          final diff = todayQty - yQty;
-          return !(todayQty.abs() < 200 && diff.abs() < 200);
-        })
-        .map<ModelFuture>((e) {
-          final key = "${e['product_name']}_${e['identity_type']}";
-
-          final todayQty = parseNumValue(e['oi_net_qty']);
-          final yQty = (yesterdayMap[key] ?? todayQty);
-
-          return ModelFuture.fromJson({
-            ...e,
-            "oi_net_qty_diff": todayQty - yQty,
-          });
-        })
-        .toList();
+    return ModelStockFutures.project(current: result, previous: result2);
   }
 
   Future<bool> isDataExist(DateTime date, String type) async {
@@ -596,15 +554,7 @@ class ServiceStock {
     return tryParseDateTimeValue(result["date"]);
   }
 
-  Future<DateTime?> getLatestDate() async {
-    final result = await supabase
-        .from(TableNames.stockPredicted)
-        .select('date')
-        .order('date', ascending: false)
-        .limit(1);
-    if (result.isEmpty) return null;
-    return tryParseDateTimeValue(result.first['date']);
-  }
+  Future<DateTime?> getLatestDate() => _predictionsRepository.readLatestDate();
 
   Future<List<ModelStock>> getSimpleStrategy(String level) async {
     try {
@@ -649,6 +599,9 @@ class ServiceStock {
       }
 
       stocks = map.values.toList();
+      for (final stock in stocks) {
+        stock.origin = StockDataOrigin.backend;
+      }
       return stocks;
     } catch (ex, stackTrace) {
       logger.e(stackTrace);
@@ -662,24 +615,14 @@ class ServiceStock {
   }
 
   Future<List<ModelStock>> getSimpleStrategySupabase(String level) async {
-    // 1️⃣ 找最新日期
-    DateTime? latestDate = await getLatestDate();
-    if (latestDate == null) {
-      return [];
-    }
-
+    // Read the newest date and its content together, avoiding a second request
+    // and a date/content race while the cloud snapshot is being updated.
+    final apiStocks = await _predictionsRepository.readLatest();
     Map<String, ModelStock> map = {};
-
-    try {
-      List<ModelStock> apiStocks = await fetchStocksFromApi(latestDate);
-
-      for (var s in apiStocks) {
-        s.securityName = "API: ${s.securityName}";
-        s.level = level;
-        map.putIfAbsent("API: ${s.securityCode}", () => s);
-      }
-    } catch (ex) {
-      logger.e(ex);
+    for (var s in apiStocks) {
+      s.securityName = "API: ${s.securityName}";
+      s.level = level;
+      map.putIfAbsent("API: ${s.securityCode}", () => s);
     }
 
     stocks = map.values.toList();
@@ -692,75 +635,24 @@ class ServiceStock {
       'table_name': TableNames.stockPredicted,
       'date': date.toUtc().toIso8601String(),
     });
-    dynamic tmp;
     if (existing["data"] == null) {
       //api.post('stock/update_model', {});
       return null;
     }
-    tmp = existing["data"];
-    return (tmp as List)
-        .map<ModelStock>(
-          (json) => ModelStock.fromJson(Map<String, dynamic>.from(json)),
-        )
-        .toList();
+    return ModelStockPredictions.decode(
+      existing['data'] as List,
+      origin: StockDataOrigin.backend,
+    );
   }
 
-  Future<List<ModelStock>> fetchStocksFromApi(DateTime date) async {
-    // 檢查同一天是否已經有資料
-    final dateFrom = DateTime.utc(date.year, date.month, date.day);
-    final dateTo = dateFrom.add(const Duration(days: 1));
-    final rows = await supabase
-        .from(TableNames.stockPredicted)
-        .select('data')
-        .gte('date', dateFrom.toIso8601String())
-        .lt('date', dateTo.toIso8601String())
-        .limit(1);
-    if (rows.isEmpty || rows.first['data'] is! List) return [];
-    return (rows.first['data'] as List)
-        .map<ModelStock>(
-          (json) => ModelStock.fromJson(Map<String, dynamic>.from(json)),
-        )
-        .toList();
-  }
+  Future<List<ModelStock>> fetchStocksFromApi(DateTime date) =>
+      _predictionsRepository.readDate(date);
 
-  List<ModelStock> _rankStocks(List<ModelStock> list) {
-    list.sort((a, b) {
-      double scoreA = SimpleStrategy.score(a);
-      double scoreB = SimpleStrategy.score(b);
-      return scoreB.compareTo(scoreA); // 高分排前面
-    });
-    return list;
-  }
+  List<ModelStock> _rankStocks(List<ModelStock> list) =>
+      ModelStockStrategy.rankInPlace(list);
 
-  List<ModelStock> filterRisingStocks(List<ModelStock> stocks) {
-    return stocks.where((s) {
-      final close = s.closingPrice;
-      final high20 = s.high20 ?? 0;
-      final vol5 = s.vol5 ?? 0;
-      final volume = s.tradedNumber ?? 0;
-      final pct = s.pctChange ?? 0;
-      final ma5 = s.ma5 ?? 0;
-      final ma20 = s.ma20 ?? 0;
-      final rsi = s.rsi ?? 0;
-
-      final isRising =
-          close >= high20 && // 1️⃣ 突破20日高點
-          volume >= vol5 * 1.5 && // 2️⃣ 成交量放大
-          pct >= 2 && // 3️⃣ 漲幅 > 2%
-          ma5 >= ma20 && // 4️⃣ 均線多頭
-          rsi >= 50 &&
-          s.closingPrice >= 20 &&
-          s.tradedNumber != null &&
-          s.tradedNumber! >= 35000000;
-
-      //&& rsi < 80; //排除假突破與過熱
-
-      if (isRising) {
-        s.isRising = true; // 👈 標記
-      }
-      return isRising;
-    }).toList()..sort((a, b) => (b.pctChange ?? 0).compareTo(a.pctChange ?? 0));
-  }
+  List<ModelStock> filterRisingStocks(List<ModelStock> stocks) =>
+      ModelStockStrategy.rising(stocks);
 
   Future<void> quantitativeCalculation(int batch, DateTime date) async {
     /*ma5           → 5日均線
@@ -872,49 +764,5 @@ class ServiceStock {
       'date': date.toUtc().toIso8601String(),
       'data': stocks.map((stock) => stock.toJsonPred()).toList(),
     });
-  }
-}
-
-class SimpleStrategy {
-  static double score(ModelStock s) {
-    double score = 0;
-
-    //綜合考量：漲幅 成交量 本益比 動能
-    // 1️⃣ 短中期動能（核心）
-    score += (s.pctChange ?? 0) * 2;
-    score += (s.ma5 ?? 0) / s.closingPrice * 2;
-    score += (s.ma20 ?? 0) / s.closingPrice * 1.5;
-
-    // 2️⃣ 量能爆發
-    if (s.vol5 != null && s.vol5! > 0) {
-      score += (s.tradedNumber! / s.vol5!) * 5;
-    }
-
-    // 3️⃣ 突破強度
-    if (s.high20 != null && s.high20! > 0) {
-      score += (s.closingPrice / s.high20!) * 20;
-    }
-
-    // 4️⃣ RSI 動能
-    if (s.rsi != null) {
-      score += s.rsi! * 0.3;
-    }
-
-    // 5️⃣ K棒強度
-    if (s.highestPrice != null && s.lowestPrice != null) {
-      double range = s.highestPrice! - s.lowestPrice!;
-      if (range > 0) {
-        double strength = (s.closingPrice - s.lowestPrice!) / range;
-        score += strength * 10;
-      }
-    }
-
-    // 6️⃣ 均線結構
-    if (s.ma5 != null && s.ma20 != null) {
-      if (s.ma5! > s.ma20!) {
-        score += 10;
-      }
-    }
-    return score;
   }
 }

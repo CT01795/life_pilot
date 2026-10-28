@@ -2963,6 +2963,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stockForeignSell => '外資賣超排行';
 
   @override
+  String get stockReadTimeout => '載入逾時，請重試。';
+
+  @override
+  String get stockSourceCloud => '雲端資料';
+
+  @override
+  String get stockSourceBackend => '後端資料';
+
+  @override
   String get stockLoadFailed => '股票資料載入失敗，請稍後再試。';
 
   @override

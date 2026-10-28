@@ -1,117 +1,125 @@
-// lib/pages/home_page.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/stock/controller_stock.dart';
 import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/stock/service_stock.dart';
+import 'package:life_pilot/stock/widgets_stock_date_selector.dart';
 import 'package:life_pilot/stock/widgets_stock_search.dart';
+import 'package:life_pilot/stock/widgets_stock_card.dart';
+import 'package:life_pilot/stock/widgets_stock_foreign_ranking.dart';
+import 'package:life_pilot/stock/widgets_stock_futures.dart';
+import 'package:life_pilot/stock/widgets_stock_section_failure.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class PageStock extends StatelessWidget {
-  const PageStock({super.key});
+  const PageStock({super.key, this.service});
+  final ServiceStock? service;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ControllerStock(ServiceStock())..load(),
-      child: Consumer<ControllerStock>(
-        builder: (context, controller, _) {
-          if (controller.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (controller.loadFailed && controller.stocks.isEmpty) {
-            return ListView(
-              padding: const EdgeInsets.all(8),
-              children: [
-                if (controller.latestAvailableDate != null) ...[
-                  _buildDateSelector(context, controller),
-                  Gaps.h8,
-                ],
-                _buildLoadFailure(context, controller),
-              ],
-            );
-          }
-
-          final visibleStocks = controller.visibleStocks;
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: visibleStocks.length + 1,
-            itemBuilder: (context, index) {
-              if (index > 0) {
-                final stockIndex = index - 1;
-                return _buildStockCard(
-                  context,
-                  visibleStocks[stockIndex],
-                  stockIndex,
+      create: (_) => ControllerStock(service ?? ServiceStock())..load(),
+      child:
+          Selector<
+            ControllerStock,
+            ({bool loading, bool failed, List<ModelStock> stocks})
+          >(
+            selector: (_, c) => (
+              loading: c.loading,
+              failed: c.loadFailed,
+              stocks: c.visibleStocks,
+            ),
+            shouldRebuild: (previous, next) => previous != next,
+            child: const _StockDashboard(),
+            builder: (context, state, dashboard) {
+              final controller = context.read<ControllerStock>();
+              if (state.loading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (state.failed && controller.stocks.isEmpty) {
+                return ListView(
+                  padding: const EdgeInsets.all(8),
+                  children: [
+                    if (controller.latestAvailableDate != null) ...[
+                      _buildDateSelector(context, controller),
+                      Gaps.h8,
+                    ],
+                    _buildLoadFailure(context, controller),
+                  ],
                 );
               }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildDateSelector(context, controller),
-                  Gaps.h8,
-                  WidgetsStockSearch(
-                    query: controller.searchQuery,
-                    onChanged: controller.setSearchQuery,
-                  ),
-                  Gaps.h8,
-                  if (controller.updateStatus != StockUpdateStatus.idle) ...[
-                    _buildUpdateStatus(context, controller.updateStatus),
-                    Gaps.h8,
-                  ],
 
-                  /// =========================
-                  /// 📊 DASHBOARD（放最上面）
-                  /// =========================
-                  if (controller.stocks.isEmpty)
-                    _buildEmptyState(context)
-                  else ...[
-                    _buildDashboard(context, controller),
-                    Gaps.h8,
-                  ],
+              final visibleStocks = state.stocks;
+              return ListView.builder(
+                padding: const EdgeInsets.all(8),
+                itemCount: visibleStocks.length + 1,
+                itemBuilder: (context, index) {
+                  if (index > 0) {
+                    final stockIndex = index - 1;
+                    return WidgetsStockCard(
+                      stock: visibleStocks[stockIndex],
+                      index: stockIndex,
+                    );
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildDateSelector(context, controller),
+                      Gaps.h8,
+                      Selector<ControllerStock, String>(
+                        selector: (_, c) => c.searchQuery,
+                        builder: (_, query, _) => WidgetsStockSearch(
+                          query: query,
+                          onChanged: controller.setSearchQuery,
+                        ),
+                      ),
+                      Gaps.h8,
+                      Selector<ControllerStock, StockUpdateStatus>(
+                        selector: (_, c) => c.updateStatus,
+                        builder: (context, status, _) =>
+                            status == StockUpdateStatus.idle
+                            ? const SizedBox.shrink()
+                            : Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: _buildUpdateStatus(context, status),
+                              ),
+                      ),
 
-                  /// =========================
-                  /// 📈 STOCK LIST
-                  /// =========================
-                ],
+                      /// =========================
+                      /// 📊 DASHBOARD（放最上面）
+                      /// =========================
+                      if (controller.stocks.isEmpty)
+                        _buildEmptyState(context)
+                      else ...[
+                        dashboard!,
+                        Gaps.h8,
+                      ],
+
+                      /// =========================
+                      /// 📈 STOCK LIST
+                      /// =========================
+                    ],
+                  );
+                },
               );
             },
-          );
-        },
-      ),
+          ),
     );
   }
 }
 
 Widget _buildDateSelector(BuildContext context, ControllerStock controller) {
-  final loc = AppLocalizations.of(context)!;
-  final selectedDate = controller.selectedDate ?? DateTime.now();
-  final latestAvailableDate = controller.latestAvailableDate ?? DateTime.now();
-  return OutlinedButton.icon(
-    onPressed: !controller.canSelectDate
-        ? null
-        : () async {
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: selectedDate,
-              firstDate: DateTime(2000),
-              lastDate: latestAvailableDate,
-            );
-            if (picked != null) await controller.loadDate(picked);
-          },
-    icon: controller.dateLoading
-        ? const SizedBox.square(
-            dimension: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        : const Icon(Icons.calendar_month_outlined),
-    label: Text(
-      '${loc.stockSelectDate}: ${DateFormat('yyyy/MM/dd').format(selectedDate)}',
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+  return Selector<ControllerStock, (DateTime?, DateTime?, bool, bool)>(
+    selector: (_, c) =>
+        (c.selectedDate, c.latestAvailableDate, c.dateLoading, c.canSelectDate),
+    builder: (context, state, _) => WidgetsStockDateSelector(
+      selectedDate: state.$1,
+      latestAvailableDate: state.$2,
+      loading: state.$3,
+      enabled: state.$4,
+      onSelected: controller.loadDate,
     ),
   );
 }
@@ -208,286 +216,79 @@ Widget _buildUpdateStatus(BuildContext context, StockUpdateStatus status) {
   );
 }
 
-Widget _buildDashboard(BuildContext context, ControllerStock c) {
-  final loc = AppLocalizations.of(context)!;
-  final integerFormat = NumberFormat('#,##0');
-  final onSurface = Theme.of(context).colorScheme.onSurface;
+/// Keep the dashboard subtree stable when the stock list is filtered. Its
+/// section selectors still observe fresh data, loading, errors and locale.
+class _StockDashboard extends StatelessWidget {
+  const _StockDashboard();
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        loc.stockDashboardTitle,
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-      Gaps.h8,
-      ...c.futures.map(
-        //.take(30).map(
-        (e) => RichText(
-          text: TextSpan(
-            style: TextStyle(fontSize: 20, color: onSurface),
-            children: [
-              TextSpan(
-                text: "${e.productName?.trim()} ${e.identityType?.trim()} ",
-              ),
-              TextSpan(
-                text: '${integerFormat.format(e.oiNetQty)} ',
-                style: TextStyle(
-                  color: (e.oiNetQty ?? 0) >= 0 ? Colors.red : Colors.green,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextSpan(text: '${loc.stockNet}: '),
-              TextSpan(
-                text: '${integerFormat.format(e.oiNetQtyDiff)} ',
-                style: TextStyle(
-                  color: (e.oiNetQtyDiff ?? 0) > 0 ? Colors.red : Colors.green,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      Gaps.h32,
-      _ForeignRankingSection(
-        key: const ValueKey('foreign-buy-ranking'),
-        title: loc.stockForeignBuy,
-        items: c.visibleForeignBuy,
-        isBuy: true,
-      ),
-      Gaps.h8,
-      _ForeignRankingSection(
-        key: const ValueKey('foreign-sell-ranking'),
-        title: loc.stockForeignSell,
-        items: c.visibleForeignSell,
-        isBuy: false,
-      ),
-    ],
-  );
+  @override
+  Widget build(BuildContext context) =>
+      _buildDashboard(context, context.read<ControllerStock>());
 }
 
-class _ForeignRankingSection extends StatefulWidget {
-  const _ForeignRankingSection({
-    super.key,
-    required this.title,
-    required this.items,
-    required this.isBuy,
-  });
+Widget _buildDashboard(BuildContext context, ControllerStock c) => Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Selector<ControllerStock, (List<ModelFuture>, bool, Object?)>(
+      selector: (_, c) => (c.visibleFutures, c.futuresLoading, c.futuresError),
+      builder: (context, state, _) => WidgetsStockFutures(
+        items: state.$1,
+        loading: state.$2,
+        error: state.$3,
+        onRetry: c.retryFutures,
+      ),
+    ),
+    Gaps.h32,
+    Selector<ControllerStock, Object?>(
+      selector: (_, c) => c.institutionalsError,
+      builder: (_, error, _) => error == null
+          ? const SizedBox.shrink()
+          : WidgetsStockSectionFailure(
+              error: error,
+              onRetry: c.retryInstitutionals,
+            ),
+    ),
+    const _StockForeignRankingSelector(isBuy: true),
+    Gaps.h8,
+    const _StockForeignRankingSelector(isBuy: false),
+  ],
+);
 
-  final String title;
-  final List<ModelInstitutional> items;
+/// Buy and sell results can change independently while a keyword is edited.
+/// Observe each projection separately rather than rebuilding both rankings.
+class _StockForeignRankingSelector extends StatelessWidget {
+  const _StockForeignRankingSelector({required this.isBuy});
   final bool isBuy;
 
   @override
-  State<_ForeignRankingSection> createState() => _ForeignRankingSectionState();
-}
-
-class _ForeignRankingSectionState extends State<_ForeignRankingSection> {
-  static const int _initialCount = 10;
-  static const int _pageSize = 20;
-  int _visibleCount = _initialCount;
-
-  @override
-  void didUpdateWidget(covariant _ForeignRankingSection oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.items, widget.items)) {
-      _visibleCount = _initialCount;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final integerFormat = NumberFormat('#,##0');
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final itemCount = widget.items.length < _visibleCount
-        ? widget.items.length
-        : _visibleCount;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                widget.title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ),
-            Text(
-              '$itemCount / ${widget.items.length}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+  Widget build(BuildContext context) =>
+      Selector<
+        ControllerStock,
+        ({List<ModelInstitutional> items, bool loading, bool failed})
+      >(
+        selector: (_, c) => (
+          items: isBuy ? c.visibleForeignBuy : c.visibleForeignSell,
+          loading: c.institutionalsLoading,
+          failed: c.institutionalsError != null,
         ),
-        Gaps.h8,
-        for (final item in widget.items.take(itemCount))
-          RichText(
-            text: TextSpan(
-              style: TextStyle(fontSize: 20, color: onSurface),
-              children: [
-                TextSpan(
-                  text: '${item.stockNo.trim()} ${item.stockName.trim()} ',
-                ),
-                TextSpan(
-                  text: '${integerFormat.format(item.foreignDiff / 1000)} ',
-                  style: TextStyle(
-                    color: widget.isBuy ? Colors.red : Colors.green,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextSpan(text: '${loc.stockNet}: '),
-                TextSpan(
-                  text: '${integerFormat.format(item.totalDiff / 1000)} ',
-                  style: TextStyle(
-                    color: widget.isBuy
-                        ? (item.foreignDiff < item.totalDiff
-                              ? Colors.red
-                              : Colors.blue)
-                        : (item.foreignDiff > item.totalDiff
-                              ? Colors.green
-                              : Colors.blue),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextSpan(text: loc.stockThousandLots),
-              ],
+        // Different keywords may produce new lists containing the same rows.
+        // Preserve that section's widgets and expansion when its result is equal.
+        shouldRebuild: (previous, next) =>
+            previous.loading != next.loading ||
+            previous.failed != next.failed ||
+            !listEquals(previous.items, next.items),
+        builder: (context, state, _) {
+          final loc = AppLocalizations.of(context)!;
+          return WidgetsStockForeignRanking(
+            key: ValueKey(
+              isBuy ? 'foreign-buy-ranking' : 'foreign-sell-ranking',
             ),
-          ),
-        if (itemCount < widget.items.length)
-          TextButton(
-            onPressed: () => setState(() => _visibleCount += _pageSize),
-            child: Text(loc.clickHereToSeeMore),
-          ),
-      ],
-    );
-  }
-}
-
-Widget _buildStockCard(BuildContext context, ModelStock stock, int index) {
-  final loc = AppLocalizations.of(context)!;
-  final colorScheme = Theme.of(context).colorScheme;
-  final isUp =
-      stock.change?.contains('+') == true || (stock.pctChange ?? 0) > 0;
-  return Card(
-    elevation: 2,
-    margin: const EdgeInsets.symmetric(vertical: 6),
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          /// 🔹 第一行：股號 + 名稱（可點擊）
-          InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: () async {
-              final url = Uri.parse(
-                "https://tw.stock.yahoo.com/quote/${stock.securityCode}",
-              );
-              await launchUrl(url, mode: LaunchMode.externalApplication);
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Text("${index + 1}. "),
-                  Gaps.w8,
-                  Text(
-                    stock.securityCode,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                  Gaps.w8,
-                  Expanded(
-                    child: Text(
-                      "${stock.securityName} ${stock.signalText ?? ''} ${stock.predPct?.toStringAsFixed(2) ?? ""}",
-                      style: TextStyle(
-                        color: stock.signal == 1
-                            ? Colors.red
-                            : (stock.signal == -1
-                                  ? Colors.green
-                                  : colorScheme.onSurface),
-                        fontWeight: stock.signal != 0
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Gaps.h8,
-
-          /// 🔹 第二行：收盤價 + 漲跌
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: [
-              Text(
-                loc.stockClosingPrice(
-                  NumberFormat('#,##0.00').format(stock.closingPrice),
-                ),
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              if (stock.pctChange != null)
-                Text(
-                  '${stock.pctChange!.toStringAsFixed(2)}%',
-                  style: TextStyle(
-                    color: isUp ? Colors.red : Colors.green,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              if (stock.peRatio != null && stock.peRatio != 0)
-                Text(loc.priceEarningsRatio(stock.peRatio.toString())),
-            ],
-          ),
-          Gaps.h8,
-
-          /// 🔹 第三行：其他資訊
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: [
-              if (stock.rsi != null)
-                Text(
-                  loc.relativeStrengthIndex(stock.rsi!.toStringAsFixed(2)),
-                  style: TextStyle(
-                    color: stock.rsi! < 50 ? Colors.green : Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              Text(
-                loc.stockTradingVolume(
-                  NumberFormat(
-                    '#,##0',
-                  ).format((stock.tradedNumber ?? 0) / 1000),
-                ),
-              ),
-            ],
-          ),
-          Gaps.h8,
-
-          /// 🔹 第四行：其他資訊
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "${DateFormat('M/d').format(stock.date)} ${stock.level ?? ''}",
-              ),
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
+            title: isBuy ? loc.stockForeignBuy : loc.stockForeignSell,
+            items: state.items,
+            isBuy: isBuy,
+            loading: state.loading,
+            failed: state.failed,
+          );
+        },
+      );
 }

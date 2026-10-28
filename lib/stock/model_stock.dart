@@ -1,7 +1,10 @@
 // lib/models/stock.dart
 import 'package:life_pilot/utils/value_parser.dart';
 
+enum StockDataOrigin { cloud, backend }
+
 class ModelStock {
+  StockDataOrigin? origin;
   DateTime date;
   String securityCode;
   String securityName;

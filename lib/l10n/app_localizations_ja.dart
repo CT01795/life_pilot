@@ -2963,6 +2963,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get stockForeignSell => '外国人投資家売り越しランキング';
 
   @override
+  String get stockReadTimeout => '読み込みがタイムアウトしました。再試行してください。';
+
+  @override
+  String get stockSourceCloud => 'クラウドデータ';
+
+  @override
+  String get stockSourceBackend => 'サーバーデータ';
+
+  @override
   String get stockLoadFailed => '株式データを読み込めませんでした。もう一度お試しください。';
 
   @override
