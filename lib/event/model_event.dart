@@ -17,7 +17,7 @@ class ModelEvent {
   final Set<String> selectedEventIds = {};
   final Set<String> removedEventIds = {};
   List<EventItem>? _filteredEventsCache;
-  AppLocalizations? _filteredEventsLoc;
+  EventSearchLabels? _filteredEventsLabels;
   final _searchTextIndex = ModelEventSearchIndex();
   String? _parsedKeywords;
   ModelEventSearchQuery? _parsedQuery;
@@ -38,15 +38,23 @@ class ModelEvent {
   static final RegExp priceReg = ModelEventSearchQuery.price;
 
   List<EventItem> getFilteredEvents(AppLocalizations loc) {
-    if (_filteredEventsCache != null && identical(_filteredEventsLoc, loc)) {
+    // The compatibility entry point extracts plain values; filtering and its
+    // cache need neither a retained locale object nor its identity.
+    final labels = (
+      free: loc.free,
+      pay: loc.pay,
+      outdoor: loc.outdoor,
+      indoor: loc.indoor,
+    );
+    if (_filteredEventsCache != null && _filteredEventsLabels == labels) {
       return _filteredEventsCache!;
     }
-    _filteredEventsLoc = loc;
+    _filteredEventsLabels = labels;
     return _filteredEventsCache = _filterEvents(
       events: _events,
       inFilter: _searchFilter,
       removedEventIds: removedEventIds,
-      loc: loc,
+      labels: labels,
     );
   }
 
@@ -252,7 +260,7 @@ class ModelEvent {
 
   void _invalidateFilteredEvents() {
     _filteredEventsCache = null;
-    _filteredEventsLoc = null;
+    _filteredEventsLabels = null;
   }
 
   void _invalidateEventData() {
@@ -265,15 +273,9 @@ class ModelEvent {
     required List<EventItem> events,
     required SearchFilter inFilter,
     required Set<String> removedEventIds,
-    required AppLocalizations loc,
+    required EventSearchLabels labels,
   }) {
     final query = _queryForCurrentKeywords();
-    final labels = (
-      free: loc.free,
-      pay: loc.pay,
-      outdoor: loc.outdoor,
-      indoor: loc.indoor,
-    );
 
     if (query.isEmpty &&
         inFilter.startDate == null &&

@@ -9,6 +9,15 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get recordInputInvalid => 'Enter a description and a value greater than zero.';
+
+  @override
+  String get recordTextInvalid => 'Invalid format. Use a description, + or -, and a non-zero value (up to 4 decimal places), e.g. Lunch-120; Salary+30000. No data was saved.';
+
+  @override
+  String get pointRecordTextInvalid => 'Invalid format. Use non-zero whole numbers, e.g. Exercise+10; Late-2. Check every entry; no data was saved.';
+
+  @override
   String get localSubscriptionRequiredForChanges => 'Device plan inactive. You can only view or delete data. Subscribe and ask an administrator to activate it.';
 
   @override

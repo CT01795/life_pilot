@@ -1,4 +1,10 @@
 {
+  "recordInputInvalid": "Enter a description and a value greater than zero.",
+  "@recordInputInvalid": {"description": "Label for recordInputInvalid"},
+  "recordTextInvalid": "Invalid format. Use a description, + or -, and a non-zero value (up to 4 decimal places), e.g. Lunch-120; Salary+30000. No data was saved.",
+  "@recordTextInvalid": {"description": "Label for recordTextInvalid"},
+  "pointRecordTextInvalid": "Invalid format. Use non-zero whole numbers, e.g. Exercise+10; Late-2. Check every entry; no data was saved.",
+  "@pointRecordTextInvalid": {"description": "Label for pointRecordTextInvalid"},
   "localSubscriptionRequiredForChanges": "Device plan inactive. You can only view or delete data. Subscribe and ask an administrator to activate it.",
   "@localSubscriptionRequiredForChanges": {"description": "Read-only notice when the Device plan is inactive"},
   "quotaNotLimited": "No limit",

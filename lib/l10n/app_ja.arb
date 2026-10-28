@@ -1,4 +1,10 @@
 {
+  "recordInputInvalid": "説明と 0 より大きい値を入力してください。",
+  "@recordInputInvalid": {"description": "Label for recordInputInvalid"},
+  "recordTextInvalid": "形式が正しくありません。説明、+ または -、0 以外の数値（小数点以下4桁まで）を入力してください。例：昼食-120；給与+30000。まだ保存されていません。",
+  "@recordTextInvalid": {"description": "Label for recordTextInvalid"},
+  "pointRecordTextInvalid": "形式が正しくありません。0 以外の整数を入力してください。例：運動+10；遅刻-2。各項目を確認してください。まだ保存されていません。",
+  "@pointRecordTextInvalid": {"description": "Label for pointRecordTextInvalid"},
   "localSubscriptionRequiredForChanges": "ローカルプランは未有効です。閲覧と削除のみできます。契約後、管理者に有効化を依頼してください。",
   "@localSubscriptionRequiredForChanges": {"description": "ローカルプランが無効な場合の読み取り専用メッセージ"},
   "quotaNotLimited": "制限なし",

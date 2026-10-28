@@ -1,4 +1,5 @@
 import 'dart:core';
+import 'package:life_pilot/utils/repository_event_cloud_operations.dart';
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -197,9 +198,13 @@ class ClusterItem {
         return {};
       }
 
-      final response = await apiSupabase.post('/external/geocode', {
-        'query': '$address$currentCountry',
-      }, bearerToken: accessToken);
+      final query = '$address$currentCountry';
+      final response = await RepositoryEventCloudOperations().geocode(
+        query: query,
+        backend: () => apiSupabase.post('/external/geocode', {
+          'query': query,
+        }, bearerToken: accessToken),
+      );
       if (response is Map<String, dynamic> &&
           response['lat'] is num &&
           response['lng'] is num) {

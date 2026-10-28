@@ -99,6 +99,24 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
+  /// Label for recordInputInvalid
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a description and a value greater than zero.'**
+  String get recordInputInvalid;
+
+  /// Label for recordTextInvalid
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid format. Use a description, + or -, and a non-zero value (up to 4 decimal places), e.g. Lunch-120; Salary+30000. No data was saved.'**
+  String get recordTextInvalid;
+
+  /// Label for pointRecordTextInvalid
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid format. Use non-zero whole numbers, e.g. Exercise+10; Late-2. Check every entry; no data was saved.'**
+  String get pointRecordTextInvalid;
+
   /// Read-only notice when the Device plan is inactive
   ///
   /// In en, this message translates to:

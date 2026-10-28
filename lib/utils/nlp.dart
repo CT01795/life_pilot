@@ -1,6 +1,35 @@
 import 'package:life_pilot/utils/value_parser.dart';
 
 class NLP {
+  /// Submission is all-or-nothing: do not silently discard unrecognized text.
+  static List<ParsedResult> parseForSubmission(
+    String text, {
+    bool integersOnly = false,
+  }) {
+    final matches = regex.allMatches(text).toList();
+    final separators = RegExp(r'^[\s，。,;；]*$');
+    var end = 0;
+    for (final match in matches) {
+      if (!separators.hasMatch(text.substring(end, match.start))) {
+        throw const FormatException('Invalid record format');
+      }
+      end = match.end;
+    }
+    final results = parseMulti(text);
+    if (results.isEmpty ||
+        !separators.hasMatch(text.substring(end)) ||
+        results.length != matches.length ||
+        results.any(
+          (r) =>
+              !r.value.isFinite ||
+              r.value == 0 ||
+              (integersOnly && r.value != r.value.roundToDouble()),
+        )) {
+      throw const FormatException('Invalid record format');
+    }
+    return results;
+  }
+
   static final regex = RegExp(
     r'([^，。,;；]*?)\s*(收入|支出|加分|扣分|增加|減少|加|減|\+|-)\s*(\d{1,3}(?:,\d{3})+(?:\.\d{1,4})?|\d+(?:\.\d{1,4})?|[一二三四五六七八九十兩]+)\s*(元|點|分)?',
   );

@@ -2,6 +2,52 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/utils/nlp.dart';
 
 void main() {
+  group('submission validation', () {
+    for (final text in [
+      '',
+      '   ',
+      '午餐120',
+      '午餐-',
+      '午餐-abc',
+      '午餐-23.4.4',
+      '午餐-23.45678',
+      '午餐-0',
+      '午餐-120；薪資30000',
+      '午餐120；薪資+30000',
+      '午餐-120；備註',
+    ]) {
+      test(
+        'rejects invalid input without returning a partial batch: $text',
+        () {
+          expect(() => NLP.parseForSubmission(text), throwsFormatException);
+        },
+      );
+    }
+
+    test('accepts complete signed entries and four decimal places', () {
+      final rows = NLP.parseForSubmission('午餐-23.4567；薪資+30,000');
+      expect(rows.map((r) => r.value), [-23.4567, 30000]);
+      expect(rows.map((r) => r.description), ['午餐', '薪資']);
+    });
+
+    test('accepts words used in Chinese speech', () {
+      final rows = NLP.parseForSubmission('運動加分10點；遲到扣分2點', integersOnly: true);
+      expect(rows.map((r) => r.value), [10, -2]);
+    });
+
+    test('points reject the whole batch if one entry has a fraction', () {
+      expect(
+        () => NLP.parseForSubmission('運動+10；遲到-2.5', integersOnly: true),
+        throwsFormatException,
+      );
+    });
+
+    test('correcting the original text allows a subsequent submission', () {
+      expect(() => NLP.parseForSubmission('午餐120'), throwsFormatException);
+      expect(NLP.parseForSubmission('午餐-120').single.value, -120);
+    });
+  });
+
   test('accounting parser preserves up to four decimal places', () {
     final result = NLP.parseMulti('午餐-23.4567');
 

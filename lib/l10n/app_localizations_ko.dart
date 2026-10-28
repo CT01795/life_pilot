@@ -9,6 +9,15 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get recordInputInvalid => '설명과 0보다 큰 값을 입력해 주세요.';
+
+  @override
+  String get recordTextInvalid => '형식이 올바르지 않습니다. 설명, + 또는 -, 0이 아닌 값(소수점 이하 최대 4자리)을 입력해 주세요. 예: 점심-120; 급여+30000. 아직 저장되지 않았습니다.';
+
+  @override
+  String get pointRecordTextInvalid => '형식이 올바르지 않습니다. 0이 아닌 정수를 입력해 주세요. 예: 운동+10; 지각-2. 각 항목을 확인해 주세요. 아직 저장되지 않았습니다.';
+
+  @override
   String get localSubscriptionRequiredForChanges => '기기 요금제가 비활성 상태입니다. 조회와 삭제만 가능합니다. 구독 후 관리자에게 활성화를 요청해 주세요.';
 
   @override

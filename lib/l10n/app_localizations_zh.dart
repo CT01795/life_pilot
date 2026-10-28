@@ -9,6 +9,15 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get recordInputInvalid => '請填寫描述及大於 0 的數值。';
+
+  @override
+  String get recordTextInvalid => '格式錯誤，請填寫描述、加減符號及非零數值（最多 4 位小數），例如：午餐-120；薪資+30000。尚未儲存，請修正後重送。';
+
+  @override
+  String get pointRecordTextInvalid => '格式錯誤，積分須為非零整數，例如：運動+10；遲到-2。尚未儲存，請檢查每筆內容後重送。';
+
+  @override
   String get localSubscriptionRequiredForChanges => '本機方案未啟用，僅可查看或刪除資料。請先訂閱並由管理者開通。';
 
   @override

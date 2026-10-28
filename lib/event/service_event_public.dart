@@ -24,11 +24,14 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:life_pilot/utils/repository_cloud_gateway.dart';
+import 'package:life_pilot/utils/repository_event_cloud_operations.dart';
 
 class ServiceEventPublic {
   final Duration perEventDelay;
   final EventHttpRequester _http;
   final bool _ownsHttpRequester;
+  final RepositoryCloudGateway _cloudGateway;
   int _refreshAttemptedSources = 0;
   int _refreshSuccessfulSources = 0;
   int _refreshFailedSources = 0;
@@ -42,8 +45,10 @@ class ServiceEventPublic {
   ServiceEventPublic({
     this.perEventDelay = const Duration(seconds: 1),
     EventHttpRequester? httpRequester,
+    RepositoryCloudGateway? cloudGateway,
   }) : _http = httpRequester ?? EventHttpRequester(),
-       _ownsHttpRequester = httpRequester == null;
+       _ownsHttpRequester = httpRequester == null,
+       _cloudGateway = cloudGateway ?? RepositoryCloudGateway();
 
   void close() {
     if (_ownsHttpRequester) _http.close();
@@ -68,7 +73,11 @@ class ServiceEventPublic {
   }
 
   Future<PublicEventRefreshStatus> getRefreshStatus() async {
-    final response = await apiSupabase.get('event/public_events_updated_today');
+    final response = await _cloudGateway.rpcOrBackend(
+      'life_pilot_public_event_refresh',
+      params: {'p_action': 'status'},
+      backend: () => apiSupabase.get('event/public_events_updated_today'),
+    );
     return PublicEventRefreshStatus(
       updated: response is Map && response['updated'] == true,
       running: response is Map && response['running'] == true,
@@ -76,9 +85,11 @@ class ServiceEventPublic {
   }
 
   Future<(String?, PublicEventRefreshExecution)> _startRefresh() async {
-    final response = await apiSupabase.post(
-      'event/start_public_event_refresh',
-      const {},
+    final response = await _cloudGateway.rpcOrBackend(
+      'life_pilot_public_event_refresh',
+      params: {'p_action': 'start'},
+      backend: () =>
+          apiSupabase.post('event/start_public_event_refresh', const {}),
     );
     if (response is! Map) {
       return (null, PublicEventRefreshExecution.running);
@@ -99,11 +110,15 @@ class ServiceEventPublic {
   }
 
   Future<void> _finishRefresh(String token, {required bool completed}) async {
-    await apiSupabase.post(
-      completed
-          ? 'event/complete_public_event_refresh'
-          : 'event/abort_public_event_refresh',
-      {'token': token},
+    await _cloudGateway.rpcOrBackend(
+      'life_pilot_public_event_refresh',
+      params: {'p_action': completed ? 'complete' : 'abort', 'p_token': token},
+      backend: () => apiSupabase.post(
+        completed
+            ? 'event/complete_public_event_refresh'
+            : 'event/abort_public_event_refresh',
+        {'token': token},
+      ),
     );
   }
 
@@ -142,9 +157,14 @@ class ServiceEventPublic {
 
   Future<void> _heartbeatRefresh(String token) async {
     try {
-      await apiSupabase.post('event/heartbeat_public_event_refresh', {
-        'token': token,
-      });
+      await _cloudGateway.rpcOrBackend(
+        'life_pilot_public_event_refresh',
+        params: {'p_action': 'heartbeat', 'p_token': token},
+        backend: () => apiSupabase.post(
+          'event/heartbeat_public_event_refresh',
+          {'token': token},
+        ),
+      );
     } catch (error, stackTrace) {
       logger.e(
         'Public event refresh heartbeat failed',
@@ -285,10 +305,17 @@ class ServiceEventPublic {
         } else {
           for (var offset = 0; offset < rows.length; offset += 200) {
             final end = offset + 200 < rows.length ? offset + 200 : rows.length;
-            await apiSupabase.post('event/import_public_events', {
-              'source_url': url,
-              'events': rows.sublist(offset, end),
-            });
+            final batch = rows.sublist(offset, end);
+            await RepositoryEventCloudOperations(
+              gateway: _cloudGateway,
+            ).importPublicEvents(
+              sourceUrl: url,
+              events: batch,
+              backend: () => apiSupabase.post('event/import_public_events', {
+                'source_url': url,
+                'events': batch,
+              }),
+            );
           }
         }
       } on Exception catch (ex) {

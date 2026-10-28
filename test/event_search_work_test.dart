@@ -4,6 +4,11 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/l10n/app_localizations_en.dart';
 import 'package:life_pilot/l10n/app_localizations_zh.dart';
 
+class _AlternateFreeLabel extends AppLocalizationsEn {
+  @override
+  String get free => 'complimentary';
+}
+
 class _TextEvent extends EventItem {
   _TextEvent(String id, DateTime? date, {List<EventItem> children = const []})
     : super(
@@ -23,6 +28,56 @@ class _TextEvent extends EventItem {
 
 void main() {
   final loc = AppLocalizationsEn();
+  test('equivalent locale instances reuse the same filtered projection', () {
+    final row = _TextEvent('event', DateTime(2026, 10, 1));
+    final model = ModelEvent()
+      ..setEvents([row])
+      ..updateSearchKeywords('needle')
+      ..updateStartDate(DateTime(2026, 10, 1));
+    final first = model.getFilteredEvents(AppLocalizationsEn());
+    for (var i = 0; i < 20; i++) {
+      expect(model.getFilteredEvents(AppLocalizationsEn()), same(first));
+    }
+    expect(first, [row]);
+    expect(row.reads, 1);
+  });
+
+  test(
+    'changed search labels invalidate the cache even for the same language',
+    () {
+      final model = ModelEvent()
+        ..setEvents([EventItem(id: 'e', name: '', isFree: true)])
+        ..updateSearchKeywords('complimentary');
+      expect(model.getFilteredEvents(AppLocalizationsEn()), isEmpty);
+      expect(model.getFilteredEvents(_AlternateFreeLabel()).single.id, 'e');
+      expect(model.getFilteredEvents(AppLocalizationsEn()), isEmpty);
+    },
+  );
+
+  test('equivalent locale labels cannot reuse a projection after an edit', () {
+    final model = ModelEvent()
+      ..setEvents([EventItem(id: 'e', name: 'needle')])
+      ..updateSearchKeywords('needle');
+    final previous = model.getFilteredEvents(AppLocalizationsEn());
+    model.updateEvent(EventItem(id: 'e', name: 'replacement'));
+    final current = model.getFilteredEvents(AppLocalizationsEn());
+    expect(current, isEmpty);
+    expect(current, isNot(same(previous)));
+    expect(previous.single.name, 'needle');
+  });
+
+  test('equivalent labels do not carry filtered rows across account reset', () {
+    final model = ModelEvent()
+      ..setEvents([EventItem(id: 'same', name: 'private-a')])
+      ..updateSearchKeywords('private-a');
+    final previous = model.getFilteredEvents(AppLocalizationsEn());
+    model.resetForDataScope();
+    model.setEvents([EventItem(id: 'same', name: 'private-b')]);
+    model.updateSearchKeywords('private-a');
+    expect(model.getFilteredEvents(AppLocalizationsEn()), isEmpty);
+    expect(previous.single.name, 'private-a');
+  });
+
   test('editing one record preserves the other records search index', () {
     final changed = _TextEvent('changed', DateTime(2026, 10, 1));
     final keep = _TextEvent('keep', DateTime(2026, 10, 1));

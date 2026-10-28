@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/model_weather_forecast_window.dart';
 import 'package:life_pilot/utils/weather_cache_store.dart';
 import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/utils/repository_external_cache.dart';
 
 class _WeatherResult {
   final List<EventWeather> data;
@@ -87,10 +88,14 @@ class ServiceWeather {
         return null;
       }
 
-      final response = await apiSupabase.post('/external/weather', {
-        'lat': event.lat,
-        'lng': event.lng,
-      }, bearerToken: accessToken);
+      final response = await RepositoryExternalCache().weather(
+        lat: event.lat!,
+        lng: event.lng!,
+        backend: () => apiSupabase.post('/external/weather', {
+          'lat': event.lat,
+          'lng': event.lng,
+        }, bearerToken: accessToken),
+      );
       final items =
           response is Map<String, dynamic> && response['items'] is List
           ? response['items'] as List

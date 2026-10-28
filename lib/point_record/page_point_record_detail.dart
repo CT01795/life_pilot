@@ -535,15 +535,22 @@ class _PagePointRecordDetailViewState
                   child: FilledButton.icon(
                     icon: const Icon(Icons.send_rounded),
                     onPressed: () async {
-                      if (_speechTextController.text.isEmpty) return;
                       final latest = firstRecordOutsideCategory(
                         controller.todayRecords,
                         excludedCategory: RecordCategories.reserved,
                         primaryCategoryOf: (record) => record.primaryCategory,
                       );
-                      final previews = controller.parseFromSpeech(
-                        _speechTextController.text,
-                      );
+                      final List<PointRecordPreview> previews;
+                      try {
+                        previews = controller.parseFromSpeech(
+                          _speechTextController.text,
+                        );
+                      } on FormatException {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(loc.pointRecordTextInvalid)),
+                        );
+                        return;
+                      }
                       for (final preview in previews) {
                         preview.eventId = widget.linkedEventId;
                         preview.date = _newRecordDate;
@@ -651,6 +658,7 @@ class _PagePointRecordDetailViewState
     );
     final loc = AppLocalizations.of(context)!;
 
+    String? validationError;
     return showDialog<PointRecordPreview>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -686,7 +694,11 @@ class _PagePointRecordDetailViewState
                 ),
                 TextField(
                   controller: valueController,
-                  decoration: InputDecoration(labelText: loc.recordValue),
+                  decoration: InputDecoration(
+                    labelText: loc.recordValue,
+                    errorText: validationError,
+                    errorMaxLines: 3,
+                  ),
                   keyboardType: TextInputType.number,
                 ),
                 ListTile(
@@ -771,7 +783,10 @@ class _PagePointRecordDetailViewState
               onPressed: () {
                 final value = tryParseIntValue(valueController.text);
                 final description = descController.text.trim();
-                if (value == null || value <= 0 || description.isEmpty) return;
+                if (value == null || value <= 0 || description.isEmpty) {
+                  setState(() => validationError = loc.recordInputInvalid);
+                  return;
+                }
                 Navigator.pop(
                   context,
                   record.copyWith(

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:life_pilot/calendar/model_calendar_holidays.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/repository_external_cache.dart';
 import 'package:uuid/uuid.dart';
 
 import '../utils/logger.dart';
@@ -101,11 +102,26 @@ class ServiceCalendar {
   }) async {
     final yearStart = DateTime.utc(year, 1, 1);
     final yearEnd = DateTime.utc(year + 1, 1, 1);
-    final data = await apiSupabase.post('/external/holidays', {
-      'start': yearStart.toIso8601String(),
-      'end': yearEnd.toIso8601String(),
-      'language_code': languageCode,
-    }, bearerToken: accessToken);
+    final cacheDate = _cacheUtcDate;
+    final data = await RepositoryExternalCache().holidays(
+      year: year,
+      language: languageCode,
+      backend: () => apiSupabase.post('/external/holidays', {
+        'start': yearStart.toIso8601String(),
+        'end': yearEnd.toIso8601String(),
+        'language_code': languageCode,
+      }, bearerToken: accessToken),
+      onRefreshed: (data) {
+        if (cacheDate != _cacheUtcDate ||
+            data is! Map ||
+            data['items'] is! List) {
+          return;
+        }
+        _yearCache['$languageCode:$year'] = Future.value(
+          ModelCalendarHolidays.parseRows(data['items'] as List),
+        );
+      },
+    );
     final items = data is Map<String, dynamic> && data['items'] is List
         ? data['items'] as List
         : const [];

@@ -9,6 +9,15 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get recordInputInvalid => '説明と 0 より大きい値を入力してください。';
+
+  @override
+  String get recordTextInvalid => '形式が正しくありません。説明、+ または -、0 以外の数値（小数点以下4桁まで）を入力してください。例：昼食-120；給与+30000。まだ保存されていません。';
+
+  @override
+  String get pointRecordTextInvalid => '形式が正しくありません。0 以外の整数を入力してください。例：運動+10；遅刻-2。各項目を確認してください。まだ保存されていません。';
+
+  @override
   String get localSubscriptionRequiredForChanges => 'ローカルプランは未有効です。閲覧と削除のみできます。契約後、管理者に有効化を依頼してください。';
 
   @override

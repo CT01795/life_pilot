@@ -198,7 +198,7 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
     String? currency,
     num? exchangeRate,
   ) {
-    final results = NLP.parseMulti(text);
+    final results = NLP.parseForSubmission(text);
 
     return results
         .map(

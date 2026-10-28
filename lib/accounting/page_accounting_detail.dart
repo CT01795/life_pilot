@@ -564,19 +564,26 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   child: FilledButton.icon(
                     icon: const Icon(Icons.send_rounded),
                     onPressed: () async {
-                      if (_speechTextController.text.isEmpty) return;
                       final latest = firstRecordOutsideCategory(
                         controller.todayRecords,
                         excludedCategory: RecordCategories.reserved,
                         primaryCategoryOf: (record) => record.primaryCategory,
                       );
-                      final previews = controller.parseFromSpeech(
-                        _speechTextController.text,
-                        latest?.currency ??
-                            controller.currentCurrency ??
-                            widget.account.currency,
-                        controller.currentExchangeRate,
-                      );
+                      final List<AccountingPreview> previews;
+                      try {
+                        previews = controller.parseFromSpeech(
+                          _speechTextController.text,
+                          latest?.currency ??
+                              controller.currentCurrency ??
+                              widget.account.currency,
+                          controller.currentExchangeRate,
+                        );
+                      } on FormatException {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(loc.recordTextInvalid)),
+                        );
+                        return;
+                      }
                       for (final preview in previews) {
                         preview.eventId = widget.linkedEventId;
                         preview.date = _newRecordDate;
@@ -692,6 +699,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     );
     final loc = AppLocalizations.of(context)!;
 
+    String? validationError;
     final result = await showDialog<AccountingPreview>(
       context: context,
       builder: (context) {
@@ -739,7 +747,11 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                     ),
                     TextField(
                       controller: valueController,
-                      decoration: InputDecoration(labelText: loc.recordValue),
+                      decoration: InputDecoration(
+                        labelText: loc.recordValue,
+                        errorText: validationError,
+                        errorMaxLines: 3,
+                      ),
                       keyboardType: TextInputType.number,
                       inputFormatters: const [DecimalInputFormatter()],
                     ),
@@ -865,8 +877,10 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                       valueController.text.replaceAll(',', ''),
                     );
                     if (v == null ||
+                        !v.isFinite ||
                         v <= 0 ||
                         descController.text.trim().isEmpty) {
+                      setState(() => validationError = loc.recordInputInvalid);
                       return;
                     }
                     Navigator.pop(

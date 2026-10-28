@@ -18,9 +18,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/utils/repository_cloud_gateway.dart';
+import 'package:life_pilot/utils/repository_event_cloud_operations.dart';
 
 class ServiceEvent {
-  ServiceEvent();
+  ServiceEvent({RepositoryEventCloudOperations? cloudOperations})
+    : _cloudOperations = cloudOperations ?? RepositoryEventCloudOperations();
+
+  final RepositoryEventCloudOperations _cloudOperations;
 
   // Controllers already know the active storage mode. Do not open the native
   // local database just to decide whether a cloud query should use it.
@@ -77,11 +82,15 @@ class ServiceEvent {
     required String tableName,
     int offset = 0,
   }) async {
-    final response = await apiSupabase.post('/external/map-geocode/backfill', {
-      'table_name': tableName,
-      'limit': 25,
-      'offset': offset,
-    });
+    final response = await _cloudOperations.backfillCoordinates(
+      tableName: tableName,
+      offset: offset,
+      backend: () => apiSupabase.post('/external/map-geocode/backfill', {
+        'table_name': tableName,
+        'limit': 25,
+        'offset': offset,
+      }),
+    );
     return MapCoordinateBackfillResult.fromJson(
       Map<String, dynamic>.from(response as Map),
     );
@@ -98,10 +107,14 @@ class ServiceEvent {
       return event;
     }
 
-    final response = await apiSupabase.post('/external/map-geocode', {
-      'table_name': tableName,
-      'event_id': event.id,
-    });
+    final response = await _cloudOperations.mapCoordinates(
+      tableName: tableName,
+      eventId: event.id,
+      backend: () => apiSupabase.post('/external/map-geocode', {
+        'table_name': tableName,
+        'event_id': event.id,
+      }),
+    );
     if (response is Map<String, dynamic>) {
       event.mapLat = tryParseDoubleValue(response['lat']);
       event.mapLng = tryParseDoubleValue(response['lng']);
@@ -116,7 +129,11 @@ class ServiceEvent {
 
     final request = () async {
       try {
-        await apiSupabase.post('event/cleanup_recommended_events', const {});
+        await RepositoryCloudGateway().rpcOrBackend(
+          'life_pilot_run_daily_cleanup',
+          backend: () =>
+              apiSupabase.post('event/cleanup_recommended_events', const {}),
+        );
         _lastCleanupRequestDate = today;
       } catch (error, stackTrace) {
         logger.e(
