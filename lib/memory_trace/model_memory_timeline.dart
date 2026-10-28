@@ -40,6 +40,19 @@ class ModelMemoryTimeline {
     final headers = <int, MemoryTimelineHeader>{};
     int? previousDay;
     int? previousMonth;
+    int? pendingDay;
+    var pendingMonth = 0, pendingCount = 0;
+    // Timelines commonly contain many adjacent records from the same day.
+    // Flush one run, rather than looking up and writing both maps per record.
+    // This state belongs to this projection only, never a retained snapshot.
+    void flushCounts() {
+      final day = pendingDay;
+      if (day == null) return;
+      daily[day] = (daily[day] ?? 0) + pendingCount;
+      monthly[pendingMonth] = (monthly[pendingMonth] ?? 0) + pendingCount;
+      pendingCount = 0;
+    }
+
     var count = 0;
     for (final event in events) {
       count++;
@@ -60,8 +73,12 @@ class ModelMemoryTimeline {
       }
       previousDay = day;
       previousMonth = month;
-      daily[day] = (daily[day] ?? 0) + 1;
-      monthly[month] = (monthly[month] ?? 0) + 1;
+      if (pendingDay != day) {
+        flushCounts();
+        pendingDay = day;
+        pendingMonth = month;
+      }
+      pendingCount++;
       final rawCity = event.city;
       final city = normalizedCities.putIfAbsent(
         rawCity,
@@ -69,6 +86,7 @@ class ModelMemoryTimeline {
       );
       if (city.isNotEmpty) cities.add(city);
     }
+    flushCounts();
     return ModelMemoryTimeline._(
       daily: daily,
       monthly: monthly,

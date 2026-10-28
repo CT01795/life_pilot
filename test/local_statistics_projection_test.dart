@@ -342,6 +342,71 @@ void main() {
       currency: 'TWD',
       now: now,
     );
+    test(
+      'alternating accounts reuse their unchanged local projections',
+      () async {
+        final source = _CountedRow(row('a', 10));
+        store.snapshot = List.unmodifiable([
+          source,
+          row('b', 20, account: 'b'),
+        ]);
+        expect(await total(), 10);
+        expect(await total(account: 'b'), 20);
+        final reads = source.reads;
+        for (var i = 0; i < 20; i++) {
+          expect(await total(), 10);
+          expect(await total(account: 'b'), 20);
+        }
+        expect(source.reads, reads);
+      },
+    );
+
+    test(
+      'bounded cache evicts least recently used account, not recent hits',
+      () async {
+        final source = _CountedRow(row('a', 10));
+        store.snapshot = List.unmodifiable([source]);
+        expect(await total(), 10);
+        for (var i = 0; i < 7; i++) {
+          expect(await total(account: 'other-$i'), 0);
+        }
+        // Touch a so other-0 becomes the eviction candidate.
+        expect(await total(), 10);
+        expect(await total(account: 'ninth'), 0);
+        final reads = source.reads;
+        expect(await total(), 10);
+        expect(await total(account: 'other-1'), 0);
+        expect(source.reads, reads);
+        expect(await total(account: 'other-0'), 0);
+        expect(source.reads, greaterThan(reads));
+      },
+    );
+
+    test('replacement invalidates every cached account projection', () async {
+      store.snapshot = List.unmodifiable([
+        row('a', 10),
+        row('b', 20, account: 'b'),
+      ]);
+      expect(await total(), 10);
+      expect(await total(account: 'b'), 20);
+      store.snapshot = List.unmodifiable([
+        row('a', -5),
+        row('b', 7, account: 'b'),
+      ]);
+      expect(await total(account: 'b'), 7);
+      expect(await total(), -5);
+    });
+
+    test('owner changes discard all previous owner projections', () async {
+      final source = _CountedRow(row('a', 10));
+      store.snapshot = List.unmodifiable([source]);
+      expect(await total(), 10);
+      expect(await total(account: 'b'), 0);
+      expect(await total(owner: 'two@example.com'), 10);
+      final reads = source.reads;
+      expect(await total(), 10);
+      expect(source.reads, greaterThan(reads));
+    });
     for (final kind in RecordStatisticsKind.values) {
       test(
         '$kind: cancellation during local IO skips projection work',

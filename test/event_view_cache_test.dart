@@ -16,6 +16,16 @@ class _Child extends EventItem {
   }
 }
 
+class _ChangedLabels extends AppLocalizationsEn {
+  _ChangedLabels({this.changedPay = false, this.changedIndoor = false});
+  final bool changedPay;
+  final bool changedIndoor;
+  @override
+  String get pay => changedPay ? 'changed-pay' : super.pay;
+  @override
+  String get indoor => changedIndoor ? 'changed-indoor' : super.indoor;
+}
+
 void main() {
   late ModelEventViewCache cache;
   late EventItem event;
@@ -41,6 +51,35 @@ void main() {
   test('unchanged presentation inputs reuse the view model', () {
     final first = build();
     expect(identical(build(), first), isTrue);
+  });
+
+  test('equivalent localization instances reuse deferred child models', () {
+    final child = _Child();
+    event.subEvents = [child];
+    final first = build();
+    final childView = first.subEvents.single;
+    final second = build(language: AppLocalizationsEn());
+    expect(second, same(first));
+    expect(second.subEvents.single, same(childView));
+    expect(child.reads, 1);
+  });
+
+  test('changed pay label invalidates even when only a child uses it', () {
+    event.subEvents = [EventItem(id: 'paid', name: 'paid', isFree: false)];
+    final first = build();
+    final updated = build(language: _ChangedLabels(changedPay: true));
+    expect(updated, isNot(same(first)));
+    expect(updated.subEvents.single.tags, contains('changed-pay'));
+    expect(first.subEvents.single.tags, contains(loc.pay));
+  });
+
+  test('changed indoor label invalidates deferred children', () {
+    event.subEvents = [EventItem(id: 'indoor', name: 'in', isOutdoor: false)];
+    final first = build();
+    final updated = build(language: _ChangedLabels(changedIndoor: true));
+    expect(updated, isNot(same(first)));
+    expect(updated.subEvents.single.tags, contains('changed-indoor'));
+    expect(first.subEvents.single.tags, contains(loc.indoor));
   });
 
   test('same-ID replacement refreshes content', () {

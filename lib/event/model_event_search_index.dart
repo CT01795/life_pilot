@@ -77,7 +77,14 @@ class ModelEventSearchIndex {
   /// Edits must still use invalidate; do not inspect/decode child records here.
   void retainEvents(Iterable<EventItem> events) {
     if (_entries.isEmpty) return;
-    final active = Set<EventItem>.identity()..addAll(events);
+    // Retention needs membership only for objects already indexed. Do not build
+    // a temporary set of thousands of untouched appended records.
+    final active = Set<EventItem>.identity();
+    for (final event in events) {
+      if (_entries.containsKey(event) || _baseText.containsKey(event)) {
+        active.add(event);
+      }
+    }
     _entries.removeWhere((event, _) => !active.contains(event));
     _baseText.removeWhere((event, _) => !active.contains(event));
   }

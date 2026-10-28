@@ -83,17 +83,26 @@ class ModelContentPerformance {
     // Metric indexes are shared with item counts. Avoid repeated string-key
     // lookups for every row; publish the existing named-column API only once.
     final totalCounts = List<int>.filled(contentPerformanceColumns.length, 0);
+    var requiresSort = false;
     for (final row in rows) {
       final metrics = _ContentMetricCounts(row);
       // Excluded rows need neither date parsing nor a retained source copy.
       if (statisticsOnly && !metrics.hasStatistics) continue;
       final item = ContentPerformanceItem._fromCounts(row, metrics);
+      // Reuse an already strictly ordered response. Equal keys deliberately
+      // keep the original sort path, including its tie behavior.
+      if (sortByExpiry &&
+          !requiresSort &&
+          items.isNotEmpty &&
+          items.last.compare(item, attractions: attractions) >= 0) {
+        requiresSort = true;
+      }
       items.add(item);
       for (var i = 0; i < totalCounts.length; i++) {
         totalCounts[i] += item.counts[i];
       }
     }
-    if (sortByExpiry) {
+    if (requiresSort) {
       items.sort((a, b) => a.compare(b, attractions: attractions));
     }
     return ModelContentPerformance._(
@@ -119,8 +128,13 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
   int countFor(ContentPerformanceMetric metric) => counts[metric.index];
   late final List<ContentPerformanceMetricValue> visibleMetrics =
       _nonZeroMetricValues(countFor);
-  final int maximum;
-  bool get hasStatistics => counts.any((value) => value != 0);
+  // Legacy chart API remains available, without computing an unused scale for
+  // every row on entry to the current icon-only performance page.
+  late final int maximum = counts.fold<int>(
+    1,
+    (maximum, count) => count > maximum ? count : maximum,
+  );
+  final bool hasStatistics;
   ContentPerformanceItem._(
     this.source,
     this.id,
@@ -131,7 +145,7 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
     this.starts,
     this.ends,
     this.counts,
-    this.maximum,
+    this.hasStatistics,
   );
   factory ContentPerformanceItem(Map<String, dynamic> row) {
     return ContentPerformanceItem._fromCounts(row, _ContentMetricCounts(row));
@@ -140,8 +154,12 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
     Map<String, dynamic> row,
     _ContentMetricCounts metrics,
   ) {
-    final starts = tryParseDateTimeValue(row['start_date'], toLocal: true);
-    final ends = tryParseDateTimeValue(row['end_date'], toLocal: true);
+    final rawStart = row['start_date'];
+    final rawEnd = row['end_date'];
+    final starts = tryParseDateTimeValue(rawStart, toLocal: true);
+    final ends = rawStart == rawEnd
+        ? starts
+        : tryParseDateTimeValue(rawEnd, toLocal: true);
     return ContentPerformanceItem._(
       Map.unmodifiable(row),
       parseStringValue(row['id']),
@@ -152,7 +170,7 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
       starts,
       ends,
       metrics.values,
-      metrics.maximum,
+      metrics.hasStatistics,
     );
   }
   @override
@@ -180,22 +198,18 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
 /// Parse metric columns once, before deciding whether full row data is needed.
 class _ContentMetricCounts {
   final List<int> values;
-  final int maximum;
   final bool hasStatistics;
-  _ContentMetricCounts._(this.values, this.maximum, this.hasStatistics);
+  _ContentMetricCounts._(this.values, this.hasStatistics);
   factory _ContentMetricCounts(Map<String, dynamic> row) {
     final values = <int>[];
-    var maximum = 1;
     var hasStatistics = false;
     for (final column in contentPerformanceColumns) {
       final value = parseIntValue(row[column]);
       values.add(value);
       if (value != 0) hasStatistics = true;
-      if (value > maximum) maximum = value;
     }
     return _ContentMetricCounts._(
       List<int>.unmodifiable(values),
-      maximum,
       hasStatistics,
     );
   }

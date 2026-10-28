@@ -10,6 +10,9 @@ List<T> filterRecordItems<T>(
   required String Function(String category) categoryLabelOf,
 }) {
   final normalizedQuery = normalizeStringValue(query);
+  // Labels are stable within one filter call. Do not cache them across locale
+  // changes, and preserve short-circuiting for description/secondary matches.
+  final categoryLabels = <String, String>{};
   return records
       .where((record) {
         final primaryCategory = primaryCategoryOf(record);
@@ -21,9 +24,12 @@ List<T> filterRecordItems<T>(
             (secondaryCategoryOf(record) ?? '').toLowerCase().contains(
               normalizedQuery,
             ) ||
-            categoryLabelOf(
-              primaryCategory,
-            ).toLowerCase().contains(normalizedQuery);
+            categoryLabels
+                .putIfAbsent(
+                  primaryCategory,
+                  () => categoryLabelOf(primaryCategory).toLowerCase(),
+                )
+                .contains(normalizedQuery);
       })
       .toList(growable: false);
 }

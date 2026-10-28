@@ -12,10 +12,20 @@ class ModelEventViewCache {
     required String tableName,
     required bool canDelete,
   }) {
+    // Key the translated presentation by values, not the localization object's
+    // lifetime. Include every label consumed by buildEventViewModel (children
+    // included), so changed translations still invalidate deferred content.
+    final labels = (
+      locale: loc.localeName,
+      free: loc.free,
+      pay: loc.pay,
+      outdoor: loc.outdoor,
+      indoor: loc.indoor,
+    );
     final cached = _entries[event.id];
     if (cached != null &&
         identical(cached.event, event) &&
-        identical(cached.loc, loc) &&
+        cached.labels == labels &&
         cached.tableName == tableName &&
         cached.canDelete == canDelete) {
       return cached.viewModel;
@@ -30,7 +40,7 @@ class ModelEventViewCache {
     );
     _entries[event.id] = _CachedEventView(
       event,
-      loc,
+      labels,
       tableName,
       canDelete,
       viewModel,
@@ -43,7 +53,14 @@ class ModelEventViewCache {
   /// Keep unchanged rows across progressive responses, releasing models for
   /// removed or replaced records. Locale/permission checks still happen in build.
   void retainEvents(Iterable<EventItem> events) {
-    final current = {for (final event in events) event.id: event};
+    if (_entries.isEmpty) return;
+    // Visible-card caches are often much smaller than a loaded snapshot. Keep
+    // only relevant IDs, but scan all rows: the LAST duplicate ID still wins.
+    final current = <String, EventItem>{};
+    for (final event in events) {
+      final id = event.id;
+      if (_entries.containsKey(id)) current[id] = event;
+    }
     _entries.removeWhere((id, cached) => !identical(current[id], cached.event));
   }
 
@@ -52,14 +69,21 @@ class ModelEventViewCache {
 
 class _CachedEventView {
   final EventItem event;
-  final AppLocalizations loc;
+  final ({
+    String locale,
+    String free,
+    String pay,
+    String outdoor,
+    String indoor,
+  })
+  labels;
   final String tableName;
   final bool canDelete;
   final EventViewModel viewModel;
 
   const _CachedEventView(
     this.event,
-    this.loc,
+    this.labels,
     this.tableName,
     this.canDelete,
     this.viewModel,

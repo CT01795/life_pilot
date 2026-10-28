@@ -1,5 +1,6 @@
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_event_ordering.dart';
 
 /// Pure projection for the dashboard's three-day schedule window.
 /// Filter lightweight fields before decoding descriptions or sub-events.
@@ -19,7 +20,19 @@ class ModelDashboardScheduleQuery {
       decodeRows(rows.where(_matchesWindow));
 
   List<CalendarEvent> decodeRows(Iterable<Map<String, dynamic>> rows) =>
-      rows.map(CalendarEvent.fromJson).toList()..sort(_compare);
+      ModelDashboardEventOrdering.sorted(
+        rows.map(CalendarEvent.fromJson),
+        keyOf: (event) {
+          final time = event.startTime;
+          return DashboardEventOrderKey(
+            date: event.startDate,
+            minutes: time == null ? 1440 : time.hour * 60 + time.minute,
+            city: event.city,
+            location: event.location,
+            name: event.name,
+          );
+        },
+      );
 
   bool _matchesWindow(Map<String, dynamic> row) {
     if (row['is_completed'] == true) return false;
@@ -34,26 +47,5 @@ class ModelDashboardScheduleQuery {
       toLocal: true,
     );
     return !(end ?? start).isBefore(today);
-  }
-
-  static int _compare(CalendarEvent left, CalendarEvent right) {
-    var comparison = (left.startDate ?? DateTime(9999)).compareTo(
-      right.startDate ?? DateTime(9999),
-    );
-    if (comparison != 0) return comparison;
-    final leftTime = left.startTime;
-    final rightTime = right.startTime;
-    comparison =
-        (leftTime == null ? 24 * 60 : leftTime.hour * 60 + leftTime.minute)
-            .compareTo(
-              rightTime == null
-                  ? 24 * 60
-                  : rightTime.hour * 60 + rightTime.minute,
-            );
-    if (comparison != 0) return comparison;
-    comparison = (left.city ?? '').compareTo(right.city ?? '');
-    if (comparison != 0) return comparison;
-    comparison = (left.location ?? '').compareTo(right.location ?? '');
-    return comparison != 0 ? comparison : left.name.compareTo(right.name);
   }
 }

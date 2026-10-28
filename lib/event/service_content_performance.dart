@@ -29,11 +29,12 @@ class ServiceContentPerformance {
       statisticsOnly: statisticsOnly,
     );
     final elapsed = Stopwatch()..start();
+    final normalizedOwner = owner.toLowerCase();
     final rows = await readAllPagedRows(
       shouldContinue: shouldContinue,
       fetch: (offset, limit) async {
         if (supabase.auth.currentUser?.email?.toLowerCase() !=
-            owner.toLowerCase()) {
+            normalizedOwner) {
           throw StateError('Account scope changed');
         }
         var query = supabase

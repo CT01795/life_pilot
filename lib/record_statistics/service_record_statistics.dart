@@ -1,16 +1,19 @@
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:life_pilot/record_statistics/model_local_record_statistics.dart';
+import 'package:life_pilot/record_statistics/model_record_statistics_query.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/paged_row_reader.dart';
 
 class ServiceRecordStatistics {
+  // Performance cache only, unrelated to subscription/storage quotas.
+  static const _maximumLocalProjections = 8;
   final LocalDataStore localStore;
   List<Map<String, dynamic>>? _localSource;
   Object? _localScope;
-  ModelLocalRecordStatistics? _localProjection;
+  final Map<(String, String?), ModelLocalRecordStatistics> _localProjections = {};
   ServiceRecordStatistics({LocalDataStore? localStore})
     : localStore = localStore ?? LocalDataStore.instance;
 
@@ -31,25 +34,36 @@ class ServiceRecordStatistics {
     final zone = DateTime.now();
     final scope = (
       owner.toLowerCase(),
-      accountId,
       kind,
-      currency,
       zone.timeZoneName,
       zone.timeZoneOffset,
     );
     // LocalDataStore replaces its immutable list after writes/deletes/moves.
     // Never retain an aggregate across a changed resource snapshot or scope.
     if (!identical(source, _localSource) || scope != _localScope) {
-      _localProjection = ModelLocalRecordStatistics(
-        source,
-        accountId: accountId,
-        kind: kind,
-        currency: currency,
-      );
+      _localProjections.clear();
       _localSource = source;
       _localScope = scope;
     }
-    return _localProjection!;
+    final key = (accountId, currency);
+    // Refresh insertion order on hits. Alternating between recently viewed
+    // accounts no longer discards an unchanged immutable-snapshot projection.
+    final cached = _localProjections.remove(key);
+    if (cached != null) {
+      _localProjections[key] = cached;
+      return cached;
+    }
+    final projection = ModelLocalRecordStatistics(
+      source,
+      accountId: accountId,
+      kind: kind,
+      currency: currency,
+    );
+    if (_localProjections.length >= _maximumLocalProjections) {
+      _localProjections.remove(_localProjections.keys.first);
+    }
+    _localProjections[key] = projection;
+    return projection;
   }
 
   Future<num> readTotal({
@@ -98,11 +112,6 @@ class ServiceRecordStatistics {
     bool Function()? shouldContinue,
   }) async {
     if (shouldContinue?.call() == false) return [];
-    final table = kind == RecordStatisticsKind.accounting
-        ? TableNames.accountingDetail
-        : TableNames.pointRecordDetail;
-    final start = DateTime(now.year, now.month);
-    final end = DateTime(now.year, now.month + 1);
     if (storage == DataStorageLocation.local) {
       final projection = await _readLocal(
         owner: owner,
@@ -114,28 +123,31 @@ class ServiceRecordStatistics {
       if (projection == null || shouldContinue?.call() == false) return [];
       return projection.rows(now: now, history: history);
     }
+    final projection = ModelRecordStatisticsQuery(
+      kind: kind,
+      now: now,
+      currency: currency,
+      history: history,
+    );
+    final normalizedOwner = owner.toLowerCase();
     return readAllPagedRows(
       shouldContinue: shouldContinue,
       fetch: (offset, limit) async {
         if (supabase.auth.currentUser?.email?.toLowerCase() !=
-            owner.toLowerCase()) {
+            normalizedOwner) {
           throw StateError('Account scope changed');
         }
         var query = supabase
-            .from(table)
-            .select(
-              kind == RecordStatisticsKind.accounting
-                  ? 'id,date,value,currency'
-                  : 'id,date,value',
-            )
+            .from(projection.tableName)
+            .select(projection.columns)
             .eq('account_id', accountId);
-        if (kind == RecordStatisticsKind.accounting && currency != null) {
-          query = query.eq('currency', currency);
+        if (projection.currency != null) {
+          query = query.eq('currency', projection.currency!);
         }
-        if (!history) {
+        if (projection.startUtc != null) {
           query = query
-              .gte('date', start.toUtc().toIso8601String())
-              .lt('date', end.toUtc().toIso8601String());
+              .gte('date', projection.startUtc!)
+              .lt('date', projection.endUtc!);
         }
         return query
             .order('date')

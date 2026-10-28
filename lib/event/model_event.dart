@@ -1,4 +1,5 @@
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/model_event_date_range.dart';
 import 'package:life_pilot/event/model_event_ordering.dart';
 import 'package:life_pilot/event/model_event_search_query.dart';
 import 'package:life_pilot/event/model_event_search_index.dart';
@@ -284,24 +285,28 @@ class ModelEvent {
       // ✅ 若沒有過濾條件，直接回傳原列表（避免無謂運算）
       return List<EventItem>.from(events);
     }
-    return events.where((e) {
-      if (removedEventIds.contains(e.id)) return false;
-      if (!_matchesDateRange(e, inFilter)) return false;
-      return query.matchesWithText(
-        e,
-        containsText: (word) =>
-            _searchTextIndex.contains(e, word, labels: labels),
-      );
-    }).toList();
-  }
-
-  bool _matchesDateRange(EventItem event, SearchFilter filter) {
-    if (filter.startDate == null && filter.endDate == null) return true;
-    final rawStart = event.startDate;
-    if (rawStart == null) return false;
-    final start = DateTimeFormatter.dateOnly(rawStart);
-    final end = DateTimeFormatter.dateOnly(event.endDate ?? rawStart);
-    return (filter.startDate == null || !end.isBefore(filter.startDate!)) &&
-        (filter.endDate == null || !start.isAfter(filter.endDate!));
+    final dateRange = ModelEventDateRange(
+      start: inFilter.startDate,
+      end: inFilter.endDate,
+    );
+    final hasRemovedEvents = removedEventIds.isNotEmpty;
+    final hasKeywords = !query.isEmpty;
+    final filtered = <EventItem>[];
+    for (final event in events) {
+      if (hasRemovedEvents && removedEventIds.contains(event.id)) continue;
+      if (!dateRange.matches(event)) continue;
+      // Date-only searches need neither a per-row text callback nor the text
+      // matching pipeline. Keep source order and return a separate snapshot.
+      if (hasKeywords &&
+          !query.matchesWithText(
+            event,
+            containsText: (word) =>
+                _searchTextIndex.contains(event, word, labels: labels),
+          )) {
+        continue;
+      }
+      filtered.add(event);
+    }
+    return filtered;
   }
 }

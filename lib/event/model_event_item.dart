@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/event/model_event_tags.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -553,21 +554,13 @@ class EventViewModel {
         ? ''
         : "\$${event.priceMin}~${event.priceMax == null ? '' : "\$${event.priceMax}"}";
     // 處理 tags
-    final tagsRawData = <String>[
+    final tags = ModelEventTags.firstThree([
       isFree,
       isOutdoor,
       ageRange,
       priceRange,
       event.type,
-    ].where((t) => t.isNotEmpty).toList();
-
-    final tags = tagsRawData
-        // ignore: deprecated_member_use
-        .expand((t) => t.split(RegExp(r'[\s,，]')))
-        .map((t) => t.trim())
-        .where((t) => t.isNotEmpty)
-        .take(3)
-        .toList();
+    ]);
 
     final businessHours = tableName == TableNames.recommendPlaces
         ? [
