@@ -95,6 +95,145 @@ void main() {
     auth.dispose();
   });
 
+  for (final stage in ['initial', 'history', 'older date', 'older page']) {
+    for (final lateFailure in [false, true]) {
+      testWidgets(
+        '$stage timeout retains a retry action (late failure=$lateFailure)',
+        (tester) async {
+          controller.dispose();
+          controller = ControllerFeedbackAdmin(
+            service,
+            auth,
+            requestTimeout: const Duration(milliseconds: 20),
+            historyTimeout: const Duration(milliseconds: 10),
+          );
+          final older = stage.startsWith('older');
+          if (older) {
+            final seed = controller.loadFeedback();
+            await tester.pump();
+            await seed;
+          }
+          final page = Completer<List<dynamic>>();
+          final probe = Completer<bool>();
+          final date = Completer<DateTime?>();
+          if (stage == 'initial' || stage == 'older page') {
+            service.pendingLoad = page;
+          } else if (stage == 'history') {
+            service.pendingProbe = probe;
+          } else {
+            service.pendingOlder = date;
+          }
+          final pending = older
+              ? controller.loadMore()
+              : controller.loadFeedback();
+          await tester.pump();
+          final snapshot = controller.feedbackList;
+          final loads = service.loads, probes = service.probes;
+          await tester.pump(const Duration(milliseconds: 21));
+          await pending;
+          final error = stage == 'initial'
+              ? controller.loadError
+              : stage == 'history'
+              ? controller.historyError
+              : controller.loadMoreError;
+          expect(error, isA<TimeoutException>());
+          expect(controller.isLoading, isFalse);
+          expect(controller.isLoadingMore, isFalse);
+          expect(controller.isCheckingHistory, isFalse);
+          expect(controller.feedbackList, same(snapshot));
+          if (stage != 'initial') expect(controller.hasHistoryAction, isTrue);
+
+          if (stage == 'initial' || stage == 'older page') {
+            lateFailure
+                ? page.completeError(StateError('late page'))
+                : page.complete([_row(99)]);
+          } else if (stage == 'history') {
+            lateFailure
+                ? probe.completeError(StateError('late history'))
+                : probe.complete(true);
+          } else {
+            lateFailure
+                ? date.completeError(StateError('late date'))
+                : date.complete(DateTime(2026, 1));
+          }
+          await tester.pump();
+          expect(controller.feedbackList, same(snapshot));
+          expect(service.loads, loads);
+          expect(service.probes, probes);
+          service.pendingLoad = null;
+          service.pendingProbe = null;
+          service.pendingOlder = null;
+          service.more = false;
+          service.rows = [_row(2)];
+          final retry = stage == 'history'
+              ? controller.retryHistory()
+              : older
+              ? controller.loadMore()
+              : controller.loadFeedback();
+          await tester.pump();
+          await retry;
+          expect(controller.loadError, isNull);
+          expect(controller.historyError, isNull);
+          expect(controller.loadMoreError, isNull);
+          expect(controller.hasHistoryAction, isFalse);
+          if (stage == 'history') {
+            expect(service.loads, loads);
+            expect(controller.feedbackList, same(snapshot));
+          } else {
+            expect(controller.feedbackList.map((f) => f.id), contains(2));
+          }
+          if (older) {
+            expect(service.olderBoundaries.first, service.olderBoundaries.last);
+          }
+        },
+      );
+    }
+  }
+
+  testWidgets('late timeout after account switch cannot publish an error', (
+    tester,
+  ) async {
+    controller.dispose();
+    controller = ControllerFeedbackAdmin(
+      service,
+      auth,
+      requestTimeout: const Duration(milliseconds: 20),
+    );
+    final page = Completer<List<dynamic>>();
+    service.pendingLoad = page;
+    final pending = controller.loadFeedback();
+    auth.switchAccount();
+    await tester.pump(const Duration(milliseconds: 21));
+    await pending;
+    expect(controller.loadError, isNull);
+    expect(controller.feedbackList, isEmpty);
+    expect(controller.isLoading, isFalse);
+    page.completeError(StateError('old account'));
+    await tester.pump();
+    expect(service.probes, 0);
+    expect(controller.loadError, isNull);
+  });
+
+  test(
+    'status snapshots are stable, read-only and replaced only when changed',
+    () async {
+      final first = controller.selectedStatuses;
+      expect(controller.selectedStatuses, same(first));
+      await controller.loadFeedback();
+      expect(controller.selectedStatuses, same(first));
+      controller.toggleStatus('completed');
+      final next = controller.selectedStatuses;
+      expect(next, isNot(same(first)));
+      expect(next, contains('completed'));
+      expect(first, isNot(contains('completed')));
+      expect(() => next.clear(), throwsUnsupportedError);
+      auth.switchAccount();
+      expect(controller.selectedStatuses, {'pending', 'in_progress'});
+      expect(controller.selectedStatuses, isNot(same(next)));
+      expect(next, contains('completed'));
+    },
+  );
+
   test(
     'selecting the current feedback status does not write or invalidate cache',
     () async {

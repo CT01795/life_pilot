@@ -52,6 +52,40 @@ class _WriteCountedEvents extends ListBase<EventItem> {
   }
 }
 
+class _ReadCountedEvent extends EventItem {
+  _ReadCountedEvent(String id, TimeOfDay? time)
+    : super(id: id, name: id, startDate: today, startTime: time);
+  int dates = 0, ends = 0, clocks = 0, countries = 0;
+  @override
+  DateTime? get startDate {
+    dates++;
+    return super.startDate;
+  }
+
+  @override
+  DateTime? get endDate {
+    ends++;
+    return super.endDate;
+  }
+
+  @override
+  TimeOfDay? get startTime {
+    clocks++;
+    return super.startTime;
+  }
+
+  @override
+  String get country {
+    countries++;
+    return super.country;
+  }
+
+  @override
+  String get description => throw StateError('sorting decoded description');
+  @override
+  List<EventItem> get subEvents => throw StateError('sorting decoded children');
+}
+
 void main() {
   for (final mode in ['events', 'places', 'memory']) {
     void sort(List<EventItem> rows) {
@@ -64,6 +98,31 @@ void main() {
           now: today,
         );
       }
+    }
+
+    for (final timed in [false, true]) {
+      test('$mode reads only required sort keys once, timed=$timed', () {
+        final rows = [
+          _ReadCountedEvent(
+            'b',
+            timed ? const TimeOfDay(hour: 10, minute: 0) : null,
+          ),
+          _ReadCountedEvent(
+            'a',
+            timed ? const TimeOfDay(hour: 9, minute: 0) : null,
+          ),
+        ];
+        for (final row in rows) {
+          row.dates = row.ends = row.clocks = row.countries = 0;
+        }
+        sort(rows);
+        for (final row in rows) {
+          expect(row.dates, mode == 'places' ? 0 : 1);
+          expect(row.ends, mode == 'events' ? 1 : 0);
+          expect(row.clocks, mode == 'places' ? 0 : 1);
+          expect(row.countries, mode == 'events' ? 1 : 0);
+        }
+      });
     }
 
     test('$mode does not rewrite already ordered rows or equal-key ties', () {

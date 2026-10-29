@@ -4,6 +4,175 @@ import 'package:life_pilot/game/controller_game_my_questions.dart';
 import 'package:life_pilot/game/service_game.dart';
 
 void main() {
+  for (final failQuestions in [true, false]) {
+    for (final synchronous in [true, false]) {
+      test(
+        'fail-fast ${failQuestions ? 'questions' : 'groups'}, synchronous=$synchronous, consumes late sibling error',
+        () async {
+          final service = _QuestionService()
+            ..pendingPage = Completer<MyGameQuestionPage>()
+            ..pendingGroups = Completer<List<String>>();
+          if (synchronous) {
+            service.failLoad = failQuestions;
+            service.failGroups = !failQuestions;
+          }
+          final c = ControllerGameMyQuestions(
+            service: service,
+            gameName: 'Speaking',
+          );
+          addTearDown(c.dispose);
+          final pending = c.load();
+          if (!synchronous) {
+            if (failQuestions) {
+              service.pendingPage!.completeError(StateError('questions'));
+            } else {
+              service.pendingGroups!.completeError(StateError('groups'));
+            }
+          }
+          expect(await pending, isFalse);
+          expect(c.isLoading, isFalse);
+          expect(c.hasError, isTrue);
+          if (failQuestions) {
+            service.pendingGroups!.completeError(StateError('late groups'));
+          } else {
+            service.pendingPage!.completeError(StateError('late questions'));
+          }
+          await Future<void>.delayed(Duration.zero);
+          expect(c.questions, isEmpty);
+          service.pendingPage = null;
+          service.pendingGroups = null;
+          service.failLoad = false;
+          service.failGroups = false;
+          expect(await c.load(), isTrue);
+          expect(c.hasError, isFalse);
+          expect(c.questions, isNotEmpty);
+        },
+      );
+    }
+  }
+  for (final waitingFor in ['questions', 'groups', 'fallback']) {
+    testWidgets(
+      '$waitingFor timeout closes the entire read and permits retry',
+      (tester) async {
+        final service = _QuestionService();
+        final c = ControllerGameMyQuestions(
+          service: service,
+          gameName: 'Speaking',
+          requestTimeout: const Duration(milliseconds: 20),
+        );
+        addTearDown(c.dispose);
+        c.selectGroup('removed');
+        if (waitingFor == 'questions') {
+          service.pendingPage = Completer<MyGameQuestionPage>();
+        } else if (waitingFor == 'groups') {
+          service.pendingGroups = Completer<List<String>>();
+        } else {
+          service.pendingFallback = Completer<MyGameQuestionPage>();
+        }
+        final pending = c.load();
+        await tester.pump();
+        expect(service.calls.length, waitingFor == 'fallback' ? 2 : 1);
+        await tester.pump(const Duration(milliseconds: 21));
+        expect(await pending, isFalse);
+        expect(c.isLoading, isFalse);
+        expect(c.hasError, isTrue);
+        final calls = service.calls.length;
+        service.pendingPage?.complete(_page(8));
+        service.pendingGroups?.complete([]);
+        service.pendingFallback?.complete(_page(9));
+        await tester.pump();
+        expect(service.calls.length, calls);
+        expect(c.questions, isEmpty);
+        expect(c.selectedGroup, waitingFor == 'fallback' ? isNull : 'removed');
+        service.pendingPage = null;
+        service.pendingGroups = null;
+        service.pendingFallback = null;
+        c.selectGroup(null);
+        final retry = c.load();
+        await tester.pump();
+        expect(await retry, isTrue);
+        expect(c.hasError, isFalse);
+        expect(c.questions.single.id, '0');
+      },
+    );
+  }
+
+  testWidgets('classification wait and fallback share one total timeout', (
+    tester,
+  ) async {
+    final service = _QuestionService()
+      ..pendingGroups = Completer<List<String>>()
+      ..pendingFallback = Completer<MyGameQuestionPage>();
+    final c = ControllerGameMyQuestions(
+      service: service,
+      gameName: 'Speaking',
+      requestTimeout: const Duration(milliseconds: 20),
+    )..selectGroup('removed');
+    addTearDown(c.dispose);
+    final pending = c.load();
+    await tester.pump(const Duration(milliseconds: 12));
+    service.pendingGroups!.complete([]);
+    await tester.pump();
+    expect(service.calls.length, 2);
+    await tester.pump(const Duration(milliseconds: 9));
+    expect(await pending, isFalse);
+    expect(c.isLoading, isFalse);
+    service.pendingFallback!.complete(_page(9));
+    await tester.pump();
+    expect(c.questions, isEmpty);
+  });
+
+  testWidgets(
+    'load-more timeout retains old rows and retry uses the same offset',
+    (tester) async {
+      final service = _QuestionService();
+      final c = ControllerGameMyQuestions(
+        service: service,
+        gameName: 'Speaking',
+        requestTimeout: const Duration(milliseconds: 20),
+      );
+      addTearDown(c.dispose);
+      final first = c.load();
+      await tester.pump();
+      await first;
+      final snapshot = c.questions;
+      final oldPage = Completer<MyGameQuestionPage>();
+      service.pendingPage = oldPage;
+      final more = c.load(append: true);
+      expect(c.isLoadingMore, isTrue);
+      await tester.pump(const Duration(milliseconds: 21));
+      expect(await more, isFalse);
+      expect(c.isLoadingMore, isFalse);
+      expect(c.questions, same(snapshot));
+      expect(c.hasMore, isTrue);
+      service.pendingPage = null;
+      final retry = c.load(append: true);
+      await tester.pump();
+      expect(await retry, isTrue);
+      expect(service.calls.map((call) => call.$4), [0, 1, 1]);
+      oldPage.complete(_page(9));
+      await tester.pump();
+      expect(c.questions.map((q) => q.id), ['0', '1']);
+      expect(service.groupCalls, 1);
+    },
+  );
+
+  test('failed group refresh retains the previous question snapshot', () async {
+    final service = _QuestionService();
+    final c = ControllerGameMyQuestions(service: service, gameName: 'Speaking');
+    addTearDown(c.dispose);
+    await c.load();
+    final snapshot = c.questions;
+    service.failGroups = true;
+    expect(await c.load(refreshGroups: true), isFalse);
+    expect(c.questions, same(snapshot));
+    expect(c.hasLoaded, isTrue);
+    expect(c.hasError, isFalse);
+    service.failGroups = false;
+    expect(await c.load(refreshGroups: true), isTrue);
+    expect(c.isLoading, isFalse);
+  });
+
   test(
     'new full query clears obsolete load-more state and ignores its result',
     () async {
@@ -470,10 +639,13 @@ class _QuestionService extends ServiceGame {
   final calls = <(String, String?, String, int)>[];
   int groupCalls = 0;
   bool failLoad = false;
+  bool failGroups = false;
   bool failDelete = false;
   MyGameQuestionPage? suppliedPage;
   final groupData = <String>['grammar'];
   Completer<MyGameQuestionPage>? pendingPage;
+  Completer<MyGameQuestionPage>? pendingFallback;
+  Completer<List<String>>? pendingGroups;
   (String, bool)? updated;
 
   @override
@@ -484,19 +656,23 @@ class _QuestionService extends ServiceGame {
     String status = 'all',
     int offset = 0,
     int limit = 20,
-  }) async {
+  }) {
     calls.add((keyword, group, status, offset));
     if (failLoad) throw StateError('load failed');
+    if (calls.length > 1 && pendingFallback != null) {
+      return pendingFallback!.future;
+    }
     if (pendingPage != null) return pendingPage!.future;
-    return suppliedPage ?? _page(offset);
+    return Future.value(suppliedPage ?? _page(offset));
   }
 
   @override
   Future<List<String>> fetchMyQuestionGroupsForManagement({
     required String gameName,
-  }) async {
+  }) {
     groupCalls++;
-    return groupData;
+    if (failGroups) throw StateError('groups failed');
+    return pendingGroups?.future ?? Future.value(groupData);
   }
 
   @override

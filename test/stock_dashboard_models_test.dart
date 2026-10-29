@@ -206,6 +206,32 @@ void main() {
     expect(ranking.sell.first.stockNo, '-5000');
   });
 
+  for (final quantities in [
+    [100, -100, 90, -90, 0, 80, -80],
+    [100, 90, -10, -100, 0],
+    [100, 100, -10, -10, 0],
+  ]) {
+    test('ranking preserves legacy partition order for $quantities', () {
+      final source = [
+        for (var i = 0; i < quantities.length; i++)
+          ModelInstitutional(
+            stockNo: '$i',
+            stockName: '',
+            foreignDiff: quantities[i],
+            totalDiff: 0,
+          ),
+      ];
+      final expectedBuy = source.where((r) => r.foreignDiff > 0).toList()
+        ..sort((a, b) => b.foreignDiff.compareTo(a.foreignDiff));
+      final expectedSell = source.where((r) => r.foreignDiff < 0).toList()
+        ..sort((a, b) => a.foreignDiff.compareTo(b.foreignDiff));
+      final ranking = ModelStockInstitutionalRankings(source);
+      expect(ranking.buy, orderedEquals(expectedBuy));
+      expect(ranking.sell, orderedEquals(expectedSell));
+      expect(source.map((r) => r.foreignDiff), quantities);
+    });
+  }
+
   test(
     'ranking matches legacy directions and tie order across randomized input',
     () {

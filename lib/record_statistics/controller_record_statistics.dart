@@ -67,6 +67,11 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
       auth.preferredStorage,
       auth.personalDataRevision,
       DateTime(now.year, now.month, now.day),
+      // Only cloud summaries consume the supplied authoritative total. A new
+      // value must not join a read that will publish the previous total.
+      !history && auth.preferredStorage == DataStorageLocation.cloud
+          ? knownTotal
+          : null,
     );
     if (_loadKey != key) {
       _request++;
@@ -105,26 +110,31 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
           ? Future<num?>.value(null)
           : knownTotal != null && storage == DataStorageLocation.cloud
           ? Future<num?>.value(knownTotal)
-          : service.readTotal(
-              owner: _owner,
-              storage: storage,
-              accountId: accountId,
-              kind: kind,
-              currency: currency,
+          : Future<num>.sync(
+              () => service.readTotal(
+                owner: _owner,
+                storage: storage,
+                accountId: accountId,
+                kind: kind,
+                currency: currency,
+              ),
             );
       // Observe both requests immediately and fail fast. Future.wait still
       // consumes late errors; finally closes pagination without waiting for
       // the unrelated request to complete or time out.
       final results = await Future.wait<Object?>([
-        service.read(
-          owner: _owner,
-          storage: storage,
-          accountId: accountId,
-          kind: kind,
-          currency: currency,
-          now: now,
-          history: history,
-          shouldContinue: () => reading && _isCurrentRequest(request, storage),
+        Future<List<Map<String, dynamic>>>.sync(
+          () => service.read(
+            owner: _owner,
+            storage: storage,
+            accountId: accountId,
+            kind: kind,
+            currency: currency,
+            now: now,
+            history: history,
+            shouldContinue: () =>
+                reading && _isCurrentRequest(request, storage),
+          ),
         ),
         totalFuture,
       ], eagerError: true).timeout(requestTimeout);

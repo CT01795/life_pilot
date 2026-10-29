@@ -20,7 +20,7 @@ class ModelUpcomingSchedule {
     final keys = [
       for (final existing in events)
         if (existing.id != event.id) _UpcomingOrderKey(existing),
-      _UpcomingOrderKey(event),
+      _UpcomingOrderKey(event, startDate: startDate),
     ];
     if (!_insertIntoStrictOrder(keys)) keys.sort(_compare);
     return List<CalendarEvent>.generate(
@@ -31,7 +31,12 @@ class ModelUpcomingSchedule {
   }
 
   static int _compare(_UpcomingOrderKey left, _UpcomingOrderKey right) {
-    final date = left.date.compareTo(right.date);
+    final leftDate = left.date, rightDate = right.date;
+    // Preserve malformed existing rows instead of failing the entire local
+    // projection. New events still require a date; existing undated rows sort last.
+    if (leftDate == null && rightDate != null) return 1;
+    if (leftDate != null && rightDate == null) return -1;
+    final date = leftDate == null ? 0 : leftDate.compareTo(rightDate!);
     return date != 0 ? date : left.minutes.compareTo(right.minutes);
   }
 
@@ -61,11 +66,11 @@ class ModelUpcomingSchedule {
 
 class _UpcomingOrderKey {
   final CalendarEvent event;
-  final DateTime date;
+  final DateTime? date;
   final int minutes;
 
-  _UpcomingOrderKey(this.event)
-    : date = event.startDate!,
+  _UpcomingOrderKey(this.event, {DateTime? startDate})
+    : date = startDate ?? event.startDate,
       minutes = _minutes(event);
 
   // Untimed entries retain the dashboard's existing midnight ordering.

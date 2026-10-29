@@ -8,12 +8,18 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   final ServiceFeedback _service;
   final ControllerAuth auth;
 
-  ControllerFeedbackAdmin(ServiceFeedback service, this.auth)
-    : _service = service {
+  ControllerFeedbackAdmin(
+    ServiceFeedback service,
+    this.auth, {
+    this.requestTimeout = const Duration(seconds: 30),
+    this.historyTimeout = const Duration(seconds: 10),
+  }) : _service = service {
     _account = auth.currentAccount;
     auth.addListener(_onAccountChanged);
   }
   String? _account;
+  final Duration requestTimeout;
+  final Duration historyTimeout;
   int _revision = 0;
   final Set<int> _updating = {};
   List<ModelFeedback>? _visibleCache;
@@ -41,6 +47,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     _selectedStatuses
       ..clear()
       ..addAll({'pending', 'in_progress'});
+    _selectedStatusesCache = null;
     notifyListeners();
   }
 
@@ -61,7 +68,9 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   bool hasMore = false;
   DateTime? _loadedStartDate;
   final Set<String> _selectedStatuses = {'pending', 'in_progress'};
-  Set<String> get selectedStatuses => Set.unmodifiable(_selectedStatuses);
+  Set<String>? _selectedStatusesCache;
+  Set<String> get selectedStatuses =>
+      _selectedStatusesCache ??= Set.unmodifiable(_selectedStatuses);
 
   Future<void> loadFeedback() async {
     if (notifierDisposed || isLoading || _updating.isNotEmpty) return;
@@ -78,10 +87,9 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
       final dateTo = DateTime(now.year, now.month, now.day + 1);
       final loadedStartDate = dateTo.subtract(const Duration(days: 30));
       if (!_active(revision)) return;
-      final res = await _service.loadFeedback(
-        dateFrom: loadedStartDate,
-        dateTo: dateTo,
-      );
+      final res = await _service
+          .loadFeedback(dateFrom: loadedStartDate, dateTo: dateTo)
+          .timeout(requestTimeout);
       if (!_active(revision)) return;
       final loadedFeedback = res
           .map((e) => ModelFeedback.fromMap(e as Map<String, dynamic>))
@@ -108,7 +116,9 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     notifyListeners();
     try {
       if (!_active(revision)) return;
-      final more = await _service.hasFeedbackBefore(before);
+      final more = await _service
+          .hasFeedbackBefore(before)
+          .timeout(historyTimeout);
       if (_active(revision)) hasMore = more;
     } catch (error) {
       if (_active(revision)) historyError = error;
@@ -151,6 +161,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     _selectedStatuses.contains(status)
         ? _selectedStatuses.remove(status)
         : _selectedStatuses.add(status);
+    _selectedStatusesCache = null;
     _visibleCache = null;
     notifyListeners();
   }
@@ -173,7 +184,9 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     notifyListeners();
     try {
       if (!_active(revision)) return;
-      final latestOlder = await _service.latestFeedbackDateBefore(before);
+      final latestOlder = await _service
+          .latestFeedbackDateBefore(before)
+          .timeout(requestTimeout);
       if (!_active(revision)) return;
       if (latestOlder == null) {
         hasMore = false;
@@ -185,10 +198,9 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
         latestOlder.day + 1,
       );
       final dateFrom = dateTo.subtract(const Duration(days: 30));
-      final rows = await _service.loadFeedback(
-        dateFrom: dateFrom,
-        dateTo: dateTo,
-      );
+      final rows = await _service
+          .loadFeedback(dateFrom: dateFrom, dateTo: dateTo)
+          .timeout(requestTimeout);
       if (!_active(revision)) return;
       _feedbackList = [
         ...feedbackList,

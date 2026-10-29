@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:life_pilot/game/model_question_bank.dart';
 import 'package:life_pilot/game/service_game.dart' show ServiceGame;
 import 'package:life_pilot/utils/logger.dart';
@@ -11,15 +13,23 @@ typedef _QuestionQuery = ({
   QuestionStatusFilter status,
 });
 
+typedef _QuestionRead = ({
+  MyGameQuestionPage page,
+  List<String> groups,
+  _QuestionQuery query,
+});
+
 /// Owns question-list state and operations; navigation and messages stay in View.
 class ControllerGameMyQuestions extends SafeChangeNotifier {
   ControllerGameMyQuestions({
     required ServiceGame service,
     required this.gameName,
+    this.requestTimeout = const Duration(seconds: 30),
   }) : _service = service;
 
   final ServiceGame _service;
   final String gameName;
+  final Duration requestTimeout;
   List<MyGameQuestion> _questions = const [];
   List<String> _groups = const [];
   int _totalCount = 0;
@@ -97,38 +107,20 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
       _hasError = false;
     }
     notifyListeners();
+    var reading = true;
+    bool isCurrent() =>
+        reading && !notifierDisposed && generation == _loadGeneration;
     try {
-      if (notifierDisposed || generation != _loadGeneration) return null;
-      final results = await Future.wait<Object>([
-        _service.fetchMyQuestions(
-          gameName: gameName,
-          keyword: query.keyword,
-          group: query.group,
-          status: query.status.name,
-          offset: offset,
-        ),
-        fetchGroups
-            ? _service.fetchMyQuestionGroupsForManagement(gameName: gameName)
-            : Future.value(_groups),
-      ]);
-      if (notifierDisposed || generation != _loadGeneration) return null;
-      var page = results[0] as MyGameQuestionPage;
-      final groups = results[1] as List<String>;
-      var effectiveQuery = query;
-      if (!append && query.group != null && !groups.contains(query.group)) {
-        if (_query == query) _selectedGroup = null;
-        effectiveQuery = (
-          keyword: query.keyword,
-          group: null,
-          status: query.status,
-        );
-        page = await _service.fetchMyQuestions(
-          gameName: gameName,
-          keyword: query.keyword,
-          status: query.status.name,
-        );
-        if (notifierDisposed || generation != _loadGeneration) return null;
-      }
+      if (!isCurrent()) return null;
+      final result = await _readPage(
+        query: query,
+        offset: offset,
+        append: append,
+        fetchGroups: fetchGroups,
+        isCurrent: isCurrent,
+      ).timeout(requestTimeout);
+      if (!isCurrent() || result == null) return null;
+      final (:page, :groups, query: effectiveQuery) = result;
       _questions = List.unmodifiable(
         append ? _questions.followedBy(page.questions) : page.questions,
       );
@@ -159,6 +151,9 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
       }
       return false;
     } finally {
+      // Timing out does not cancel HTTP. Prevent a late response from starting
+      // a fallback query or publishing into a completed/replaced read.
+      reading = false;
       if (!notifierDisposed && generation == _loadGeneration) {
         if (!append) _loadingQuery = null;
         _isLoading = false;
@@ -166,6 +161,52 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  Future<_QuestionRead?> _readPage({
+    required _QuestionQuery query,
+    required int offset,
+    required bool append,
+    required bool fetchGroups,
+    required bool Function() isCurrent,
+  }) async {
+    final results = await Future.wait<Object>([
+      Future<MyGameQuestionPage>.sync(
+        () => _service.fetchMyQuestions(
+          gameName: gameName,
+          keyword: query.keyword,
+          group: query.group,
+          status: query.status.name,
+          offset: offset,
+        ),
+      ),
+      fetchGroups
+          ? Future<List<String>>.sync(
+              () => _service.fetchMyQuestionGroupsForManagement(
+                gameName: gameName,
+              ),
+            )
+          : Future.value(_groups),
+    ], eagerError: true);
+    if (!isCurrent()) return null;
+    var page = results[0] as MyGameQuestionPage;
+    final groups = results[1] as List<String>;
+    var effectiveQuery = query;
+    if (!append && query.group != null && !groups.contains(query.group)) {
+      if (_query == query) _selectedGroup = null;
+      effectiveQuery = (
+        keyword: query.keyword,
+        group: null,
+        status: query.status,
+      );
+      page = await _service.fetchMyQuestions(
+        gameName: gameName,
+        keyword: query.keyword,
+        status: query.status.name,
+      );
+      if (!isCurrent()) return null;
+    }
+    return (page: page, groups: groups, query: effectiveQuery);
   }
 
   Future<void> deleteQuestion(String id) async {

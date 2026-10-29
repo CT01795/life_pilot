@@ -29,11 +29,14 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
 
   // 載入當前題目答案到 HtmlEditor
   void _loadCurrentAnswer() {
+    if (!mounted) return;
     final c = context.read<ControllerBusinessPlan>();
-    final currentQuestionId = c.currentQuestion.id;
+    final question = c.selectedQuestion;
+    if (question == null) return;
+    final currentQuestionId = question.id;
     // 只在 question 改變時 setText
     if (_currentQuestionId == currentQuestionId) return;
-    final answer = c.currentQuestion.answer;
+    final answer = question.answer;
     _htmlController.setText(answer);
     setState(() {
       _currentQuestionId = currentQuestionId;
@@ -56,8 +59,19 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final (plan, sectionIndex, _) = context.select(
+      (ControllerBusinessPlan c) =>
+          (c.currentPlan, c.sectionIndex, c.questionIndex),
+    );
     final c = context.read<ControllerBusinessPlan>();
     final loc = AppLocalizations.of(context)!;
+    final question = c.selectedQuestion;
+    if (question == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(loc.businessPlan)),
+        body: Center(child: Text(loc.noData)),
+      );
+    }
     return PopScope(
       canPop: false, // 我們手動控制 pop
       onPopInvokedWithResult: (didPop, result) async {
@@ -99,7 +113,7 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
             children: [
               // Section
               Text(
-                c.currentPlan!.sections[c.sectionIndex].title,
+                plan!.sections[sectionIndex].title,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -107,19 +121,14 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
               ),
               Gaps.h16,
               // Question
-              Text(
-                c.currentQuestion.prompt,
-                style: const TextStyle(fontSize: 16),
-              ),
+              Text(question.prompt, style: const TextStyle(fontSize: 16)),
               Gaps.h16,
               // Answer
               Expanded(
                 child: HtmlEditor(
                   controller: _htmlController,
                   htmlEditorOptions: HtmlEditorOptions(
-                    initialText: c.currentQuestion.answer.isEmpty
-                        ? ""
-                        : c.currentQuestion.answer,
+                    initialText: question.answer.isEmpty ? "" : question.answer,
                     hint: loc.enterAnswer,
                   ),
                   htmlToolbarOptions: const HtmlToolbarOptions(

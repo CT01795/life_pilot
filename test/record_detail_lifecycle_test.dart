@@ -306,6 +306,94 @@ void main() {
         await pending;
       }
 
+      for (final stage in [
+        'initial page',
+        'initial metadata',
+        'older date',
+        'older page',
+        'older metadata',
+      ]) {
+        for (final change in ['account', 'storage', 'dispose', 'none']) {
+          test('$stage failure after $change respects read scope', () async {
+            final initial = stage.startsWith('initial');
+            if (!initial) await seed();
+            final pending = initial ? h.load() : h.more();
+            // Attach the error handler before failing any asynchronous stage.
+            final checked = expectLater(
+              pending,
+              change == 'none' ? throwsStateError : completes,
+            );
+            if (stage.startsWith('older') && stage != 'older date') {
+              requests.latest.last.complete(DateTime(2026, 4));
+              await _flush();
+            }
+            if (stage.endsWith('metadata')) {
+              requests.pages.last.complete([_Row('not published')]);
+              await _flush();
+            }
+            if (change == 'account') {
+              auth.changeAccount();
+            } else if (change == 'storage') {
+              auth.changeStorage();
+            } else if (change == 'dispose') {
+              h.controller.dispose();
+            }
+            var notifications = 0;
+            if (!h.controller.notifierDisposed) {
+              h.controller.addListener(() => notifications++);
+            }
+            if (stage == 'older date') {
+              requests.latest.last.completeError(StateError('offline'));
+            } else if (stage.endsWith('metadata')) {
+              requests.histories.last.completeError(StateError('offline'));
+            } else {
+              requests.pages.last.completeError(StateError('offline'));
+            }
+            await checked;
+            if (change == 'none') {
+              expect(initial ? h.loading() : h.loadingMore(), isFalse);
+              expect(h.ids(), initial ? isEmpty : ['initial']);
+            } else {
+              expect(notifications, 0);
+              if (change != 'dispose') expect(h.ids(), isEmpty);
+            }
+          });
+        }
+      }
+
+      test('obsolete history error cannot clear a newer refresh', () async {
+        await seed();
+        final old = h.more();
+        final fresh = h.load();
+        requests.latest.single.completeError(StateError('old probe'));
+        await old;
+        expect(h.loading(), isTrue);
+        expect(h.ids(), ['initial']);
+        requests.pages.last.complete([_Row('fresh')]);
+        await _flush();
+        requests.histories.last.complete(false);
+        await fresh;
+        expect(h.ids(), ['fresh']);
+        expect(h.loading(), isFalse);
+      });
+
+      test('currency selection skips unchanged values and disposed state', () {
+        if (!accounting) return;
+        final controller = h.controller as ControllerAccountingDetail;
+        var notifications = 0;
+        controller.addListener(() => notifications++);
+        controller.currentCurrency = 'TWD';
+        final afterChange = notifications;
+        controller.currentCurrency = 'TWD';
+        expect(notifications, afterChange);
+        controller.currentCurrency = 'USD';
+        expect(notifications, afterChange + 1);
+        controller.dispose();
+        controller.currentCurrency = 'JPY';
+        expect(controller.currentCurrency, 'USD');
+        expect(notifications, afterChange + 1);
+      });
+
       test(
         'latest fallback excludes reserved rows when choosing history cursor',
         () async {

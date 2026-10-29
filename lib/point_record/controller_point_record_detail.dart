@@ -116,6 +116,9 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
       hasMore = loadedHasMore;
       _sortAndDeduplicate();
       _calculateTotals(inputAccountId: inputAccountId);
+    } catch (_) {
+      // Read errors belong to the account/storage and request that started them.
+      if (_isCurrent(generation, request)) rethrow;
     } finally {
       if (_isCurrent(generation, request)) {
         isLoading = false;
@@ -174,6 +177,8 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
       _loadedStartDate = dateFrom;
       _sortAndDeduplicate();
       hasMore = loadedHasMore;
+    } catch (_) {
+      if (_isCurrent(generation, request)) rethrow;
     } finally {
       if (_isCurrent(generation, request)) {
         isLoadingMore = false;

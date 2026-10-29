@@ -192,6 +192,66 @@ void main() {
     expect(await pending, [holiday]);
   });
 
+  for (final eventFails in [false, true]) {
+    test(
+      '${eventFails ? 'event' : 'holiday'} failure returns without waiting for the other response',
+      () async {
+        final previews = <List<EventItem>>[];
+        final pending = service.loadMonth(
+          _query(null),
+          onEventsReady: previews.add,
+        );
+        final checked = expectLater(pending, throwsStateError);
+        if (eventFails) {
+          events.response.completeError(StateError('events'));
+        } else {
+          holidays.completeError(StateError('holidays'));
+        }
+        await checked;
+        expect(events.active!(), isFalse);
+        if (eventFails) {
+          holidays.completeError(StateError('late holiday failure'));
+        } else {
+          events.response.complete([EventItem(id: 'late', name: 'late')]);
+        }
+        await Future<void>.delayed(Duration.zero);
+        expect(previews, isEmpty);
+      },
+    );
+  }
+
+  test(
+    'successful completion also closes the service read predicate',
+    () async {
+      final pending = service.loadMonth(_query(null));
+      expect(events.active!(), isTrue);
+      events.response.complete([]);
+      holidays.complete([]);
+      await pending;
+      expect(events.active!(), isFalse);
+    },
+  );
+
+  test(
+    'a preview published before holiday failure stays a preview, not success',
+    () async {
+      final previews = <List<EventItem>>[];
+      final pending = service.loadMonth(
+        _query(null),
+        onEventsReady: previews.add,
+      );
+      final checked = expectLater(pending, throwsStateError);
+      final event = EventItem(id: 'preview', name: 'preview');
+      events.response.complete([event]);
+      await Future<void>.delayed(Duration.zero);
+      expect(previews.single, [event]);
+      holidays.completeError(StateError('holidays'));
+      await checked;
+      expect(events.active!(), isFalse);
+      expect(previews.length, 1);
+    },
+  );
+
   test(
     'event failure remains visible to caller rather than becoming empty data',
     () async {

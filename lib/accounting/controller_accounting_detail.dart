@@ -127,6 +127,10 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
       hasMore = loadedHasMore;
       _sortAndDeduplicate();
       _calculateTotals(inputAccountId: inputAccountId);
+    } catch (_) {
+      // Only the active screen may present a read failure. Old account/storage
+      // requests can still finish, but must not surface errors on the new screen.
+      if (_isCurrent(generation, request)) rethrow;
     } finally {
       if (_isCurrent(generation, request)) {
         isLoading = false;
@@ -185,6 +189,8 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
       _loadedStartDate = dateFrom;
       _sortAndDeduplicate();
       hasMore = loadedHasMore;
+    } catch (_) {
+      if (_isCurrent(generation, request)) rethrow;
     } finally {
       if (_isCurrent(generation, request)) {
         isLoadingMore = false;
@@ -201,7 +207,7 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
     );
   }
 
-  Future<void> _calculateTotals({String? inputAccountId}) async {
+  void _calculateTotals({String? inputAccountId}) {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
 
@@ -228,6 +234,7 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   }
 
   set currentCurrency(String? value) {
+    if (notifierDisposed || _currentCurrency == value) return;
     _currentCurrency = value;
     notifyListeners();
   }

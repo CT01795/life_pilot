@@ -110,6 +110,162 @@ void main() {
     if (!c.notifierDisposed) c.dispose();
     auth.dispose();
   });
+  for (final duringSetup in [true, false]) {
+    testWidgets(
+      'timeout during ${duringSetup ? 'setup' : 'parallel reads'} is retryable and ignores late work',
+      (tester) async {
+        c.dispose();
+        c = ControllerVendorDashboard(
+          auth: auth,
+          service: service,
+          requestTimeout: const Duration(milliseconds: 20),
+        );
+        final old = c.load();
+        expect(c.load(), same(old));
+        if (!duringSetup) {
+          service.setups.single.complete();
+          await tester.pump();
+          expect(service.statuses.length, 1);
+        }
+        await tester.pump(const Duration(milliseconds: 21));
+        await old;
+        expect(c.loading, isFalse);
+        expect(c.error, isA<TimeoutException>());
+        expect(c.data, isNull);
+
+        final retry = c.load();
+        expect(retry, isNot(same(old)));
+        expect(c.error, isNull);
+        expect(c.loading, isTrue);
+        if (duringSetup) {
+          service.setups.first.complete();
+        } else {
+          service.complete(0);
+        }
+        await tester.pump();
+        expect(c.data, isNull);
+        expect(c.loading, isTrue);
+        expect(service.statuses.length, duringSetup ? 0 : 1);
+
+        service.setups.last.complete();
+        await tester.pump();
+        service.complete(duringSetup ? 0 : 1);
+        await tester.pump();
+        await retry;
+        expect(c.data, isNotNull);
+        expect(c.error, isNull);
+        expect(c.loading, isFalse);
+      },
+    );
+  }
+  for (final failedRead in ['status', 'metrics', 'pricing']) {
+    test('$failedRead failure does not wait for other pending reads', () async {
+      final pending = c.load();
+      service.setups.single.complete();
+      await _flush();
+      final error = StateError(failedRead);
+      switch (failedRead) {
+        case 'status':
+          service.statuses.single.completeError(error);
+        case 'metrics':
+          service.metrics.single.completeError(error);
+        case 'pricing':
+          service.pricing.single.completeError(error);
+      }
+      await pending;
+      expect(c.error, same(error));
+      expect(c.loading, isFalse);
+      // A second failure arriving after the first must also be handled, without
+      // replacing the error already shown or creating an unhandled exception.
+      if (!service.statuses.single.isCompleted) {
+        service.statuses.single.completeError(StateError('late status'));
+      }
+      if (!service.metrics.single.isCompleted) {
+        service.metrics.single.completeError(StateError('late metrics'));
+      }
+      if (!service.pricing.single.isCompleted) {
+        service.pricing.single.completeError(StateError('late pricing'));
+      }
+      await _flush();
+      expect(c.error, same(error));
+      final retry = c.load();
+      service.setups.last.complete();
+      await _flush();
+      service.complete(1);
+      await retry;
+      expect(c.error, isNull);
+      expect(c.data, isNotNull);
+    });
+  }
+  testWidgets('setup and reads share one total timeout budget', (tester) async {
+    c.dispose();
+    c = ControllerVendorDashboard(
+      auth: auth,
+      service: service,
+      requestTimeout: const Duration(milliseconds: 20),
+    );
+    final pending = c.load();
+    await tester.pump(const Duration(milliseconds: 12));
+    service.setups.single.complete();
+    await tester.pump();
+    expect(service.statuses.length, 1);
+    await tester.pump(const Duration(milliseconds: 9));
+    await pending;
+    expect(c.error, isA<TimeoutException>());
+    expect(c.loading, isFalse);
+    service.complete(0);
+    await tester.pump();
+    expect(c.data, isNull);
+  });
+  for (final change in ['account', 'dispose']) {
+    testWidgets('late timeout after $change cannot publish an error', (
+      tester,
+    ) async {
+      c.dispose();
+      c = ControllerVendorDashboard(
+        auth: auth,
+        service: service,
+        requestTimeout: const Duration(milliseconds: 20),
+      );
+      final pending = c.load();
+      if (change == 'account') {
+        auth.change('other');
+      } else {
+        c.dispose();
+      }
+      var notifications = 0;
+      if (!c.notifierDisposed) c.addListener(() => notifications++);
+      await tester.pump(const Duration(milliseconds: 21));
+      await pending;
+      expect(c.error, isNull);
+      expect(c.data, isNull);
+      expect(notifications, 0);
+      service.setups.single.complete();
+      await tester.pump();
+      expect(service.statuses, isEmpty);
+    });
+  }
+  test('failed refresh retains the last complete dashboard snapshot', () async {
+    final first = c.load();
+    service.setups.single.complete();
+    await _flush();
+    service.complete(0);
+    await first;
+    final snapshot = c.data;
+    final refresh = c.load();
+    service.setups.last.complete();
+    await _flush();
+    service.statuses.last.completeError(StateError('offline'));
+    await refresh;
+    expect(c.data, same(snapshot));
+    expect(c.error, isA<StateError>());
+    expect(c.loading, isFalse);
+    service.metrics.last.complete(_metrics);
+    service.pricing.last.complete([]);
+    await _flush();
+    expect(c.data, same(snapshot));
+  });
+
   test(
     'setup gates three parallel reads and concurrent loads share one future',
     () async {

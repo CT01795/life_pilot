@@ -29,6 +29,7 @@ class ControllerDashboard extends SafeChangeNotifier {
   String? _activeAccount;
   Future<DashboardSetting>? _settingsLoad;
   int _settingsRequest = 0;
+  Future<void>? _settingsSaveTail;
 
   ControllerDashboard({required this.repository, required this.localeProvider});
 
@@ -98,6 +99,7 @@ class ControllerDashboard extends SafeChangeNotifier {
     _eventCompletions.clear();
     _activeAccount = account;
     _settingsLoad = null;
+    _settingsSaveTail = null;
     _state = DashboardState.empty();
     _setting = DashboardSetting(
       recommendEventCity: '台北',
@@ -556,6 +558,10 @@ class ControllerDashboard extends SafeChangeNotifier {
       if (!active()) return;
       final result = await read();
       if (active()) apply(result);
+    } catch (_) {
+      // A replaced section or account cannot report errors on the new screen.
+      // Current failures still reach the View/retry action as before.
+      if (active()) rethrow;
     } finally {
       if (_isCurrentRequest(account, generation)) {
         _endLoading([section]);
@@ -694,29 +700,55 @@ class ControllerDashboard extends SafeChangeNotifier {
   /// launch another dashboard refresh.
   Future<bool> _saveSetting({
     required String account,
-    required DashboardSetting setting,
+    required DashboardSetting Function(DashboardSetting current) update,
     bool publishBeforeSave = false,
   }) async {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return false;
-    if (publishBeforeSave) _setting = setting;
-    await repository.saveDashboardSetting(account: account, setting: setting);
-    if (!_isCurrentRequest(account, generation)) return false;
-    if (!publishBeforeSave) {
+    final previous = _settingsSaveTail;
+    final completion = Completer<void>();
+    final tail = completion.future;
+    // Register before invoking persistence, whose callbacks may re-enter.
+    _settingsSaveTail = tail;
+    DashboardSetting? before, submitted;
+    try {
+      if (previous != null) await previous;
+      if (!_isCurrentRequest(account, generation)) return false;
+      before = _setting;
+      final setting = submitted = update(before);
+      _settingsRequest++;
+      if (publishBeforeSave) _setting = setting;
+      await repository.saveDashboardSetting(account: account, setting: setting);
+      if (!_isCurrentRequest(account, generation)) return false;
+      // Reads started before this write completed cannot restore old settings.
+      _settingsRequest++;
       _setting = setting;
-      notifyListeners();
+      if (!publishBeforeSave) notifyListeners();
+      return _isCurrentRequest(account, generation);
+    } catch (_) {
+      if (!_isCurrentRequest(account, generation)) return false;
+      if (publishBeforeSave &&
+          identical(_setting, submitted) &&
+          before != null) {
+        _setting = before;
+      }
+      rethrow;
+    } finally {
+      // Release queued changes even on failure; each caller receives its own
+      // error, and the next change rebases on the last confirmed setting.
+      if (identical(_settingsSaveTail, tail)) _settingsSaveTail = null;
+      completion.complete();
     }
-    // A listener can synchronously switch accounts during publication.
-    return _isCurrentRequest(account, generation);
   }
 
   Future<void> changeEventCity({
     required String account,
     required String city,
   }) async {
-    final updatedSetting = _setting.copyWith(recommendEventCity: city);
-
-    if (!await _saveSetting(account: account, setting: updatedSetting)) {
+    if (!await _saveSetting(
+      account: account,
+      update: (current) => current.copyWith(recommendEventCity: city),
+    )) {
       return;
     }
 
@@ -727,9 +759,10 @@ class ControllerDashboard extends SafeChangeNotifier {
     required String account,
     required String city,
   }) async {
-    final updatedSetting = _setting.copyWith(recommendPlaceCity: city);
-
-    if (!await _saveSetting(account: account, setting: updatedSetting)) {
+    if (!await _saveSetting(
+      account: account,
+      update: (current) => current.copyWith(recommendPlaceCity: city),
+    )) {
       return;
     }
 
@@ -742,7 +775,7 @@ class ControllerDashboard extends SafeChangeNotifier {
   }) async {
     if (!await _saveSetting(
       account: account,
-      setting: _setting.copyWith(language: language),
+      update: (current) => current.copyWith(language: language),
       publishBeforeSave: true,
     )) {
       return;
@@ -756,12 +789,13 @@ class ControllerDashboard extends SafeChangeNotifier {
     required String? accountId,
     required String? accountName,
   }) async {
-    final updatedSetting = _setting.copyWith(
-      accountingAccountId: accountId,
-      accountingAccountName: accountName,
-    );
-
-    if (!await _saveSetting(account: account, setting: updatedSetting)) {
+    if (!await _saveSetting(
+      account: account,
+      update: (current) => current.copyWith(
+        accountingAccountId: accountId,
+        accountingAccountName: accountName,
+      ),
+    )) {
       return;
     }
 
@@ -792,12 +826,13 @@ class ControllerDashboard extends SafeChangeNotifier {
     required String? accountId,
     required String? accountName,
   }) async {
-    final updatedSetting = _setting.copyWith(
-      pointAccountId: accountId,
-      pointAccountName: accountName,
-    );
-
-    if (!await _saveSetting(account: account, setting: updatedSetting)) {
+    if (!await _saveSetting(
+      account: account,
+      update: (current) => current.copyWith(
+        pointAccountId: accountId,
+        pointAccountName: accountName,
+      ),
+    )) {
       return;
     }
 

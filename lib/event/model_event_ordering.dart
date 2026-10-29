@@ -17,11 +17,12 @@ class ModelEventOrdering {
       DateTime? effectiveDate;
       var end = 0;
       if (isEvent) {
-        final start = event.startDate ?? today;
+        final originalStart = event.startDate;
+        final start = originalStart ?? today;
         final date = DateTime(start.year, start.month, start.day);
         effectiveDate = date.isBefore(today) ? today : date;
         end =
-            (event.endDate ?? event.startDate)?.millisecondsSinceEpoch ??
+            (event.endDate ?? originalStart)?.millisecondsSinceEpoch ??
             8640000000000000;
       }
       keys.add(
@@ -35,6 +36,8 @@ class ModelEventOrdering {
               : 1,
           date: effectiveDate,
           end: end,
+          includeTime: isEvent,
+          includeCountry: isEvent,
         ),
       );
     }
@@ -121,10 +124,15 @@ class _EventOrderKey {
     this.preference = 0,
     this.date,
     this.end = 0,
-  }) : time = event.startTime == null
-           ? 24 * 60
-           : event.startTime!.hour * 60 + event.startTime!.minute,
-       country = event.country,
+    bool includeTime = true,
+    bool includeCountry = false,
+  }) : time = !includeTime
+           ? 0
+           : switch (event.startTime) {
+               final time? => time.hour * 60 + time.minute,
+               null => 24 * 60,
+             },
+       country = includeCountry ? event.country : '',
        city = event.city,
        location = event.location,
        name = event.name;

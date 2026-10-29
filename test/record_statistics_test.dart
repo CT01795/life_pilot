@@ -23,6 +23,7 @@ class StatisticsTestAuth extends ControllerAuth {
 }
 
 class StatisticsTestService extends ServiceRecordStatistics {
+  Object? syncReadError, syncTotalError;
   final reads = <Completer<List<Map<String, dynamic>>>>[];
   final totals = <Completer<num>>[];
   final scopes = <(String, DataStorageLocation, String, bool)>[];
@@ -40,6 +41,7 @@ class StatisticsTestService extends ServiceRecordStatistics {
   }) {
     scopes.add((owner, storage, accountId, history));
     activeRequests.add(shouldContinue);
+    if (syncReadError case final error?) throw error;
     final result = Completer<List<Map<String, dynamic>>>();
     reads.add(result);
     return result.future;
@@ -53,6 +55,7 @@ class StatisticsTestService extends ServiceRecordStatistics {
     required RecordStatisticsKind kind,
     String? currency,
   }) {
+    if (syncTotalError case final error?) throw error;
     final result = Completer<num>();
     totals.add(result);
     return result.future;
@@ -184,6 +187,119 @@ void main() {
       }
       auth.dispose();
     });
+
+    for (final kind in RecordStatisticsKind.values) {
+      for (final readFails in [true, false]) {
+        test(
+          '$kind synchronous ${readFails ? 'detail' : 'total'} failure observes late sibling errors and retries',
+          () async {
+            controller.dispose();
+            controller = ControllerRecordStatistics(
+              auth: auth,
+              accountId: 'a',
+              kind: kind,
+              service: service,
+            );
+            final error = StateError('synchronous failure');
+            if (readFails) {
+              service.syncReadError = error;
+            } else {
+              service.syncTotalError = error;
+            }
+            await controller.load();
+            expect(controller.error, same(error));
+            expect(controller.loading, isFalse);
+            if (readFails) {
+              service.totals.single.completeError(StateError('late total'));
+            } else {
+              expect(service.activeRequests.single!(), isFalse);
+              service.reads.single.completeError(StateError('late rows'));
+            }
+            await Future<void>.delayed(Duration.zero);
+            expect(controller.error, same(error));
+            service.syncReadError = null;
+            service.syncTotalError = null;
+            final retry = controller.load();
+            service.reads.last.complete([]);
+            service.totals.last.complete(42);
+            await retry;
+            expect(controller.error, isNull);
+            expect(controller.data!.total, 42);
+          },
+        );
+      }
+      for (final oldFails in [false, true]) {
+        test(
+          '$kind updated known cloud total supersedes old summary (old fails=$oldFails)',
+          () async {
+            controller.dispose();
+            controller = ControllerRecordStatistics(
+              auth: auth,
+              accountId: 'a',
+              kind: kind,
+              service: service,
+            );
+            final old = controller.load(knownTotal: 100);
+            final fresh = controller.load(knownTotal: 0);
+            expect(service.reads.length, 2);
+            expect(service.activeRequests.first!(), isFalse);
+            expect(service.totals, isEmpty);
+            service.reads.last.complete([]);
+            await fresh;
+            expect(controller.data!.total, 0);
+            final snapshot = controller.data;
+            if (oldFails) {
+              service.reads.first.completeError(StateError('obsolete'));
+            } else {
+              service.reads.first.complete([]);
+            }
+            await old;
+            expect(controller.data, same(snapshot));
+            expect(controller.error, isNull);
+            expect(controller.loading, isFalse);
+          },
+        );
+      }
+    }
+    test(
+      'identical supplied totals still share one active summary request',
+      () async {
+        final first = controller.load(knownTotal: -12.5);
+        final second = controller.load(knownTotal: -12.5);
+        expect(second, same(first));
+        expect(service.reads.length, 1);
+        service.reads.single.complete([]);
+        await Future.wait([first, second]);
+        expect(controller.data!.total, -12.5);
+      },
+    );
+    for (final local in [false, true]) {
+      test(
+        'ignored supplied total does not split ${local ? 'local' : 'history'} requests',
+        () async {
+          controller.dispose();
+          auth.storage = local
+              ? DataStorageLocation.local
+              : DataStorageLocation.cloud;
+          controller = ControllerRecordStatistics(
+            auth: auth,
+            accountId: 'a',
+            kind: RecordStatisticsKind.accounting,
+            service: service,
+            history: !local,
+          );
+          final first = controller.load(knownTotal: 100);
+          final second = controller.load(knownTotal: 200);
+          expect(second, same(first));
+          expect(service.reads.length, 1);
+          service.reads.single.complete([]);
+          if (local) service.totals.single.complete(7);
+          await Future.wait([first, second]);
+          expect(controller.data!.total, local ? 7 : 0);
+        },
+      );
+    }
+
     test(
       'summary fetches current month and independent authoritative total',
       () async {

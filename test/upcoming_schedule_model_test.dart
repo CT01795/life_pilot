@@ -211,8 +211,35 @@ void main() {
     final added = _CountedEvent('new', 30);
     ModelUpcomingSchedule.withEvent(events: rows, event: added, now: now);
     expect(rows.every((row) => row.dates == 1 && row.times == 1), isTrue);
-    expect(added.dates, 2); // eligibility and one sorting key
+    expect(added.dates, 1); // eligibility is also the sorting key
     expect(added.times, 1);
+  });
+
+  test(
+    'undated existing rows are retained last instead of breaking insertion',
+    () {
+      final unknown = CalendarEvent(id: 'undated', name: 'Undated');
+      final existing = event('existing', minute: 600);
+      final added = event('new', minute: 700);
+      final source = List<CalendarEvent>.unmodifiable([unknown, existing]);
+      final result = ModelUpcomingSchedule.withEvent(
+        events: source,
+        event: added,
+        now: now,
+      )!;
+      expect(result, [existing, added, unknown]);
+      expect(source, [unknown, existing]);
+      expect(result.last, same(unknown));
+    },
+  );
+
+  test('undated existing copy of an updated ID is replaced normally', () {
+    final old = CalendarEvent(id: 'same', name: 'Undated');
+    final added = event('same');
+    expect(
+      ModelUpcomingSchedule.withEvent(events: [old], event: added, now: now),
+      [added],
+    );
   });
 
   test(

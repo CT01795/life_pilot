@@ -9,14 +9,18 @@ import 'package:life_pilot/vendor/service_vendor_account.dart';
 
 /// Owns dashboard requests. The page owns navigation and localized messages.
 class ControllerVendorDashboard extends SafeChangeNotifier {
-  ControllerVendorDashboard({required this.auth, required this.service})
-    : _owner = auth.currentAccount,
-      _personalDataRevision = auth.personalDataRevision {
+  ControllerVendorDashboard({
+    required this.auth,
+    required this.service,
+    this.requestTimeout = const Duration(seconds: 30),
+  }) : _owner = auth.currentAccount,
+       _personalDataRevision = auth.personalDataRevision {
     auth.addListener(_authChanged);
   }
 
   final ControllerAuth auth;
   final ServiceVendorAccount service;
+  final Duration requestTimeout;
   final String? _owner;
   int _personalDataRevision;
   int _revision = 0;
@@ -65,30 +69,46 @@ class ControllerVendorDashboard extends SafeChangeNotifier {
     _loading = true;
     _error = null;
     notifyListeners();
+    var reading = true;
     try {
       if (!_active(revision)) return;
-      await service.ensureVendorAccount();
+      final result = await _readDashboard(
+        () => reading && _active(revision),
+      ).timeout(requestTimeout);
       if (!_active(revision)) return;
-      // These reads depend on account setup, not on each other's results.
-      final values = await Future.wait<Object>([
-        Future<VendorSubscriptionStatus>.sync(service.fetchMyStatus),
-        Future<VendorContentMetrics>.sync(() => service.fetchMetrics(_owner!)),
-        Future<List<VendorPricingPlan>>.sync(service.fetchPricingPlans),
-      ]);
-      if (!_active(revision)) return;
-      _data = ModelVendorDashboard(
-        status: values[0] as VendorSubscriptionStatus,
-        metrics: values[1] as VendorContentMetrics,
-        plans: values[2] as List<VendorPricingPlan>,
-      );
+      if (result != null) _data = result;
     } catch (error) {
       if (_active(revision)) _error = error;
     } finally {
+      // Timeout does not cancel HTTP. Close this read scope so a late setup
+      // response cannot launch three new requests after the UI has moved on.
+      reading = false;
       if (_active(revision)) {
         _loading = false;
         notifyListeners();
       }
     }
+  }
+
+  Future<ModelVendorDashboard?> _readDashboard(
+    bool Function() shouldContinue,
+  ) async {
+    if (!shouldContinue()) return null;
+    await service.ensureVendorAccount();
+    if (!shouldContinue()) return null;
+    // Independent reads: fail promptly even if another response never arrives.
+    // Future.wait still handles late errors from every registered future.
+    final values = await Future.wait<Object>([
+      Future<VendorSubscriptionStatus>.sync(service.fetchMyStatus),
+      Future<VendorContentMetrics>.sync(() => service.fetchMetrics(_owner!)),
+      Future<List<VendorPricingPlan>>.sync(service.fetchPricingPlans),
+    ], eagerError: true);
+    if (!shouldContinue()) return null;
+    return ModelVendorDashboard(
+      status: values[0] as VendorSubscriptionStatus,
+      metrics: values[1] as VendorContentMetrics,
+      plans: values[2] as List<VendorPricingPlan>,
+    );
   }
 
   @override

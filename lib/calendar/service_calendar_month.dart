@@ -29,6 +29,8 @@ class ServiceCalendarMonth {
     void Function(List<EventItem>)? onEventsReady,
   }) async {
     if (shouldContinue?.call() == false) return [];
+    var reading = true;
+    bool isActive() => reading && shouldContinue?.call() != false;
     try {
       final results = await Future.wait<List<EventItem>?>([
         _events
@@ -38,10 +40,10 @@ class ServiceCalendarMonth {
               dateE: query.end,
               inputUser: query.account,
               storageLocation: query.storage,
-              shouldContinue: shouldContinue,
+              shouldContinue: isActive,
             )
             .then((events) {
-              if (shouldContinue?.call() != false) {
+              if (isActive()) {
                 onEventsReady?.call(events ?? []);
               }
               return events;
@@ -51,7 +53,7 @@ class ServiceCalendarMonth {
           query.end.add(const Duration(days: 2)),
           query.locale,
         ),
-      ]);
+      ], eagerError: true);
       if (shouldContinue?.call() == false) return [];
       return [...?results[0], ...?results[1]];
     } catch (error, stackTrace) {
@@ -63,6 +65,10 @@ class ServiceCalendarMonth {
         );
       }
       rethrow;
+    } finally {
+      // Already-sent reads cannot be cancelled here. Close progressive
+      // publication and service pagination after either completion or failure.
+      reading = false;
     }
   }
 }

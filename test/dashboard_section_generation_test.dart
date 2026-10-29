@@ -161,6 +161,40 @@ void main() {
       DashboardSection.points => controller.refreshPoints(accountId: 'points'),
     };
 
+    for (final change in ['superseded', 'account', 'none']) {
+      test(
+        '$section single refresh failure after $change respects scope',
+        () async {
+          repository.target = section;
+          final old = refreshSection();
+          final checked = expectLater(
+            old,
+            change == 'none' ? throwsStateError : completes,
+          );
+          Future<void>? fresh;
+          if (change == 'superseded') {
+            fresh = refreshSection();
+            repository.pending.last.succeed();
+            await fresh;
+            // The old operation still owns one loading count until it finishes.
+            expect(controller.isLoading(section), isTrue);
+          } else if (change == 'account') {
+            controller.switchAccount('other');
+          }
+          repository.pending.first.fail();
+          await checked;
+          expect(controller.loading, isFalse);
+          expect(controller.hasFailed(section), isFalse);
+          if (change == 'none') {
+            final retry = refreshSection();
+            repository.pending.last.succeed();
+            await retry;
+            expect(controller.loading, isFalse);
+          }
+        },
+      );
+    }
+
     test(
       '$section skips unsent read after account switch during publication',
       () async {

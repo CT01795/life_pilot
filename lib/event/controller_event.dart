@@ -64,6 +64,7 @@ class ControllerEvent extends SafeChangeNotifier {
   bool _hasMoreEvents = true;
   late String _dataScopeKey;
   int _dataScopeGeneration = 0;
+  int _eventLoadRevision = 0;
   final Set<String> _pendingPreferences = {};
   Future<void>? _pageInitialization;
 
@@ -133,6 +134,10 @@ class ControllerEvent extends SafeChangeNotifier {
       !_disposed &&
       generation == _dataScopeGeneration &&
       _dataScopeKey == _currentDataScopeKey;
+
+  // A full reload supersedes paging/metadata in the same account and storage.
+  bool _isCurrentEventLoad(int generation, int revision) =>
+      _isCurrentDataScope(generation) && revision == _eventLoadRevision;
 
   ServiceEvent get serviceEvent => _serviceEvent;
   ServiceWeather get serviceWeather => _serviceWeather;
@@ -567,20 +572,26 @@ class ControllerEvent extends SafeChangeNotifier {
   }
 
   Future<void> loadEvents({required bool isGetPublicEvents}) async {
+    if (_disposed) return;
     _handleAuthChange();
     if (_isLoadingEvents) return;
     final generation = _dataScopeGeneration;
+    final revision = ++_eventLoadRevision;
+    _isLoadingMoreMemory = false;
+    _isLoadingMoreEvents = false;
+    _isCheckingMoreMemory = false;
     _isLoadingEvents = true;
     _isLoadingMemoryRecords = _tableName == TableNames.memoryTrace;
     _loadEventsError = null;
     if (!_disposed) notifyListeners();
 
     try {
+      if (!_isCurrentEventLoad(generation, revision)) return;
       final today = DateTimeFormatter.dateOnly(DateTime.now());
       final isMemoryTrace = _tableName == TableNames.memoryTrace;
       final memoryStart = today.subtract(const Duration(days: 29));
       void publishMemoryPreview(List<EventItem> rows) {
-        if (!_isCurrentDataScope(generation) || rows.isEmpty) return;
+        if (!_isCurrentEventLoad(generation, revision) || rows.isEmpty) return;
         // Keep the service's accumulating buffer separate from model sorting.
         final preview = rows.take(_cloudPageSize).toList();
         _modelEvent.setProgressiveEvents(preview);
@@ -604,9 +615,9 @@ class ControllerEvent extends SafeChangeNotifier {
         dateE: isMemoryTrace ? _memoryLoadedEndDate : null,
         limit: usesCloudPagination ? _cloudPageSize + 1 : null,
         onPartialEvents: isMemoryTrace ? publishMemoryPreview : null,
-        shouldContinue: () => _isCurrentDataScope(generation),
+        shouldContinue: () => _isCurrentEventLoad(generation, revision),
       );
-      if (!_isCurrentDataScope(generation)) return;
+      if (!_isCurrentEventLoad(generation, revision)) return;
       var loadedEvents = list ?? [];
       if (usesCloudPagination) {
         loadedEvents = _acceptCloudPage(loadedEvents);
@@ -621,9 +632,9 @@ class ControllerEvent extends SafeChangeNotifier {
           inputUser: auth.currentAccount,
           storageLocation: auth.preferredStorage,
           onLatestEvent: (event) => publishMemoryPreview([event]),
-          shouldContinue: () => _isCurrentDataScope(generation),
+          shouldContinue: () => _isCurrentEventLoad(generation, revision),
         );
-        if (!_isCurrentDataScope(generation)) return;
+        if (!_isCurrentEventLoad(generation, revision)) return;
         if (latestOlder != null) {
           _memoryLoadedEndDate = latestOlder;
           loadedEvents =
@@ -635,10 +646,10 @@ class ControllerEvent extends SafeChangeNotifier {
                 dateE: latestOlder,
                 limit: usesCloudPagination ? _cloudPageSize + 1 : null,
                 onPartialEvents: publishMemoryPreview,
-                shouldContinue: () => _isCurrentDataScope(generation),
+                shouldContinue: () => _isCurrentEventLoad(generation, revision),
               ) ??
               [];
-          if (!_isCurrentDataScope(generation)) return;
+          if (!_isCurrentEventLoad(generation, revision)) return;
           if (usesCloudPagination) {
             loadedEvents = _acceptCloudPage(loadedEvents);
           }
@@ -675,13 +686,14 @@ class ControllerEvent extends SafeChangeNotifier {
           _isCheckingMoreMemory = true;
           _viewModelCache.retainEvents(loadedEvents);
           notifyListeners();
-          if (!_isCurrentDataScope(generation)) return;
+          if (!_isCurrentEventLoad(generation, revision)) return;
           await _refreshMemoryHistoryAvailability(
             generation: generation,
+            revision: revision,
             before: _memoryLoadedStartDate ?? memoryStart,
           );
         }
-        if (!_isCurrentDataScope(generation)) return;
+        if (!_isCurrentEventLoad(generation, revision)) return;
       }
 
       // ✅ STOP UI card 不再觸發 weather
@@ -691,7 +703,7 @@ class ControllerEvent extends SafeChangeNotifier {
         _invalidateViewModelCache();
       }
     } catch (error, stackTrace) {
-      if (!_isCurrentDataScope(generation)) return;
+      if (!_isCurrentEventLoad(generation, revision)) return;
       _loadEventsError = error;
       logger.e(
         'loadEvents failed for $_tableName',
@@ -699,7 +711,7 @@ class ControllerEvent extends SafeChangeNotifier {
         stackTrace: stackTrace,
       );
     } finally {
-      if (_isCurrentDataScope(generation)) {
+      if (_isCurrentEventLoad(generation, revision)) {
         _isLoadingEvents = false;
         _isLoadingMemoryRecords = false;
         _isCheckingMoreMemory = false;
@@ -707,7 +719,10 @@ class ControllerEvent extends SafeChangeNotifier {
       }
     }
 
-    if (!_isCurrentDataScope(generation) || _loadEventsError != null) return;
+    if (!_isCurrentEventLoad(generation, revision) ||
+        _loadEventsError != null) {
+      return;
+    }
 
     if (isGetPublicEvents &&
         !_disposed &&
@@ -716,16 +731,16 @@ class ControllerEvent extends SafeChangeNotifier {
       _beginPublicEventServiceOperation();
       try {
         await _serviceEventPublic.fetchAndSaveAllEvents();
-        if (!_isCurrentDataScope(generation)) return;
+        if (!_isCurrentEventLoad(generation, revision)) return;
 
         final newList = await _serviceEvent.getEvents(
           tableName: _tableName,
           inputUser: auth.currentAccount,
           storageLocation: auth.preferredStorage,
           limit: usesCloudPagination ? _cloudPageSize + 1 : null,
-          shouldContinue: () => _isCurrentDataScope(generation),
+          shouldContinue: () => _isCurrentEventLoad(generation, revision),
         );
-        if (!_isCurrentDataScope(generation)) return;
+        if (!_isCurrentEventLoad(generation, revision)) return;
         var refreshedEvents = newList ?? [];
         if (usesCloudPagination) {
           refreshedEvents = _acceptCloudPage(refreshedEvents);
@@ -736,7 +751,7 @@ class ControllerEvent extends SafeChangeNotifier {
         _invalidateViewModelCache();
         if (!_disposed) notifyListeners();
       } catch (error, stackTrace) {
-        if (!_isCurrentDataScope(generation)) return;
+        if (!_isCurrentEventLoad(generation, revision)) return;
         logger.e(
           'public event refresh failed after loading existing events',
           error: error,
@@ -752,9 +767,10 @@ class ControllerEvent extends SafeChangeNotifier {
   /// Keep the history action available if this lightweight check fails.
   Future<void> _refreshMemoryHistoryAvailability({
     required int generation,
+    required int revision,
     required DateTime before,
   }) async {
-    if (!_isCurrentDataScope(generation)) return;
+    if (!_isCurrentEventLoad(generation, revision)) return;
     var reading = true;
     try {
       final hasOlder = await _serviceEvent
@@ -763,13 +779,14 @@ class ControllerEvent extends SafeChangeNotifier {
             before: before,
             inputUser: auth.currentAccount,
             storageLocation: auth.preferredStorage,
-            shouldContinue: () => reading && _isCurrentDataScope(generation),
+            shouldContinue: () =>
+                reading && _isCurrentEventLoad(generation, revision),
           )
           .timeout(const Duration(seconds: 10));
-      if (!_isCurrentDataScope(generation)) return;
+      if (!_isCurrentEventLoad(generation, revision)) return;
       _hasMoreMemory = hasOlder;
     } catch (error, stackTrace) {
-      if (!_isCurrentDataScope(generation)) return;
+      if (!_isCurrentEventLoad(generation, revision)) return;
       _hasMoreMemory = true;
       logger.w(
         'Memory history availability check failed',
@@ -782,6 +799,7 @@ class ControllerEvent extends SafeChangeNotifier {
   }
 
   Future<void> loadMoreMemoryEvents() async {
+    if (_disposed) return;
     _handleAuthChange();
     if (_tableName != TableNames.memoryTrace ||
         _isLoadingEvents ||
@@ -795,6 +813,7 @@ class ControllerEvent extends SafeChangeNotifier {
       return;
     }
     final generation = _dataScopeGeneration;
+    final revision = _eventLoadRevision;
     final loadedStart =
         _memoryLoadedStartDate ??
         DateTimeFormatter.dateOnly(
@@ -803,6 +822,7 @@ class ControllerEvent extends SafeChangeNotifier {
     _isLoadingMoreMemory = true;
     if (!_disposed) notifyListeners();
     try {
+      if (!_isCurrentEventLoad(generation, revision)) return;
       if (usesCloudPagination && _hasMoreEvents) {
         var nextPage =
             await _serviceEvent.getEvents(
@@ -813,10 +833,10 @@ class ControllerEvent extends SafeChangeNotifier {
               dateE: _memoryLoadedEndDate,
               limit: _cloudPageSize + 1,
               offset: _nextCloudOffset,
-              shouldContinue: () => _isCurrentDataScope(generation),
+              shouldContinue: () => _isCurrentEventLoad(generation, revision),
             ) ??
             [];
-        if (!_isCurrentDataScope(generation)) return;
+        if (!_isCurrentEventLoad(generation, revision)) return;
         nextPage = _acceptCloudPage(nextPage, offset: _nextCloudOffset);
         _modelEvent.appendMemoryEvents(nextPage);
         if (_hasMoreEvents) return;
@@ -826,9 +846,9 @@ class ControllerEvent extends SafeChangeNotifier {
         before: loadedStart,
         inputUser: auth.currentAccount,
         storageLocation: auth.preferredStorage,
-        shouldContinue: () => _isCurrentDataScope(generation),
+        shouldContinue: () => _isCurrentEventLoad(generation, revision),
       );
-      if (!_isCurrentDataScope(generation)) return;
+      if (!_isCurrentEventLoad(generation, revision)) return;
       if (latestOlder == null) {
         _hasMoreMemory = false;
         return;
@@ -843,10 +863,10 @@ class ControllerEvent extends SafeChangeNotifier {
             dateS: rangeStart,
             dateE: rangeEnd,
             limit: usesCloudPagination ? _cloudPageSize + 1 : null,
-            shouldContinue: () => _isCurrentDataScope(generation),
+            shouldContinue: () => _isCurrentEventLoad(generation, revision),
           ) ??
           [];
-      if (!_isCurrentDataScope(generation)) return;
+      if (!_isCurrentEventLoad(generation, revision)) return;
       var visibleOlderEvents = olderEvents;
       if (usesCloudPagination) {
         visibleOlderEvents = _acceptCloudPage(olderEvents);
@@ -859,11 +879,14 @@ class ControllerEvent extends SafeChangeNotifier {
       } else {
         await _refreshMemoryHistoryAvailability(
           generation: generation,
+          revision: revision,
           before: rangeStart,
         );
       }
+    } catch (_) {
+      if (_isCurrentEventLoad(generation, revision)) rethrow;
     } finally {
-      if (_isCurrentDataScope(generation)) {
+      if (_isCurrentEventLoad(generation, revision)) {
         _isLoadingMoreMemory = false;
         notifyListeners();
       }
@@ -871,17 +894,21 @@ class ControllerEvent extends SafeChangeNotifier {
   }
 
   Future<void> loadMoreRecommendedEvents() async {
+    if (_disposed) return;
     _handleAuthChange();
-    if (!_isRecommendedContent ||
+    if (_isLoadingEvents ||
+        !_isRecommendedContent ||
         !usesCloudPagination ||
         _isLoadingMoreEvents ||
         !_hasMoreEvents) {
       return;
     }
     final generation = _dataScopeGeneration;
+    final revision = _eventLoadRevision;
     _isLoadingMoreEvents = true;
     if (!_disposed) notifyListeners();
     try {
+      if (!_isCurrentEventLoad(generation, revision)) return;
       var nextPage =
           await _serviceEvent.getEvents(
             tableName: _tableName,
@@ -889,10 +916,10 @@ class ControllerEvent extends SafeChangeNotifier {
             storageLocation: auth.preferredStorage,
             limit: _cloudPageSize + 1,
             offset: _nextCloudOffset,
-            shouldContinue: () => _isCurrentDataScope(generation),
+            shouldContinue: () => _isCurrentEventLoad(generation, revision),
           ) ??
           [];
-      if (!_isCurrentDataScope(generation)) return;
+      if (!_isCurrentEventLoad(generation, revision)) return;
       nextPage = _acceptCloudPage(nextPage, offset: _nextCloudOffset);
       _modelEvent.appendRecommendedEvents(
         nextPage,
@@ -901,8 +928,10 @@ class ControllerEvent extends SafeChangeNotifier {
       // Appending preserves existing event instances; their cached models
       // remain valid. Replaced rows, locale and permission changes are checked
       // by the cache, while full reloads still explicitly clear it.
+    } catch (_) {
+      if (_isCurrentEventLoad(generation, revision)) rethrow;
     } finally {
-      if (_isCurrentDataScope(generation)) {
+      if (_isCurrentEventLoad(generation, revision)) {
         _isLoadingMoreEvents = false;
         notifyListeners();
       }

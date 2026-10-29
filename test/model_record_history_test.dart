@@ -8,8 +8,106 @@ class _Row {
   final DateTime date;
 }
 
+/// Instrument the two ordering operations without measuring wall-clock time.
+class _TrackedDate implements DateTime {
+  _TrackedDate(int day) : value = DateTime(2026, 1, day);
+  final DateTime value;
+  int comparisons = 0, orderChecks = 0;
+  static DateTime unwrap(DateTime other) =>
+      other is _TrackedDate ? other.value : other;
+  @override
+  int compareTo(DateTime other) {
+    comparisons++;
+    return value.compareTo(unwrap(other));
+  }
+
+  @override
+  bool isAfter(DateTime other) {
+    orderChecks++;
+    return value.isAfter(unwrap(other));
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 void main() {
   final start = DateTime(2026, 10);
+  test(
+    'strictly newest-first history validates once and performs no sort comparisons',
+    () {
+      final rows = [
+        for (var i = 10000; i > 0; i--) _Row('$i', _TrackedDate(i)),
+      ];
+      final result = ModelRecordHistory.ordered(
+        rows,
+        idOf: (r) => r.id,
+        dateOf: (r) => r.date,
+      );
+      expect(result, orderedEquals(rows));
+      expect(
+        rows.fold<int>(
+          0,
+          (sum, row) => sum + (row.date as _TrackedDate).comparisons,
+        ),
+        0,
+      );
+      expect(
+        rows.fold<int>(
+          0,
+          (sum, row) => sum + (row.date as _TrackedDate).orderChecks,
+        ),
+        rows.length - 1,
+      );
+      expect(result, isNot(same(rows)));
+    },
+  );
+  for (final ties in [true, false]) {
+    test(
+      '${ties ? 'equal dates' : 'late disorder'} retains the original sort path',
+      () {
+        final rows = [
+          for (var i = 100; i > 0; i--) _Row('$i', _TrackedDate(ties ? 1 : i)),
+        ];
+        if (!ties) rows.add(_Row('newest', _TrackedDate(101)));
+        final expected = List<_Row>.of(rows)
+          ..sort((a, b) => b.date.compareTo(a.date));
+        for (final row in rows) {
+          (row.date as _TrackedDate).comparisons = 0;
+        }
+        final result = ModelRecordHistory.ordered(
+          rows,
+          idOf: (r) => r.id,
+          dateOf: (r) => r.date,
+        );
+        expect(result, orderedEquals(expected));
+        expect(
+          rows.any((row) => (row.date as _TrackedDate).comparisons > 0),
+          isTrue,
+        );
+      },
+    );
+  }
+  test(
+    'a duplicate replacement is checked before considering order reusable',
+    () {
+      final old = _Row('a', _TrackedDate(10));
+      final keep = _Row('b', _TrackedDate(9));
+      final replacement = _Row('a', _TrackedDate(1));
+      var dates = 0;
+      final result = ModelRecordHistory.ordered(
+        [old, keep, replacement],
+        idOf: (r) => r.id,
+        dateOf: (r) {
+          dates++;
+          return r.date;
+        },
+      );
+      expect(result, [keep, replacement]);
+      expect(dates, 2);
+      expect((old.date as _TrackedDate).comparisons, 0);
+    },
+  );
   test(
     'last duplicate wins; source stays unchanged and equal-date order is preserved',
     () {

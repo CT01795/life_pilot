@@ -5,6 +5,7 @@ import 'package:life_pilot/business_plan/model_business_plan.dart';
 import 'package:life_pilot/business_plan/model_business_plan_list.dart';
 import 'package:life_pilot/business_plan/model_plan_answers.dart';
 import 'package:life_pilot/business_plan/model_plan_question.dart';
+import 'package:life_pilot/business_plan/model_plan_navigation.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/in_flight_read_pool.dart';
@@ -127,74 +128,68 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     _answerNotifiers[key]?.value = value;
   }
 
-  // 取得指定 question 的 answer
-  String planAnswerAt(int sectionIndex, int questionIndex) {
-    return currentPlan
-            ?.sections[sectionIndex]
-            .questions[questionIndex]
-            .answer ??
-        '';
-  }
+  PlanQuestionPosition get _position =>
+      (section: sectionIndex, question: questionIndex);
+
+  ModelPlanQuestion? get selectedQuestion =>
+      ModelPlanNavigation.questionAt(currentPlan, _position);
+
+  String planAnswerAt(int sectionIndex, int questionIndex) =>
+      ModelPlanNavigation.questionAt(currentPlan, (
+        section: sectionIndex,
+        question: questionIndex,
+      ))?.answer ??
+      '';
 
   ModelPlanQuestion get currentQuestion =>
-      currentPlan!.sections[sectionIndex].questions[questionIndex];
+      selectedQuestion ?? (throw StateError('No question selected'));
 
-  int get totalQuestions =>
-      currentPlan!.sections.fold(0, (sum, s) => sum + s.questions.length);
+  int get totalQuestions => ModelPlanNavigation.count(currentPlan);
 
-  int get currentQuestionNumber {
-    int count = 0;
-    for (int s = 0; s < sectionIndex; s++) {
-      count += currentPlan!.sections[s].questions.length;
-    }
-    return count + questionIndex + 1;
+  int get currentQuestionNumber =>
+      ModelPlanNavigation.numberAt(currentPlan, _position);
+
+  double get progress {
+    final total = totalQuestions;
+    return total == 0 ? 0 : currentQuestionNumber / total;
   }
 
-  double get progress =>
-      totalQuestions == 0 ? 0 : currentQuestionNumber / totalQuestions;
+  bool next() => _moveQuestion(forward: true);
 
-  // -------------------------
-  // Navigation
-  // -------------------------
-  bool next() {
-    if (questionIndex <
-        currentPlan!.sections[sectionIndex].questions.length - 1) {
-      questionIndex++;
-      safeNotify();
-      return true;
-    }
+  bool previous() => _moveQuestion(forward: false);
 
-    if (sectionIndex < currentPlan!.sections.length - 1) {
-      sectionIndex++;
-      questionIndex = 0;
-      safeNotify();
-      return true;
-    }
-
-    return false;
-  }
-
-  bool previous() {
-    if (questionIndex > 0) {
-      questionIndex--;
-      safeNotify();
-      return true;
-    }
-
-    if (sectionIndex > 0) {
-      sectionIndex--;
-      questionIndex = currentPlan!.sections[sectionIndex].questions.length - 1;
-      safeNotify();
-      return true;
-    }
-
-    return false;
+  bool _moveQuestion({required bool forward}) {
+    if (notifierDisposed) return false;
+    final target = ModelPlanNavigation.adjacent(
+      currentPlan,
+      _position,
+      forward: forward,
+    );
+    if (target == null) return false;
+    jumpToQuestion(
+      sectionIndex: target.section,
+      questionIndex: target.question,
+    );
+    return true;
   }
 
   void jumpToQuestion({required int sectionIndex, required int questionIndex}) {
+    final target = (section: sectionIndex, question: questionIndex);
+    if (notifierDisposed ||
+        target == _position ||
+        ModelPlanNavigation.questionAt(currentPlan, target) == null) {
+      return;
+    }
     this.sectionIndex = sectionIndex;
     this.questionIndex = questionIndex;
     safeNotify();
+  }
+
+  void _ensureQuestionSelection() {
+    if (selectedQuestion != null) return;
+    final first = ModelPlanNavigation.first(currentPlan);
+    sectionIndex = first?.section ?? 0;
+    questionIndex = first?.question ?? 0;
   }
 
   // -------------------------
@@ -477,6 +472,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     final cached = _planCache[planId];
     if (_loadedPlanDetails.contains(planId) && cached != null) {
       currentPlan = cached.copyWith();
+      _ensureQuestionSelection();
       isPlanDetailLoading = false;
       safeNotify();
       return;
@@ -503,6 +499,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
         return;
       }
       currentPlan = plan;
+      _ensureQuestionSelection();
       _answerNotifiers.clear();
     } catch (error) {
       if (!notifierDisposed &&
@@ -554,11 +551,9 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
       _answerNotifiers.clear();
       _planCache[planId] = plan.copyWith();
       _loadedPlanDetails.add(planId);
-      final firstQuestionSection = plan.sections.indexWhere(
-        (section) => section.questions.isNotEmpty,
-      );
-      sectionIndex = firstQuestionSection < 0 ? 0 : firstQuestionSection;
-      questionIndex = 0;
+      final first = ModelPlanNavigation.first(plan);
+      sectionIndex = first?.section ?? 0;
+      questionIndex = first?.question ?? 0;
       // Publish the new summary without another list query on return.
       plans = [...plans, plan.copyWith(sections: [])];
       _sortAndDeduplicatePlans();
@@ -635,8 +630,9 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   Future<void> commitCurrentAnswer(String answer) async {
     final plan = currentPlan;
     if (notifierDisposed || plan == null) return;
+    final question = selectedQuestion;
+    if (question == null) return;
     final section = plan.sections[sectionIndex];
-    final question = section.questions[questionIndex];
     final key = (plan.id, section.id, question.id);
     if (question.answer == answer) {
       await _answerSaves[key]?.tail;
