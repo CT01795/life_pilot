@@ -1,9 +1,7 @@
-import 'package:life_pilot/event/model_content_performance.dart';
 import 'package:life_pilot/event/service_content_performance.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
-import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceVendorAccount {
@@ -48,69 +46,10 @@ class ServiceVendorAccount {
         includeSubmissionDetails: true,
       ),
     ]);
-    final eventRows = responses[0].rows;
-    final attractionRows = responses[1].rows;
-    final allRows = [...eventRows, ...attractionRows];
-    final today = DateTime.now();
-    final date = DateTime(today.year, today.month, today.day);
-    bool active(Map<String, dynamic> row) {
-      final end = tryParseDateTimeValue(
-        parseStringValue(
-          row['end_date'],
-          fallback: parseStringValue(row['start_date']),
-        ),
-        toLocal: true,
-      );
-      return end == null || !end.isBefore(date);
-    }
-
-    VendorRecentSubmission submission(
-      Map<String, dynamic> row, {
-      required bool isActivity,
-    }) => VendorRecentSubmission(
-      id: parseStringValue(row['id']),
-      name: parseStringValue(row['name']),
-      city: parseStringValue(row['city']),
-      isActivity: isActivity,
-      isApproved: row['is_approved'] == true,
-      startDate: tryParseDateTimeValue(
-        parseStringValue(row['start_date']),
-        toLocal: true,
-      ),
-      endDate: tryParseDateTimeValue(
-        parseStringValue(row['end_date']),
-        toLocal: true,
-      ),
-    );
-
-    final recentSubmissions =
-        <VendorRecentSubmission>[
-          ...eventRows.map((row) => submission(row, isActivity: true)),
-          ...attractionRows.map((row) => submission(row, isActivity: false)),
-        ]..sort((left, right) {
-          if (left.isApproved != right.isApproved) {
-            return left.isApproved ? 1 : -1;
-          }
-          final leftDate = left.startDate ?? left.endDate;
-          final rightDate = right.startDate ?? right.endDate;
-          if (leftDate == null && rightDate == null) return 0;
-          if (leftDate == null) return 1;
-          if (rightDate == null) return -1;
-          final leftUpcoming = !leftDate.isBefore(date);
-          final rightUpcoming = !rightDate.isBefore(date);
-          if (leftUpcoming != rightUpcoming) return leftUpcoming ? -1 : 1;
-          return leftUpcoming
-              ? leftDate.compareTo(rightDate)
-              : rightDate.compareTo(leftDate);
-        });
-
-    return VendorContentMetrics(
-      published: allRows.where((row) => row['is_approved'] == true).length,
-      pending: allRows.where((row) => row['is_approved'] != true).length,
-      activeEvents: eventRows.where(active).length,
-      activeAttractions: attractionRows.where(active).length,
-      recentSubmissions: recentSubmissions.take(5).toList(growable: false),
-      performance: ModelContentPerformance(allRows),
+    return VendorContentMetrics.fromPerformance(
+      events: responses[0],
+      attractions: responses[1],
+      now: DateTime.now(),
     );
   }
 

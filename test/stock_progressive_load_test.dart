@@ -108,6 +108,63 @@ class _CountedSell extends ModelInstitutional {
 Future<void> _flush() => Future<void>.delayed(Duration.zero);
 
 void main() {
+  test(
+    'startup notification superseded by history does not send an initial cloud read',
+    () async {
+      final service = _Service();
+      final c = ControllerStock(service);
+      addTearDown(c.dispose);
+      final historical = _day.subtract(const Duration(days: 7));
+      var changed = false;
+      Future<void>? history;
+      c.addListener(() {
+        if (changed) return;
+        changed = true;
+        history = c.loadDate(historical);
+      });
+      final startup = c.load();
+      await _flush();
+      expect(service.cloudCalls, 0);
+      expect(service.rawCalls, 0);
+      service.foreign[historical]!.complete([]);
+      service.futuresByDate[historical]!.complete([]);
+      await history;
+      await startup;
+      expect(c.selectedDate, historical);
+    },
+  );
+
+  test(
+    'superseding update-start notification prevents an obsolete backend write',
+    () async {
+      final service = _Service();
+      final c = ControllerStock(service);
+      addTearDown(c.dispose);
+      final historical = _day.subtract(const Duration(days: 7));
+      var changed = false;
+      Future<void>? history;
+      c.addListener(() {
+        if (changed || c.updateStatus != StockUpdateStatus.updating) return;
+        changed = true;
+        history = c.loadDate(historical);
+      });
+      final startup = c.load();
+      service.initial.complete([_stock(_day)]);
+      await _flush();
+      expect(service.rawCalls, 0);
+      for (final request in service.foreign.values) {
+        request.complete([]);
+      }
+      for (final request in service.futuresByDate.values) {
+        request.complete([]);
+      }
+      await history;
+      await startup;
+      expect(c.selectedDate, historical);
+      expect(c.stocks.single.date, historical);
+    },
+  );
+
   testWidgets('equal stock search results do not rebuild cards or lose input', (
     tester,
   ) async {

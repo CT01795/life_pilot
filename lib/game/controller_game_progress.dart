@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'package:life_pilot/game/model_game_user.dart';
 import 'package:life_pilot/game/model_game_progress_summary.dart';
 import 'package:life_pilot/game/service_game.dart';
@@ -34,7 +32,7 @@ class ControllerGameProgress extends SafeChangeNotifier {
     bestScore: null,
   );
 
-  List<ModelGameUser> get records => UnmodifiableListView(_records);
+  List<ModelGameUser> get records => _records;
   ModelGameProgressSummary get summary => _summary;
   int get unlockedMaxLevel => _unlockedMaxLevel;
   bool get isLoading => _loading;
@@ -46,8 +44,8 @@ class ControllerGameProgress extends SafeChangeNotifier {
       !notifierDisposed && generation == _generation;
 
   void _setRecords(List<ModelGameUser> records) {
-    _records = records;
-    _summary = ModelGameProgressSummary.from(records);
+    _records = List.unmodifiable(records);
+    _summary = ModelGameProgressSummary.from(_records);
   }
 
   /// Null means a newer game selection or disposal superseded this request.
@@ -72,6 +70,7 @@ class ControllerGameProgress extends SafeChangeNotifier {
     _service.invalidateLocalProgress();
     notifyListeners();
     try {
+      if (!_isCurrent(generation)) return null;
       final now = _now();
       final today = DateTime(now.year, now.month, now.day);
       var start = today.subtract(const Duration(days: 29));
@@ -147,15 +146,17 @@ class ControllerGameProgress extends SafeChangeNotifier {
     final generation = _generation;
     final gameType = _gameType!;
     final gameName = _gameName!;
+    final before = _startDate!;
     _loadingMore = true;
     _loadError = null;
     notifyListeners();
     try {
+      if (!_isCurrent(generation)) return null;
       final latest = await _service.latestUserProgressDateBefore(
         userName: userName,
         gameType: gameType,
         gameName: gameName,
-        before: _startDate!,
+        before: before,
       );
       if (!_isCurrent(generation)) return null;
       if (latest == null) {

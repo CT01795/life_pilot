@@ -45,6 +45,38 @@ String legacyText(EventItem event, EventSearchLabels labels) {
 }
 
 void main() {
+  for (final keepUnrelated in [false, true]) {
+    test(
+      'orphan child base text is pruned without parent entries ($keepUnrelated)',
+      () {
+        final child = _CountedEvent('child', 'oldneedle');
+        final parent = _CountedEvent('parent', 'plain', children: [child]);
+        final index = ModelEventSearchIndex();
+        expect(index.contains(parent, 'oldneedle', labels: labels), isTrue);
+        expect(child.reads, 1);
+        // Only the child's base text remains; it has no full search entry yet.
+        index.retainEvents([child]);
+        index.retainEvents(keepUnrelated ? [EventItem(id: 'other')] : []);
+        child.description = 'newneedle';
+        expect(index.contains(child, 'newneedle', labels: labels), isTrue);
+        expect(child.reads, 2);
+      },
+    );
+  }
+  test(
+    'still-active child base text is reused after its parent is removed',
+    () {
+      final child = _CountedEvent('child', 'needle');
+      final parent = _CountedEvent('parent', 'plain', children: [child]);
+      final index = ModelEventSearchIndex();
+      index.contains(parent, 'needle', labels: labels);
+      index.retainEvents([child]);
+      index.retainEvents([child]);
+      expect(index.contains(child, 'needle', labels: labels), isTrue);
+      expect(child.reads, 1);
+    },
+  );
+
   test('early child match defers later descriptions until needed', () {
     final children = [
       _CountedEvent('first', 'needle'),

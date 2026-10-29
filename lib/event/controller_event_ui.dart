@@ -57,13 +57,15 @@ Future<void> onDeletePressed({
     cancelText: loc.cancel,
   );
 
-  if (shouldDelete != true) return;
+  if (shouldDelete != true || !context.mounted) return;
 
   try {
     await controller.deleteEvent(event);
+    if (!context.mounted) return;
     AppNavigator.showSnackBar(loc.deleteOk);
   } on EventDeleteException catch (error, stackTrace) {
     logger.e('Delete event blocked', error: error, stackTrace: stackTrace);
+    if (!context.mounted) return;
     final message = switch (error.error) {
       EventDeleteError.published => loc.publishedContentDeleteAdminOnly,
       EventDeleteError.previouslyPublished =>
@@ -73,6 +75,7 @@ Future<void> onDeletePressed({
     return;
   } catch (error, stackTrace) {
     logger.e('Delete event failed', error: error, stackTrace: stackTrace);
+    if (!context.mounted) return;
     AppNavigator.showErrorBar(loc.deleteError);
     return;
   }
@@ -108,6 +111,7 @@ Future<void> onMemoryCheckboxChanged({
     );
   }
 
+  if (!context.mounted) return;
   // 顯示確認對話框
   final schedule = await confirmEventTransfer(
     context: context,
@@ -115,6 +119,7 @@ Future<void> onMemoryCheckboxChanged({
     loc: loc,
     isAlreadyAdded: isAlreadyAdded,
   );
+  if (!context.mounted) return;
 
   if (schedule != null) {
     final scheduledEvent = event.copyWith(
@@ -133,12 +138,14 @@ Future<void> onMemoryCheckboxChanged({
         scheduledEvent,
         true,
       );
+      if (!context.mounted) return;
       if (isAlreadyAdded) {
         final confirmed = await showConfirmationDialog(
           content: loc.scheduleDuplicateConfirmation,
           confirmText: loc.add,
           cancelText: loc.cancel,
         );
+        if (!context.mounted) return;
         if (!confirmed) {
           controller.toggleEventSelection(event.id, false);
           return;
@@ -150,6 +157,7 @@ Future<void> onMemoryCheckboxChanged({
       isAlreadyAdded,
       scheduledEvent,
     );
+    if (!context.mounted) return;
     if (addedEvent != null && context.mounted) {
       context.read<ControllerCalendar>().invalidateEventCache(
         startDate: addedEvent.startDate,

@@ -12,9 +12,14 @@ class ModelFeedback {
   List<String>? screenshot; // base64
   final String? createdBy;
   final DateTime createdAt;
-  List<Uint8List>? screenshotDecodeRawData; // decode cache
+  List<Uint8List>? _decodedScreenshots;
+  List<String>? _decodedSource;
   Future<List<Uint8List>>? _screenshotDecodeFuture;
-  final Map<int, Future<Uint8List?>> _screenshotDecodeFutures = {};
+  List<String>? _screenshotDecodeSource;
+  Object? _screenshotDecodeToken;
+  final _screenshotDecodeFutures =
+      <int, ({String source, Future<Uint8List?> value})>{};
+  final Future<Uint8List> Function(String) _screenshotDecoder;
   bool? isOk;
   String? dealBy;
   DateTime? dealAt;
@@ -32,7 +37,8 @@ class ModelFeedback {
     this.dealBy,
     this.dealAt,
     this.status = 'pending',
-  });
+    Future<Uint8List> Function(String)? screenshotDecoder,
+  }) : _screenshotDecoder = screenshotDecoder ?? _decodeOffThread;
 
   factory ModelFeedback.fromMap(Map<String, dynamic> map) {
     return ModelFeedback(
@@ -75,6 +81,7 @@ class ModelFeedback {
         content: content,
         cc: cc,
         screenshot: screenshot,
+        screenshotDecoder: _screenshotDecoder,
         createdBy: createdBy,
         createdAt: createdAt,
         status: nextStatus,
@@ -83,18 +90,44 @@ class ModelFeedback {
         dealAt: nextStatus == 'completed' ? now.toUtc() : null,
       );
 
-  // 💡 懶加載 decode，第一次用時才 decode，之後 cache
-  List<Uint8List>? get screenshotDecodeData {
-    if (screenshotDecodeRawData != null) return screenshotDecodeRawData;
-    if (screenshot == null) return null;
-    screenshotDecodeRawData = screenshot?.map(base64Decode).toList();
-    return screenshotDecodeRawData;
+  /// A decoded batch belongs to an exact source snapshot, including when the
+  /// public screenshot list is edited in place by an existing caller.
+  List<Uint8List>? get screenshotDecodeRawData =>
+      listEquals(screenshot, _decodedSource) ? _decodedScreenshots : null;
+
+  set screenshotDecodeRawData(List<Uint8List>? value) {
+    _decodedScreenshots = value;
+    _decodedSource = screenshot == null ? null : List.of(screenshot!);
+    _screenshotDecodeFutures.clear();
+    _screenshotDecodeToken = null;
+    _screenshotDecodeFuture = null;
+    _screenshotDecodeSource = null;
   }
 
-  Future<List<Uint8List>> decodeScreenshotsAsync() async {
-    if (screenshotDecodeRawData != null) return screenshotDecodeRawData!;
-    if (screenshot == null) return [];
-    return _screenshotDecodeFuture ??= _decodeScreenshots();
+  List<Uint8List>? get screenshotDecodeData {
+    final cached = screenshotDecodeRawData;
+    if (cached != null) return cached;
+    final images = screenshot;
+    if (images == null) return null;
+    final decoded = images.map(base64Decode).toList();
+    screenshotDecodeRawData = decoded;
+    return decoded;
+  }
+
+  Future<List<Uint8List>> decodeScreenshotsAsync() {
+    final decoded = screenshotDecodeRawData;
+    if (decoded != null) return Future.value(decoded);
+    final images = screenshot;
+    if (images == null) return Future.value([]);
+    if (_screenshotDecodeFuture != null &&
+        listEquals(images, _screenshotDecodeSource)) {
+      return _screenshotDecodeFuture!;
+    }
+    final source = List<String>.of(images, growable: false);
+    final token = Object();
+    _screenshotDecodeSource = source;
+    _screenshotDecodeToken = token;
+    return _screenshotDecodeFuture = _decodeScreenshots(source, token);
   }
 
   Future<Uint8List?> decodeScreenshotAsync(int index) {
@@ -102,28 +135,59 @@ class ModelFeedback {
     if (screenshots == null || index < 0 || index >= screenshots.length) {
       return Future.value();
     }
-    return _screenshotDecodeFutures.putIfAbsent(index, () async {
-      try {
-        return await compute(decodeBase64, screenshots[index]);
-      } catch (_) {
-        return null;
-      }
-    });
+    final source = screenshots[index];
+    final cached = _screenshotDecodeFutures[index];
+    if (cached != null && cached.source == source) return cached.value;
+    // Validate this index only: lazy thumbnails must not scan every image.
+    final decoded = _decodedScreenshots;
+    final decodedSource = _decodedSource;
+    final future =
+        decoded != null &&
+            decodedSource != null &&
+            index < decoded.length &&
+            index < decodedSource.length &&
+            decodedSource[index] == source
+        ? Future<Uint8List?>.value(decoded[index])
+        : _decodeScreenshot(source);
+    _screenshotDecodeFutures[index] = (source: source, value: future);
+    return future;
   }
 
-  Future<List<Uint8List>> _decodeScreenshots() async {
+  Future<Uint8List?> _decodeScreenshot(String source) async {
+    try {
+      return await _screenshotDecoder(source);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<Uint8List>> _decodeScreenshots(
+    List<String> source,
+    Object token,
+  ) async {
     try {
       final decoded = await Future.wait(
-        screenshot!.map((s) => compute(decodeBase64, s)),
+        source.map(
+          (image) => Future<Uint8List>.sync(() => _screenshotDecoder(image)),
+        ),
       );
-      screenshotDecodeRawData = decoded;
+      if (identical(token, _screenshotDecodeToken) &&
+          listEquals(screenshot, source)) {
+        _decodedScreenshots = decoded;
+        _decodedSource = source;
+      }
       return decoded;
     } catch (_) {
-      _screenshotDecodeFuture = null;
+      if (identical(token, _screenshotDecodeToken)) {
+        _screenshotDecodeFuture = null;
+        _screenshotDecodeSource = null;
+      }
       rethrow;
     }
   }
 
   // helper for isolate
   static Uint8List decodeBase64(String s) => base64Decode(s);
+  static Future<Uint8List> _decodeOffThread(String source) =>
+      compute(decodeBase64, source);
 }

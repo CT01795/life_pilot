@@ -22,6 +22,7 @@ class _Service extends ServiceGame {
   Completer<DateTime?>? pendingLatest;
   final ranges = <(DateTime, DateTime, bool)>[];
   final beforeDates = <DateTime>[];
+  int latestReads = 0;
 
   @override
   Future<int> fetchHighestPassedLevel({
@@ -61,7 +62,10 @@ class _Service extends ServiceGame {
     required String gameType,
     required String gameName,
     required DateTime before,
-  }) async => pendingLatest?.future ?? Future.value(latest);
+  }) async {
+    latestReads++;
+    return pendingLatest?.future ?? Future.value(latest);
+  }
 }
 
 ControllerGameProgress _controller(_Service service) => ControllerGameProgress(
@@ -71,6 +75,68 @@ ControllerGameProgress _controller(_Service service) => ControllerGameProgress(
 );
 
 void main() {
+  test(
+    'record snapshot is stable, read-only and isolated from service list',
+    () async {
+      final service = _Service()..page = [_row('a', _today)];
+      final c = _controller(service);
+      addTearDown(c.dispose);
+      await c.load(gameType: 'language', gameName: 'Speaking');
+      final snapshot = c.records;
+      expect(c.records, same(snapshot));
+      expect(() => snapshot.clear(), throwsUnsupportedError);
+      service.page.add(_row('external', _today));
+      expect(c.records.length, 1);
+      expect(c.summary.attempts, 1);
+      service.page = [_row('new', _today)];
+      await c.load(gameType: 'language', gameName: 'Speaking');
+      expect(snapshot.single.id, 'a');
+      expect(c.records.single.id, 'new');
+    },
+  );
+
+  test(
+    'superseded initial load does not start obsolete progress reads',
+    () async {
+      final service = _Service();
+      final c = _controller(service);
+      addTearDown(c.dispose);
+      Future<bool?>? newer;
+      var started = false;
+      c.addListener(() {
+        if (!started && c.isLoading) {
+          started = true;
+          newer = c.load(gameType: 'language', gameName: 'Other');
+        }
+      });
+      expect(await c.load(gameType: 'language', gameName: 'Speaking'), isNull);
+      expect(await newer, isTrue);
+      expect(service.ranges.length, 1);
+    },
+  );
+
+  test(
+    'superseded load-more does not probe a new games history boundary',
+    () async {
+      final service = _Service()..more = true;
+      final c = _controller(service);
+      addTearDown(c.dispose);
+      await c.load(gameType: 'language', gameName: 'Speaking');
+      Future<bool?>? newer;
+      var started = false;
+      c.addListener(() {
+        if (!started && c.isLoadingMore) {
+          started = true;
+          newer = c.load(gameType: 'language', gameName: 'Other');
+        }
+      });
+      expect(await c.loadMore(), isNull);
+      await newer;
+      expect(service.latestReads, 0);
+      expect(c.isLoadingMore, isFalse);
+    },
+  );
+
   test('loads 30-day inclusive window and caches summary', () async {
     final service = _Service()
       ..page = [

@@ -73,6 +73,27 @@ class ModelContentPerformance {
   }
 
   ModelContentPerformance._(this.rows, this.items, this.totals);
+
+  /// Combine parsed snapshots without copying source maps or decoding dates
+  /// and counters again. Source order, duplicate rows and zero values remain.
+  factory ModelContentPerformance.combine(
+    Iterable<ModelContentPerformance> sources,
+  ) {
+    final items = <ContentPerformanceItem>[];
+    final totals = {for (final column in contentPerformanceColumns) column: 0};
+    for (final source in sources) {
+      items.addAll(source.items);
+      for (final column in contentPerformanceColumns) {
+        totals[column] = totals[column]! + source.totals[column]!;
+      }
+    }
+    return ModelContentPerformance._(
+      List.unmodifiable(items.map((item) => item.source)),
+      List.unmodifiable(items),
+      Map.unmodifiable(totals),
+    );
+  }
+
   factory ModelContentPerformance(
     List<Map<String, dynamic>> rows, {
     bool sortByExpiry = false,

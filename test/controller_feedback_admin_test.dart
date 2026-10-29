@@ -96,6 +96,52 @@ void main() {
   });
 
   test(
+    'selecting the current feedback status does not write or invalidate cache',
+    () async {
+      await controller.loadFeedback();
+      final feedback = controller.feedbackList.single;
+      final visible = controller.visibleFeedback;
+      expect(
+        await controller.updateStatus(feedback, feedback.status, auth.account),
+        isTrue,
+      );
+      expect(service.updates, 0);
+      expect(controller.visibleFeedback, same(visible));
+    },
+  );
+
+  test('a replaced feedback row cannot submit a stale status update', () async {
+    await controller.loadFeedback();
+    final old = controller.feedbackList.single;
+    await controller.loadFeedback();
+    expect(
+      await controller.updateStatus(old, 'completed', auth.account),
+      isNull,
+    );
+    expect(service.updates, 0);
+  });
+
+  test(
+    'account change during busy notification prevents an obsolete status write',
+    () async {
+      await controller.loadFeedback();
+      final feedback = controller.feedbackList.single;
+      var changed = false;
+      controller.addListener(() {
+        if (changed || !controller.isUpdating(feedback.id)) return;
+        changed = true;
+        auth.switchAccount();
+      });
+      expect(
+        await controller.updateStatus(feedback, 'completed', auth.account),
+        isNull,
+      );
+      expect(service.updates, 0);
+      expect(controller.feedbackList, isEmpty);
+    },
+  );
+
+  test(
     'older page failure keeps data and retries exactly the same 30-day range',
     () async {
       await controller.loadFeedback();

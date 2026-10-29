@@ -76,7 +76,9 @@ class ModelEventSearchIndex {
   /// Only for progressive snapshots whose existing objects are unchanged.
   /// Edits must still use invalidate; do not inspect/decode child records here.
   void retainEvents(Iterable<EventItem> events) {
-    if (_entries.isEmpty) return;
+    // A child may remain as base text after its parent entry was removed.
+    // It still needs pruning even when no complete entries remain.
+    if (_entries.isEmpty && _baseText.isEmpty) return;
     // Retention needs membership only for objects already indexed. Do not build
     // a temporary set of thousands of untouched appended records.
     final active = Set<EventItem>.identity();

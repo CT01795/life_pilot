@@ -90,6 +90,68 @@ class VendorContentMetrics {
   final int activeAttractions;
   final List<VendorRecentSubmission> recentSubmissions;
   final ModelContentPerformance performance;
+
+  /// Pure projection of owner-scoped, already parsed performance snapshots.
+  /// Network access and authentication remain in Service/Controller.
+  factory VendorContentMetrics.fromPerformance({
+    required ModelContentPerformance events,
+    required ModelContentPerformance attractions,
+    required DateTime now,
+  }) {
+    final today = DateTime(now.year, now.month, now.day);
+    var published = 0;
+    var pending = 0;
+    var activeEvents = 0;
+    var activeAttractions = 0;
+    final submissions = <VendorRecentSubmission>[];
+    void collect(ModelContentPerformance source, {required bool activity}) {
+      for (final item in source.items) {
+        item.approved ? published++ : pending++;
+        // Preserve the previous policy: only an absent end field falls back
+        // to start; an empty/invalid end remains an open-ended record.
+        final end = item.source['end_date'] == null ? item.starts : item.ends;
+        if (end == null || !end.isBefore(today)) {
+          activity ? activeEvents++ : activeAttractions++;
+        }
+        submissions.add(
+          VendorRecentSubmission(
+            id: item.id,
+            name: item.name,
+            city: item.city,
+            isActivity: activity,
+            isApproved: item.approved,
+            startDate: item.starts,
+            endDate: item.ends,
+          ),
+        );
+      }
+    }
+
+    collect(events, activity: true);
+    collect(attractions, activity: false);
+    submissions.sort((left, right) {
+      if (left.isApproved != right.isApproved) return left.isApproved ? 1 : -1;
+      final leftDate = left.startDate ?? left.endDate;
+      final rightDate = right.startDate ?? right.endDate;
+      if (leftDate == null && rightDate == null) return 0;
+      if (leftDate == null) return 1;
+      if (rightDate == null) return -1;
+      final leftUpcoming = !leftDate.isBefore(today);
+      final rightUpcoming = !rightDate.isBefore(today);
+      if (leftUpcoming != rightUpcoming) return leftUpcoming ? -1 : 1;
+      return leftUpcoming
+          ? leftDate.compareTo(rightDate)
+          : rightDate.compareTo(leftDate);
+    });
+    return VendorContentMetrics(
+      published: published,
+      pending: pending,
+      activeEvents: activeEvents,
+      activeAttractions: activeAttractions,
+      recentSubmissions: List.unmodifiable(submissions.take(5)),
+      performance: ModelContentPerformance.combine([events, attractions]),
+    );
+  }
 }
 
 class VendorRecentSubmission {

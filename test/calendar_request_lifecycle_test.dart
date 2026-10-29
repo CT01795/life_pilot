@@ -82,6 +82,24 @@ void main() {
   );
 
   test(
+    'selection notifies only for membership changes and stops on disposal',
+    () {
+      var notifications = 0;
+      controller.addListener(() => notifications++);
+      controller.toggleEventSelection('a', false);
+      controller.toggleEventSelection('a', true);
+      controller.toggleEventSelection('a', true);
+      expect(notifications, 1);
+      expect(model.selectedEventIds, {'a'});
+      controller.toggleEventSelection('a', false);
+      expect(notifications, 2);
+      controller.dispose();
+      controller.toggleEventSelection('a', true);
+      expect(model.selectedEventIds, isEmpty);
+    },
+  );
+
+  test(
     'preview is visible in the grid before the complete month returns',
     () async {
       final month = DateTime(2026, 10);

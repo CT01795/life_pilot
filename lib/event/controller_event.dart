@@ -417,11 +417,16 @@ class ControllerEvent extends SafeChangeNotifier {
   // 🔍 搜尋與篩選控制
   // ---------------------------------------------------------------------------
   void toggleEventSelection(String eventId, bool isSelected) {
+    if (_disposed ||
+        _modelEvent.selectedEventIds.contains(eventId) == isSelected) {
+      return;
+    }
     _modelEvent.toggleEventSelection(eventId, isSelected);
     if (!_disposed) notifyListeners();
   }
 
   void toggleSearchPanel(bool value, AppLocalizations loc) {
+    if (_disposed || _modelEvent.showSearchPanel == value) return;
     _modelEvent.toggleSearchPanel(value, loc);
     if (!_disposed) notifyListeners();
   }
@@ -472,13 +477,21 @@ class ControllerEvent extends SafeChangeNotifier {
   }
 
   void updateStartDate(DateTime? startDate) {
+    if (_disposed) return;
+    final filter = _modelEvent.searchFilter;
+    final previous = (filter.startDate, filter.endDate);
     _modelEvent.updateStartDate(startDate);
+    if (previous == (filter.startDate, filter.endDate)) return;
     _filterRevision++;
     if (!_disposed) notifyListeners();
   }
 
   void updateEndDate(DateTime? endDate) {
+    if (_disposed) return;
+    final filter = _modelEvent.searchFilter;
+    final previous = (filter.startDate, filter.endDate);
     _modelEvent.updateEndDate(endDate);
+    if (previous == (filter.startDate, filter.endDate)) return;
     _filterRevision++;
     if (!_disposed) notifyListeners();
   }

@@ -1,6 +1,7 @@
 import 'package:life_pilot/game/model_game_catalog.dart';
 import 'package:life_pilot/game/model_game_item.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 
 /// Loads the catalog; play history belongs to ControllerGameProgress.
@@ -9,7 +10,7 @@ class ControllerGameList extends SafeChangeNotifier {
 
   final ServiceGame serviceGame;
   ModelGameCatalog _catalog = ModelGameCatalog(const []);
-  Future<void>? _loadRequest;
+  final _loads = RefreshRequestCoordinator();
   bool _isLoading = false;
   Object? _loadError;
 
@@ -26,20 +27,17 @@ class ControllerGameList extends SafeChangeNotifier {
   /// Concurrent callers share one request. A later explicit load still refreshes.
   Future<void> loadGames() {
     if (notifierDisposed) return Future.value();
-    final active = _loadRequest;
-    if (active != null) return active;
-    final source = Future<List<ModelGameItem>>.sync(serviceGame.fetchGames);
-    final request = _applyCatalog(source);
-    _loadRequest = request;
+    return _loads.run(_loadGames);
+  }
+
+  Future<void> _loadGames() async {
     _isLoading = true;
     _loadError = null;
     notifyListeners();
-    return request;
-  }
-
-  Future<void> _applyCatalog(Future<List<ModelGameItem>> source) async {
     try {
-      final games = await source;
+      // A listener may close the page before the service read starts.
+      if (notifierDisposed) return;
+      final games = await serviceGame.fetchGames();
       if (notifierDisposed) return;
       _catalog = ModelGameCatalog(games);
     } catch (error) {
@@ -48,7 +46,6 @@ class ControllerGameList extends SafeChangeNotifier {
         rethrow;
       }
     } finally {
-      _loadRequest = null;
       if (!notifierDisposed) {
         _isLoading = false;
         notifyListeners();

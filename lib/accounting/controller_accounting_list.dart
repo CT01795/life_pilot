@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -62,9 +64,19 @@ class ControllerAccountingList extends SafeChangeNotifier {
     _loadingCategory = requestedCategory;
     isLoading = true;
     loadError = null;
-    _loadFuture = _loadAccounts(user, requestedCategory, generation, request);
-    notifyListeners();
-    return _loadFuture!;
+    final completion = Completer<void>();
+    final future = completion.future;
+    // Publish before invoking the service or listeners; either can re-enter.
+    _loadFuture = future;
+    unawaited(
+      _loadAccounts(user, requestedCategory, generation, request).then<void>(
+        (_) => completion.complete(),
+        onError: (Object error, StackTrace stack) =>
+            completion.completeError(error, stack),
+      ),
+    );
+    if (_isCurrent(generation) && request == _listRequest) notifyListeners();
+    return future;
   }
 
   Future<void> _loadAccounts(
@@ -226,6 +238,7 @@ class ControllerAccountingList extends SafeChangeNotifier {
     required int deltaBalance,
     required String? currency,
   }) {
+    if (notifierDisposed || deltaBalance == 0) return;
     final index = accounts.indexWhere(
       (a) => a.id == accountId && (currency == null || a.currency == currency),
     );

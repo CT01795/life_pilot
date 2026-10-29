@@ -84,6 +84,57 @@ void main() {
   });
 
   for (final section in DashboardSection.values) {
+    Future<void> refreshSection() => switch (section) {
+      DashboardSection.todaySchedule => controller.refreshTodaySchedule(
+        account: 'user',
+      ),
+      DashboardSection.recommendEvents => controller.refreshRecommendEvent(
+        account: 'user',
+      ),
+      DashboardSection.recommendPlaces => controller.refreshRecommendPlace(
+        account: 'user',
+      ),
+      DashboardSection.accounting => controller.refreshAccounting(
+        accountId: 'cash',
+      ),
+      DashboardSection.points => controller.refreshPoints(accountId: 'points'),
+    };
+
+    test(
+      '$section skips unsent read after account switch during publication',
+      () async {
+        var switched = false;
+        controller.addListener(() {
+          if (!switched && controller.isLoading(section)) {
+            switched = true;
+            controller.switchAccount('another');
+          }
+        });
+        await refreshSection();
+        expect(repository.calls[section] ?? 0, 0);
+        expect(controller.loading, isFalse);
+      },
+    );
+
+    test(
+      '$section skips superseded read started by a synchronous listener',
+      () async {
+        Future<void>? newer;
+        var started = false;
+        controller.addListener(() {
+          if (!started && controller.isLoading(section)) {
+            started = true;
+            newer = refreshSection();
+          }
+        });
+        final first = refreshSection();
+        await first;
+        await newer;
+        expect(repository.calls[section], 1);
+        expect(controller.loading, isFalse);
+      },
+    );
+
     test(
       'refreshAll releases completed sections while $section remains pending',
       () async {

@@ -30,8 +30,9 @@ Future<void> onAddEventPressed({
     ),
   );
 
-  if (newEvent != null) {
+  if (newEvent != null && context.mounted) {
     await controller.handleCrossMonthTap(tappedDate: newEvent.startDate!);
+    if (!context.mounted) return;
     Navigator.pop(context, true); // 回傳 true 給外層
   }
 }
@@ -72,10 +73,11 @@ Future<void> onDeletePressed({
     cancelText: loc.cancel,
   );
 
-  if (shouldDelete != true) return;
+  if (shouldDelete != true || !context.mounted) return;
 
   try {
     await controller.deleteEvent(event);
+    if (!context.mounted) return;
     AppNavigator.showSnackBar(loc.deleteOk);
   } catch (error, stackTrace) {
     logger.e(
@@ -83,6 +85,7 @@ Future<void> onDeletePressed({
       error: error,
       stackTrace: stackTrace,
     );
+    if (!context.mounted) return;
     AppNavigator.showErrorBar(loc.deleteError);
     return;
   }
@@ -113,6 +116,7 @@ Future<void> onMemoryCheckboxChanged({
     event,
     tmpValue,
   );
+  if (!context.mounted) return;
 
   // 顯示確認對話框
   final shouldTransfer = await confirmCalenderEventTransfer(
@@ -122,6 +126,7 @@ Future<void> onMemoryCheckboxChanged({
     loc: loc,
     isAlreadyAdded: isAlreadyAdded,
   );
+  if (!context.mounted) return;
 
   if (shouldTransfer ?? false) {
     await controller.handleEventCheckboxTransfer(
@@ -130,6 +135,7 @@ Future<void> onMemoryCheckboxChanged({
       event,
       selectedDate,
     );
+    if (!context.mounted) return;
     AppNavigator.showSnackBar(loc.memoryAddOk);
   } else {
     controller.toggleEventSelection(event.id, false);
@@ -144,7 +150,7 @@ Future<void> onAlarmPressed({
 }) async {
   final result = await showAlarmSettingsDialog(context, controller, event, loc);
 
-  if (result == null) {
+  if (result == null || !context.mounted) {
     return;
   }
 
@@ -154,6 +160,7 @@ Future<void> onAlarmPressed({
     reminders: result["reminders"],
     loc: loc,
   );
+  if (!context.mounted) return;
   if (msg["error"] != null) {
     AppNavigator.showErrorBar(loc.alarmUpdateFailed);
     return;

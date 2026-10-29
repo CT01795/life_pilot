@@ -160,6 +160,7 @@ class ControllerStock extends SafeChangeNotifier {
     _notifyListenersIfActive();
 
     var initialSourceLoaded = false;
+    if (_isDisposed || requestId != _dataRequestId) return;
 
     // 1️⃣ 先顯示現有資料（快速）
     try {
@@ -200,6 +201,7 @@ class ControllerStock extends SafeChangeNotifier {
 
     updateStatus = StockUpdateStatus.updating;
     _notifyListenersIfActive();
+    if (_isDisposed || requestId != _dataRequestId) return;
 
     try {
       // 2️⃣ 背景更新資料（不阻塞 UI）

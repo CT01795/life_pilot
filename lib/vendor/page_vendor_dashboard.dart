@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/widgets_content_performance_link.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +15,8 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
+import 'package:life_pilot/vendor/model_vendor_dashboard.dart';
+import 'package:life_pilot/vendor/controller_vendor_dashboard.dart';
 import 'package:life_pilot/vendor/service_vendor_account.dart';
 import 'package:life_pilot/vendor/vendor_plan_labels.dart';
 import 'package:life_pilot/vendor/widgets_admin_vendor_pricing.dart';
@@ -20,69 +24,56 @@ import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 
 class PageVendorDashboard extends StatefulWidget {
-  const PageVendorDashboard({super.key, this.focusPricing = false});
+  const PageVendorDashboard({
+    super.key,
+    this.focusPricing = false,
+    this.service,
+  });
 
   final bool focusPricing;
+  final ServiceVendorAccount? service;
 
   @override
   State<PageVendorDashboard> createState() => _PageVendorDashboardState();
 }
 
 class _PageVendorDashboardState extends State<PageVendorDashboard> {
-  final _service = ServiceVendorAccount();
   final _pricingKey = GlobalKey();
-  late Future<_VendorDashboardData> _data;
+  late final ControllerVendorDashboard _controller;
   bool _pricingFocused = false;
 
   @override
   void initState() {
     super.initState();
-    _data = _load();
-  }
-
-  Future<_VendorDashboardData> _load() async {
-    final account = context.read<ControllerAuth>().currentAccount ?? '';
-    await _service.ensureVendorAccount();
-    final status = await _service.fetchMyStatus();
-    final values = await Future.wait<dynamic>([
-      _service.fetchMetrics(account),
-      _service.fetchPricingPlans(),
-    ]);
-    final plans =
-        List<VendorPricingPlan>.from(values[1] as List<VendorPricingPlan>)
-          ..sort((left, right) {
-            const order = {'free': 0, 'partner': 1, 'growth': 2};
-            final byPlan = (order[left.code] ?? 99).compareTo(
-              order[right.code] ?? 99,
-            );
-            if (byPlan != 0) return byPlan;
-            return right.effectiveAt.compareTo(left.effectiveAt);
-          });
-    return _VendorDashboardData(
-      metrics: values[0] as VendorContentMetrics,
-      status: status,
-      plans: plans,
+    _controller = ControllerVendorDashboard(
+      auth: context.read<ControllerAuth>(),
+      service: widget.service ?? ServiceVendorAccount(),
     );
+    unawaited(_controller.load());
   }
 
-  void _reload() => setState(() => _data = _load());
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _reload() => unawaited(_controller.load());
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
       body: RefreshIndicator(
-        onRefresh: () async {
-          _reload();
-          await _data;
-        },
-        child: FutureBuilder<_VendorDashboardData>(
-          future: _data,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
+        onRefresh: _controller.load,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final data = _controller.data;
+            if (_controller.loading) {
               return const Center(child: CircularProgressIndicator());
             }
-            if (snapshot.hasError || snapshot.data == null) {
+            if (_controller.error != null || data == null) {
               return ListView(
                 children: [
                   const SizedBox(height: 120),
@@ -117,14 +108,14 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
                 );
               });
             }
-            return _content(loc, snapshot.data!);
+            return _content(loc, data);
           },
         ),
       ),
     );
   }
 
-  Widget _content(AppLocalizations loc, _VendorDashboardData data) {
+  Widget _content(AppLocalizations loc, ModelVendorDashboard data) {
     final theme = Theme.of(context);
     final status = data.status;
     final isAdmin = context.watch<ControllerAuth>().isSysAdmin;
@@ -532,7 +523,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
     );
   }
 
-  Widget _nextStep(AppLocalizations loc, _VendorDashboardData data) {
+  Widget _nextStep(AppLocalizations loc, ModelVendorDashboard data) {
     final metrics = data.metrics;
     final engagement = data.metrics.performance.totals;
     final (icon, title, message) = switch ((
@@ -800,16 +791,4 @@ class _VendorPlanCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _VendorDashboardData {
-  const _VendorDashboardData({
-    required this.metrics,
-    required this.status,
-    required this.plans,
-  });
-
-  final VendorContentMetrics metrics;
-  final VendorSubscriptionStatus status;
-  final List<VendorPricingPlan> plans;
 }

@@ -716,6 +716,10 @@ class ControllerCalendar extends SafeChangeNotifier {
   // 搜尋 / 篩選 / 選擇
   // ------------------------
   void toggleEventSelection(String eventId, bool isSelected) {
+    if (notifierDisposed ||
+        _modelCalendar.selectedEventIds.contains(eventId) == isSelected) {
+      return;
+    }
     _modelCalendar.toggleEventSelection(eventId, isSelected);
     notifyListeners();
   }

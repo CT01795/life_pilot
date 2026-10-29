@@ -30,4 +30,9 @@ class ModelBusinessPlan {
       sections: sections ?? this.sections.map((e) => e.copyWith()).toList(),
     );
   }
+
+  /// Renaming does not alter the section/question tree. Answer edits replace
+  /// their changed branch, so unchanged content can keep its existing identity.
+  ModelBusinessPlan renamed(String value) =>
+      title == value ? this : copyWith(title: value, sections: sections);
 }

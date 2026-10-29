@@ -26,9 +26,11 @@ class _Service extends ServiceGame {
   bool fail = false;
   List<ModelGameItem> games = [];
   Completer<List<ModelGameItem>>? pending;
+  void Function()? onFetch;
   @override
   Future<List<ModelGameItem>> fetchGames() async {
     loads++;
+    onFetch?.call();
     if (pending != null) return pending!.future;
     if (fail) throw StateError('unavailable');
     return games;
@@ -195,6 +197,34 @@ void main() {
     expect(service.loads, 3);
     controller.dispose();
   });
+
+  for (final duringFetch in [true, false]) {
+    test(
+      'reentrant catalog read shares request (service callback: $duringFetch)',
+      () async {
+        final service = _Service()..pending = Completer<List<ModelGameItem>>();
+        final controller = ControllerGameList(serviceGame: service);
+        Future<void>? reentrant;
+        void join() {
+          reentrant ??= controller.loadGames();
+        }
+
+        if (duringFetch) {
+          service.onFetch = join;
+        } else {
+          controller.addListener(join);
+        }
+        final first = controller.loadGames();
+        expect(reentrant, same(first));
+        expect(service.loads, 1);
+        service.pending!.complete([_game('A', 'Game', 1)]);
+        await first;
+        expect(controller.categories, ['A']);
+        expect(controller.isLoading, isFalse);
+        controller.dispose();
+      },
+    );
+  }
 
   test(
     'synchronous service error releases loading and permits retry',

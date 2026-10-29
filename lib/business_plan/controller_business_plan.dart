@@ -7,6 +7,7 @@ import 'package:life_pilot/business_plan/model_plan_answers.dart';
 import 'package:life_pilot/business_plan/model_plan_question.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/in_flight_read_pool.dart';
 import 'package:life_pilot/business_plan/service_business_plan.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:uuid/uuid.dart';
@@ -20,8 +21,10 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   bool hasLoadedOnce = false;
   final Map<String, ModelBusinessPlan> _planCache = {};
   final Set<String> _loadedPlanDetails = {};
-  final Map<String, Future<ModelBusinessPlan>> _detailRequests = {};
-  final _answerSaves = <(String, String, String), _PlanAnswerSaveQueue>{};
+  final _detailRequests = InFlightReadPool<String, ModelBusinessPlan>();
+  final _answerSaves = <(String, String, String), _PlanTextSaveQueue>{};
+  final _titleSaves = <String, _PlanTextSaveQueue>{};
+  final _statusSaves = <String, _PlanTextSaveQueue>{};
   int _detailSelectionRevision = 0;
   bool isPlanDetailLoading = false;
   Object? planDetailError;
@@ -69,8 +72,10 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     _planListRevision++;
     _detailSelectionRevision++;
     _loadedPlanDetails.clear();
-    _detailRequests.clear();
+    _detailRequests.invalidate();
     _answerSaves.clear();
+    _titleSaves.clear();
+    _statusSaves.clear();
     isPlanDetailLoading = false;
     planDetailError = null;
     isCreatingPlan = false;
@@ -374,20 +379,65 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   }
 
   Future<void> updatePlanStatus(ModelBusinessPlan plan, String status) async {
+    if (notifierDisposed) return;
     final index = plans.indexWhere((item) => item.id == plan.id);
     if (index < 0) return;
     final previous = plans[index];
-    plans[index] = previous.copyWith(status: status);
-    _sortAndDeduplicatePlans();
+    if (previous.status == status) {
+      await _statusSaves[plan.id]?.tail;
+      return;
+    }
+    final generation = _accountGeneration;
+    final queue = _statusSaves.putIfAbsent(
+      plan.id,
+      () => _PlanTextSaveQueue(previous.status),
+    );
+    final revision = ++queue.revision;
+    _applyPlanStatus(plan.id, status);
+    final operation = queue.tail.then<void>((_) async {
+      if (notifierDisposed || generation != _accountGeneration) return;
+      try {
+        await _service.updatePlanStatus(planId: plan.id, status: status);
+        queue.confirmedValue = status;
+      } catch (_) {
+        if (!notifierDisposed &&
+            generation == _accountGeneration &&
+            revision == queue.revision) {
+          _applyPlanStatus(plan.id, queue.confirmedValue, expected: status);
+          safeNotify();
+        }
+        rethrow;
+      }
+    });
+    // A failed write must reach its caller without blocking the next status.
+    final tail = operation.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
+    queue.tail = tail;
     safeNotify();
     try {
-      await _service.updatePlanStatus(planId: plan.id, status: status);
-    } catch (_) {
-      final rollbackIndex = plans.indexWhere((item) => item.id == plan.id);
-      if (rollbackIndex >= 0) plans[rollbackIndex] = previous;
+      await operation;
+    } finally {
+      if (identical(_statusSaves[plan.id], queue) &&
+          identical(queue.tail, tail)) {
+        _statusSaves.remove(plan.id);
+      }
+    }
+  }
+
+  void _applyPlanStatus(String id, String status, {String? expected}) {
+    ModelBusinessPlan apply(ModelBusinessPlan value) =>
+        (expected == null || value.status == expected)
+        ? value.copyWith(status: status, sections: value.sections)
+        : value;
+    final cached = _planCache[id];
+    if (cached != null) _planCache[id] = apply(cached);
+    if (currentPlan?.id == id) currentPlan = apply(currentPlan!);
+    final index = plans.indexWhere((item) => item.id == id);
+    if (index >= 0) {
+      plans[index] = apply(plans[index]);
       _sortAndDeduplicatePlans();
-      safeNotify();
-      rethrow;
     }
   }
 
@@ -399,6 +449,10 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     if (notifierDisposed) return;
     final planId = inputPlanId.trim();
     if (planId.isEmpty) return;
+    final pendingStateChanged =
+        currentPlanId != planId ||
+        !isPlanDetailLoading ||
+        planDetailError != null;
     final generation = _accountGeneration;
     final revision = ++_detailSelectionRevision;
     if (currentPlanId != planId) {
@@ -416,13 +470,18 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
       return;
     }
     isPlanDetailLoading = true;
-    safeNotify();
-    final request = _detailRequests.putIfAbsent(
-      planId,
-      () => Future<ModelBusinessPlan>.sync(
-        () => _service.fetchPlanDetail(planId: planId),
-      ),
-    );
+    var startedRead = false;
+    final request = _detailRequests.read(planId, () {
+      startedRead = true;
+      // The shared slot exists before notifying listeners. A reentrant load
+      // joins this request instead of notifying recursively or fetching twice.
+      safeNotify();
+      if (notifierDisposed || generation != _accountGeneration) {
+        throw StateError('Plan detail request superseded');
+      }
+      return _service.fetchPlanDetail(planId: planId);
+    });
+    if (!startedRead && pendingStateChanged) safeNotify();
     try {
       final plan = await request;
       if (notifierDisposed || generation != _accountGeneration) return;
@@ -440,9 +499,6 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
         planDetailError = error;
       }
     } finally {
-      if (identical(_detailRequests[planId], request)) {
-        _detailRequests.remove(planId);
-      }
       if (!notifierDisposed &&
           generation == _accountGeneration &&
           revision == _detailSelectionRevision) {
@@ -470,6 +526,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     planDetailError = null;
     safeNotify();
     try {
+      if (notifierDisposed || generation != _accountGeneration) return false;
       await _service.createPlanFromTemplate(
         user: user,
         planId: planId,
@@ -509,32 +566,58 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     ModelBusinessPlan oldPlan,
     String newTitle,
   ) async {
-    currentPlan =
-        (_planCache.containsKey(oldPlan.id)
-                ? _planCache[oldPlan.id] as ModelBusinessPlan
-                : oldPlan)
-            .copyWith(title: newTitle);
+    if (notifierDisposed) return;
     final index = plans.indexWhere((p) => p.id == oldPlan.id);
-    if (index != -1) {
-      plans[index] = plans[index].copyWith(title: newTitle);
+    final source =
+        _planCache[oldPlan.id] ??
+        (currentPlan?.id == oldPlan.id ? currentPlan : null) ??
+        (index >= 0 ? plans[index] : null);
+    if (source == null) return;
+    if (source.title == newTitle) {
+      await _titleSaves[oldPlan.id]?.tail;
+      return;
     }
-
-    safeNotify();
-
-    // ✅ 更新 cache
-    _planCache[oldPlan.id] = currentPlan!;
-
-    // 2️⃣ 再存 DB
-    try {
-      await _service.updatePlanTitle(planId: oldPlan.id, title: newTitle);
-    } catch (e) {
-      // ❌ 失敗就回滾
-      currentPlan = currentPlan!.copyWith(title: oldPlan.title);
-      if (index != -1) {
-        plans[index] = plans[index].copyWith(title: oldPlan.title);
+    final generation = _accountGeneration;
+    final queue = _titleSaves.putIfAbsent(
+      oldPlan.id,
+      () => _PlanTextSaveQueue(source.title),
+    );
+    final revision = ++queue.revision;
+    _planCache.putIfAbsent(oldPlan.id, () => source);
+    _applyPlanTitle(oldPlan.id, newTitle);
+    bool isActive() => !notifierDisposed && generation == _accountGeneration;
+    final operation = queue.tail.then((_) async {
+      if (!isActive()) return;
+      try {
+        await _service.updatePlanTitle(planId: oldPlan.id, title: newTitle);
+        if (isActive()) queue.confirmedValue = newTitle;
+      } catch (_) {
+        if (!isActive() || revision != queue.revision) return;
+        _applyPlanTitle(oldPlan.id, queue.confirmedValue, expected: newTitle);
+        safeNotify();
       }
-      safeNotify();
+    });
+    queue.tail = operation;
+    safeNotify();
+    try {
+      await operation;
+    } finally {
+      if (identical(_titleSaves[oldPlan.id], queue) &&
+          identical(queue.tail, operation)) {
+        _titleSaves.remove(oldPlan.id);
+      }
     }
+  }
+
+  void _applyPlanTitle(String planId, String title, {String? expected}) {
+    ModelBusinessPlan apply(ModelBusinessPlan plan) =>
+        expected == null || plan.title == expected ? plan.renamed(title) : plan;
+    final cached = _planCache[planId];
+    if (cached != null) _planCache[planId] = apply(cached);
+    final active = currentPlan;
+    if (active != null && active.id == planId) currentPlan = apply(active);
+    final index = plans.indexWhere((plan) => plan.id == planId);
+    if (index >= 0) plans[index] = apply(plans[index]);
   }
 
   Future<void> commitCurrentAnswer(String answer) async {
@@ -550,7 +633,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     final generation = _accountGeneration;
     final queue = _answerSaves.putIfAbsent(
       key,
-      () => _PlanAnswerSaveQueue(question.answer),
+      () => _PlanTextSaveQueue(question.answer),
     );
     final revision = ++queue.revision;
     final notifier = answerNotifier(sectionIndex, questionIndex);
@@ -572,7 +655,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
           questionId: question.id,
           answer: answer,
         );
-        if (isActive()) queue.confirmedAnswer = answer;
+        if (isActive()) queue.confirmedValue = answer;
       } catch (_) {
         if (!isActive() || revision != queue.revision) return;
         final cached = _planCache[plan.id];
@@ -581,7 +664,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
             cached,
             sectionId: section.id,
             questionId: question.id,
-            answer: queue.confirmedAnswer,
+            answer: queue.confirmedValue,
             expectedAnswer: answer,
           );
         }
@@ -591,7 +674,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
           active,
           sectionId: section.id,
           questionId: question.id,
-          answer: queue.confirmedAnswer,
+          answer: queue.confirmedValue,
           expectedAnswer: answer,
         );
         if (identical(restored, active)) return;
@@ -600,7 +683,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
         final q = restored.sections[s].questions.indexWhere(
           (item) => item.id == question.id,
         );
-        _syncAnswerNotifier(s, q, queue.confirmedAnswer);
+        _syncAnswerNotifier(s, q, queue.confirmedValue);
         safeNotify();
       }
     });
@@ -628,9 +711,9 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   }
 }
 
-class _PlanAnswerSaveQueue {
-  _PlanAnswerSaveQueue(this.confirmedAnswer);
-  String confirmedAnswer;
+class _PlanTextSaveQueue {
+  _PlanTextSaveQueue(this.confirmedValue);
+  String confirmedValue;
   int revision = 0;
   Future<void> tail = Future<void>.value();
 }

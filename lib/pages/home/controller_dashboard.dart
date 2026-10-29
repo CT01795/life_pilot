@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
@@ -38,6 +40,7 @@ class ControllerDashboard extends SafeChangeNotifier {
   int _accountingRequest = 0;
   int _pointsRequest = 0;
   int _todayScheduleRequest = 0;
+  final _eventCompletions = <(int, String), Future<void>>{};
 
   bool get loading => _sectionLoadingCounts.isNotEmpty;
 
@@ -92,6 +95,7 @@ class ControllerDashboard extends SafeChangeNotifier {
 
   void switchAccount(String? account) {
     _accountGeneration++;
+    _eventCompletions.clear();
     _activeAccount = account;
     _settingsLoad = null;
     _state = DashboardState.empty();
@@ -514,151 +518,132 @@ class ControllerDashboard extends SafeChangeNotifier {
     }
   }
 
-  Future<void> refreshTodaySchedule({required String account}) async {
-    final generation = _accountGeneration;
-    if (!_isCurrentRequest(account, generation)) return;
-    final request = ++_todayScheduleRequest;
-    _beginLoading(const [DashboardSection.todaySchedule]);
-    notifyListeners();
-
-    try {
-      final todayEvents = await repository.loadTodayEvents(account);
-      if (!_isCurrentRequest(account, generation) ||
-          request != _todayScheduleRequest) {
-        return;
-      }
-
-      _state = _state.copyWith(todayEvents: todayEvents);
-    } finally {
-      if (_isCurrentRequest(account, generation)) {
-        _endLoading(const [DashboardSection.todaySchedule]);
-        notifyListeners();
-      }
-    }
-  }
-
-  Future<void> refreshRecommendEvent({required String account}) async {
-    final generation = _accountGeneration;
-    if (!_isCurrentRequest(account, generation)) return;
-    final request = ++_recommendEventRequest;
-    _beginLoading(const [DashboardSection.recommendEvents]);
-    notifyListeners();
-
-    try {
-      final recommendedEvents = await repository.loadRecommendEvents(
-        _setting.recommendEventCity,
-      );
-
-      if (!_isCurrentRequest(account, generation) ||
-          request != _recommendEventRequest) {
-        return;
-      }
-
-      _state = _state.copyWith(recommendEvents: recommendedEvents);
-    } finally {
-      if (_isCurrentRequest(account, generation)) {
-        _endLoading(const [DashboardSection.recommendEvents]);
-        notifyListeners();
-      }
-    }
-  }
-
-  Future<void> refreshRecommendPlace({required String account}) async {
-    final generation = _accountGeneration;
-    if (!_isCurrentRequest(account, generation)) return;
-    final request = ++_recommendPlaceRequest;
-    _beginLoading(const [DashboardSection.recommendPlaces]);
-    notifyListeners();
-
-    try {
-      final recommendedPlaces = await repository.loadRecommendPlaces(
-        _setting.recommendPlaceCity,
-      );
-
-      if (!_isCurrentRequest(account, generation) ||
-          request != _recommendPlaceRequest) {
-        return;
-      }
-
-      _state = _state.copyWith(recommendPlaces: recommendedPlaces);
-    } finally {
-      if (_isCurrentRequest(account, generation)) {
-        _endLoading(const [DashboardSection.recommendPlaces]);
-        notifyListeners();
-      }
-    }
-  }
-
-  Future<void> refreshAccounting({required String accountId}) async {
-    final account = _activeAccount;
+  /// Shared lifecycle for independent dashboard sections. Persistence stays in
+  /// Repository; this controller publishes only the current account/request.
+  Future<void> _refreshSection<T>({
+    required DashboardSection section,
+    required String? account,
+    required int Function() advance,
+    required bool Function(int) isLatest,
+    required Future<T> Function() read,
+    required void Function(T) apply,
+  }) async {
     final generation = _accountGeneration;
     if (account == null || !_isCurrentRequest(account, generation)) return;
-    final request = ++_accountingRequest;
-    _beginLoading(const [DashboardSection.accounting]);
+    final request = advance();
+    bool active() =>
+        _isCurrentRequest(account, generation) && isLatest(request);
+    _beginLoading([section]);
     notifyListeners();
-
     try {
-      final summary = await repository.loadAccountingSummary(
-        accountId: accountId,
-      );
-
-      if (!_isCurrentRequest(account, generation) ||
-          request != _accountingRequest) {
-        return;
-      }
-
-      _failedSections.remove(DashboardSection.accounting);
-      _state = _state.copyWith(
-        todayIncomeExpense: summary.records,
-        accountingTotal: summary.total,
-        todayAccountingTotal: summary.todayTotal,
-        accountingCurrency: summary.currency,
-      );
+      // Listeners may synchronously switch accounts or supersede this read.
+      if (!active()) return;
+      final result = await read();
+      if (active()) apply(result);
     } finally {
       if (_isCurrentRequest(account, generation)) {
-        _endLoading(const [DashboardSection.accounting]);
+        _endLoading([section]);
         notifyListeners();
       }
     }
   }
 
-  Future<void> refreshPoints({required String accountId}) async {
-    final account = _activeAccount;
-    final generation = _accountGeneration;
-    if (account == null || !_isCurrentRequest(account, generation)) return;
-    final request = ++_pointsRequest;
-    _beginLoading(const [DashboardSection.points]);
-    notifyListeners();
+  Future<void> refreshTodaySchedule({required String account}) =>
+      _refreshSection(
+        section: DashboardSection.todaySchedule,
+        account: account,
+        advance: () => ++_todayScheduleRequest,
+        isLatest: (request) => request == _todayScheduleRequest,
+        read: () => repository.loadTodayEvents(account),
+        apply: (events) => _state = _state.copyWith(todayEvents: events),
+      );
 
-    try {
-      final summary = await repository.loadPointSummary(accountId: accountId);
+  Future<void> refreshRecommendEvent({required String account}) =>
+      _refreshSection(
+        section: DashboardSection.recommendEvents,
+        account: account,
+        advance: () => ++_recommendEventRequest,
+        isLatest: (request) => request == _recommendEventRequest,
+        read: () => repository.loadRecommendEvents(_setting.recommendEventCity),
+        apply: (events) => _state = _state.copyWith(recommendEvents: events),
+      );
 
-      if (!_isCurrentRequest(account, generation) ||
-          request != _pointsRequest) {
-        return;
-      }
+  Future<void> refreshRecommendPlace({required String account}) =>
+      _refreshSection(
+        section: DashboardSection.recommendPlaces,
+        account: account,
+        advance: () => ++_recommendPlaceRequest,
+        isLatest: (request) => request == _recommendPlaceRequest,
+        read: () => repository.loadRecommendPlaces(_setting.recommendPlaceCity),
+        apply: (places) => _state = _state.copyWith(recommendPlaces: places),
+      );
 
+  Future<void> refreshAccounting({required String accountId}) =>
+      _refreshSection(
+        section: DashboardSection.accounting,
+        account: _activeAccount,
+        advance: () => ++_accountingRequest,
+        isLatest: (request) => request == _accountingRequest,
+        read: () => repository.loadAccountingSummary(accountId: accountId),
+        apply: (summary) {
+          _failedSections.remove(DashboardSection.accounting);
+          _state = _state.copyWith(
+            todayIncomeExpense: summary.records,
+            accountingTotal: summary.total,
+            todayAccountingTotal: summary.todayTotal,
+            accountingCurrency: summary.currency,
+          );
+        },
+      );
+
+  Future<void> refreshPoints({required String accountId}) => _refreshSection(
+    section: DashboardSection.points,
+    account: _activeAccount,
+    advance: () => ++_pointsRequest,
+    isLatest: (request) => request == _pointsRequest,
+    read: () => repository.loadPointSummary(accountId: accountId),
+    apply: (summary) {
       _failedSections.remove(DashboardSection.points);
       _state = _state.copyWith(
         todayPoints: summary.records,
         pointsTotal: summary.total,
         todayPointsTotal: summary.todayTotal,
       );
-    } finally {
-      if (_isCurrentRequest(account, generation)) {
-        _endLoading(const [DashboardSection.points]);
-        notifyListeners();
+    },
+  );
+
+  Future<void> completeEvent({required String id, required String account}) {
+    final generation = _accountGeneration;
+    if (!_isCurrentRequest(account, generation)) return Future.value();
+    final key = (generation, id);
+    final active = _eventCompletions[key];
+    if (active != null) return active;
+    final completion = Completer<void>();
+    final request = completion.future;
+    // Register before persistence: synchronous callbacks share the same write.
+    _eventCompletions[key] = request;
+    void release() {
+      if (identical(_eventCompletions[key], request)) {
+        _eventCompletions.remove(key);
       }
     }
+
+    unawaited(
+      _completeEvent(id, account, generation).then<void>(
+        (_) {
+          release();
+          completion.complete();
+        },
+        onError: (Object error, StackTrace stack) {
+          release();
+          completion.completeError(error, stack);
+        },
+      ),
+    );
+    return request;
   }
 
-  Future<void> completeEvent({
-    required String id,
-    required String account,
-  }) async {
-    final generation = _accountGeneration;
-    if (!_isCurrentRequest(account, generation)) return;
-
+  Future<void> _completeEvent(String id, String account, int generation) async {
     await repository.completeEvent(id: id, account: account);
 
     if (!_isCurrentRequest(account, generation)) return;

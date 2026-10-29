@@ -224,10 +224,13 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
         _updating.contains(feedback.id)) {
       return null;
     }
+    if (!_feedbackList.any((item) => identical(item, feedback))) return null;
+    if (feedback.status == status) return true;
     final revision = _revision;
     _updating.add(feedback.id);
     notifyListeners();
     try {
+      if (!_active(revision)) return null;
       final update = feedback.withStatus(status, adminAccount, DateTime.now());
       await _service.updateFeedback(feedback: update);
       if (!_active(revision)) return null;

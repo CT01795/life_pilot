@@ -39,8 +39,10 @@ class _Requests {
   final categories = <String>[];
   final pending = <Completer<List<String>>>[];
   bool immediate = false;
+  void Function()? onFetch;
   Future<List<String>> fetch(String? category) {
     categories.add(category!);
+    onFetch?.call();
     if (immediate) return Future.value(['$category account']);
     final request = Completer<List<String>>();
     pending.add(request);
@@ -206,6 +208,41 @@ void main() {
         await Future.wait([first, second]);
         expect(h.ids(), ['personal']);
       });
+
+      test('synchronous service re-entry awaits the actual request', () async {
+        Future<void>? joined;
+        requests.onFetch = () {
+          joined = h.load();
+        };
+        final first = h.load();
+        expect(joined, same(first));
+        var completed = false;
+        unawaited(joined!.then((_) => completed = true));
+        await Future<void>.delayed(Duration.zero);
+        expect(completed, isFalse);
+        requests.pending.single.complete(['personal']);
+        await first;
+        expect(completed, isTrue);
+        expect(h.ids(), ['personal']);
+      });
+
+      test(
+        'account change during loading notification returns safely',
+        () async {
+          var switched = false;
+          h.controller.addListener(() {
+            if (!switched && h.loading()) {
+              switched = true;
+              auth.switchAccount();
+            }
+          });
+          final first = h.load();
+          requests.pending.single.complete(['old account']);
+          await first;
+          expect(h.ids(), isEmpty);
+          expect(h.loading(), isFalse);
+        },
+      );
 
       test(
         'new category wins even when the previous response arrives last',

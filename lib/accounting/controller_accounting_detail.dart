@@ -4,6 +4,7 @@ import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/model_record_history.dart';
 import 'package:life_pilot/utils/nlp.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
 
@@ -12,6 +13,7 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   ControllerAuth? auth;
   String? _accountKey;
   int _accountGeneration = 0;
+  int _requestId = 0;
   final String accountId;
   final bool loadAllRecords;
   num? currentExchangeRate;
@@ -23,7 +25,9 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
     this.loadAllRecords = false,
     this.currentExchangeRate,
   }) : _service = service,
-       _accountKey = normalizeText(auth?.currentAccount);
+       _accountKey = _scopeKey(auth) {
+    auth?.addListener(_onAuthChanged);
+  }
 
   final String currentType = 'balance';
 
@@ -36,12 +40,38 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   bool hasMore = false;
   DateTime? _loadedStartDate;
 
+  static String _scopeKey(ControllerAuth? auth) =>
+      '${normalizeText(auth?.currentAccount)}|${auth?.preferredStorage.name ?? ''}';
+
+  bool _isCurrent(int generation, [int? request]) =>
+      !notifierDisposed &&
+      generation == _accountGeneration &&
+      _accountKey == _scopeKey(auth) &&
+      (request == null || request == _requestId);
+
+  void _onAuthChanged() {
+    final current = auth;
+    if (current != null) updateAuth(current);
+  }
+
+  @override
+  void dispose() {
+    auth?.removeListener(_onAuthChanged);
+    super.dispose();
+  }
+
   void updateAuth(ControllerAuth nextAuth, {bool notify = true}) {
-    final nextAccount = normalizeText(nextAuth.currentAccount);
+    if (notifierDisposed) return;
+    final nextAccount = _scopeKey(nextAuth);
+    if (!identical(auth, nextAuth)) {
+      auth?.removeListener(_onAuthChanged);
+      nextAuth.addListener(_onAuthChanged);
+    }
     auth = nextAuth;
     if (_accountKey == nextAccount) return;
     _accountKey = nextAccount;
     _accountGeneration++;
+    _requestId++;
     todayRecords = [];
     todayTotal = 0;
     total = null;
@@ -53,12 +83,17 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   }
 
   Future<void> loadToday({String? inputAccountId}) async {
-    if (isLoading) return;
+    if (notifierDisposed || isLoading || !_isCurrent(_accountGeneration)) {
+      return;
+    }
     final generation = _accountGeneration;
+    final request = ++_requestId;
+    isLoadingMore = false;
     isLoading = true;
     notifyListeners();
     final targetAccountId = inputAccountId ?? accountId;
     try {
+      if (!_isCurrent(generation, request)) return;
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       var loadedStartDate = loadAllRecords
@@ -72,18 +107,13 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
         includeLatestFallback: !loadAllRecords,
         includeReservedRecords: true,
       );
-      if (generation != _accountGeneration) return;
-      final regularRecords = loadedRecords
-          .where((record) => record.primaryCategory != 'reserved')
-          .toList();
-      if (regularRecords.isNotEmpty &&
-          regularRecords.every(
-            (record) => record.localTime.isBefore(loadedStartDate),
-          )) {
-        loadedStartDate = regularRecords
-            .map((record) => record.localTime)
-            .reduce((a, b) => a.isAfter(b) ? a : b);
-      }
+      if (!_isCurrent(generation, request)) return;
+      loadedStartDate = ModelRecordHistory.fallbackStart(
+        loadedRecords,
+        start: loadedStartDate,
+        categoryOf: (record) => record.primaryCategory,
+        dateOf: (record) => record.localTime,
+      );
       final loadedHasMore =
           !loadAllRecords &&
           await _service.hasRecordsBefore(
@@ -91,14 +121,14 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
             type: currentType,
             before: loadedStartDate,
           );
-      if (generation != _accountGeneration) return;
+      if (!_isCurrent(generation, request)) return;
       todayRecords = loadedRecords;
       _loadedStartDate = loadedStartDate;
       hasMore = loadedHasMore;
       _sortAndDeduplicate();
       _calculateTotals(inputAccountId: inputAccountId);
     } finally {
-      if (generation == _accountGeneration) {
+      if (_isCurrent(generation, request)) {
         isLoading = false;
         notifyListeners();
       }
@@ -106,18 +136,28 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   }
 
   Future<void> loadMore({String? inputAccountId}) async {
-    if (isLoadingMore || !hasMore || _loadedStartDate == null) return;
+    if (notifierDisposed ||
+        isLoading ||
+        isLoadingMore ||
+        !hasMore ||
+        _loadedStartDate == null ||
+        !_isCurrent(_accountGeneration)) {
+      return;
+    }
     final generation = _accountGeneration;
+    final request = _requestId;
+    final before = _loadedStartDate!;
     isLoadingMore = true;
     notifyListeners();
     final targetAccountId = inputAccountId ?? accountId;
     try {
+      if (!_isCurrent(generation, request)) return;
       final latestOlder = await _service.latestRecordDateBefore(
         accountId: targetAccountId,
         type: currentType,
-        before: _loadedStartDate!,
+        before: before,
       );
-      if (generation != _accountGeneration) return;
+      if (!_isCurrent(generation, request)) return;
       if (latestOlder == null) {
         hasMore = false;
         return;
@@ -134,19 +174,19 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
         dateFrom: dateFrom,
         dateTo: dateTo,
       );
-      if (generation != _accountGeneration) return;
+      if (!_isCurrent(generation, request)) return;
       final loadedHasMore = await _service.hasRecordsBefore(
         accountId: targetAccountId,
         type: currentType,
         before: dateFrom,
       );
-      if (generation != _accountGeneration) return;
-      todayRecords.addAll(loadedRecords);
+      if (!_isCurrent(generation, request)) return;
+      todayRecords = [...todayRecords, ...loadedRecords];
       _loadedStartDate = dateFrom;
       _sortAndDeduplicate();
       hasMore = loadedHasMore;
     } finally {
-      if (generation == _accountGeneration) {
+      if (_isCurrent(generation, request)) {
         isLoadingMore = false;
         notifyListeners();
       }
@@ -154,12 +194,11 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   }
 
   void _sortAndDeduplicate() {
-    final unique = <String, ModelAccountingDetail>{};
-    for (final record in todayRecords) {
-      unique[record.id] = record;
-    }
-    todayRecords = unique.values.toList()
-      ..sort((a, b) => b.localTime.compareTo(a.localTime));
+    todayRecords = ModelRecordHistory.ordered(
+      todayRecords,
+      idOf: (record) => record.id,
+      dateOf: (record) => record.localTime,
+    );
   }
 
   Future<void> _calculateTotals({String? inputAccountId}) async {
@@ -216,7 +255,8 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
     List<AccountingPreview> previews, {
     String? inputAccountId,
   }) async {
-    if (previews.isEmpty) return;
+    final generation = _accountGeneration;
+    if (previews.isEmpty || !_isCurrent(generation)) return;
     await _service.insertRecordsBatch(
       accountId: inputAccountId ?? accountId,
       type: currentType,
@@ -224,14 +264,19 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
       currency: previews.first.currency,
     );
 
+    if (!_isCurrent(generation)) return;
     await auth?.refreshSubscriptionUsage();
+    if (!_isCurrent(generation)) return;
 
     await loadToday(inputAccountId: inputAccountId ?? accountId);
   }
 
   // 更新單筆 accounting_detail
   Future<void> updateAccountingDetail(AccountingPreview preview) async {
-    if (preview.id == null || preview.currency == null) {
+    final generation = _accountGeneration;
+    if (!_isCurrent(generation) ||
+        preview.id == null ||
+        preview.currency == null) {
       return;
     }
     // 呼叫後端 RPC
@@ -244,12 +289,17 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
       newPrimaryCategory: preview.primaryCategory,
       newSecondaryCategory: preview.secondaryCategory,
     );
+    if (!_isCurrent(generation)) return;
     await loadToday();
   }
 
   Future<void> deleteAccountingDetail(String detailId) async {
+    final generation = _accountGeneration;
+    if (!_isCurrent(generation)) return;
     await _service.deleteAccountingDetail(detailId: detailId);
+    if (!_isCurrent(generation)) return;
     await auth?.refreshSubscriptionUsage();
+    if (!_isCurrent(generation)) return;
     await loadToday();
   }
 }

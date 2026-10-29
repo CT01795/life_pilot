@@ -34,6 +34,7 @@ class _Service extends ServiceBusinessPlan {
   Completer<void>? pendingCreate;
   bool failRead = false;
   bool failCreate = false;
+  void Function()? onRead;
   @override
   Future<void> upsertAnswer({
     required String planId,
@@ -44,6 +45,7 @@ class _Service extends ServiceBusinessPlan {
   @override
   Future<ModelBusinessPlan> fetchPlanDetail({required String planId}) async {
     reads.add(planId);
+    onRead?.call();
     if (failRead) throw StateError('offline');
     return pending[planId]?.future ?? Future.value(planFactory(planId));
   }
@@ -79,6 +81,121 @@ Widget _app(ControllerBusinessPlan controller, Widget child) =>
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+    'reentrant loading listener does not recursively publish the same state',
+    () async {
+      final service = _Service()..pending['a'] = Completer<ModelBusinessPlan>();
+      final auth = _Auth();
+      final c = ControllerBusinessPlan(service: service, auth: auth);
+      addTearDown(c.dispose);
+      addTearDown(auth.dispose);
+      final nested = <Future<void>>[];
+      var notifications = 0;
+      c.addListener(() {
+        notifications++;
+        // Limit recursion so a regression reports an assertion, not stack overflow.
+        if (c.isPlanDetailLoading && notifications < 5) {
+          nested.add(c.loadPlanDetailIfNeeded('a'));
+        }
+      });
+      final first = c.loadPlanDetailIfNeeded('a');
+      expect(notifications, 1);
+      expect(service.reads, ['a']);
+      service.pending['a']!.complete(_plan('a'));
+      await Future.wait([first, ...nested]);
+      expect(c.currentPlan!.id, 'a');
+      expect(c.isPlanDetailLoading, isFalse);
+    },
+  );
+  test(
+    'synchronous service callback joins the registered detail read',
+    () async {
+      final service = _Service()..pending['a'] = Completer<ModelBusinessPlan>();
+      final auth = _Auth();
+      final c = ControllerBusinessPlan(service: service, auth: auth);
+      addTearDown(c.dispose);
+      addTearDown(auth.dispose);
+      Future<void>? nested;
+      service.onRead = () {
+        service.onRead = null;
+        nested = c.loadPlanDetailIfNeeded('a');
+      };
+      final first = c.loadPlanDetailIfNeeded('a');
+      expect(service.reads, ['a']);
+      service.pending['a']!.complete(_plan('a'));
+      await Future.wait([first, nested!]);
+      expect(c.currentPlan!.id, 'a');
+    },
+  );
+  test(
+    'switching back to a pending plan publishes selection without rereading',
+    () async {
+      final service = _Service()
+        ..pending['a'] = Completer<ModelBusinessPlan>()
+        ..pending['b'] = Completer<ModelBusinessPlan>();
+      final auth = _Auth();
+      final c = ControllerBusinessPlan(service: service, auth: auth);
+      addTearDown(c.dispose);
+      addTearDown(auth.dispose);
+      final a = c.loadPlanDetailIfNeeded('a'),
+          b = c.loadPlanDetailIfNeeded('b');
+      var notifications = 0;
+      c.addListener(() => notifications++);
+      final back = c.loadPlanDetailIfNeeded('a');
+      expect(notifications, 1);
+      expect(c.currentPlanId, 'a');
+      expect(service.reads, ['a', 'b']);
+      service.pending['a']!.complete(_plan('a'));
+      await Future.wait([a, back]);
+      service.pending['b']!.complete(_plan('b'));
+      await b;
+      expect(c.currentPlan!.id, 'a');
+    },
+  );
+  test(
+    'account change during loading publication prevents an unsent detail read',
+    () async {
+      final service = _Service();
+      final auth = _Auth();
+      final c = ControllerBusinessPlan(service: service, auth: auth);
+      addTearDown(c.dispose);
+      addTearDown(auth.dispose);
+      c.addListener(() {
+        if (c.isPlanDetailLoading) {
+          auth.account = 'b@example.com';
+          c.updateAuth(auth, notify: false);
+        }
+      });
+      await c.loadPlanDetailIfNeeded('a');
+      expect(service.reads, isEmpty);
+      expect(c.currentPlan, isNull);
+      expect(c.planDetailError, isNull);
+      expect(c.isPlanDetailLoading, isFalse);
+    },
+  );
+  test(
+    'account change during creation publication prevents an unsent write',
+    () async {
+      final service = _Service();
+      final auth = _Auth();
+      final c = ControllerBusinessPlan(service: service, auth: auth);
+      addTearDown(c.dispose);
+      addTearDown(auth.dispose);
+      c.addListener(() {
+        if (c.isCreatingPlan) {
+          auth.account = 'b@example.com';
+          c.updateAuth(auth, notify: false);
+        }
+      });
+      expect(
+        await c.createPlanFromTemplate(title: 'Plan', templateId: 't'),
+        isFalse,
+      );
+      expect(service.creates, isEmpty);
+      expect(service.reads, isEmpty);
+    },
+  );
+
   testWidgets('preview index refreshes after plan edits and saved answers', (
     tester,
   ) async {
