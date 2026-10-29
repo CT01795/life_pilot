@@ -38,19 +38,17 @@ class ServiceCalendar {
       final endDate = DateTime(end.year, end.month, end.day);
       if (!endDate.isAfter(startDate)) return holidays;
 
-      final lastIncludedDate = endDate.subtract(const Duration(days: 1));
-      final records = <List<CalendarHolidayRecord>>[];
-      for (int year = startDate.year; year <= lastIncludedDate.year; year++) {
-        records.add(
-          await _getHolidayYear(
-            year: year,
-            languageCode: languageCode,
-            accessToken: accessToken,
-          ),
-        );
-      }
+      final records = await loadHolidayYears(
+        start: startDate,
+        end: endDate,
+        loadYear: (year) => _getHolidayYear(
+          year: year,
+          languageCode: languageCode,
+          accessToken: accessToken,
+        ),
+      );
       return ModelCalendarHolidays.project(
-        records: records.expand((year) => year),
+        records: records,
         start: startDate,
         end: endDate,
         createId: () => 'holiday_${_uuid.v4()}',
@@ -59,6 +57,20 @@ class ServiceCalendar {
       logger.e('Fetch holidays failed', error: e, stackTrace: stack);
       return [];
     }
+  }
+
+  /// Independent years load concurrently. Future.wait retains year order even
+  /// when responses arrive out of order; the existing yearly cache stays owner.
+  static Future<List<CalendarHolidayRecord>> loadHolidayYears({
+    required DateTime start,
+    required DateTime end,
+    required Future<List<CalendarHolidayRecord>> Function(int year) loadYear,
+  }) async {
+    final batches = await Future.wait([
+      for (final year in ModelCalendarHolidays.requiredYears(start, end))
+        Future<List<CalendarHolidayRecord>>.sync(() => loadYear(year)),
+    ]);
+    return [for (final batch in batches) ...batch];
   }
 
   static void _clearCacheAfterUtcDateChange() {

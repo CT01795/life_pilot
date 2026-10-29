@@ -8,6 +8,7 @@ import 'package:life_pilot/business_plan/model_plan_question.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/in_flight_read_pool.dart';
+import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 import 'package:life_pilot/business_plan/service_business_plan.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:uuid/uuid.dart';
@@ -22,6 +23,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   final Map<String, ModelBusinessPlan> _planCache = {};
   final Set<String> _loadedPlanDetails = {};
   final _detailRequests = InFlightReadPool<String, ModelBusinessPlan>();
+  RefreshRequestCoordinator _templateLoads = RefreshRequestCoordinator();
   final _answerSaves = <(String, String, String), _PlanTextSaveQueue>{};
   final _titleSaves = <String, _PlanTextSaveQueue>{};
   final _statusSaves = <String, _PlanTextSaveQueue>{};
@@ -73,6 +75,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     _detailSelectionRevision++;
     _loadedPlanDetails.clear();
     _detailRequests.invalidate();
+    _templateLoads = RefreshRequestCoordinator();
     _answerSaves.clear();
     _titleSaves.clear();
     _statusSaves.clear();
@@ -197,19 +200,28 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   // -------------------------
   // Load Data
   // -------------------------
-  Future<void> loadTemplates() async {
-    if (isTemplateLoading) return;
+  Future<void> loadTemplates() {
+    if (notifierDisposed) return Future.value();
     final generation = _accountGeneration;
+    return _templateLoads.run(() => _loadTemplates(generation));
+  }
+
+  Future<void> _loadTemplates(int generation) async {
     isTemplateLoading = true;
     templateLoadError = null;
     safeNotify();
     try {
+      if (notifierDisposed || generation != _accountGeneration) return;
       final loadedTemplates = await _service.fetchTemplates();
-      if (generation == _accountGeneration) templates = loadedTemplates;
+      if (!notifierDisposed && generation == _accountGeneration) {
+        templates = List.unmodifiable(loadedTemplates);
+      }
     } catch (error) {
-      if (generation == _accountGeneration) templateLoadError = error;
+      if (!notifierDisposed && generation == _accountGeneration) {
+        templateLoadError = error;
+      }
     } finally {
-      if (generation == _accountGeneration) {
+      if (!notifierDisposed && generation == _accountGeneration) {
         isTemplateLoading = false;
         safeNotify();
       }

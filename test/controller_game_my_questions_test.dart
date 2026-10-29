@@ -4,6 +4,227 @@ import 'package:life_pilot/game/controller_game_my_questions.dart';
 import 'package:life_pilot/game/service_game.dart';
 
 void main() {
+  test(
+    'new full query clears obsolete load-more state and ignores its result',
+    () async {
+      final service = _QuestionService();
+      final c = ControllerGameMyQuestions(
+        service: service,
+        gameName: 'Speaking',
+      );
+      addTearDown(c.dispose);
+      await c.load();
+      final old = Completer<MyGameQuestionPage>(),
+          fresh = Completer<MyGameQuestionPage>();
+      service.pendingPage = old;
+      final more = c.load(append: true);
+      expect(c.isLoadingMore, isTrue);
+      c.applySearch('new');
+      service.pendingPage = fresh;
+      final search = c.load();
+      expect(c.isLoadingMore, isFalse);
+      expect(c.isLoading, isTrue);
+      fresh.complete(_page(9));
+      await search;
+      old.complete(_page(8));
+      expect(await more, isNull);
+      expect(c.questions.single.id, '9');
+    },
+  );
+
+  for (final oldFails in [false, true]) {
+    test(
+      'new keyword supersedes active loaded search (old failure: $oldFails)',
+      () async {
+        final service = _QuestionService();
+        final c = ControllerGameMyQuestions(
+          service: service,
+          gameName: 'Speaking',
+        );
+        addTearDown(c.dispose);
+        await c.load();
+        final old = Completer<MyGameQuestionPage>(),
+            fresh = Completer<MyGameQuestionPage>();
+        service.pendingPage = old;
+        c.applySearch('old');
+        final a = c.load();
+        service.pendingPage = fresh;
+        c.applySearch('new');
+        final b = c.load();
+        expect(service.calls.map((call) => call.$1), ['', 'old', 'new']);
+        fresh.complete(_page(9));
+        expect(await b, isTrue);
+        if (oldFails) {
+          old.completeError(StateError('old'));
+        } else {
+          old.complete(_page(8));
+        }
+        expect(await a, isNull);
+        expect(c.questions.single.id, '9');
+        expect(c.hasError, isFalse);
+        expect(c.isLoading, isFalse);
+      },
+    );
+  }
+  for (final groupChange in [true, false]) {
+    test(
+      'group/status change supersedes pending query (group: $groupChange)',
+      () async {
+        final service = _QuestionService()..groupData.add('other');
+        final c = ControllerGameMyQuestions(
+          service: service,
+          gameName: 'Speaking',
+        );
+        addTearDown(c.dispose);
+        await c.load();
+        final old = Completer<MyGameQuestionPage>(),
+            fresh = Completer<MyGameQuestionPage>();
+        service.pendingPage = old;
+        final a = c.load();
+        if (groupChange) {
+          c.selectGroup('other');
+        } else {
+          c.selectStatus(QuestionStatusFilter.inactive);
+        }
+        service.pendingPage = fresh;
+        final b = c.load();
+        expect(service.calls.length, 3);
+        expect(service.calls.last.$2, groupChange ? 'other' : null);
+        expect(service.calls.last.$3, groupChange ? 'all' : 'inactive');
+        fresh.complete(_page(9));
+        await b;
+        old.complete(_page(8));
+        await a;
+        expect(c.questions.single.id, '9');
+      },
+    );
+  }
+  for (final hasLoaded in [false, true]) {
+    test(
+      'same active query does not send duplicate read (loaded: $hasLoaded)',
+      () async {
+        final service = _QuestionService();
+        final c = ControllerGameMyQuestions(
+          service: service,
+          gameName: 'Speaking',
+        );
+        addTearDown(c.dispose);
+        if (hasLoaded) await c.load();
+        final pending = Completer<MyGameQuestionPage>();
+        service.pendingPage = pending;
+        final first = c.load();
+        await c.load();
+        expect(service.calls.length, hasLoaded ? 2 : 1);
+        pending.complete(_page(0));
+        await first;
+      },
+    );
+  }
+  test(
+    'changed filters cannot append into the previously loaded query',
+    () async {
+      final service = _QuestionService();
+      final c = ControllerGameMyQuestions(
+        service: service,
+        gameName: 'Speaking',
+      );
+      addTearDown(c.dispose);
+      await c.load();
+      c.applySearch('new');
+      await c.load(append: true);
+      expect(service.calls.length, 1);
+      expect(c.questions.single.id, '0');
+      await c.load();
+      expect(service.calls.last.$1, 'new');
+      await c.load(append: true);
+      expect(service.calls.last.$4, 1);
+    },
+  );
+
+  test(
+    'question snapshots keep identity and do not alias service lists',
+    () async {
+      final page = _page(0);
+      final service = _QuestionService()..suppliedPage = page;
+      final c = ControllerGameMyQuestions(
+        service: service,
+        gameName: 'Speaking',
+      );
+      addTearDown(c.dispose);
+      await c.load();
+      final snapshot = c.questions;
+      expect(c.questions, same(snapshot));
+      expect(() => snapshot.clear(), throwsUnsupportedError);
+      page.questions.clear();
+      expect(c.questions.length, 1);
+      expect(c.hasMore, isTrue);
+    },
+  );
+  test(
+    'group snapshots do not alias service lists and remain cached across search',
+    () async {
+      final service = _QuestionService();
+      final c = ControllerGameMyQuestions(
+        service: service,
+        gameName: 'Speaking',
+      );
+      addTearDown(c.dispose);
+      await c.load();
+      final groups = c.groups;
+      expect(c.groups, same(groups));
+      expect(() => groups.clear(), throwsUnsupportedError);
+      service.groupData.add('external');
+      expect(c.groups, ['grammar']);
+      c.applySearch('new');
+      await c.load();
+      expect(c.groups, same(groups));
+      expect(service.groupCalls, 1);
+    },
+  );
+  test(
+    'appending replaces the snapshot without altering prior views',
+    () async {
+      final service = _QuestionService();
+      final c = ControllerGameMyQuestions(
+        service: service,
+        gameName: 'Speaking',
+      );
+      addTearDown(c.dispose);
+      await c.load();
+      final first = c.questions, groups = c.groups;
+      await c.load(append: true);
+      expect(first.map((q) => q.id), ['0']);
+      expect(c.questions.map((q) => q.id), ['0', '1']);
+      expect(c.groups, same(groups));
+      expect(c.hasMore, isFalse);
+    },
+  );
+  test(
+    'reentrant new search prevents obsolete initial question/group reads',
+    () async {
+      final service = _QuestionService();
+      final c = ControllerGameMyQuestions(
+        service: service,
+        gameName: 'Speaking',
+      );
+      addTearDown(c.dispose);
+      Future<bool?>? fresh;
+      var changed = false;
+      c.addListener(() {
+        if (!changed && c.isLoading) {
+          changed = true;
+          c.applySearch('new');
+          fresh = c.load();
+        }
+      });
+      expect(await c.load(), isNull);
+      expect(await fresh, isTrue);
+      expect(service.calls.length, 1);
+      expect(service.calls.single.$1, 'new');
+      expect(service.groupCalls, 1);
+    },
+  );
+
   test('a write during loading leaves the group cache invalidated', () async {
     final service = _QuestionService();
     final controller = ControllerGameMyQuestions(
@@ -250,6 +471,8 @@ class _QuestionService extends ServiceGame {
   int groupCalls = 0;
   bool failLoad = false;
   bool failDelete = false;
+  MyGameQuestionPage? suppliedPage;
+  final groupData = <String>['grammar'];
   Completer<MyGameQuestionPage>? pendingPage;
   (String, bool)? updated;
 
@@ -265,7 +488,7 @@ class _QuestionService extends ServiceGame {
     calls.add((keyword, group, status, offset));
     if (failLoad) throw StateError('load failed');
     if (pendingPage != null) return pendingPage!.future;
-    return _page(offset);
+    return suppliedPage ?? _page(offset);
   }
 
   @override
@@ -273,7 +496,7 @@ class _QuestionService extends ServiceGame {
     required String gameName,
   }) async {
     groupCalls++;
-    return ['grammar'];
+    return groupData;
   }
 
   @override

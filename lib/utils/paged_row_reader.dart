@@ -4,9 +4,12 @@ typedef FetchRows = Future<List<dynamic>> Function(int offset, int limit);
 /// requested size. Callers retain query, authorization and timeout ownership.
 /// An expired scope returns no rows (never a partial aggregate); callers must
 /// still guard publication. An already-sent fetch is not physically aborted.
+/// [copyRows] defaults to preserving independent row maps. Set it to false only
+/// when the caller owns fetched rows and immediately builds its own snapshot.
 Future<List<Map<String, dynamic>>> readAllPagedRows({
   required FetchRows fetch,
   int batchSize = 500,
+  bool copyRows = true,
   bool Function()? shouldContinue,
 }) async {
   if (batchSize < 1) throw ArgumentError.value(batchSize, 'batchSize');
@@ -18,7 +21,9 @@ Future<List<Map<String, dynamic>>> readAllPagedRows({
     if (shouldContinue?.call() == false) return [];
     if (batch.isEmpty) return rows;
     for (final value in batch) {
-      final row = Map<String, dynamic>.from(value as Map);
+      final row = !copyRows && value is Map<String, dynamic>
+          ? value
+          : Map<String, dynamic>.from(value as Map);
       if (!seen.add(row['id'].toString())) {
         throw StateError('Pagination returned a repeated row; check offset');
       }

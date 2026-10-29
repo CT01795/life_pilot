@@ -1,0 +1,134 @@
+import 'dart:async';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:life_pilot/calendar/model_calendar_holidays.dart';
+import 'package:life_pilot/calendar/service_calendar.dart';
+
+void main() {
+  test('same-year day range requests that year once', () {
+    expect(
+      ModelCalendarHolidays.requiredYears(
+        DateTime(2026, 10, 1, 23),
+        DateTime(2026, 11, 1, 5),
+      ),
+      [2026],
+    );
+  });
+  test('exclusive January first end does not request the following year', () {
+    expect(
+      ModelCalendarHolidays.requiredYears(
+        DateTime(2026, 12, 27),
+        DateTime(2027, 1, 1),
+      ),
+      [2026],
+    );
+    expect(
+      ModelCalendarHolidays.requiredYears(
+        DateTime(2026, 12, 27),
+        DateTime(2027, 1, 2),
+      ),
+      [2026, 2027],
+    );
+  });
+  test('empty/reversed/same-day ranges contain no years', () {
+    expect(
+      ModelCalendarHolidays.requiredYears(DateTime(2026), DateTime(2025)),
+      isEmpty,
+    );
+    expect(
+      ModelCalendarHolidays.requiredYears(DateTime(2026), DateTime(2026)),
+      isEmpty,
+    );
+    expect(
+      ModelCalendarHolidays.requiredYears(
+        DateTime(2026, 1, 1, 3),
+        DateTime(2026, 1, 1, 23),
+      ),
+      isEmpty,
+    );
+  });
+  test(
+    'multi-year ranges preserve ascending order and return read-only years',
+    () {
+      final years = ModelCalendarHolidays.requiredYears(
+        DateTime.utc(2024, 12, 31),
+        DateTime.utc(2027, 1, 2),
+      );
+      expect(years, [2024, 2025, 2026, 2027]);
+      expect(() => years.clear(), throwsUnsupportedError);
+    },
+  );
+  test(
+    'cross-year reads start concurrently and retain year order after reverse completion',
+    () async {
+      final calls = <int>[];
+      final a = Completer<List<CalendarHolidayRecord>>(),
+          b = Completer<List<CalendarHolidayRecord>>();
+      final first = CalendarHolidayRecord(
+        date: DateTime(2026, 12, 31),
+        summary: 'First',
+      );
+      final second = CalendarHolidayRecord(
+        date: DateTime(2027, 1, 1),
+        summary: 'Second',
+      );
+      final request = ServiceCalendar.loadHolidayYears(
+        start: DateTime(2026, 12, 27),
+        end: DateTime(2027, 1, 3),
+        loadYear: (year) {
+          calls.add(year);
+          return year == 2026 ? a.future : b.future;
+        },
+      );
+      expect(calls, [2026, 2027]);
+      b.complete([second]);
+      a.complete([first]);
+      expect(await request, [first, second]);
+    },
+  );
+  test('empty range does not invoke the loader', () async {
+    final rows = await ServiceCalendar.loadHolidayYears(
+      start: DateTime(2026),
+      end: DateTime(2026),
+      loadYear: (_) => throw StateError('unexpected query'),
+    );
+    expect(rows, isEmpty);
+  });
+  for (final synchronous in [true, false]) {
+    test(
+      'year failure propagates without unhandled errors ($synchronous)',
+      () async {
+        final request = ServiceCalendar.loadHolidayYears(
+          start: DateTime(2026, 12),
+          end: DateTime(2027, 2),
+          loadYear: (year) {
+            if (year == 2026) {
+              if (synchronous) throw StateError('holiday failure');
+              return Future.error(StateError('holiday failure'));
+            }
+            return Future.value([]);
+          },
+        );
+        await expectLater(request, throwsStateError);
+      },
+    );
+  }
+  test(
+    'range loader does not add a second cache over the existing yearly cache',
+    () async {
+      var reads = 0;
+      Future<List<CalendarHolidayRecord>> load(int _) async {
+        reads++;
+        return [];
+      }
+
+      for (var i = 0; i < 2; i++) {
+        await ServiceCalendar.loadHolidayYears(
+          start: DateTime(2026, 10),
+          end: DateTime(2026, 11),
+          loadYear: load,
+        );
+      }
+      expect(reads, 2);
+    },
+  );
+}

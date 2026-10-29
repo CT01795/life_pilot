@@ -1,11 +1,15 @@
-import 'dart:collection';
-
 import 'package:life_pilot/game/model_question_bank.dart';
 import 'package:life_pilot/game/service_game.dart' show ServiceGame;
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 
 enum QuestionStatusFilter { all, active, inactive }
+
+typedef _QuestionQuery = ({
+  String keyword,
+  String? group,
+  QuestionStatusFilter status,
+});
 
 /// Owns question-list state and operations; navigation and messages stay in View.
 class ControllerGameMyQuestions extends SafeChangeNotifier {
@@ -33,9 +37,13 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
   String _appliedKeyword = '';
   String? _selectedGroup;
   QuestionStatusFilter _statusFilter = QuestionStatusFilter.all;
+  _QuestionQuery? _loadingQuery;
+  _QuestionQuery? _loadedQuery;
+  _QuestionQuery get _query =>
+      (keyword: _appliedKeyword, group: _selectedGroup, status: _statusFilter);
 
-  List<MyGameQuestion> get questions => UnmodifiableListView(_questions);
-  List<String> get groups => UnmodifiableListView(_groups);
+  List<MyGameQuestion> get questions => _questions;
+  List<String> get groups => _groups;
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
   bool get hasLoaded => _hasLoaded;
@@ -69,27 +77,35 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
   /// Null means the request was superseded or the controller was disposed.
   Future<bool?> load({bool append = false, bool refreshGroups = false}) async {
     if (notifierDisposed) return null;
-    if (!append && _isLoading && _hasLoaded) return true;
-    if (append && (_isLoading || _isLoadingMore || !hasMore)) return true;
+    final query = _query;
+    if (!append && _isLoading && _loadingQuery == query) return true;
+    if (append &&
+        (_isLoading || _isLoadingMore || !hasMore || _loadedQuery != query)) {
+      return true;
+    }
     final fetchGroups =
         !append && (refreshGroups || !_hasGroupCache || _groupsDirty);
     final groupRevision = _groupRevision;
     final generation = append ? _loadGeneration : ++_loadGeneration;
+    final offset = append ? _questions.length : 0;
     if (append) {
       _isLoadingMore = true;
     } else {
+      _loadingQuery = query;
+      _isLoadingMore = false;
       _isLoading = true;
       _hasError = false;
     }
     notifyListeners();
     try {
+      if (notifierDisposed || generation != _loadGeneration) return null;
       final results = await Future.wait<Object>([
         _service.fetchMyQuestions(
           gameName: gameName,
-          keyword: _appliedKeyword,
-          group: _selectedGroup,
-          status: _statusFilter.name,
-          offset: append ? _questions.length : 0,
+          keyword: query.keyword,
+          group: query.group,
+          status: query.status.name,
+          offset: offset,
         ),
         fetchGroups
             ? _service.fetchMyQuestionGroupsForManagement(gameName: gameName)
@@ -98,26 +114,33 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
       if (notifierDisposed || generation != _loadGeneration) return null;
       var page = results[0] as MyGameQuestionPage;
       final groups = results[1] as List<String>;
-      if (!append &&
-          _selectedGroup != null &&
-          !groups.contains(_selectedGroup)) {
-        _selectedGroup = null;
+      var effectiveQuery = query;
+      if (!append && query.group != null && !groups.contains(query.group)) {
+        if (_query == query) _selectedGroup = null;
+        effectiveQuery = (
+          keyword: query.keyword,
+          group: null,
+          status: query.status,
+        );
         page = await _service.fetchMyQuestions(
           gameName: gameName,
-          keyword: _appliedKeyword,
-          status: _statusFilter.name,
+          keyword: query.keyword,
+          status: query.status.name,
         );
         if (notifierDisposed || generation != _loadGeneration) return null;
       }
-      _questions = append ? [..._questions, ...page.questions] : page.questions;
+      _questions = List.unmodifiable(
+        append ? _questions.followedBy(page.questions) : page.questions,
+      );
       _totalCount = page.totalCount;
       _pageHasMore = page.hasMore;
-      _groups = groups;
+      if (!identical(groups, _groups)) _groups = List.unmodifiable(groups);
       if (fetchGroups) {
         _hasGroupCache = true;
         _groupsDirty = groupRevision != _groupRevision;
       }
       _hasLoaded = true;
+      _loadedQuery = effectiveQuery;
       return true;
     } catch (error, stackTrace) {
       if (notifierDisposed || generation != _loadGeneration) return null;
@@ -137,6 +160,7 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
       return false;
     } finally {
       if (!notifierDisposed && generation == _loadGeneration) {
+        if (!append) _loadingQuery = null;
         _isLoading = false;
         _isLoadingMore = false;
         notifyListeners();

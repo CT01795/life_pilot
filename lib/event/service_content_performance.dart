@@ -31,6 +31,8 @@ class ServiceContentPerformance {
     final elapsed = Stopwatch()..start();
     final normalizedOwner = owner.toLowerCase();
     final rows = await readAllPagedRows(
+      // ModelContentPerformance takes immutable copies immediately below.
+      copyRows: false,
       shouldContinue: shouldContinue,
       fetch: (offset, limit) async {
         if (supabase.auth.currentUser?.email?.toLowerCase() !=

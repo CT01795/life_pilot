@@ -131,8 +131,21 @@ class ControllerDashboard extends SafeChangeNotifier {
     }
   }
 
-  Future<DashboardSetting> _loadSettings(String account, int generation) =>
-      _settingsLoad = _readSettings(account, generation, ++_settingsRequest);
+  Future<DashboardSetting> _loadSettings(String account, int generation) {
+    if (!_isCurrentRequest(account, generation)) return Future.value(_setting);
+    final completion = Completer<DashboardSetting>();
+    final request = completion.future;
+    // Publish before repository callbacks can start a newer account/refresh.
+    _settingsLoad = request;
+    unawaited(
+      _readSettings(account, generation, ++_settingsRequest).then<void>(
+        (setting) => completion.complete(setting),
+        onError: (Object error, StackTrace stack) =>
+            completion.completeError(error, stack),
+      ),
+    );
+    return request;
+  }
 
   Future<DashboardSetting> _readSettings(
     String account,
@@ -141,6 +154,7 @@ class ControllerDashboard extends SafeChangeNotifier {
   ) async {
     var setting = _setting;
     try {
+      if (!_isCurrentRequest(account, generation)) return setting;
       final loaded = await repository.loadDashboardSetting(account: account);
       setting = loaded.copyWith(language: localeProvider.locale.languageCode);
     } catch (error, stackTrace) {
@@ -240,6 +254,7 @@ class ControllerDashboard extends SafeChangeNotifier {
     notifyListeners();
 
     try {
+      if (!_isCurrentRequest(account, generation)) return;
       final todayEventsFuture =
           _loadSection(
             DashboardSection.todaySchedule,
@@ -361,6 +376,7 @@ class ControllerDashboard extends SafeChangeNotifier {
     notifyListeners();
 
     try {
+      if (!_isCurrentRequest(account, generation)) return;
       final todayEventsFuture =
           _loadSection(
             DashboardSection.todaySchedule,

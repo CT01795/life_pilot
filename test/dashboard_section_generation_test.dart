@@ -20,6 +20,8 @@ DashboardSetting _setting() => DashboardSetting(
 );
 
 class _Repository extends DashboardRepository {
+  int settingsReads = 0;
+  void Function()? onSettingsRead;
   DashboardSection? target;
   bool gateSettings = false;
   final settings = <Completer<DashboardSetting>>[];
@@ -39,9 +41,11 @@ class _Repository extends DashboardRepository {
 
   @override
   Future<DashboardSetting> loadDashboardSetting({required String account}) {
+    settingsReads++;
     if (!gateSettings) return Future.value(_setting());
     final completer = Completer<DashboardSetting>();
     settings.add(completer);
+    onSettingsRead?.call();
     return completer.future;
   }
 
@@ -82,6 +86,63 @@ void main() {
     controller.dispose();
     locale.dispose();
   });
+
+  for (final all in [true, false]) {
+    test(
+      'account change during batch start prevents all obsolete reads ($all)',
+      () async {
+        var changed = false;
+        controller.addListener(() {
+          if (!changed && controller.loading) {
+            changed = true;
+            controller.switchAccount('other');
+          }
+        });
+        await (all
+            ? controller.refreshAll(account: 'user')
+            : controller.refreshCore(account: 'user'));
+        expect(repository.calls, isEmpty);
+        expect(repository.settingsReads, 0);
+        expect(controller.loading, isFalse);
+      },
+    );
+  }
+  for (final changeAccount in [true, false]) {
+    test(
+      'settings waiter follows synchronous newer refresh (new account: $changeAccount)',
+      () async {
+        repository.gateSettings = true;
+        Future<void>? newer;
+        var started = false;
+        final nextAccount = changeAccount ? 'other' : 'user';
+        repository.onSettingsRead = () {
+          if (started) return;
+          started = true;
+          if (changeAccount) controller.switchAccount(nextAccount);
+          newer = controller.refreshCore(account: nextAccount);
+        };
+        final first = controller.refreshAll(account: 'user');
+        expect(repository.settings.length, 2);
+        var settingsReady = false;
+        final waiting = controller
+            .waitForSettings(account: nextAccount)
+            .then((_) => settingsReady = true);
+        repository.settings.first.complete(
+          _setting().copyWith(recommendEventCity: 'old'),
+        );
+        await first;
+        expect(settingsReady, isFalse);
+        repository.settings.last.complete(
+          _setting().copyWith(recommendEventCity: 'new'),
+        );
+        await newer;
+        await waiting;
+        expect(controller.setting.recommendEventCity, 'new');
+        expect(settingsReady, isTrue);
+        expect(controller.loading, isFalse);
+      },
+    );
+  }
 
   for (final section in DashboardSection.values) {
     Future<void> refreshSection() => switch (section) {

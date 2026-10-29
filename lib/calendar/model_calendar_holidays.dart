@@ -11,6 +11,17 @@ class CalendarHolidayRecord {
 
 /// Holiday data projection only; requests, caching and ID generation stay out.
 class ModelCalendarHolidays {
+  /// Calendar-day range: inclusive start and exclusive end, matching projection.
+  static List<int> requiredYears(DateTime start, DateTime end) {
+    final first = DateTime(start.year, start.month, start.day);
+    final until = DateTime(end.year, end.month, end.day);
+    if (!until.isAfter(first)) return const [];
+    final last = until.subtract(const Duration(days: 1));
+    return List.unmodifiable([
+      for (var year = first.year; year <= last.year; year++) year,
+    ]);
+  }
+
   static List<CalendarHolidayRecord> parseRows(Iterable<dynamic> items) {
     final records = <CalendarHolidayRecord>[];
     for (final item in items) {

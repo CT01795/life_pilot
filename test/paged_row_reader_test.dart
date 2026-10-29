@@ -1,8 +1,81 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/utils/paged_row_reader.dart';
+import 'package:life_pilot/event/model_content_performance.dart';
 
 void main() {
+  test('full reader copies typed rows by default', () async {
+    final source = <String, dynamic>{'id': 'a', 'name': 'Original'};
+    final rows = await readAllPagedRows(
+      fetch: (offset, _) async => offset == 0 ? [source] : [],
+    );
+    expect(rows.single, isNot(same(source)));
+    source['name'] = 'Changed';
+    expect(rows.single['name'], 'Original');
+  });
+  test(
+    'owned typed rows skip intermediate copy and model still takes a snapshot',
+    () async {
+      final source = <String, dynamic>{
+        'id': 'a',
+        'name': 'Original',
+        'page_views': 2,
+      };
+      final offsets = <int>[];
+      final rows = await readAllPagedRows(
+        copyRows: false,
+        fetch: (offset, _) async {
+          offsets.add(offset);
+          return offset == 0 ? [source] : [];
+        },
+      );
+      expect(rows.single, same(source));
+      expect(offsets, [0, 1]);
+      final model = ModelContentPerformance(rows);
+      source['name'] = 'Changed';
+      source['page_views'] = 99;
+      expect(model.items.single.name, 'Original');
+      expect(model.rows.single['name'], 'Original');
+      expect(model.totalFor(ContentPerformanceMetric.pageViews), 2);
+      expect(() => model.rows.single.clear(), throwsUnsupportedError);
+    },
+  );
+  test(
+    'untyped maps still convert to typed rows when copy is disabled',
+    () async {
+      final source = <Object?, Object?>{'id': 'a', 'name': 'Original'};
+      final rows = await readAllPagedRows(
+        copyRows: false,
+        fetch: (offset, _) async => offset == 0 ? [source] : [],
+      );
+      expect(rows.single, isA<Map<String, dynamic>>());
+      expect(rows.single, isNot(same(source)));
+      source['name'] = 'Changed';
+      expect(rows.single['name'], 'Original');
+    },
+  );
+  test('copy-free full read retains duplicate-row protection', () async {
+    final source = <String, dynamic>{'id': 'a'};
+    await expectLater(
+      readAllPagedRows(copyRows: false, fetch: (_, _) async => [source]),
+      throwsStateError,
+    );
+  });
+  test('copy-free full read discards data when its scope expires', () async {
+    var active = true;
+    final rows = await readAllPagedRows(
+      copyRows: false,
+      shouldContinue: () => active,
+      fetch: (_, _) async {
+        active = false;
+        return [
+          <String, dynamic>{'id': 'a'},
+        ];
+      },
+    );
+    expect(rows, isEmpty);
+  });
+
   test('expired scope never starts a request', () async {
     var calls = 0;
     final rows = await readPagedRows(
