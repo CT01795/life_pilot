@@ -23,6 +23,7 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
+import 'package:life_pilot/utils/model_weather_forecast_window.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/utils/service/network_availability.dart';
 import 'package:life_pilot/utils/service/service_notification/notification_overlay.dart';
@@ -32,6 +33,7 @@ import 'package:uuid/uuid.dart';
 
 class ControllerCalendar extends SafeChangeNotifier {
   final EventTrackingService _tracking;
+  final Future<bool> Function() _networkAvailable;
   late ModelCalendar _modelCalendar;
   late ServiceEvent _serviceEvent;
   late final ServiceCalendarMonth _monthLoader;
@@ -99,7 +101,9 @@ class ControllerCalendar extends SafeChangeNotifier {
     required this.closeText,
     EventTrackingService? eventTracking,
     ServiceCalendarMonth? monthLoader,
-  }) : _tracking = eventTracking ?? EventTrackingService() {
+    Future<bool> Function()? networkAvailable,
+  }) : _tracking = eventTracking ?? EventTrackingService(),
+       _networkAvailable = networkAvailable ?? hasNetworkConnection {
     _modelCalendar = modelCalendar;
     _serviceEvent = serviceEvent;
     _monthLoader =
@@ -207,7 +211,7 @@ class ControllerCalendar extends SafeChangeNotifier {
 
     // ✅ STOP UI card 不再觸發 weather
     final ordered = ModelCalendar.orderedEvents(result);
-    unawaited(_warmUpWeather(ordered));
+    unawaited(_warmUpWeather(ordered, shouldContinue: isCurrent));
     _modelCalendar.cacheMonthEvents(targetMonth, ordered);
     _previewMonths.remove(monthKey);
     final isCurrentMonth = currentMonth.toMonthKey() == monthKey;
@@ -219,50 +223,76 @@ class ControllerCalendar extends SafeChangeNotifier {
     }
   }
 
-  Future<void> _warmUpWeather(List<EventItem> events) async {
-    if (!await hasNetworkConnection()) return;
-    final context = app_navigator.navigatorKey.currentContext;
-    if (context == null) return;
+  Future<void> _warmUpWeather(
+    List<EventItem> events, {
+    bool Function()? shouldContinue,
+  }) async {
+    if (events.isEmpty) return;
+    final generation = _dataGeneration;
+    final scope = _currentDataScopeKey(auth);
+    var reading = true;
+    bool isCurrent() =>
+        reading &&
+        _isCurrentDataScope(generation, scope) &&
+        _dataScopeKey == scope &&
+        shouldContinue?.call() != false;
+    try {
+      if (!isCurrent() || !await _networkAvailable() || !isCurrent()) return;
+      final context = app_navigator.navigatorKey.currentContext;
+      if (context == null || !context.mounted) return;
+      final loc = AppLocalizations.of(context);
+      if (loc == null) return;
 
-    final loc = AppLocalizations.of(context);
-    if (loc == null) return;
+      final safeList = List<EventItem>.from(events);
+      final seenLocations = <String>{};
+      final weatherCandidates = <EventViewModel>[];
+      const maxPreloadedLocations = 8;
+      final window = ModelWeatherForecastWindow(DateTime.now());
 
-    final safeList = List<EventItem>.from(events); // ⭐ 複製！
-    final seenLocations = <String>{};
-    final weatherCandidates = <EventViewModel>[];
-    const maxPreloadedLocations = 8;
-    final today = DateTimeFormatter.dateOnly(DateTime.now());
-    final rangeEndExclusive = today.add(const Duration(days: 7));
-
-    for (final e in safeList) {
-      final startDate = e.startDate;
-      if (startDate == null) continue;
-      final eventStart = DateTimeFormatter.dateOnly(startDate);
-      final eventEnd = DateTimeFormatter.dateOnly(e.endDate ?? startDate);
-      if (_tableName != TableNames.recommendPlaces &&
-          (!eventStart.isBefore(rangeEndExclusive) ||
-              eventEnd.isBefore(today))) {
-        continue;
+      for (final event in safeList) {
+        if (!isCurrent()) return;
+        final startDate = event.startDate;
+        if (startDate == null) continue;
+        if (_tableName != TableNames.recommendPlaces &&
+            !window.includes(startDate: startDate, endDate: event.endDate)) {
+          continue;
+        }
+        final view = buildViewModel(event: event, loc: loc);
+        if (view.locationDisplay.isEmpty ||
+            !seenLocations.add(view.locationDisplay)) {
+          continue;
+        }
+        weatherCandidates.add(view);
+        if (seenLocations.length >= maxPreloadedLocations) break;
       }
-
-      final vm = buildViewModel(event: e, loc: loc);
-
-      if (vm.locationDisplay.isEmpty ||
-          !seenLocations.add(vm.locationDisplay)) {
-        continue;
+      final requested = await Future.wait(
+        weatherCandidates.map(
+          (event) => Future<bool>.sync(() {
+            if (!isCurrent()) return false;
+            return _serviceWeather.preloadWeather(
+              [event],
+              tableName: _tableName,
+              shouldContinue: isCurrent,
+            );
+          }),
+        ),
+        eagerError: true,
+      );
+      if (isCurrent() && requested.any((value) => value)) notifyListeners();
+    } catch (error, stackTrace) {
+      // Optional enrichment must not fail the month/day load or leak an
+      // unhandled error from the unawaited month preload.
+      if (isCurrent()) {
+        logger.w(
+          'Calendar weather preload failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }
-
-      weatherCandidates.add(vm);
-      if (seenLocations.length >= maxPreloadedLocations) break;
+    } finally {
+      // In-flight HTTP may finish, but this owner can no longer request more.
+      reading = false;
     }
-
-    final requested = await Future.wait(
-      weatherCandidates.map(
-        (event) =>
-            _serviceWeather.preloadWeather([event], tableName: _tableName),
-      ),
-    );
-    if (requested.any((value) => value)) notifyListeners();
   }
 
   Future<void> preloadWeatherForDay(List<EventItem> events) async {

@@ -17,6 +17,8 @@ import 'package:life_pilot/utils/text_normalization.dart';
 
 class ControllerBusinessPlan extends SafeChangeNotifier {
   final ServiceBusinessPlan _service;
+  final Duration requestTimeout;
+  final Duration historyTimeout;
   ControllerAuth? auth;
   String? _accountKey;
   int _accountGeneration = 0;
@@ -36,12 +38,24 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   ControllerBusinessPlan({
     required ServiceBusinessPlan service,
     required this.auth,
+    this.requestTimeout = const Duration(seconds: 30),
+    this.historyTimeout = const Duration(seconds: 10),
   }) : _service = service,
        _accountKey = normalizeText(auth?.currentAccount);
 
   String? currentPlanId;
   ModelBusinessPlan? currentPlan;
-  List<ModelBusinessPlan> plans = [];
+  List<ModelBusinessPlan> _plans = const [];
+  List<ModelBusinessPlan>? _visiblePlans;
+  List<ModelBusinessPlan> get plans => _plans;
+
+  // Own the list structure so callers and service responses cannot silently
+  // change membership/order without invalidating the filtered snapshot.
+  set plans(List<ModelBusinessPlan> value) {
+    _plans = List.unmodifiable(value);
+    _visiblePlans = null;
+  }
+
   List<ModelPlanTemplate> templates = [];
 
   int sectionIndex = 0;
@@ -58,7 +72,10 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   bool isLoadingMorePlans = false;
   bool hasMorePlans = false;
   DateTime? _plansStartDate;
-  final Set<String> selectedStatuses = {'in_progress', 'not_started'};
+  final Set<String> _selectedStatuses = {'in_progress', 'not_started'};
+  Set<String>? _selectedStatusesSnapshot;
+  Set<String> get selectedStatuses =>
+      _selectedStatusesSnapshot ??= Set.unmodifiable(_selectedStatuses);
 
   // 單個 question 的 ValueNotifier
   final Map<String, ValueNotifier<String>> _answerNotifiers = {};
@@ -207,7 +224,9 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     safeNotify();
     try {
       if (notifierDisposed || generation != _accountGeneration) return;
-      final loadedTemplates = await _service.fetchTemplates();
+      final loadedTemplates = await _service.fetchTemplates().timeout(
+        requestTimeout,
+      );
       if (!notifierDisposed && generation == _accountGeneration) {
         templates = List.unmodifiable(loadedTemplates);
       }
@@ -243,11 +262,9 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
       final dateTo = DateTime(now.year, now.month, now.day + 1);
       final dateFrom = dateTo.subtract(const Duration(days: 360));
       if (!_isPlanListCurrent(generation, revision)) return;
-      final loadedPlans = await _service.fetchPlans(
-        user: user,
-        dateFrom: dateFrom,
-        dateTo: dateTo,
-      );
+      final loadedPlans = await _service
+          .fetchPlans(user: user, dateFrom: dateFrom, dateTo: dateTo)
+          .timeout(requestTimeout);
       if (!_isPlanListCurrent(generation, revision)) return;
       plans = loadedPlans;
       _plansStartDate = dateFrom;
@@ -282,7 +299,9 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     safeNotify();
     try {
       if (!_isPlanListCurrent(generation, revision)) return;
-      final hasMore = await _service.hasPlansBefore(user: user, before: before);
+      final hasMore = await _service
+          .hasPlansBefore(user: user, before: before)
+          .timeout(historyTimeout);
       if (_isPlanListCurrent(generation, revision)) hasMorePlans = hasMore;
     } catch (error) {
       if (_isPlanListCurrent(generation, revision)) planHistoryError = error;
@@ -311,8 +330,8 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     );
   }
 
-  List<ModelBusinessPlan> get visiblePlans =>
-      plans.where((plan) => selectedStatuses.contains(plan.status)).toList();
+  List<ModelBusinessPlan> get visiblePlans => _visiblePlans ??=
+      ModelBusinessPlanList.visible(_plans, _selectedStatuses);
 
   bool get hasPlanHistoryAction =>
       hasMorePlans ||
@@ -322,9 +341,12 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
       loadMorePlansError != null;
 
   void toggleStatus(String status) {
-    selectedStatuses.contains(status)
-        ? selectedStatuses.remove(status)
-        : selectedStatuses.add(status);
+    if (notifierDisposed) return;
+    _selectedStatuses.contains(status)
+        ? _selectedStatuses.remove(status)
+        : _selectedStatuses.add(status);
+    _selectedStatusesSnapshot = null;
+    _visiblePlans = null;
     safeNotify();
   }
 
@@ -347,10 +369,9 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     safeNotify();
     try {
       if (!_isPlanListCurrent(generation, revision)) return;
-      final latestOlder = await _service.latestPlanDateBefore(
-        user: user,
-        before: before,
-      );
+      final latestOlder = await _service
+          .latestPlanDateBefore(user: user, before: before)
+          .timeout(requestTimeout);
       if (!_isPlanListCurrent(generation, revision)) return;
       if (latestOlder == null) {
         hasMorePlans = false;
@@ -362,11 +383,9 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
         latestOlder.day + 1,
       );
       final dateFrom = dateTo.subtract(const Duration(days: 360));
-      final loadedPlans = await _service.fetchPlans(
-        user: user,
-        dateFrom: dateFrom,
-        dateTo: dateTo,
-      );
+      final loadedPlans = await _service
+          .fetchPlans(user: user, dateFrom: dateFrom, dateTo: dateTo)
+          .timeout(requestTimeout);
       if (!_isPlanListCurrent(generation, revision)) return;
       plans = [...plans, ...loadedPlans];
       // Advance only after a successful page read, so failures can retry the
@@ -443,13 +462,20 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     if (currentPlan?.id == id) currentPlan = apply(currentPlan!);
     final index = plans.indexWhere((item) => item.id == id);
     if (index >= 0) {
-      plans[index] = apply(plans[index]);
+      _replacePlanSummary(index, apply(plans[index]));
       _sortAndDeduplicatePlans();
     }
   }
 
   void _sortAndDeduplicatePlans() {
     plans = ModelBusinessPlanList.ordered(plans);
+  }
+
+  void _replacePlanSummary(int index, ModelBusinessPlan plan) {
+    if (identical(_plans[index], plan)) return;
+    final updated = List<ModelBusinessPlan>.of(_plans);
+    updated[index] = plan;
+    plans = updated;
   }
 
   Future<void> loadPlanDetailIfNeeded(String inputPlanId) async {
@@ -488,7 +514,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
         throw StateError('Plan detail request superseded');
       }
       return _service.fetchPlanDetail(planId: planId);
-    });
+    }, timeout: requestTimeout);
     if (!startedRead && pendingStateChanged) safeNotify();
     try {
       final plan = await request;
@@ -624,7 +650,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     final active = currentPlan;
     if (active != null && active.id == planId) currentPlan = apply(active);
     final index = plans.indexWhere((plan) => plan.id == planId);
-    if (index >= 0) plans[index] = apply(plans[index]);
+    if (index >= 0) _replacePlanSummary(index, apply(plans[index]));
   }
 
   Future<void> commitCurrentAnswer(String answer) async {

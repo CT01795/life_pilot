@@ -2,6 +2,14 @@ import 'package:life_pilot/business_plan/model_business_plan.dart';
 
 /// List policy only: no service, UI, account state or retained result cache.
 class ModelBusinessPlanList {
+  /// Keep the already ordered list's relative order; filtering must not sort
+  /// or alter the source, and completed snapshots cannot be edited by Views.
+  static List<ModelBusinessPlan> visible(
+    Iterable<ModelBusinessPlan> source,
+    Set<String> statuses,
+  ) =>
+      List.unmodifiable(source.where((plan) => statuses.contains(plan.status)));
+
   static int _statusRank(String status) => switch (status) {
     'in_progress' => 0,
     'not_started' => 1,
