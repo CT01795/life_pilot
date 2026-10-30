@@ -99,7 +99,7 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
-  /// No description provided for @subscriptionConfigurationMissing.
+  /// Shown when the subscription configuration is missing or invalid
   ///
   /// In en, this message translates to:
   /// **'No applicable allowance is configured. Read only: adding, editing and deleting are unavailable. Contact the administrator.'**
@@ -2208,8 +2208,14 @@ abstract class AppLocalizations {
   /// Label for adminPricingDeleteInUse
   ///
   /// In en, this message translates to:
-  /// **'This pricing version is still used by a subscription or entitlement and cannot be deleted.'**
+  /// **'This version has been used and cannot be edited or deleted. Create a new version.'**
   String get adminPricingDeleteInUse;
+
+  /// Pricing type and price validation hint
+  ///
+  /// In en, this message translates to:
+  /// **'Free plans cost 0; paid plans must cost more than 0.'**
+  String get adminPricingPriceRule;
 
   /// Label for adminPricingDeleteTitle
   ///

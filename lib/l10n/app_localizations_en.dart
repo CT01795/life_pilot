@@ -1098,7 +1098,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPricingDeleted => 'Pricing version deleted.';
 
   @override
-  String get adminPricingDeleteInUse => 'This pricing version is still used by a subscription or entitlement and cannot be deleted.';
+  String get adminPricingDeleteInUse => 'This version has been used and cannot be edited or deleted. Create a new version.';
+
+  @override
+  String get adminPricingPriceRule => 'Free plans cost 0; paid plans must cost more than 0.';
 
   @override
   String get adminPricingDeleteTitle => 'Delete pricing version';

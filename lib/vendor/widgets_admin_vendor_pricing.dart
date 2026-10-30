@@ -5,6 +5,7 @@ import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/vendor/service_vendor_account.dart';
 import 'package:life_pilot/vendor/vendor_plan_labels.dart';
 import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/subscription/repository_pricing_version_guard.dart';
 
 class AdminVendorPricing extends StatefulWidget {
   const AdminVendorPricing({super.key});
@@ -114,13 +115,40 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
       _resetPricingForm();
       setState(() => _plans = _service.fetchPricingPlans());
     } catch (error) {
-      if (mounted) _message(loc.adminPricingCreateFailed(error.toString()));
+      if (mounted) {
+        _message(
+          error.toString().contains('pricing_version_in_use')
+              ? loc.adminPricingDeleteInUse
+              : loc.adminPricingCreateFailed(error.toString()),
+        );
+      }
     } finally {
       if (mounted) setState(() => _savingPricing = false);
     }
   }
 
-  void _editPricing(VendorPricingPlan plan) {
+  Future<bool> _canChange(VendorPricingPlan plan) async {
+    if (_savingPricing) return false;
+    final loc = AppLocalizations.of(context)!;
+    setState(() => _savingPricing = true);
+    try {
+      final locked = await RepositoryPricingVersionGuard().isLocked(
+        plan.id,
+        vendor: true,
+      );
+      if (!mounted) return false;
+      if (locked) _message(loc.adminPricingDeleteInUse);
+      return !locked;
+    } catch (error) {
+      if (mounted) _message(loc.adminPricingCreateFailed(error.toString()));
+      return false;
+    } finally {
+      if (mounted) setState(() => _savingPricing = false);
+    }
+  }
+
+  Future<void> _editPricing(VendorPricingPlan plan) async {
+    if (!await _canChange(plan) || !mounted) return;
     setState(() {
       _editingPricingId = plan.id;
       _editingVersionName = plan.versionName;
@@ -149,6 +177,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
   }
 
   Future<void> _deletePricing(VendorPricingPlan plan) async {
+    if (!await _canChange(plan) || !mounted) return;
     final loc = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,

@@ -1098,7 +1098,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminPricingDeleted => '料金バージョンを削除しました。';
 
   @override
-  String get adminPricingDeleteInUse => 'この料金バージョンは契約または権利で使用中のため削除できません。';
+  String get adminPricingDeleteInUse => '使用済みのバージョンは変更・削除できません。新しいバージョンを作成してください。';
+
+  @override
+  String get adminPricingPriceRule => '無料プランは0、有料プランは0より大きい料金を設定してください。';
 
   @override
   String get adminPricingDeleteTitle => '料金バージョンを削除';

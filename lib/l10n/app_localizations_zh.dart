@@ -1098,7 +1098,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminPricingDeleted => '收費版本已刪除。';
 
   @override
-  String get adminPricingDeleteInUse => '此收費版本仍被訂閱或權益使用，無法刪除。';
+  String get adminPricingDeleteInUse => '此版本已被使用，無法修改或刪除。請建立新版本。';
+
+  @override
+  String get adminPricingPriceRule => '免費版價格為 0；付費版價格須大於 0。';
 
   @override
   String get adminPricingDeleteTitle => '刪除收費版本';
