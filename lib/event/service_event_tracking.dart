@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/service/service_external_link.dart';
@@ -13,11 +14,40 @@ class EventTrackingService {
   EventTrackingService({
     ServiceExternalLink? links,
     EventCounterWriter? counterWriter,
+    Object? Function()? accountScope,
   }) : _links = links ?? ServiceExternalLink(),
-       _counterWriter = counterWriter;
+       _counterWriter = counterWriter,
+       _accountScope = accountScope ?? (() => supabase.auth.currentUser?.id);
 
   final ServiceExternalLink _links;
   final EventCounterWriter? _counterWriter;
+  final Object? Function() _accountScope;
+  final _pendingOpens = <Object, Future<bool>>{};
+
+  Future<bool> _openOnce(Object key, Future<bool> Function() open) {
+    final active = _pendingOpens[key];
+    if (active != null) return active;
+    final completion = Completer<bool>();
+    final request = completion.future;
+    _pendingOpens[key] = request;
+    void release() {
+      if (identical(_pendingOpens[key], request)) _pendingOpens.remove(key);
+    }
+
+    unawaited(
+      Future<bool>.sync(open).then<void>(
+        (value) {
+          release();
+          completion.complete(value);
+        },
+        onError: (Object error, StackTrace stack) {
+          release();
+          completion.completeError(error, stack);
+        },
+      ),
+    );
+    return request;
+  }
 
   Future<bool> launchUrlLink(String? url) => _links.openUrl(url);
   Future<bool> onOpenMap(String? city, String? location) =>
@@ -55,14 +85,18 @@ class EventTrackingService {
     required String eventId,
     required String eventName,
     required String? url,
-  }) async {
-    if (!await launchUrlLink(url)) return false;
-    await incrementEventCounter(
-      eventId: eventId,
-      eventName: eventName,
-      column: 'page_views',
-    );
-    return true;
+  }) {
+    final scope = _accountScope();
+    return _openOnce((scope, 'link', eventId, eventName, url), () async {
+      if (!await launchUrlLink(url)) return false;
+      if (_accountScope() != scope) return true;
+      await incrementEventCounter(
+        eventId: eventId,
+        eventName: eventName,
+        column: 'page_views',
+      );
+      return true;
+    });
   }
 
   Future<bool> openEventMap({
@@ -70,13 +104,20 @@ class EventTrackingService {
     required String eventName,
     required String? city,
     required String? location,
-  }) async {
-    if (!await onOpenMap(city, location)) return false;
-    await incrementEventCounter(
-      eventId: eventId,
-      eventName: eventName,
-      column: 'card_clicks',
+  }) {
+    final scope = _accountScope();
+    return _openOnce(
+      (scope, 'map', eventId, eventName, city, location),
+      () async {
+        if (!await onOpenMap(city, location)) return false;
+        if (_accountScope() != scope) return true;
+        await incrementEventCounter(
+          eventId: eventId,
+          eventName: eventName,
+          column: 'card_clicks',
+        );
+        return true;
+      },
     );
-    return true;
   }
 }

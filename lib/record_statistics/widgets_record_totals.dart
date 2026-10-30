@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/record_statistics/controller_record_statistics.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
+import 'package:life_pilot/record_statistics/record_statistics_formats.dart';
 import 'package:life_pilot/record_statistics/page_record_statistics.dart';
 import 'package:life_pilot/record_statistics/service_record_statistics.dart';
 
@@ -91,11 +91,11 @@ class _WidgetsRecordTotalsState extends State<WidgetsRecordTotals> {
     builder: (context, _) {
       final loc = AppLocalizations.of(context)!;
       final points = widget.kind == RecordStatisticsKind.points;
-      final formatter = NumberFormat('#,##0.####', loc.localeName);
+      final formats = RecordStatisticsFormats.forLocale(loc.localeName);
       final data = controller.data;
       String value(num? number) => number == null
           ? '—'
-          : '${formatter.format(number)} ${points ? loc.pointsUnit : widget.currency ?? ''}'
+          : '${formats.value(number)} ${points ? loc.pointsUnit : widget.currency ?? ''}'
                 .trim();
       Widget row(String label, num? number) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),

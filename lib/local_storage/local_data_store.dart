@@ -19,6 +19,17 @@ class LocalDataStore {
   Future<Database>? _databaseFuture;
   final Map<String, Future<List<Map<String, dynamic>>>> _listCache = {};
   final Map<String, bool> _createAllowed = {};
+  final Map<String, bool> _deleteAllowed = {};
+
+  void setDeleteAllowed(String owner, bool allowed) {
+    _deleteAllowed[owner.toLowerCase()] = allowed;
+  }
+
+  void _assertDeleteAllowed(String owner) {
+    if (_deleteAllowed[owner.toLowerCase()] == false) {
+      throw StateError('LIFE_PILOT_QUOTA_CONFIGURATION_MISSING');
+    }
+  }
 
   void setCreateAllowed(String owner, bool allowed) {
     _createAllowed[owner.toLowerCase()] = allowed;
@@ -26,6 +37,7 @@ class LocalDataStore {
 
   void clearCreatePermission(String owner) {
     _createAllowed.remove(owner.toLowerCase());
+    _deleteAllowed.remove(owner.toLowerCase());
   }
 
   Future<Database> get _db async {
@@ -117,6 +129,7 @@ class LocalDataStore {
     LocalSyncState syncState = LocalSyncState.localOnly,
     String? originalCloudId,
   }) async {
+    _assertDeleteAllowed(owner);
     final database = await _db;
     await database.transaction((transaction) async {
       final record = _records.record(_recordKey(owner, resource, id));
@@ -207,6 +220,7 @@ class LocalDataStore {
     required String resource,
     required String id,
   }) async {
+    _assertDeleteAllowed(owner);
     final database = await _db;
     await database.transaction((transaction) async {
       final record = _records.record(_recordKey(owner, resource, id));
@@ -221,6 +235,7 @@ class LocalDataStore {
     required String owner,
     required Iterable<({String resource, String id})> records,
   }) async {
+    _assertDeleteAllowed(owner);
     final recordList = records.toList(growable: false);
     final database = await _db;
     await database.transaction((transaction) async {
@@ -249,6 +264,7 @@ class LocalDataStore {
   }
 
   Future<void> deleteAllRecords({required String owner}) async {
+    _assertDeleteAllowed(owner);
     final database = await _db;
     await database.transaction((transaction) async {
       await _records.delete(

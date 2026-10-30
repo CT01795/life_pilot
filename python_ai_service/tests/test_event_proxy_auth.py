@@ -366,6 +366,7 @@ class EventProxyAuthorizationTest(unittest.TestCase):
             subscription_cleanup_result,
             answer_cleanup_result,
             inactive_account_cleanup_result,
+            MagicMock(),
             marker_result,
         ]
 
@@ -373,7 +374,7 @@ class EventProxyAuthorizationTest(unittest.TestCase):
             cleaned = _cleanup_recommended_events_once_per_day()
 
         self.assertTrue(cleaned)
-        self.assertEqual(db.execute.call_count, 7)
+        self.assertEqual(db.execute.call_count, 8)
         executed_sql = [str(call.args[0]) for call in db.execute.call_args_list]
         self.assertIn("cleanup_recommended_events", executed_sql[2])
         self.assertIn("interval '1 year'", executed_sql[2])
@@ -388,7 +389,8 @@ class EventProxyAuthorizationTest(unittest.TestCase):
             executed_sql[4],
         )
         self.assertIn("cleanup_inactive_free_accounts", executed_sql[5])
-        self.assertIn("recommended_event_url", executed_sql[6])
+        self.assertIn("delete from public.weather_forecast_cache", executed_sql[6])
+        self.assertIn("recommended_event_url", executed_sql[7])
         db.commit.assert_called_once_with()
         db.close.assert_called_once_with()
 

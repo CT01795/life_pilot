@@ -12,12 +12,17 @@ class ControllerContentPerformance extends SafeChangeNotifier {
   final bool attractions;
   final ServiceContentPerformance service;
   final String? _owner;
+  String? _observedAccount;
   final Duration requestTimeout;
   int _personalDataRevision;
   int _request = 0;
   bool loading = false;
   Object? error;
   ModelContentPerformance? data;
+  bool loadingMore = false;
+  Object? moreError;
+  ContentPerformancePeriod? _loadedPeriod;
+  String _loadedKeyword = '';
   DateTime? selectedMonth;
   String keyword = '';
   RefreshRequestCoordinator _loads = RefreshRequestCoordinator();
@@ -29,16 +34,23 @@ class ControllerContentPerformance extends SafeChangeNotifier {
     this.requestTimeout = const Duration(seconds: 30),
   }) : service = service ?? ServiceContentPerformance(),
        _owner = auth.currentAccount,
+       _observedAccount = auth.currentAccount,
        _personalDataRevision = auth.personalDataRevision {
     auth.addListener(_authChanged);
   }
   void _authChanged() {
-    if (_owner != auth.currentAccount ||
+    if (notifierDisposed) return;
+    final account = auth.currentAccount;
+    if (_observedAccount != account ||
         _personalDataRevision != auth.personalDataRevision) {
       _request++;
+      _observedAccount = account;
       _loads = RefreshRequestCoordinator();
       _loadKey = null;
       data = null;
+      loadingMore = false;
+      moreError = null;
+      _loadedPeriod = null;
       error = null;
       loading = false;
       _personalDataRevision = auth.personalDataRevision;
@@ -83,6 +95,9 @@ class ControllerContentPerformance extends SafeChangeNotifier {
       return;
     }
     final request = ++_request;
+    loadingMore = false;
+    moreError = null;
+    _loadedPeriod = null;
     loading = true;
     data = null;
     error = null;
@@ -104,6 +119,8 @@ class ControllerContentPerformance extends SafeChangeNotifier {
           .timeout(requestTimeout);
       if (_isCurrentRequest(request)) {
         data = result;
+        _loadedPeriod = period;
+        _loadedKeyword = search;
       }
     } catch (failure, stack) {
       if (_isCurrentRequest(request)) {
@@ -130,6 +147,49 @@ class ControllerContentPerformance extends SafeChangeNotifier {
       request == _request &&
       _owner == auth.currentAccount &&
       _personalDataRevision == auth.personalDataRevision;
+
+  Future<void> loadMore() async {
+    final current = data;
+    final offset = current?.nextOffset;
+    final period = _loadedPeriod;
+    final request = _request;
+    if (loading ||
+        loadingMore ||
+        offset == null ||
+        period == null ||
+        !_isCurrentRequest(request)) {
+      return;
+    }
+    loadingMore = true;
+    moreError = null;
+    notifyListeners();
+    try {
+      if (!_isCurrentRequest(request)) return;
+      final page = await service
+          .readNextPage(
+            owner: _owner!,
+            attractions: attractions,
+            period: period,
+            keyword: _loadedKeyword,
+            offset: offset,
+            shouldContinue: () => _isCurrentRequest(request),
+          )
+          .timeout(requestTimeout);
+      if (!_isCurrentRequest(request)) return;
+      if (page == null ||
+          (page.nextOffset != null && page.nextOffset! <= offset)) {
+        throw StateError('Invalid performance continuation');
+      }
+      data = current!.appendPage(page);
+    } catch (failure) {
+      if (_isCurrentRequest(request)) moreError = failure;
+    } finally {
+      if (_isCurrentRequest(request)) {
+        loadingMore = false;
+        notifyListeners();
+      }
+    }
+  }
 
   Future<void> selectMonth(DateTime? month, {String? keyword}) async {
     if (notifierDisposed) return;

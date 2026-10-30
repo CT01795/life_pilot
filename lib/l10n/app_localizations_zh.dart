@@ -9,6 +9,9 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get subscriptionConfigurationMissing => '尚未設定適用額度，僅可讀取，無法新增、修改或刪除。請聯絡管理者。';
+
+  @override
   String get recordInputInvalid => '請填寫描述及大於 0 的數值。';
 
   @override

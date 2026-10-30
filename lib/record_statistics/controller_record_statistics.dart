@@ -15,6 +15,7 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
   final bool history;
   final Duration requestTimeout;
   final String? _owner;
+  String? _observedAccount;
   DataStorageLocation _storage;
   int _personalDataRevision;
   int _request = 0;
@@ -33,15 +34,19 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
     ServiceRecordStatistics? service,
   }) : service = service ?? ServiceRecordStatistics(),
        _owner = auth.currentAccount,
+       _observedAccount = auth.currentAccount,
        _storage = auth.preferredStorage,
        _personalDataRevision = auth.personalDataRevision {
     auth.addListener(_authChanged);
   }
   void _authChanged() {
-    if (_owner != auth.currentAccount ||
+    if (notifierDisposed) return;
+    final account = auth.currentAccount;
+    if (_observedAccount != account ||
         _storage != auth.preferredStorage ||
         _personalDataRevision != auth.personalDataRevision) {
       _request++;
+      _observedAccount = account;
       _loads = RefreshRequestCoordinator();
       _loadKey = null;
       data = null;

@@ -13,6 +13,7 @@ from sqlalchemy import MetaData, Table, select, text
 from sqlalchemy.dialects.postgresql import insert as postgres_insert
 
 from config import SessionLocal, engine
+from external.repository_weather import cleanup_expired_weather_cache
 from security.rate_limit import InMemoryRateLimiter
 from security.supabase_auth import require_supabase_admin, require_supabase_user
 
@@ -125,6 +126,7 @@ def _cleanup_recommended_events_once_per_day() -> bool:
                 "Removed %s inactive free account(s)",
                 inactive_account_count,
             )
+        cleanup_expired_weather_cache(db)
         db.execute(
             text(
                 "insert into public.recommended_event_url "

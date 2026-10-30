@@ -89,7 +89,10 @@ class _PageContentPerformanceState extends State<PageContentPerformance> {
               final month = controller.selectedMonth;
               return ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                itemCount: 2 + (data?.rows.length ?? 0),
+                itemCount:
+                    2 +
+                    (data?.rows.length ?? 0) +
+                    (data?.hasMore == true ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     return Padding(
@@ -225,6 +228,27 @@ class _PageContentPerformanceState extends State<PageContentPerformance> {
                       );
                     }
                     return WidgetsContentPerformanceOverview(data: data);
+                  }
+                  if (data != null && index == data.items.length + 2) {
+                    return Column(
+                      children: [
+                        if (controller.moreError != null)
+                          Text(loc.dashboardLoadFailed),
+                        TextButton.icon(
+                          onPressed: controller.loadingMore
+                              ? null
+                              : controller.loadMore,
+                          icon: const Icon(Icons.expand_more),
+                          label: Text(
+                            controller.loadingMore
+                                ? loc.loading
+                                : controller.moreError != null
+                                ? loc.retry
+                                : loc.clickHereToSeeMore,
+                          ),
+                        ),
+                      ],
+                    );
                   }
                   final item = data!.items[index - 2];
                   return WidgetsContentPerformanceCard(

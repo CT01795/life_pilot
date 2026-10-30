@@ -217,7 +217,7 @@ void main() {
     tearDown(() => client.dispose());
     test('inactive performance query sends no database request', () async {
       active = false;
-      final result = await ServiceContentPerformance().read(
+      final result = await ServiceContentPerformance(preferPageRpc: false).read(
         owner: 'one@example.com',
         attractions: false,
         shouldContinue: () => active,
@@ -230,11 +230,12 @@ void main() {
         '$attractions expired HTTP response does not trigger another page',
         () async {
           expireOnResponse = true;
-          final result = await ServiceContentPerformance().read(
-            owner: 'one@example.com',
-            attractions: attractions,
-            shouldContinue: () => active,
-          );
+          final result = await ServiceContentPerformance(preferPageRpc: false)
+              .read(
+                owner: 'one@example.com',
+                attractions: attractions,
+                shouldContinue: () => active,
+              );
           expect(requests.length, 1);
           expect(result.items, isEmpty);
           expect(result.totals.values.every((value) => value == 0), true);
@@ -245,13 +246,14 @@ void main() {
       'statistics-only search keeps author, date, keyword and six nonzero counters as mandatory groups',
       () async {
         final period = ContentPerformancePeriod(now: now);
-        final result = await ServiceContentPerformance().read(
-          owner: 'one@example.com',
-          attractions: true,
-          period: period,
-          keyword: '新北',
-          statisticsOnly: true,
-        );
+        final result = await ServiceContentPerformance(preferPageRpc: false)
+            .read(
+              owner: 'one@example.com',
+              attractions: true,
+              period: period,
+              keyword: '新北',
+              statisticsOnly: true,
+            );
         expect(result.items.map((item) => item.id), ['1', '2']);
         expect(
           requests.length,
@@ -281,7 +283,7 @@ void main() {
           now: now,
         );
         const keyword = 'Taipei,festival';
-        await ServiceContentPerformance().read(
+        await ServiceContentPerformance(preferPageRpc: false).read(
           owner: 'one@example.com',
           attractions: false,
           period: period,
@@ -310,11 +312,12 @@ void main() {
             month: DateTime(2026, 7),
             now: now,
           );
-          final data = await ServiceContentPerformance().read(
-            owner: 'one@example.com',
-            attractions: attractions,
-            period: period,
-          );
+          final data = await ServiceContentPerformance(preferPageRpc: false)
+              .read(
+                owner: 'one@example.com',
+                attractions: attractions,
+                period: period,
+              );
           expect(data.rows.length, 3);
           expect(data.totals['page_views'], 3);
           expect(requests.length, 3);
@@ -340,11 +343,9 @@ void main() {
       'active period applies current date filter before downloading any rows',
       () async {
         final period = ContentPerformancePeriod(now: now);
-        await ServiceContentPerformance().read(
-          owner: 'one@example.com',
-          attractions: false,
-          period: period,
-        );
+        await ServiceContentPerformance(
+          preferPageRpc: false,
+        ).read(owner: 'one@example.com', attractions: false, period: period);
         expect(
           requests.first.queryParameters['or'],
           '(${period.databaseFilter})',
@@ -354,7 +355,7 @@ void main() {
     test(
       'vendor metadata overview can still read all content without a period filter',
       () async {
-        await ServiceContentPerformance().read(
+        await ServiceContentPerformance(preferPageRpc: false).read(
           owner: 'one@example.com',
           attractions: false,
           includeSubmissionDetails: true,
@@ -370,10 +371,9 @@ void main() {
       'requests for a different logged-in author fail before querying',
       () async {
         await expectLater(
-          ServiceContentPerformance().read(
-            owner: 'other@example.com',
-            attractions: false,
-          ),
+          ServiceContentPerformance(
+            preferPageRpc: false,
+          ).read(owner: 'other@example.com', attractions: false),
           throwsStateError,
         );
         expect(requests, isEmpty);
@@ -384,10 +384,9 @@ void main() {
       () async {
         duplicate = true;
         await expectLater(
-          ServiceContentPerformance().read(
-            owner: 'one@example.com',
-            attractions: false,
-          ),
+          ServiceContentPerformance(
+            preferPageRpc: false,
+          ).read(owner: 'one@example.com', attractions: false),
           throwsStateError,
         );
         expect(requests.length, 2);

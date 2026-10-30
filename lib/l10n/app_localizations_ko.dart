@@ -9,6 +9,9 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get subscriptionConfigurationMissing => '적용 가능한 이용 한도가 설정되지 않았습니다. 조회만 가능하며 추가·수정·삭제할 수 없습니다. 관리자에게 문의하세요.';
+
+  @override
   String get recordInputInvalid => '설명과 0보다 큰 값을 입력해 주세요.';
 
   @override

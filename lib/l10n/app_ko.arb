@@ -1,4 +1,6 @@
 {
+  "subscriptionConfigurationMissing": "적용 가능한 이용 한도가 설정되지 않았습니다. 조회만 가능하며 추가·수정·삭제할 수 없습니다. 관리자에게 문의하세요.",
+  "@subscriptionConfigurationMissing": {"description": "Shown when the subscription configuration is missing or invalid"},
   "recordInputInvalid": "설명과 0보다 큰 값을 입력해 주세요.",
   "@recordInputInvalid": {"description": "Label for recordInputInvalid"},
   "recordTextInvalid": "형식이 올바르지 않습니다. 설명, + 또는 -, 0이 아닌 값(소수점 이하 최대 4자리)을 입력해 주세요. 예: 점심-120; 급여+30000. 아직 저장되지 않았습니다.",

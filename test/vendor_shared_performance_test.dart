@@ -49,6 +49,7 @@ void main() {
     () async {
       final performance = _Performance();
       final result = await ServiceVendorAccount(
+        preferSummaryRpc: false,
         performance: performance,
       ).fetchMetrics('one@example.com');
       expect(performance.calls, [

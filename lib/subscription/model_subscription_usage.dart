@@ -1,4 +1,5 @@
 import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
+import 'package:life_pilot/subscription/model_quota_free_period.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 
 class SubscriptionUsage {
@@ -39,6 +40,7 @@ class SubscriptionSnapshot {
     this.lastDataActivityAt,
     this.downgradeGraceEndsAt,
     this.entitlements = const [],
+    this.promotionPeriods,
   });
 
   static const free = SubscriptionSnapshot(plan: 'free', usage: {});
@@ -57,7 +59,11 @@ class SubscriptionSnapshot {
   final DateTime? downgradeGraceEndsAt;
   final List<SubscriptionEntitlement> entitlements;
 
+  /// Null denotes an older RPC; an empty list is an authoritative empty result.
+  final List<QuotaFreePeriod>? promotionPeriods;
+
   bool get isPlus => plan == 'plus';
+  bool get configurationMissing => status == 'configuration_missing';
   SubscriptionUsage? operator [](String resource) => usage[resource];
 
   SubscriptionSnapshot copyWithUsage(Map<String, SubscriptionUsage> newUsage) {
@@ -75,6 +81,7 @@ class SubscriptionSnapshot {
       lastDataActivityAt: lastDataActivityAt,
       downgradeGraceEndsAt: downgradeGraceEndsAt,
       entitlements: entitlements,
+      promotionPeriods: promotionPeriods,
     );
   }
 }

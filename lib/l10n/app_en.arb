@@ -1,4 +1,6 @@
 {
+  "subscriptionConfigurationMissing": "No applicable allowance is configured. Read only: adding, editing and deleting are unavailable. Contact the administrator.",
+  "@subscriptionConfigurationMissing": {"description": "Shown when the subscription configuration is missing or invalid"},
   "recordInputInvalid": "Enter a description and a value greater than zero.",
   "@recordInputInvalid": {"description": "Label for recordInputInvalid"},
   "recordTextInvalid": "Invalid format. Use a description, + or -, and a non-zero value (up to 4 decimal places), e.g. Lunch-120; Salary+30000. No data was saved.",

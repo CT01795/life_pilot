@@ -6,6 +6,7 @@ import 'package:life_pilot/event/model_content_performance.dart';
 import 'package:life_pilot/event/page_content_performance.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
+import 'package:life_pilot/record_statistics/record_statistics_formats.dart';
 import 'package:life_pilot/record_statistics/page_record_statistics.dart';
 import 'package:life_pilot/record_statistics/service_record_statistics.dart';
 import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
@@ -54,6 +55,87 @@ class _Records extends ServiceRecordStatistics {
 }
 
 void main() {
+  for (final kind in RecordStatisticsKind.values) {
+    for (final monthOnly in [false, true]) {
+      testWidgets(
+        '$kind monthOnly=$monthOnly uses shared locale formatting without reloading',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 700);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final auth = StatisticsTestAuth();
+          addTearDown(auth.dispose);
+          final records = _Records();
+          Widget page(String language) =>
+              ChangeNotifierProvider<ControllerAuth>.value(
+                value: auth,
+                child: MaterialApp(
+                  locale: Locale(language),
+                  localizationsDelegates:
+                      AppLocalizations.localizationsDelegates,
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  builder: (context, child) => MediaQuery(
+                    data: MediaQuery.of(
+                      context,
+                    ).copyWith(textScaler: const TextScaler.linear(1.5)),
+                    child: child!,
+                  ),
+                  home: Scaffold(
+                    body: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: WidgetsRecordTotals(
+                          accountId: 'a',
+                          kind: kind,
+                          monthOnly: monthOnly,
+                          total: -1234.5678,
+                          currency: 'TWD',
+                          service: records,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+          for (final language in ['en', 'zh', 'ja', 'ko', 'en']) {
+            final formats = RecordStatisticsFormats.forLocale(language);
+            await tester.pumpWidget(page(language));
+            await tester.pumpAndSettle();
+            final context = tester.element(find.byType(WidgetsRecordTotals));
+            final loc = AppLocalizations.of(context)!;
+            expect(
+              RecordStatisticsFormats.forLocale(loc.localeName),
+              same(formats),
+            );
+            final points = kind == RecordStatisticsKind.points;
+            final number = monthOnly ? 12.3456 : -1234.5678;
+            final expected =
+                '${NumberFormat('#,##0.####', loc.localeName).format(number)} ${points ? loc.pointsUnit : 'TWD'}';
+            expect(find.text(expected), findsOneWidget);
+            if (!monthOnly) {
+              expect(
+                tester.widget<Text>(find.text(expected)).style!.color,
+                Theme.of(context).colorScheme.error,
+              );
+            }
+            expect(
+              find.text(points ? loc.monthlyPoints : loc.monthlyIncomeExpense),
+              findsOneWidget,
+            );
+            expect(
+              find.text(points ? loc.todayPoints : loc.todayIncomeExpense),
+              monthOnly ? findsNothing : findsOneWidget,
+            );
+            expect(records.calls, 1);
+            expect(records.totalCalls, 0);
+            expect(tester.takeException(), isNull);
+          }
+        },
+      );
+    }
+  }
+
   for (final kind in RecordStatisticsKind.values) {
     testWidgets(
       '$kind account card uses supplied total and refreshes after changes',

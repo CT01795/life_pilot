@@ -68,7 +68,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     final loc = AppLocalizations.of(context)!;
     final values = {for (final key in _values.keys) key: _number(key)};
     if (_name.text.trim().isEmpty ||
-        values.values.any((value) => value == null)) {
+        values.values.any((value) => value == null || value < 0)) {
       _message(loc.adminPricingRequired);
       return;
     }

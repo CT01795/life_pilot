@@ -14,6 +14,7 @@ class ControllerVendorDashboard extends SafeChangeNotifier {
     required this.service,
     this.requestTimeout = const Duration(seconds: 30),
   }) : _owner = auth.currentAccount,
+       _observedAccount = auth.currentAccount,
        _personalDataRevision = auth.personalDataRevision {
     auth.addListener(_authChanged);
   }
@@ -22,6 +23,7 @@ class ControllerVendorDashboard extends SafeChangeNotifier {
   final ServiceVendorAccount service;
   final Duration requestTimeout;
   final String? _owner;
+  String? _observedAccount;
   int _personalDataRevision;
   int _revision = 0;
   RefreshRequestCoordinator _loads = RefreshRequestCoordinator();
@@ -40,11 +42,14 @@ class ControllerVendorDashboard extends SafeChangeNotifier {
       _personalDataRevision == auth.personalDataRevision;
 
   void _authChanged() {
-    if (_owner == auth.currentAccount &&
+    if (notifierDisposed) return;
+    final account = auth.currentAccount;
+    if (_observedAccount == account &&
         _personalDataRevision == auth.personalDataRevision) {
       return;
     }
     _revision++;
+    _observedAccount = account;
     _personalDataRevision = auth.personalDataRevision;
     _loads = RefreshRequestCoordinator();
     _data = null;

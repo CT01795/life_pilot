@@ -56,6 +56,9 @@ String contentPerformanceSearchFilter(String keyword) {
 }
 
 class ModelContentPerformance {
+  final int? nextOffset;
+  final bool hasAggregateTotals;
+  bool get hasMore => nextOffset != null;
   final List<Map<String, dynamic>> rows;
   final List<ContentPerformanceItem> items;
   final Map<String, int> totals;
@@ -72,7 +75,61 @@ class ModelContentPerformance {
     return total > 0 ? (item.countFor(metric) / total).clamp(0.0, 1.0) : 0.0;
   }
 
-  ModelContentPerformance._(this.rows, this.items, this.totals);
+  ModelContentPerformance._(
+    this.rows,
+    this.items,
+    this.totals, {
+    this.nextOffset,
+    this.hasAggregateTotals = true,
+  });
+
+  factory ModelContentPerformance.fromPage(
+    Map<String, dynamic> json, {
+    required bool attractions,
+  }) {
+    final details = ModelContentPerformance(
+      (json['items'] as List)
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList(),
+      sortByExpiry: true,
+      attractions: attractions,
+    );
+    final totals = ModelContentPerformance.fromTotals(
+      Map<String, dynamic>.from(json['totals'] as Map? ?? const {}),
+    );
+    return ModelContentPerformance._(
+      details.rows,
+      details.items,
+      totals.totals,
+      nextOffset: tryParseIntValue(json['next_offset']),
+      hasAggregateTotals: json['totals'] is Map,
+    );
+  }
+
+  ModelContentPerformance appendPage(ModelContentPerformance page) {
+    final ids = items.map((item) => item.id).toSet();
+    final combined = [
+      ...items,
+      ...page.items.where((item) => ids.add(item.id)),
+    ];
+    return ModelContentPerformance._(
+      List.unmodifiable(combined.map((item) => item.source)),
+      List.unmodifiable(combined),
+      page.hasAggregateTotals ? page.totals : totals,
+      nextOffset: page.nextOffset,
+    );
+  }
+
+  /// Aggregate counters need no fabricated detail rows or image downloads.
+  factory ModelContentPerformance.fromTotals(Map<String, dynamic> totals) =>
+      ModelContentPerformance._(
+        const [],
+        const [],
+        Map.unmodifiable({
+          for (final column in contentPerformanceColumns)
+            column: parseIntValue(totals[column]),
+        }),
+      );
 
   /// Combine parsed snapshots without copying source maps or decoding dates
   /// and counters again. Source order, duplicate rows and zero values remain.

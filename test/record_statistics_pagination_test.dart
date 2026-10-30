@@ -64,7 +64,7 @@ void main() {
   Future<List<Map<String, dynamic>>> read(
     RecordStatisticsKind kind,
     bool history,
-  ) => ServiceRecordStatistics().read(
+  ) => ServiceRecordStatistics(preferAggregateRpc: false).read(
     owner: 'one@example.com',
     storage: DataStorageLocation.cloud,
     accountId: 'a',

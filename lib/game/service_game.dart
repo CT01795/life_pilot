@@ -147,7 +147,7 @@ class ServiceGame {
 
     final data = await supabase
         .from(TableNames.gameList)
-        .select()
+        .select('id,game_type,game_name,level')
         .order('game_type', ascending: true)
         .order('game_name', ascending: true)
         .order('level', ascending: true);
@@ -278,7 +278,9 @@ class ServiceGame {
     }
     final rows = await supabase
         .from(TableNames.gameUser)
-        .select('*, game_list!inner(game_type, game_name, level)')
+        .select(
+          'id,name,game_id,score,created_at,is_pass,game_list!inner(game_type,game_name,level)',
+        )
         .ilike('name', userName)
         .eq('game_list.game_type', gameType)
         .eq('game_list.game_name', gameName)
@@ -289,7 +291,9 @@ class ServiceGame {
     if (includeLatestFallback && result.isEmpty) {
       final fallback = await supabase
           .from(TableNames.gameUser)
-          .select('*, game_list!inner(game_type, game_name, level)')
+          .select(
+            'id,name,game_id,score,created_at,is_pass,game_list!inner(game_type,game_name,level)',
+          )
           .ilike('name', userName)
           .eq('game_list.game_type', gameType)
           .eq('game_list.game_name', gameName)

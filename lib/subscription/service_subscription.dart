@@ -1,9 +1,12 @@
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
+import 'package:life_pilot/subscription/model_quota_free_period.dart';
+export 'package:life_pilot/subscription/model_quota_free_period.dart';
+import 'package:life_pilot/subscription/repository_subscription_counts.dart';
+import 'package:life_pilot/subscription/repository_subscription_bootstrap.dart';
 import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -102,22 +105,58 @@ class ServiceSubscription {
   Future<SubscriptionSnapshot> fetchMyUsage({
     String storagePlan = 'cloud',
   }) async {
-    final responses = await Future.wait<dynamic>([
-      supabase.rpc('get_my_subscription_usage'),
-      supabase.rpc('get_my_subscription_status'),
-      supabase.rpc('get_my_subscription_entitlements'),
-    ]);
+    final bootstrap = await RepositorySubscriptionBootstrap(
+      supabase,
+    ).read(storagePlan);
+    final promotionPeriods = bootstrap?['quota_free_periods'] is List
+        ? List<QuotaFreePeriod>.unmodifiable(
+            (bootstrap!['quota_free_periods'] as List).map(
+              (row) => QuotaFreePeriod.fromJson(
+                Map<String, dynamic>.from(row as Map),
+              ),
+            ),
+          )
+        : null;
+    final responses = bootstrap == null
+        ? await Future.wait<dynamic>([
+            supabase.rpc('get_my_subscription_usage'),
+            supabase.rpc('get_my_subscription_status'),
+            supabase.rpc('get_my_subscription_entitlements'),
+          ])
+        : <dynamic>[
+            bootstrap['usage'],
+            [bootstrap['status']],
+            bootstrap['entitlements'],
+          ];
     final rows = responses.first;
     final statusRows = responses[1] as List<dynamic>;
     final entitlementRows = responses[2] as List<dynamic>;
     final status = statusRows.isEmpty
         ? <String, dynamic>{}
         : Map<String, dynamic>.from(statusRows.first as Map);
-    final recommendationUsage = await _fetchRecommendationUsage(
-      entitlementRows,
-      status,
-      storagePlan: storagePlan,
-    );
+    if (status['status'] == 'configuration_missing') {
+      return SubscriptionSnapshot(
+        plan: 'unconfigured',
+        usage: const {},
+        status: 'configuration_missing',
+        storagePlan: storagePlan,
+        promotionPeriods: promotionPeriods,
+      );
+    }
+    final bundledQuotas = bootstrap == null
+        ? null
+        : (bootstrap['cumulative_quotas'] as Map).map(
+            (key, value) => MapEntry(key.toString(), parseIntValue(value)),
+          );
+    final recommendationUsage = bootstrap?['vendor'] == true
+        ? <SubscriptionUsage>[]
+        : await _fetchRecommendationUsage(
+            entitlementRows,
+            status,
+            storagePlan: storagePlan,
+            counts: (bootstrap?['recommendation_counts'] as List?)?.cast<int>(),
+            resolvedQuotas: bundledQuotas,
+          );
     var items = <SubscriptionUsage>[
       ...(rows as List<dynamic>).map(
         (row) =>
@@ -128,9 +167,8 @@ class ServiceSubscription {
     // The currently selected storage location decides which entitlement set is
     // presented. Never infer it from the newest subscription row because users
     // may hold valid cloud and local subscriptions at the same time.
-    final cumulativeQuotas = await _fetchCumulativeQuotas(
-      storagePlan: storagePlan,
-    );
+    final cumulativeQuotas =
+        bundledQuotas ?? await _fetchCumulativeQuotas(storagePlan: storagePlan);
     if (cumulativeQuotas.isNotEmpty) {
       items = items
           .map(
@@ -184,6 +222,7 @@ class ServiceSubscription {
                 ));
     return SubscriptionSnapshot(
       plan: plan,
+      promotionPeriods: promotionPeriods,
       usage: {for (final item in items) item.resource: item},
       status: parseStringValue(status['status'], fallback: 'inactive'),
       currentPeriodEnd: tryParseDateTimeValue(status['current_period_end']),
@@ -255,27 +294,34 @@ class ServiceSubscription {
     List<dynamic> entitlementRows,
     Map<String, dynamic> status, {
     required String storagePlan,
+    List<int>? counts,
+    Map<String, int>? resolvedQuotas,
   }) async {
     try {
       final account = supabase.auth.currentUser?.email?.toLowerCase();
       if (account == null || account.isEmpty) return const [];
       final now = DateTime.now();
-      final today =
-          '${padIntValue(now.year, width: 4)}-'
-          '${padIntValue(now.month)}-'
-          '${padIntValue(now.day)}';
-      final results = await Future.wait<List<Map<String, dynamic>>>([
-        supabase
-            .from(TableNames.recommendEvents)
-            .select('id')
-            .ilike(Fields.account, account)
-            .or('end_date.gte.$today,start_date.gte.$today'),
-        supabase
-            .from(TableNames.recommendPlaces)
-            .select('id')
-            .ilike(Fields.account, account)
-            .or('end_date.gte.$today,start_date.gte.$today'),
-      ]);
+      final results =
+          counts ??
+          await RepositorySubscriptionCounts(
+            supabase,
+          ).readRecommendations(account: account, now: now);
+      if (storagePlan == 'cloud' &&
+          resolvedQuotas?.containsKey('recommended_events') == true &&
+          resolvedQuotas?.containsKey('recommended_attractions') == true) {
+        return [
+          SubscriptionUsage(
+            resource: 'recommended_events',
+            used: results[0],
+            quota: resolvedQuotas!['recommended_events']!,
+          ),
+          SubscriptionUsage(
+            resource: 'recommended_attractions',
+            used: results[1],
+            quota: resolvedQuotas['recommended_attractions']!,
+          ),
+        ];
+      }
 
       var eventQuota = 0;
       var attractionQuota = 0;
@@ -403,12 +449,12 @@ class ServiceSubscription {
       return [
         SubscriptionUsage(
           resource: 'recommended_events',
-          used: results[0].length,
+          used: results[0],
           quota: eventQuota,
         ),
         SubscriptionUsage(
           resource: 'recommended_attractions',
-          used: results[1].length,
+          used: results[1],
           quota: attractionQuota,
         ),
       ];
@@ -620,6 +666,8 @@ class ServiceSubscription {
         'p_memory_quota': quotas['memory'],
         'p_game_question_quota': quotas['game'],
         'p_calendar_share_quota': quotas['share'],
+        'p_recommended_event_quota': quotas['event'],
+        'p_recommended_attraction_quota': quotas['attraction'],
         'p_image_megabytes': quotas['image'],
         'p_answer_history_days': quotas['answerDays'],
       },
@@ -632,47 +680,6 @@ class ServiceSubscription {
       params: {'p_pricing_version_id': versionId},
     );
   }
-}
-
-class QuotaFreePeriod {
-  const QuotaFreePeriod({
-    required this.id,
-    required this.name,
-    required this.startsAt,
-    required this.endsAt,
-    required this.enabled,
-    required this.isActive,
-    this.reminderDays,
-    this.targetAccounts = const [],
-  });
-
-  final String id;
-  final String name;
-  final DateTime startsAt;
-  final DateTime endsAt;
-  final bool enabled;
-  final bool isActive;
-  final int? reminderDays;
-  final List<String> targetAccounts;
-
-  factory QuotaFreePeriod.fromJson(Map<String, dynamic> json) =>
-      QuotaFreePeriod(
-        id: parseStringValue(json['period_id']),
-        name: parseStringValue(json['period_name']),
-        startsAt:
-            tryParseDateTimeValue(json['starts_at'], toLocal: true) ??
-            DateTime.now(),
-        endsAt:
-            tryParseDateTimeValue(json['ends_at'], toLocal: true) ??
-            DateTime.now(),
-        enabled: json['enabled'] == true,
-        isActive: json['is_active'] == true,
-        reminderDays: tryParseIntValue(json['reminder_days']),
-        targetAccounts: (json['target_accounts'] as List? ?? const [])
-            .map(normalizeText)
-            .where((value) => value.isNotEmpty)
-            .toList(growable: false),
-      );
 }
 
 class SubscriptionCleanupPreview {

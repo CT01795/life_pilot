@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:life_pilot/utils/supabase.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -68,6 +70,10 @@ class _Tracking extends EventTrackingService {
 }
 
 void main() {
+  setUp(() {
+    supabase = SupabaseClient('https://example.supabase.co', 'test-key');
+  });
+  tearDown(() => supabase.dispose());
   test('map destination omits missing and whitespace-only address parts', () {
     expect(ModelExternalDestination.map(city: null, location: null), isNull);
     expect(ModelExternalDestination.map(city: ' ', location: '\n'), isNull);

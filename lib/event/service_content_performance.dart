@@ -5,13 +5,16 @@ import 'package:life_pilot/event/model_content_performance_query.dart';
 import 'package:life_pilot/utils/paged_row_reader.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
 
 class ServiceContentPerformance {
   final Duration pageTimeout;
   final Duration totalTimeout;
+  final bool preferPageRpc;
   ServiceContentPerformance({
     this.pageTimeout = const Duration(seconds: 20),
     this.totalTimeout = const Duration(seconds: 30),
+    this.preferPageRpc = true,
   });
   Future<ModelContentPerformance> read({
     required String owner,
@@ -22,6 +25,19 @@ class ServiceContentPerformance {
     bool statisticsOnly = false,
     bool Function()? shouldContinue,
   }) async {
+    if (shouldContinue?.call() == false) return ModelContentPerformance([]);
+    if (statisticsOnly && period != null && preferPageRpc) {
+      final page = await readNextPage(
+        owner: owner,
+        attractions: attractions,
+        period: period,
+        keyword: keyword,
+        offset: 0,
+        shouldContinue: shouldContinue,
+      );
+      if (shouldContinue?.call() == false) return ModelContentPerformance([]);
+      if (page != null) return page;
+    }
     final projection = ModelContentPerformanceQuery(
       includeSubmissionDetails: includeSubmissionDetails,
       period: period,
@@ -80,5 +96,51 @@ class ServiceContentPerformance {
       attractions: attractions,
       statisticsOnly: statisticsOnly,
     );
+  }
+
+  Future<ModelContentPerformance?> readNextPage({
+    required String owner,
+    required bool attractions,
+    required ContentPerformancePeriod period,
+    required String keyword,
+    required int offset,
+    bool Function()? shouldContinue,
+  }) async {
+    if (shouldContinue?.call() == false) return null;
+    final client = supabase;
+    if (client.auth.currentUser?.email?.toLowerCase() != owner.toLowerCase()) {
+      throw StateError('Account scope changed');
+    }
+    final month = period.month;
+    final result = await RepositoryOptionalJsonRpc(client)
+        .read(
+          'get_my_content_performance_page',
+          params: {
+            'p_attractions': attractions,
+            'p_keyword': keyword.trim(),
+            'p_unexpired': month == null,
+            'p_from': (month ?? period.today).toUtc().toIso8601String(),
+            'p_to': month == null
+                ? null
+                : DateTime(
+                    month.year,
+                    month.month + 1,
+                  ).toUtc().toIso8601String(),
+            'p_offset': offset,
+            'p_limit': 20,
+            'p_include_totals': offset == 0,
+          },
+        )
+        .timeout(pageTimeout < totalTimeout ? pageTimeout : totalTimeout);
+    if (shouldContinue?.call() == false) return null;
+    if (client.auth.currentUser?.email?.toLowerCase() != owner.toLowerCase()) {
+      throw StateError('Account scope changed');
+    }
+    if (offset == 0 && result != null && result['totals'] is! Map) {
+      throw const FormatException('Performance summary is missing');
+    }
+    return result == null
+        ? null
+        : ModelContentPerformance.fromPage(result, attractions: attractions);
   }
 }

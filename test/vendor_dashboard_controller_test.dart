@@ -39,15 +39,15 @@ final _metrics = VendorContentMetrics(
 );
 
 class _Auth extends ControllerAuth {
-  String account = 'a';
+  String? account = 'a';
   int revision = 0;
   @override
-  String get currentAccount => account;
+  String? get currentAccount => account;
   @override
   bool get isSysAdmin => false;
   @override
   int get personalDataRevision => revision;
-  void change(String value) {
+  void change(String? value) {
     account = value;
     notifyListeners();
   }
@@ -110,6 +110,88 @@ void main() {
     if (!c.notifierDisposed) c.dispose();
     auth.dispose();
   });
+  test(
+    'sign-out clears loaded vendor data and original sign-in reloads',
+    () async {
+      final first = c.load();
+      service.setups[0].complete();
+      await _flush();
+      service.complete(0);
+      await first;
+      expect(c.data, isNotNull);
+      auth.change(null);
+      expect(c.data, isNull);
+      expect(c.loading, isFalse);
+      await c.load();
+      expect(service.setups, hasLength(1));
+      auth.change('a');
+      expect(service.setups, hasLength(2));
+      final fresh = c.load();
+      service.setups[1].complete();
+      await _flush();
+      service.complete(1);
+      await fresh;
+      expect(c.data, isNotNull);
+      expect(service.owners, ['a', 'a']);
+    },
+  );
+
+  for (final duringSetup in [true, false]) {
+    for (final oldFailure in [false, true]) {
+      test(
+        'A-B-A reloads the owner without redundant foreign-account updates (setup=$duringSetup, old error=$oldFailure)',
+        () async {
+          final old = c.load();
+          if (!duringSetup) {
+            service.setups[0].complete();
+            await _flush();
+          }
+          auth.change('b');
+          var notifications = 0;
+          c.addListener(() => notifications++);
+          for (var i = 0; i < 4; i++) {
+            auth.notifyListeners();
+          }
+          expect(notifications, 0);
+          expect(c.data, isNull);
+          expect(c.loading, isFalse);
+          await c.load();
+          expect(service.setups, hasLength(1));
+          auth.change('a');
+          expect(service.setups, hasLength(2));
+          expect(c.loading, isTrue);
+          final fresh = c.load();
+          service.setups[1].complete();
+          await _flush();
+          final currentIndex = service.statuses.length - 1;
+          service.complete(currentIndex);
+          await fresh;
+          final current = c.data;
+          expect(current, isNotNull);
+          if (duringSetup) {
+            if (oldFailure) {
+              service.setups[0].completeError(StateError('obsolete setup'));
+            } else {
+              service.setups[0].complete();
+            }
+          } else if (oldFailure) {
+            service.statuses[0].completeError(StateError('obsolete status'));
+            service.metrics[0].complete(_metrics);
+            service.pricing[0].complete([]);
+          } else {
+            service.complete(0);
+          }
+          await old;
+          expect(c.data, same(current));
+          expect(c.error, isNull);
+          expect(c.loading, isFalse);
+          expect(service.owners.every((owner) => owner == 'a'), isTrue);
+          expect(service.statuses, hasLength(duringSetup ? 1 : 2));
+        },
+      );
+    }
+  }
+
   for (final duringSetup in [true, false]) {
     testWidgets(
       'timeout during ${duringSetup ? 'setup' : 'parallel reads'} is retryable and ignores late work',

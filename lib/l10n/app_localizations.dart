@@ -99,6 +99,12 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
+  /// No description provided for @subscriptionConfigurationMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'No applicable allowance is configured. Read only: adding, editing and deleting are unavailable. Contact the administrator.'**
+  String get subscriptionConfigurationMissing;
+
   /// Label for recordInputInvalid
   ///
   /// In en, this message translates to:

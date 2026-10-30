@@ -9,6 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get subscriptionConfigurationMissing => 'No applicable allowance is configured. Read only: adding, editing and deleting are unavailable. Contact the administrator.';
+
+  @override
   String get recordInputInvalid => 'Enter a description and a value greater than zero.';
 
   @override

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/auth/service_auth.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/subscription/widgets_subscription_read_only.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/auth/page_auth_check.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
@@ -111,6 +112,7 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                     ({
                       bool visible,
                       bool loggedIn,
+                      bool configurationMissing,
                       int? endingInDays,
                       DateTime? endsAt,
                     })
@@ -121,6 +123,8 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                           !auth.isSysAdmin &&
                           !auth.isVendor,
                       loggedIn: auth.isLoggedIn && !auth.isAnonymous,
+                      configurationMissing:
+                          auth.subscriptionConfigurationMissing,
                       endingInDays: auth.quotaFreePeriodEndingInDays,
                       endsAt: auth.quotaFreePeriodEndsAt,
                     ),
@@ -129,6 +133,17 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                       final scaledMediaQuery = mediaQuery.copyWith(
                         textScaler: TextScaler.linear(scaleFactor),
                       );
+                      if (state.loggedIn && state.configurationMissing) {
+                        return MediaQuery(
+                          data: scaledMediaQuery,
+                          child: SubscriptionReadOnlyNotice(
+                            message: AppLocalizations.of(
+                              context,
+                            )!.subscriptionConfigurationMissing,
+                            child: child ?? const SizedBox.shrink(),
+                          ),
+                        );
+                      }
                       if (!showPromotion) {
                         return MediaQuery(
                           data: scaledMediaQuery,

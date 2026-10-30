@@ -9,6 +9,9 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get subscriptionConfigurationMissing => '適用される利用枠が未設定です。閲覧のみ可能で、追加・編集・削除はできません。管理者にお問い合わせください。';
+
+  @override
   String get recordInputInvalid => '説明と 0 より大きい値を入力してください。';
 
   @override

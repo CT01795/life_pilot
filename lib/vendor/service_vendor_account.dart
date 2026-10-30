@@ -1,19 +1,28 @@
 import 'package:life_pilot/event/service_content_performance.dart';
+import 'package:life_pilot/vendor/repository_vendor_initialization.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
 
 class ServiceVendorAccount {
+  static final _initializers = Expando<RepositoryVendorInitialization>();
   final ServiceContentPerformance _performance;
-  ServiceVendorAccount({ServiceContentPerformance? performance})
-    : _performance = performance ?? ServiceContentPerformance();
+  final bool preferSummaryRpc;
+  ServiceVendorAccount({
+    ServiceContentPerformance? performance,
+    this.preferSummaryRpc = true,
+  }) : _performance = performance ?? ServiceContentPerformance();
   Future<void> ensureVendorAccount() async {
-    try {
-      await supabase.rpc('ensure_my_vendor_account');
-    } on PostgrestException catch (error) {
-      if (error.code != '42883' && error.code != 'PGRST202') rethrow;
-    }
+    final client = supabase;
+    final user = client.auth.currentUser;
+    final token = client.auth.currentSession?.accessToken;
+    final scope = user == null || token == null
+        ? null
+        : (user.id, user.email, token);
+    await (_initializers[client] ??= RepositoryVendorInitialization(
+      client,
+    )).ensure(scope);
   }
 
   Future<List<VendorPricingPlan>> fetchPricingPlans() async {
@@ -34,6 +43,28 @@ class ServiceVendorAccount {
 
   Future<VendorContentMetrics> fetchMetrics(String account) async {
     final normalized = normalizeText(account);
+    if (preferSummaryRpc) {
+      final client = supabase;
+      if (normalizeText(client.auth.currentUser?.email) != normalized ||
+          normalized.isEmpty) {
+        throw StateError('Account scope changed');
+      }
+      final now = DateTime.now();
+      final summary = await RepositoryOptionalJsonRpc(client).read(
+        'get_my_vendor_dashboard_metrics',
+        params: {
+          'p_day_start': DateTime(
+            now.year,
+            now.month,
+            now.day,
+          ).toUtc().toIso8601String(),
+        },
+      );
+      if (normalizeText(client.auth.currentUser?.email) != normalized) {
+        throw StateError('Account scope changed');
+      }
+      if (summary != null) return VendorContentMetrics.fromSummary(summary);
+    }
     final responses = await Future.wait([
       _performance.read(
         owner: normalized,

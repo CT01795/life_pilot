@@ -30,12 +30,6 @@ def save_weather_forecast_cache(
     forecast: list[dict[str, Any]],
     expires_at: datetime,
 ) -> None:
-    delete_expired_statement = text(
-        """
-        delete from public.weather_forecast_cache
-        where expires_at <= now()
-        """
-    )
     upsert_statement = text(
         """
         insert into public.weather_forecast_cache (
@@ -57,7 +51,6 @@ def save_weather_forecast_cache(
     )
 
     with get_database_engine().begin() as connection:
-        connection.execute(delete_expired_statement)
         connection.execute(
             upsert_statement,
             {
@@ -70,3 +63,10 @@ def save_weather_forecast_cache(
                 "expires_at": expires_at,
             },
         )
+
+
+def cleanup_expired_weather_cache(connection: Any) -> None:
+    """Called inside the shared daily cleanup transaction, not on each upsert."""
+    connection.execute(text(
+        "delete from public.weather_forecast_cache where expires_at <= now()"
+    ))
