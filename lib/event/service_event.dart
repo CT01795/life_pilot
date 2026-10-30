@@ -8,6 +8,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/model_event_load_policy.dart';
 import 'package:life_pilot/event/model_local_event_query.dart';
 import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/enum.dart';

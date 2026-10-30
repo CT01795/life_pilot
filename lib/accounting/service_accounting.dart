@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_detail.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/graph.dart';

@@ -20,7 +20,7 @@ import 'package:life_pilot/game/social/model_game_social.dart';
 import 'package:life_pilot/game/speaking/model_game_speaking.dart';
 import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

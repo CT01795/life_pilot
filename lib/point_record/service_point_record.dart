@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/model_point_record_detail.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/graph.dart';

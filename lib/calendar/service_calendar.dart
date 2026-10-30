@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:life_pilot/calendar/model_calendar_holidays.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/repository_external_cache.dart';
 import 'package:uuid/uuid.dart';
 

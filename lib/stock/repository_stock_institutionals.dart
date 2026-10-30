@@ -1,6 +1,6 @@
 import 'package:intl/intl.dart';
 import 'package:life_pilot/stock/model_stock.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

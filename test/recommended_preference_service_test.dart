@@ -9,7 +9,7 @@ import 'package:life_pilot/l10n/app_localizations_en.dart';
 import 'package:life_pilot/l10n/app_localizations_ja.dart';
 import 'package:life_pilot/l10n/app_localizations_ko.dart';
 import 'package:life_pilot/l10n/app_localizations_zh.dart';
-import 'package:life_pilot/utils/api.dart' as api;
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 
 void main() {
@@ -34,7 +34,7 @@ void main() {
         );
       }),
     );
-    api.supabase = client;
+    supabase = client;
   });
   tearDown(() => client.dispose());
   for (final table in [

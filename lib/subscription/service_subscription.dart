@@ -1,6 +1,6 @@
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/text_normalization.dart';

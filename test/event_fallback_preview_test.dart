@@ -7,7 +7,7 @@ import 'package:life_pilot/event/model_event_load_policy.dart';
 import 'package:life_pilot/event/model_event_page.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
-import 'package:life_pilot/utils/api.dart' as api;
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -56,7 +56,7 @@ void main() {
         );
       }),
     );
-    api.supabase = client;
+    supabase = client;
   });
   tearDown(() => client.dispose());
 

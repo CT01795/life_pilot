@@ -1,6 +1,6 @@
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/calendar/model_calendar_sharing.dart';
 import 'package:life_pilot/calendar/model_calendar_sharing_failure.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

@@ -4,7 +4,7 @@ import 'package:life_pilot/business_plan/model_business_plan.dart';
 import 'package:life_pilot/business_plan/model_plan_question.dart';
 import 'package:life_pilot/business_plan/model_plan_section.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/logger.dart';

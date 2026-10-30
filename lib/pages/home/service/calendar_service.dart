@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
 import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/extension.dart';

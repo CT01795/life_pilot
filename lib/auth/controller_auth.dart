@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/pages/home/controller_dashboard.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';

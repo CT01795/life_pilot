@@ -1,4 +1,4 @@
-import 'package:life_pilot/utils/api.dart' as api;
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Uses the signed-in Supabase client, never a service-role key. Only an
@@ -13,7 +13,7 @@ class RepositoryCloudGateway {
     required Future<dynamic> Function() backend,
   }) async {
     try {
-      return await (_client ?? api.supabase).rpc(function, params: params);
+      return await (_client ?? supabase).rpc(function, params: params);
     } on PostgrestException catch (error) {
       if (error.code != 'PGRST202') rethrow;
       return backend();

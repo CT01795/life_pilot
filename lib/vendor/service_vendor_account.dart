@@ -1,5 +1,5 @@
 import 'package:life_pilot/event/service_content_performance.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

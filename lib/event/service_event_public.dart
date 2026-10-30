@@ -16,6 +16,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/public_event_refresh.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/duplicate_tolerant_batch_writer.dart';
 import 'package:life_pilot/utils/event_latln.dart';

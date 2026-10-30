@@ -2,7 +2,7 @@ import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:life_pilot/record_statistics/model_local_record_statistics.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics_query.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/paged_row_reader.dart';

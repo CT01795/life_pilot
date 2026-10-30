@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:life_pilot/record_statistics/service_record_statistics.dart';
-import 'package:life_pilot/utils/api.dart' as api;
+import 'package:life_pilot/utils/supabase.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -43,7 +43,7 @@ void main() {
         );
       }),
     );
-    api.supabase = client;
+    supabase = client;
     await client.auth.setInitialSession(
       jsonEncode({
         'access_token': 'test-token',

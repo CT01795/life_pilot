@@ -6,7 +6,7 @@ import 'package:sembast/sembast_memory.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/calendar/service_calendar_sharing.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
-import 'package:life_pilot/utils/api.dart' as api;
+import 'package:life_pilot/utils/supabase.dart';
 
 void main() {
   late Database database;
@@ -46,7 +46,7 @@ void main() {
         );
       }),
     );
-    api.supabase = client;
+    supabase = client;
     await client.auth.setInitialSession(
       jsonEncode({
         'access_token': 'test-token',

@@ -9,8 +9,8 @@ ServiceApi api = ServiceApi(
   dbMacUrl,
   accessTokenProvider: _currentAccessToken,
 );
+
 ServiceApi apiSupabase = ServiceApi(
   dbSupabaseUrl,
   accessTokenProvider: _currentAccessToken,
 );
-SupabaseClient supabase = Supabase.instance.client;

@@ -6,7 +6,7 @@ import 'package:life_pilot/event/controller_content_performance.dart';
 import 'package:life_pilot/event/model_content_performance.dart';
 import 'package:life_pilot/event/model_content_performance_period.dart';
 import 'package:life_pilot/event/service_content_performance.dart';
-import 'package:life_pilot/utils/api.dart' as api;
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'record_statistics_test.dart' show StatisticsTestAuth;
 import 'content_performance_and_event_dates_test.dart'
@@ -198,7 +198,7 @@ void main() {
           );
         }),
       );
-      api.supabase = client;
+      supabase = client;
       await client.auth.setInitialSession(
         jsonEncode({
           'access_token': 'test-token',

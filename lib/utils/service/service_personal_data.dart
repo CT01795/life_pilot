@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:life_pilot/utils/service/export/personal_export_comparator.dart';

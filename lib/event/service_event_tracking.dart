@@ -1,4 +1,4 @@
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/service/service_external_link.dart';
 

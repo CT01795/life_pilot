@@ -4,6 +4,7 @@ import 'package:life_pilot/utils/repository_event_cloud_operations.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 

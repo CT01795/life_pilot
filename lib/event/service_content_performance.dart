@@ -3,7 +3,7 @@ import 'package:life_pilot/event/model_content_performance.dart';
 import 'package:life_pilot/event/model_content_performance_period.dart';
 import 'package:life_pilot/event/model_content_performance_query.dart';
 import 'package:life_pilot/utils/paged_row_reader.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 
 class ServiceContentPerformance {

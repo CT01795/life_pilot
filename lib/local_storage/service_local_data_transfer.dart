@@ -1,6 +1,6 @@
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/game/service_game.dart';
-import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 
