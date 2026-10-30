@@ -50,6 +50,40 @@ List<ModelFeedback> _legacy(Iterable<ModelFeedback> source) {
 
 void main() {
   test(
+    'already ordered feedback snapshots keys once and remains read-only',
+    () {
+      final source = List.generate(10000, _CountedRow.new).reversed.toList();
+      final result = ModelFeedbackList.ordered(source);
+      expect(result, orderedEquals(source));
+      expect(
+        source.every((p) => p.statusReads == 1 && p.dateReads == 1),
+        isTrue,
+      );
+      expect(result.first, same(source.first));
+      expect(() => result.clear(), throwsUnsupportedError);
+    },
+  );
+
+  test(
+    'duplicate replacement can invalidate an otherwise ordered response',
+    () {
+      final first = _row(1, 'in_progress', 3);
+      final replacement = _row(1, 'completed', 3);
+      final source = [
+        first,
+        _row(2, 'in_progress', 2),
+        _row(3, 'in_progress', 1),
+        replacement,
+      ];
+      final result = ModelFeedbackList.ordered(source);
+      expect(result, _legacy(source));
+      expect(result.map((p) => p.id), [2, 3, 1]);
+      expect(result.last, same(replacement));
+      expect(first.status, 'in_progress');
+    },
+  );
+
+  test(
     'status precedes newest creation date and source order is unchanged',
     () {
       final source = [

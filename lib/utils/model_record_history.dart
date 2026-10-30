@@ -4,6 +4,22 @@ import 'package:life_pilot/utils/record_row_utils.dart'
 /// Pure history-list rules shared by accounting and points. Controllers retain
 /// request state; services retain persistence and date-window queries.
 class ModelRecordHistory {
+  /// Date-only bounds passed to the existing inclusive-day service queries.
+  /// Keep the legacy duration subtraction and epoch start for all-record mode;
+  /// no clock, storage or pagination state belongs in this projection.
+  static ({DateTime start, DateTime end}) windowEndingAt(
+    DateTime anchor, {
+    bool allRecords = false,
+  }) {
+    final end = DateTime(anchor.year, anchor.month, anchor.day);
+    return (
+      start: allRecords
+          ? DateTime.fromMillisecondsSinceEpoch(0)
+          : end.subtract(const Duration(days: 29)),
+      end: end,
+    );
+  }
+
   static List<T> ordered<T>(
     Iterable<T> records, {
     required String Function(T) idOf,

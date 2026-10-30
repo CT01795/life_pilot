@@ -61,6 +61,8 @@ class ServiceCalendar {
 
   /// Independent years load concurrently. Future.wait retains year order even
   /// when responses arrive out of order; the existing yearly cache stays owner.
+  /// Fail promptly if one year fails instead of waiting for unrelated years.
+  /// Future.wait continues to observe late errors from every started read.
   static Future<List<CalendarHolidayRecord>> loadHolidayYears({
     required DateTime start,
     required DateTime end,
@@ -69,7 +71,7 @@ class ServiceCalendar {
     final batches = await Future.wait([
       for (final year in ModelCalendarHolidays.requiredYears(start, end))
         Future<List<CalendarHolidayRecord>>.sync(() => loadYear(year)),
-    ]);
+    ], eagerError: true);
     return [for (final batch in batches) ...batch];
   }
 

@@ -1,3 +1,5 @@
+import 'package:life_pilot/utils/sort_if_needed.dart';
+
 /// Shared dashboard ordering, without widgets, localization or account state.
 /// The schedule/recommendation adapters prepare one key per decoded event.
 class DashboardEventOrderKey implements Comparable<DashboardEventOrderKey> {
@@ -37,7 +39,7 @@ class ModelDashboardEventOrdering {
     final keyed = [
       for (final event in events) (event: event, key: keyOf(event)),
     ];
-    keyed.sort((a, b) => a.key.compareTo(b.key));
+    sortIfNeeded(keyed, (a, b) => a.key.compareTo(b.key));
     return [for (final entry in keyed) entry.event];
   }
 }

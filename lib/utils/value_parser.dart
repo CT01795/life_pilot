@@ -5,7 +5,16 @@
 /// service layers from each implementing slightly different rules.
 num? tryParseNumValue(Object? value) {
   if (value is num) return value;
-  return num.tryParse(value?.toString().trim() ?? '');
+  final text = _nonEmptyValueText(value);
+  return text == null ? null : num.tryParse(text);
+}
+
+/// Skip parsing absent database fields, while stringifying other values only
+/// once. Native numeric/date values keep their existing typed fast paths.
+String? _nonEmptyValueText(Object? value) {
+  if (value == null) return null;
+  final text = value.toString().trim();
+  return text.isEmpty ? null : text;
 }
 
 /// Converts nullable API/local values to text without repeated null handling.
@@ -29,7 +38,8 @@ num parseNumValue(Object? value, {num fallback = 0}) =>
 int? tryParseIntValue(Object? value) {
   if (value is int) return value;
   if (value is num) return value.toInt();
-  return int.tryParse(value?.toString().trim() ?? '');
+  final text = _nonEmptyValueText(value);
+  return text == null ? null : int.tryParse(text);
 }
 
 int parseIntValue(Object? value, {int fallback = 0}) =>
@@ -37,16 +47,18 @@ int parseIntValue(Object? value, {int fallback = 0}) =>
 
 double? tryParseDoubleValue(Object? value) {
   if (value is num) return value.toDouble();
-  return double.tryParse(value?.toString().trim() ?? '');
+  final text = _nonEmptyValueText(value);
+  return text == null ? null : double.tryParse(text);
 }
 
 double parseDoubleValue(Object? value, {double fallback = 0}) =>
     tryParseDoubleValue(value) ?? fallback;
 
 DateTime? tryParseDateTimeValue(Object? value, {bool toLocal = false}) {
-  final parsed = value is DateTime
-      ? value
-      : DateTime.tryParse(value?.toString().trim() ?? '');
+  if (value is DateTime) return toLocal ? value.toLocal() : value;
+  final text = _nonEmptyValueText(value);
+  if (text == null) return null;
+  final parsed = DateTime.tryParse(text);
   if (parsed == null) return null;
   return toLocal ? parsed.toLocal() : parsed;
 }

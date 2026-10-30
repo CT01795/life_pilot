@@ -4,6 +4,125 @@ import 'package:life_pilot/game/controller_game_my_questions.dart';
 import 'package:life_pilot/game/service_game.dart';
 
 void main() {
+  for (final lateFailure in [false, true]) {
+    test(
+      'explicit group refresh supersedes same-query read (late error=$lateFailure)',
+      () async {
+        final service = _QuestionService();
+        final c = ControllerGameMyQuestions(
+          service: service,
+          gameName: 'Speaking',
+        );
+        addTearDown(c.dispose);
+        await c.load();
+        final oldPage = Completer<MyGameQuestionPage>();
+        service.pendingPage = oldPage;
+        final old = c.load();
+        final newPage = Completer<MyGameQuestionPage>();
+        final newGroups = Completer<List<String>>();
+        service.pendingPage = newPage;
+        service.pendingGroups = newGroups;
+        final fresh = c.load(refreshGroups: true);
+        expect(service.calls, hasLength(3));
+        expect(service.groupCalls, 2);
+        expect(await c.load(), isTrue);
+        expect(service.calls, hasLength(3));
+        if (lateFailure) {
+          oldPage.completeError(StateError('obsolete'));
+        } else {
+          oldPage.complete(_page(8));
+        }
+        expect(await old, isNull);
+        expect(c.isLoading, isTrue);
+        expect(c.questions.single.id, '0');
+        newPage.complete(_page(9));
+        newGroups.complete(['updated']);
+        expect(await fresh, isTrue);
+        expect(c.questions.single.id, '9');
+        expect(c.groups, ['updated']);
+        expect(c.isLoading, isFalse);
+        expect(c.hasError, isFalse);
+      },
+    );
+  }
+
+  test(
+    'explicit refresh of removed group still performs its unfiltered fallback',
+    () async {
+      final service = _QuestionService();
+      final c = ControllerGameMyQuestions(
+        service: service,
+        gameName: 'Speaking',
+      );
+      addTearDown(c.dispose);
+      c.selectGroup('grammar');
+      await c.load();
+      final oldPage = Completer<MyGameQuestionPage>();
+      service.pendingPage = oldPage;
+      final old = c.load();
+      service.pendingPage = null;
+      service.groupData.clear();
+      service.suppliedPage = _page(9);
+      expect(await c.load(refreshGroups: true), isTrue);
+      expect(c.selectedGroup, isNull);
+      expect(c.groups, isEmpty);
+      expect(c.questions.single.id, '9');
+      expect(service.calls.last.$2, isNull);
+      final calls = service.calls.length;
+      oldPage.complete(_page(8));
+      expect(await old, isNull);
+      expect(service.calls, hasLength(calls));
+      expect(c.questions.single.id, '9');
+    },
+  );
+
+  for (final action in ['search', 'group', 'status']) {
+    test('disposed $action action preserves existing filter state', () {
+      final c = ControllerGameMyQuestions(
+        service: _QuestionService(),
+        gameName: 'Speaking',
+      );
+      c.applySearch('original');
+      c.selectGroup('grammar');
+      c.selectStatus(QuestionStatusFilter.active);
+      c.dispose();
+      if (action == 'search') {
+        c.applySearch('new');
+      } else if (action == 'group') {
+        c.selectGroup(null);
+      } else {
+        c.selectStatus(QuestionStatusFilter.inactive);
+      }
+      expect(c.appliedKeyword, 'original');
+      expect(c.selectedGroup, 'grammar');
+      expect(c.statusFilter, QuestionStatusFilter.active);
+    });
+  }
+
+  for (final action in ['delete', 'active']) {
+    test(
+      'disposal during $action notification prevents the unsent write',
+      () async {
+        final service = _QuestionService();
+        final c = ControllerGameMyQuestions(
+          service: service,
+          gameName: 'Speaking',
+        );
+        c.addListener(() {
+          if (c.isBusy('q')) c.dispose();
+        });
+        if (action == 'delete') {
+          await c.deleteQuestion('q');
+        } else {
+          await c.setQuestionActive('q', false);
+        }
+        expect(service.deleteCalls, 0);
+        expect(service.updated, isNull);
+        expect(c.isBusy('q'), isFalse);
+      },
+    );
+  }
+
   for (final failQuestions in [true, false]) {
     for (final synchronous in [true, false]) {
       test(
@@ -638,6 +757,7 @@ MyGameQuestionPage _page(int offset) => MyGameQuestionPage(
 class _QuestionService extends ServiceGame {
   final calls = <(String, String?, String, int)>[];
   int groupCalls = 0;
+  int deleteCalls = 0;
   bool failLoad = false;
   bool failGroups = false;
   bool failDelete = false;
@@ -680,6 +800,7 @@ class _QuestionService extends ServiceGame {
     required String gameName,
     required String questionId,
   }) async {
+    deleteCalls++;
     if (failDelete) throw StateError('delete failed');
   }
 

@@ -6,12 +6,12 @@ import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/model_record_history.dart';
 import 'package:life_pilot/utils/nlp.dart';
-import 'package:life_pilot/utils/text_normalization.dart';
+import 'package:life_pilot/utils/model_personal_data_scope.dart';
 
 class ControllerPointRecordDetail extends SafeChangeNotifier {
   final ServicePointRecord service;
   ControllerAuth? auth;
-  String? _accountKey;
+  ModelPersonalDataScope? _accountKey;
   int _accountGeneration = 0;
   int _requestId = 0;
   final String accountId;
@@ -34,8 +34,12 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
   bool hasMore = false;
   DateTime? _loadedStartDate;
 
-  static String _scopeKey(ControllerAuth? auth) =>
-      '${normalizeText(auth?.currentAccount)}|${auth?.preferredStorage.name ?? ''}';
+  static ModelPersonalDataScope _scopeKey(ControllerAuth? auth) =>
+      ModelPersonalDataScope(
+        account: auth?.currentAccount,
+        storage: auth?.preferredStorage,
+        revision: auth?.personalDataRevision ?? 0,
+      );
 
   bool _isCurrent(int generation, [int? request]) =>
       !notifierDisposed &&
@@ -88,14 +92,13 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     final targetAccountId = inputAccountId ?? accountId;
     try {
       if (!_isCurrent(generation, request)) return;
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      var loadedStartDate = today.subtract(const Duration(days: 29));
+      final window = ModelRecordHistory.windowEndingAt(DateTime.now());
+      var loadedStartDate = window.start;
       final loadedRecords = await service.fetchRecordsPage(
         accountId: targetAccountId,
         type: currentType,
         dateFrom: loadedStartDate,
-        dateTo: today,
+        dateTo: window.end,
         includeLatestFallback: true,
       );
       if (!_isCurrent(generation, request)) return;
@@ -154,27 +157,22 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
         hasMore = false;
         return;
       }
-      final dateTo = DateTime(
-        latestOlder.year,
-        latestOlder.month,
-        latestOlder.day,
-      );
-      final dateFrom = dateTo.subtract(const Duration(days: 29));
+      final window = ModelRecordHistory.windowEndingAt(latestOlder);
       final loadedRecords = await service.fetchRecordsPage(
         accountId: targetAccountId,
         type: currentType,
-        dateFrom: dateFrom,
-        dateTo: dateTo,
+        dateFrom: window.start,
+        dateTo: window.end,
       );
       if (!_isCurrent(generation, request)) return;
       final loadedHasMore = await service.hasRecordsBefore(
         accountId: targetAccountId,
         type: currentType,
-        before: dateFrom,
+        before: window.start,
       );
       if (!_isCurrent(generation, request)) return;
       todayRecords = [...todayRecords, ...loadedRecords];
-      _loadedStartDate = dateFrom;
+      _loadedStartDate = window.start;
       _sortAndDeduplicate();
       hasMore = loadedHasMore;
     } catch (_) {

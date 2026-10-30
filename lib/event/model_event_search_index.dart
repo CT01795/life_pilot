@@ -11,8 +11,9 @@ typedef EventSearchLabels = ({
 /// Event edits must invalidate this index because EventItem is mutable.
 class ModelEventSearchIndex {
   final _entries = Map<EventItem, _SearchTextEntry>.identity();
-  final _baseText = Map<EventItem, String>.identity();
+  final _baseText = Map<EventItem, _SearchText>.identity();
   EventSearchLabels? _labels;
+  EventSearchLabels? _normalizedLabels;
 
   /// [word] is a normalized query token with no whitespace.
   bool contains(
@@ -21,14 +22,20 @@ class ModelEventSearchIndex {
     required EventSearchLabels labels,
   }) {
     if (_labels != labels) {
-      clear();
       _labels = labels;
+      _normalizedLabels = (
+        free: labels.free.toLowerCase(),
+        pay: labels.pay.toLowerCase(),
+        outdoor: labels.outdoor.toLowerCase(),
+        indoor: labels.indoor.toLowerCase(),
+      );
     }
+    final normalizedLabels = _normalizedLabels!;
     final entry = _entries.putIfAbsent(
       event,
-      () => _SearchTextEntry(_textFor(event, labels)),
+      () => _SearchTextEntry(_textFor(event)),
     );
-    if (entry.parent.contains(word)) return true;
+    if (entry.parent.contains(word, normalizedLabels)) return true;
 
     // Query tokens contain no whitespace, so no token can span the newline
     // separating parent and child fields. Indexing them separately is safe.
@@ -41,13 +48,13 @@ class ModelEventSearchIndex {
     // Retain references to each child's text instead of a second concatenated
     // copy per parent. A match need not prepare later child descriptions.
     for (final text in entry.childTexts) {
-      if (text.contains(word)) return true;
+      if (text.contains(word, normalizedLabels)) return true;
     }
     final children = entry.childEvents!;
     while (entry.childTexts.length < children.length) {
-      final text = _textFor(children[entry.childTexts.length], labels);
+      final text = _textFor(children[entry.childTexts.length]);
       entry.childTexts.add(text);
-      if (text.contains(word)) return true;
+      if (text.contains(word, normalizedLabels)) return true;
     }
     return false;
   }
@@ -71,6 +78,7 @@ class ModelEventSearchIndex {
     _entries.clear();
     _baseText.clear();
     _labels = null;
+    _normalizedLabels = null;
   }
 
   /// Only for progressive snapshots whose existing objects are unchanged.
@@ -91,26 +99,44 @@ class ModelEventSearchIndex {
     _baseText.removeWhere((event, _) => !active.contains(event));
   }
 
-  String _textFor(EventItem event, EventSearchLabels labels) =>
-      _baseText.putIfAbsent(event, () => _text(event, labels));
-
-  static String _text(EventItem event, EventSearchLabels labels) => <String>[
-    event.city,
-    event.location,
-    event.name,
-    event.type,
-    event.description,
-    event.unit,
-    if (event.isFree != null) event.isFree! ? labels.free : labels.pay,
-    if (event.isOutdoor != null)
-      event.isOutdoor! ? labels.outdoor : labels.indoor,
-  ].join('\n').toLowerCase();
+  _SearchText _textFor(EventItem event) =>
+      _baseText.putIfAbsent(event, () => _SearchText(event));
 }
 
 class _SearchTextEntry {
-  final String parent;
-  final childTexts = <String>[];
+  final _SearchText parent;
+  final childTexts = <_SearchText>[];
   List<EventItem>? childEvents;
 
   _SearchTextEntry(this.parent);
+}
+
+/// Locale-independent text and metadata captured together. Normalized query
+/// tokens cannot cross newline field boundaries, so translated labels can be
+/// checked separately without copying descriptions on each language change.
+class _SearchText {
+  _SearchText(EventItem event)
+    : value = <String>[
+        event.city,
+        event.location,
+        event.name,
+        event.type,
+        event.description,
+        event.unit,
+      ].join('\n').toLowerCase(),
+      isFree = event.isFree,
+      isOutdoor = event.isOutdoor;
+
+  final String value;
+  final bool? isFree, isOutdoor;
+
+  bool contains(String word, EventSearchLabels labels) {
+    if (value.contains(word)) return true;
+    final free = isFree, outdoor = isOutdoor;
+    if (free != null && (free ? labels.free : labels.pay).contains(word)) {
+      return true;
+    }
+    return outdoor != null &&
+        (outdoor ? labels.outdoor : labels.indoor).contains(word);
+  }
 }

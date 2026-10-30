@@ -45,6 +45,161 @@ String legacyText(EventItem event, EventSearchLabels labels) {
 }
 
 void main() {
+  const translations = <EventSearchLabels>[
+    labels,
+    (free: '免費', pay: '付費', outdoor: '戶外', indoor: '室內'),
+    (free: '無料', pay: '有料', outdoor: '屋外', indoor: '屋内'),
+    (free: '무료', pay: '유료', outdoor: '야외', indoor: '실내'),
+  ];
+
+  test(
+    'language changes reuse parent descriptions and compare current labels',
+    () {
+      final row = _CountedEvent('e', 'literal')
+        ..isFree = true
+        ..isOutdoor = false;
+      final index = ModelEventSearchIndex();
+      for (final current in translations) {
+        expect(index.contains(row, 'literal', labels: current), isTrue);
+        expect(
+          index.contains(row, current.free.toLowerCase(), labels: current),
+          isTrue,
+        );
+        expect(
+          index.contains(row, current.indoor.toLowerCase(), labels: current),
+          isTrue,
+        );
+        expect(
+          index.contains(row, current.pay.toLowerCase(), labels: current),
+          isFalse,
+        );
+        expect(
+          index.contains(row, current.outdoor.toLowerCase(), labels: current),
+          isFalse,
+        );
+      }
+      expect(row.reads, 1);
+    },
+  );
+
+  test(
+    'language changes preserve prepared children and leave later children lazy',
+    () {
+      final first = _CountedEvent('first', 'plain')..isFree = true;
+      final later = _CountedEvent('later', 'plain')..isOutdoor = false;
+      final parent = _CountedEvent('parent', 'plain', children: [first, later]);
+      final index = ModelEventSearchIndex();
+      expect(index.contains(parent, 'free', labels: labels), isTrue);
+      expect([parent.reads, first.reads, later.reads], [1, 1, 0]);
+      expect(index.contains(parent, '免費', labels: translations[1]), isTrue);
+      expect([parent.reads, first.reads, later.reads], [1, 1, 0]);
+      expect(index.contains(parent, '室內', labels: translations[1]), isTrue);
+      expect([parent.reads, first.reads, later.reads], [1, 1, 1]);
+      expect(index.contains(parent, '무료', labels: translations[3]), isTrue);
+      expect([parent.reads, first.reads, later.reads], [1, 1, 1]);
+    },
+  );
+
+  test(
+    'literal words remain searchable independently of translated labels',
+    () {
+      final row = _CountedEvent('e', 'FREE OUTDOOR')
+        ..isFree = false
+        ..isOutdoor = false;
+      final index = ModelEventSearchIndex();
+      expect(index.contains(row, 'free', labels: translations[1]), isTrue);
+      expect(index.contains(row, 'outdoor', labels: translations[1]), isTrue);
+      expect(index.contains(row, '付費', labels: translations[1]), isTrue);
+      expect(index.contains(row, '免費', labels: translations[1]), isFalse);
+      expect(row.reads, 1);
+    },
+  );
+
+  test('metadata edits still invalidate text and translated flag matches', () {
+    final row = _CountedEvent('e', 'before')
+      ..isFree = true
+      ..isOutdoor = true;
+    final index = ModelEventSearchIndex();
+    expect(index.contains(row, 'free', labels: labels), isTrue);
+    row.isFree = false;
+    row.isOutdoor = false;
+    row.description = 'after';
+    index.invalidate([row]);
+    expect(index.contains(row, '免費', labels: translations[1]), isFalse);
+    expect(index.contains(row, '付費', labels: translations[1]), isTrue);
+    expect(index.contains(row, '室內', labels: translations[1]), isTrue);
+    expect(index.contains(row, 'after', labels: translations[1]), isTrue);
+    expect(index.contains(row, 'before', labels: labels), isFalse);
+    expect(row.reads, 2);
+  });
+
+  test(
+    'a shared child remains indexed once across parents and language changes',
+    () {
+      final child = _CountedEvent('child', 'plain')..isFree = true;
+      final a = _CountedEvent('a', 'plain', children: [child]);
+      final b = _CountedEvent('b', 'plain', children: [child]);
+      final index = ModelEventSearchIndex();
+      expect(index.contains(a, 'free', labels: labels), isTrue);
+      expect(index.contains(b, '免費', labels: translations[1]), isTrue);
+      expect(index.contains(a, '無料', labels: translations[2]), isTrue);
+      expect(child.reads, 1);
+      expect([a.reads, b.reads], [1, 1]);
+    },
+  );
+
+  test('explicit clear discards text and normalizes fresh label values', () {
+    final row = _CountedEvent('e', 'before')..isFree = true;
+    final index = ModelEventSearchIndex();
+    expect(index.contains(row, 'free', labels: labels), isTrue);
+    index.clear();
+    row.description = 'after';
+    const replacement = (
+      free: 'CoMpliMeNtary',
+      pay: 'PAY',
+      outdoor: 'OUT',
+      indoor: 'IN',
+    );
+    expect(index.contains(row, 'complimentary', labels: replacement), isTrue);
+    expect(index.contains(row, 'after', labels: replacement), isTrue);
+    expect(index.contains(row, 'before', labels: replacement), isFalse);
+    expect(row.reads, 2);
+  });
+
+  test(
+    'all nullable flag combinations match legacy text across four languages',
+    () {
+      final index = ModelEventSearchIndex();
+      for (final free in <bool?>[null, false, true]) {
+        for (final outdoor in <bool?>[null, false, true]) {
+          final row = EventItem(
+            id: 'e',
+            name: 'Literal',
+            isFree: free,
+            isOutdoor: outdoor,
+          );
+          for (final current in translations) {
+            final expected = legacyText(row, current);
+            for (final word in [
+              'literal',
+              'missing',
+              current.free,
+              current.pay,
+              current.outdoor,
+              current.indoor,
+            ]) {
+              expect(
+                index.contains(row, word.toLowerCase(), labels: current),
+                expected.contains(word.toLowerCase()),
+                reason: '$free $outdoor $word',
+              );
+            }
+          }
+        }
+      }
+    },
+  );
+
   for (final keepUnrelated in [false, true]) {
     test(
       'orphan child base text is pruned without parent entries ($keepUnrelated)',
@@ -124,17 +279,24 @@ void main() {
     expect([first.reads, later.reads], [1, 1]);
   });
 
-  test('locale changes discard partially prepared child text', () {
-    final first = EventItem(id: 'first', name: '', isFree: true);
-    final later = EventItem(id: 'later', name: '', isOutdoor: true);
-    final parent = EventItem(id: 'parent', name: '', subEvents: [first, later]);
-    final index = ModelEventSearchIndex();
-    expect(index.contains(parent, 'free', labels: labels), isTrue);
-    const chinese = (free: '免費', pay: '付費', outdoor: '戶外', indoor: '室內');
-    expect(index.contains(parent, '戶外', labels: chinese), isTrue);
-    expect(index.contains(parent, 'free', labels: chinese), isFalse);
-    expect(index.contains(parent, '免費', labels: chinese), isTrue);
-  });
+  test(
+    'locale changes apply current labels to partially prepared child text',
+    () {
+      final first = EventItem(id: 'first', name: '', isFree: true);
+      final later = EventItem(id: 'later', name: '', isOutdoor: true);
+      final parent = EventItem(
+        id: 'parent',
+        name: '',
+        subEvents: [first, later],
+      );
+      final index = ModelEventSearchIndex();
+      expect(index.contains(parent, 'free', labels: labels), isTrue);
+      const chinese = (free: '免費', pay: '付費', outdoor: '戶外', indoor: '室內');
+      expect(index.contains(parent, '戶外', labels: chinese), isTrue);
+      expect(index.contains(parent, 'free', labels: chinese), isFalse);
+      expect(index.contains(parent, '免費', labels: chinese), isTrue);
+    },
+  );
 
   test(
     'shared child text is prepared once across multiple parent searches',

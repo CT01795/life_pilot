@@ -1,4 +1,5 @@
 import 'package:life_pilot/business_plan/model_business_plan.dart';
+import 'package:life_pilot/utils/sort_if_needed.dart';
 
 /// List policy only: no service, UI, account state or retained result cache.
 class ModelBusinessPlanList {
@@ -26,7 +27,7 @@ class ModelBusinessPlanList {
       for (final plan in unique.values)
         (plan: plan, rank: _statusRank(plan.status), createdAt: plan.createdAt),
     ];
-    ranked.sort((left, right) {
+    sortIfNeeded(ranked, (left, right) {
       final statusOrder = left.rank.compareTo(right.rank);
       return statusOrder != 0
           ? statusOrder

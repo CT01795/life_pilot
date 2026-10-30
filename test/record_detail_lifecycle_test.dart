@@ -16,6 +16,9 @@ class _Auth extends ControllerAuth {
   String account = 'a@example.com';
   DataStorageLocation storage = DataStorageLocation.cloud;
   int usageReads = 0;
+  int dataRevision = 0;
+  @override
+  int get personalDataRevision => dataRevision;
   @override
   String get currentAccount => account;
   @override
@@ -32,6 +35,11 @@ class _Auth extends ControllerAuth {
 
   void changeStorage() {
     storage = DataStorageLocation.local;
+    notifyListeners();
+  }
+
+  void cleanup() {
+    dataRevision++;
     notifyListeners();
   }
 }
@@ -313,7 +321,13 @@ void main() {
         'older page',
         'older metadata',
       ]) {
-        for (final change in ['account', 'storage', 'dispose', 'none']) {
+        for (final change in [
+          'account',
+          'storage',
+          'cleanup',
+          'dispose',
+          'none',
+        ]) {
           test('$stage failure after $change respects read scope', () async {
             final initial = stage.startsWith('initial');
             if (!initial) await seed();
@@ -335,6 +349,8 @@ void main() {
               auth.changeAccount();
             } else if (change == 'storage') {
               auth.changeStorage();
+            } else if (change == 'cleanup') {
+              auth.cleanup();
             } else if (change == 'dispose') {
               h.controller.dispose();
             }
@@ -360,6 +376,65 @@ void main() {
           });
         }
       }
+
+      for (final stage in ['older page', 'older metadata']) {
+        test(
+          'cleanup invalidates late $stage without replacing fresh data',
+          () async {
+            await seed();
+            final old = h.more();
+            requests.latest.single.complete(DateTime(2026, 4));
+            await _flush();
+            final oldPage = requests.pages.last;
+            if (stage == 'older metadata') {
+              oldPage.complete([_Row('deleted older row')]);
+              await _flush();
+            }
+            final oldMetadata = requests.histories.last;
+            auth.cleanup();
+            expect(h.ids(), isEmpty);
+            expect(h.loading(), isFalse);
+            expect(h.loadingMore(), isFalse);
+            final fresh = h.load();
+            requests.pages.last.complete([_Row('remaining')]);
+            await _flush();
+            requests.histories.last.complete(false);
+            await fresh;
+            final pageCount = requests.pages.length;
+            final historyCount = requests.histories.length;
+            if (stage == 'older metadata') {
+              oldMetadata.complete(true);
+            } else {
+              oldPage.complete([_Row('deleted older row')]);
+            }
+            await old;
+            await h.more();
+            expect(h.ids(), ['remaining']);
+            expect(h.loading(), isFalse);
+            expect(h.loadingMore(), isFalse);
+            expect(requests.pages, hasLength(pageCount));
+            expect(requests.histories, hasLength(historyCount));
+            expect(requests.latest, hasLength(1));
+          },
+        );
+      }
+
+      test(
+        'cleanup during initial notification prevents an obsolete read',
+        () async {
+          var cleaned = false;
+          h.controller.addListener(() {
+            if (!cleaned && h.loading()) {
+              cleaned = true;
+              auth.cleanup();
+            }
+          });
+          await h.load();
+          expect(requests.pages, isEmpty);
+          expect(h.loading(), isFalse);
+          expect(h.ids(), isEmpty);
+        },
+      );
 
       test('obsolete history error cannot clear a newer refresh', () async {
         await seed();
@@ -409,7 +484,7 @@ void main() {
           expect(h.ids(), ['reserved', 'old']);
         },
       );
-      for (final change in ['account', 'storage', 'dispose']) {
+      for (final change in ['account', 'storage', 'cleanup', 'dispose']) {
         test(
           '$change during initial query prevents metadata and publication',
           () async {
@@ -418,6 +493,8 @@ void main() {
               auth.changeAccount();
             } else if (change == 'storage') {
               auth.changeStorage();
+            } else if (change == 'cleanup') {
+              auth.cleanup();
             } else {
               h.controller.dispose();
             }
@@ -569,7 +646,7 @@ void main() {
           'update' => h.update(),
           _ => h.delete(),
         };
-        for (final change in ['account', 'storage', 'dispose']) {
+        for (final change in ['account', 'storage', 'cleanup', 'dispose']) {
           test(
             '$operation completion after $change does not reload or refresh usage',
             () async {
@@ -579,6 +656,8 @@ void main() {
                 auth.changeAccount();
               } else if (change == 'storage') {
                 auth.changeStorage();
+              } else if (change == 'cleanup') {
+                auth.cleanup();
               } else {
                 h.controller.dispose();
               }

@@ -6,6 +6,23 @@ import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_schedule_q
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
 
+class _CountingKey extends DashboardEventOrderKey {
+  _CountingKey(int minutes, this.onCompare)
+    : super(
+        date: DateTime(2026),
+        minutes: minutes,
+        city: '',
+        location: '',
+        name: '',
+      );
+  final void Function() onCompare;
+  @override
+  int compareTo(DashboardEventOrderKey other) {
+    onCompare();
+    return super.compareTo(other);
+  }
+}
+
 // Frozen previous ordering, independent of the new shared key/comparator.
 int originalOrder({
   required DateTime? leftDate,
@@ -32,6 +49,89 @@ int originalOrder({
 }
 
 void main() {
+  test('strictly ordered dashboard rows need adjacent comparisons only', () {
+    final source = List.generate(10000, (i) => i);
+    var comparisons = 0, reads = 0;
+    final result = ModelDashboardEventOrdering.sorted(
+      source,
+      keyOf: (value) {
+        reads++;
+        return _CountingKey(value, () => comparisons++);
+      },
+    );
+    expect(result, orderedEquals(source));
+    expect(reads, 10000);
+    expect(comparisons, 9999);
+    result.add(10000);
+    expect(source, hasLength(10000));
+  });
+
+  test('equal dashboard keys retain the legacy full-sort path', () {
+    final source = List.generate(150, (i) => i);
+    var comparisons = 0, legacyComparisons = 0;
+    final key = _CountingKey(0, () => legacyComparisons++);
+    final expected = List.of(source)..sort((a, b) => key.compareTo(key));
+    final result = ModelDashboardEventOrdering.sorted(
+      source,
+      keyOf: (_) => _CountingKey(0, () => comparisons++),
+    );
+    expect(result, expected);
+    expect(comparisons, legacyComparisons + 1);
+  });
+
+  test(
+    'late disorder in an otherwise sorted response still sorts all rows',
+    () {
+      final source = [...List.generate(100, (i) => i), -1];
+      final expected = List.of(source)..sort();
+      final result = ModelDashboardEventOrdering.sorted(
+        source,
+        keyOf: (value) => _CountingKey(value, () {}),
+      );
+      expect(result, expected);
+      expect(source.last, -1);
+    },
+  );
+
+  test(
+    'fresh keys are captured on each call without a persistent row cache',
+    () {
+      final source = ['a', 'b'];
+      final values = {'a': 1, 'b': 2};
+      var reads = 0;
+      DashboardEventOrderKey keyOf(String id) {
+        reads++;
+        return _CountingKey(values[id]!, () {});
+      }
+
+      expect(ModelDashboardEventOrdering.sorted(source, keyOf: keyOf), [
+        'a',
+        'b',
+      ]);
+      values['a'] = 3;
+      expect(ModelDashboardEventOrdering.sorted(source, keyOf: keyOf), [
+        'b',
+        'a',
+      ]);
+      expect(reads, 4);
+      expect(source, ['a', 'b']);
+    },
+  );
+
+  test(
+    'ordering preserves duplicate row identity rather than deduplicating',
+    () {
+      final row = Object();
+      final result = ModelDashboardEventOrdering.sorted([
+        row,
+        row,
+      ], keyOf: (_) => _CountingKey(0, () {}));
+      expect(result, hasLength(2));
+      expect(result.first, same(row));
+      expect(result.last, same(row));
+    },
+  );
+
   test(
     'sort builds each key once, consumes input once, and preserves input',
     () {

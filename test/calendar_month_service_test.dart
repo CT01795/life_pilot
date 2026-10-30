@@ -12,6 +12,8 @@ import 'package:life_pilot/utils/const.dart';
 class _Events extends ServiceEvent {
   final response = Completer<List<EventItem>?>();
   int calls = 0;
+  bool failSynchronously = false;
+  void Function()? onRead;
   String? owner;
   String? table;
   DataStorageLocation? storage;
@@ -37,6 +39,8 @@ class _Events extends ServiceEvent {
     start = dateS;
     end = dateE;
     active = shouldContinue;
+    onRead?.call();
+    if (failSynchronously) throw StateError('synchronous events');
     return response.future;
   }
 }
@@ -53,6 +57,117 @@ ModelCalendarMonthQuery _query(DataStorageLocation? storage) =>
     );
 
 void main() {
+  for (final eventFails in [false, true]) {
+    for (final lateFailure in [false, true]) {
+      test(
+        'synchronous ${eventFails ? 'event' : 'holiday'} failure observes its sibling (late error=$lateFailure)',
+        () async {
+          final source = _Events()..failSynchronously = eventFails;
+          final holiday = Completer<List<EventItem>>();
+          var holidayCalls = 0;
+          final loader = ServiceCalendarMonth(
+            serviceEvent: source,
+            holidays: (_, _, _) {
+              holidayCalls++;
+              if (!eventFails) throw StateError('synchronous holidays');
+              return holiday.future;
+            },
+          );
+          final previews = <List<EventItem>>[];
+          await expectLater(
+            loader.loadMonth(_query(null), onEventsReady: previews.add),
+            throwsStateError,
+          );
+          expect(source.calls, 1);
+          expect(holidayCalls, 1);
+          expect(source.active!(), isFalse);
+          if (eventFails) {
+            if (lateFailure) {
+              holiday.completeError(StateError('late holiday'));
+            } else {
+              holiday.complete([]);
+            }
+          } else if (lateFailure) {
+            source.response.completeError(StateError('late events'));
+          } else {
+            source.response.complete([EventItem(id: 'late', name: 'late')]);
+          }
+          await Future<void>.delayed(Duration.zero);
+          expect(previews, isEmpty);
+        },
+      );
+    }
+  }
+
+  test(
+    'both synchronous failures are observed without an unhandled error',
+    () async {
+      final source = _Events()..failSynchronously = true;
+      var calls = 0;
+      final loader = ServiceCalendarMonth(
+        serviceEvent: source,
+        holidays: (_, _, _) {
+          calls++;
+          throw StateError('holidays');
+        },
+      );
+      await expectLater(loader.loadMonth(_query(null)), throwsStateError);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, 1);
+      expect(source.active!(), isFalse);
+    },
+  );
+
+  test(
+    'scope invalidated inside event service prevents unsent holiday read',
+    () async {
+      var active = true, holidayCalls = 0;
+      final source = _Events()..onRead = () => active = false;
+      final loader = ServiceCalendarMonth(
+        serviceEvent: source,
+        holidays: (_, _, _) async {
+          holidayCalls++;
+          return [];
+        },
+      );
+      final previews = <List<EventItem>>[];
+      final pending = loader.loadMonth(
+        _query(null),
+        shouldContinue: () => active,
+        onEventsReady: previews.add,
+      );
+      expect(holidayCalls, 0);
+      source.response.complete([EventItem(id: 'old', name: 'old')]);
+      expect(await pending, isEmpty);
+      expect(previews, isEmpty);
+      expect(source.active!(), isFalse);
+    },
+  );
+
+  test(
+    'preview callback failure closes reads and observes late holiday error',
+    () async {
+      final source = _Events();
+      final holiday = Completer<List<EventItem>>();
+      final loader = ServiceCalendarMonth(
+        serviceEvent: source,
+        holidays: (_, _, _) => holiday.future,
+      );
+      final checked = expectLater(
+        loader.loadMonth(
+          _query(null),
+          onEventsReady: (_) => throw StateError('preview'),
+        ),
+        throwsStateError,
+      );
+      source.response.complete([]);
+      await checked;
+      expect(source.active!(), isFalse);
+      holiday.completeError(StateError('late holiday'));
+      await Future<void>.delayed(Duration.zero);
+    },
+  );
+
   late _Events events;
   late Completer<List<EventItem>> holidays;
   late ServiceCalendarMonth service;

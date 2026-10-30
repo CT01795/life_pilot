@@ -33,26 +33,32 @@ class ServiceCalendarMonth {
     bool isActive() => reading && shouldContinue?.call() != false;
     try {
       final results = await Future.wait<List<EventItem>?>([
-        _events
-            .getEvents(
-              tableName: query.tableName,
-              dateS: query.start,
-              dateE: query.end,
-              inputUser: query.account,
-              storageLocation: query.storage,
-              shouldContinue: isActive,
-            )
-            .then((events) {
-              if (isActive()) {
-                onEventsReady?.call(events ?? []);
-              }
-              return events;
-            }),
-        _holidays(
-          query.start.subtract(const Duration(days: 2)),
-          query.end.add(const Duration(days: 2)),
-          query.locale,
-        ),
+        // Register both branches even if a service throws before returning a
+        // Future, so a sibling's late error is always observed by Future.wait.
+        Future<List<EventItem>?>.sync(() {
+          if (!isActive()) return null;
+          return _events.getEvents(
+            tableName: query.tableName,
+            dateS: query.start,
+            dateE: query.end,
+            inputUser: query.account,
+            storageLocation: query.storage,
+            shouldContinue: isActive,
+          );
+        }).then((events) {
+          if (isActive()) {
+            onEventsReady?.call(events ?? []);
+          }
+          return events;
+        }),
+        Future<List<EventItem>>.sync(() {
+          if (!isActive()) return [];
+          return _holidays(
+            query.start.subtract(const Duration(days: 2)),
+            query.end.add(const Duration(days: 2)),
+            query.locale,
+          );
+        }),
       ], eagerError: true);
       if (shouldContinue?.call() == false) return [];
       return [...?results[0], ...?results[1]];

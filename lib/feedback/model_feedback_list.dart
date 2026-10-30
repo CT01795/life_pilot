@@ -1,4 +1,5 @@
 import 'package:life_pilot/feedback/model_feedback.dart';
+import 'package:life_pilot/utils/sort_if_needed.dart';
 
 /// Ordering policy only. Status is mutable, so keys are captured per call,
 /// never cached. Preserve row identity and each row's decoded screenshots.
@@ -15,7 +16,7 @@ class ModelFeedbackList {
       for (final row in unique.values)
         (row: row, rank: _statusRank(row.status), date: row.createdAt),
     ];
-    ranked.sort((left, right) {
+    sortIfNeeded(ranked, (left, right) {
       final statusOrder = left.rank.compareTo(right.rank);
       return statusOrder != 0 ? statusOrder : right.date.compareTo(left.date);
     });

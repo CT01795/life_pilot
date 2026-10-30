@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -127,7 +128,19 @@ class ModelFeedback {
     final token = Object();
     _screenshotDecodeSource = source;
     _screenshotDecodeToken = token;
-    return _screenshotDecodeFuture = _decodeScreenshots(source, token);
+    final completion = Completer<List<Uint8List>>();
+    final future = completion.future;
+    // Publish before calling a decoder, which may synchronously request this
+    // same snapshot again. All callers must observe the same in-flight work.
+    _screenshotDecodeFuture = future;
+    unawaited(
+      _decodeScreenshots(source, token).then<void>(
+        completion.complete,
+        onError: (Object error, StackTrace stack) =>
+            completion.completeError(error, stack),
+      ),
+    );
+    return future;
   }
 
   Future<Uint8List?> decodeScreenshotAsync(int index) {
@@ -141,15 +154,21 @@ class ModelFeedback {
     // Validate this index only: lazy thumbnails must not scan every image.
     final decoded = _decodedScreenshots;
     final decodedSource = _decodedSource;
-    final future =
-        decoded != null &&
-            decodedSource != null &&
-            index < decoded.length &&
-            index < decodedSource.length &&
-            decodedSource[index] == source
-        ? Future<Uint8List?>.value(decoded[index])
-        : _decodeScreenshot(source);
+    if (decoded != null &&
+        decodedSource != null &&
+        index < decoded.length &&
+        index < decodedSource.length &&
+        decodedSource[index] == source) {
+      final future = Future<Uint8List?>.value(decoded[index]);
+      _screenshotDecodeFutures[index] = (source: source, value: future);
+      return future;
+    }
+    final completion = Completer<Uint8List?>();
+    final future = completion.future;
     _screenshotDecodeFutures[index] = (source: source, value: future);
+    // _decodeScreenshot maps decoder errors to null for the broken thumbnail.
+    // Register first so synchronous decoder re-entry cannot start another job.
+    unawaited(_decodeScreenshot(source).then<void>(completion.complete));
     return future;
   }
 
@@ -170,6 +189,7 @@ class ModelFeedback {
         source.map(
           (image) => Future<Uint8List>.sync(() => _screenshotDecoder(image)),
         ),
+        eagerError: true,
       );
       if (identical(token, _screenshotDecodeToken) &&
           listEquals(screenshot, source)) {

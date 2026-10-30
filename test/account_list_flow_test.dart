@@ -199,6 +199,105 @@ void main() {
         auth.dispose();
       });
 
+      for (final lateFailure in [false, true]) {
+        testWidgets(
+          'timeout releases shared load and late response cannot replace retry ($lateFailure)',
+          (tester) async {
+            final seed = h.load();
+            requests.pending[0].complete(['existing']);
+            await tester.pump();
+            await seed;
+
+            final first = h.load();
+            final joined = h.load();
+            expect(joined, same(first));
+            expect(requests.pending, hasLength(2));
+            await tester.pump(const Duration(seconds: 31));
+            await Future.wait([first, joined]);
+            expect(h.loading(), isFalse);
+            expect(h.error(), isA<TimeoutException>());
+            expect(h.ids(), ['existing']);
+
+            final retry = h.load();
+            expect(h.error(), isNull);
+            expect(h.loading(), isTrue);
+            expect(requests.categories, ['personal', 'personal', 'personal']);
+            if (lateFailure) {
+              requests.pending[1].completeError(StateError('late read'));
+            } else {
+              requests.pending[1].complete(['obsolete']);
+            }
+            await tester.pump();
+            expect(h.ids(), ['existing']);
+            expect(h.loading(), isTrue);
+            expect(h.error(), isNull);
+            requests.pending[2].complete(['latest']);
+            await tester.pump();
+            await retry;
+            expect(h.ids(), ['latest']);
+            expect(h.loading(), isFalse);
+            expect(h.error(), isNull);
+          },
+        );
+      }
+
+      testWidgets('old category timeout cannot release a newer category load', (
+        tester,
+      ) async {
+        final original = h.load();
+        await tester.pump(const Duration(seconds: 20));
+        final project = h.select('project');
+        await tester.pump(const Duration(seconds: 11));
+        await original;
+        expect(h.loading(), isTrue);
+        expect(h.error(), isNull);
+        expect(h.ids(), isEmpty);
+        requests.pending[0].complete(['old category']);
+        await tester.pump();
+        expect(h.loading(), isTrue);
+        requests.pending[1].complete(['project']);
+        await tester.pump();
+        await project;
+        expect(h.ids(), ['project']);
+        expect(h.loading(), isFalse);
+      });
+
+      for (final action in ['account', 'storage', 'dispose']) {
+        testWidgets('timeout after $action ignores errors and old responses', (
+          tester,
+        ) async {
+          final old = h.load();
+          if (action == 'account') {
+            auth.switchAccount();
+          } else if (action == 'storage') {
+            auth.switchStorage();
+          } else {
+            h.controller.dispose();
+          }
+          var notifications = 0;
+          if (!h.controller.notifierDisposed) {
+            h.controller.addListener(() => notifications++);
+          }
+          await tester.pump(const Duration(seconds: 31));
+          await old;
+          expect(h.error(), isNull);
+          expect(notifications, 0);
+          requests.pending[0].completeError(StateError('old read'));
+          await tester.pump();
+          expect(h.ids(), isEmpty);
+          expect(h.error(), isNull);
+          expect(notifications, 0);
+          if (action != 'dispose') {
+            final current = h.load();
+            requests.pending[1].complete(['current']);
+            await tester.pump();
+            await current;
+            expect(h.ids(), ['current']);
+            expect(h.loading(), isFalse);
+          }
+        });
+      }
+
       test('same category shares the active request', () async {
         final first = h.load();
         final second = h.load();

@@ -66,6 +66,7 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
       _deletingIds.contains(id) || _updatingIds.contains(id);
 
   void applySearch(String keyword) {
+    if (notifierDisposed) return;
     final next = keyword.trim();
     if (_appliedKeyword == next) return;
     _appliedKeyword = next;
@@ -73,12 +74,14 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
   }
 
   void selectGroup(String? group) {
+    if (notifierDisposed) return;
     if (_selectedGroup == group) return;
     _selectedGroup = group;
     notifyListeners();
   }
 
   void selectStatus(QuestionStatusFilter status) {
+    if (notifierDisposed) return;
     if (_statusFilter == status) return;
     _statusFilter = status;
     notifyListeners();
@@ -88,7 +91,11 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
   Future<bool?> load({bool append = false, bool refreshGroups = false}) async {
     if (notifierDisposed) return null;
     final query = _query;
-    if (!append && _isLoading && _loadingQuery == query) return true;
+    // Ordinary duplicate reads are ignored, but a requested classification
+    // refresh must supersede the old response (for example after an edit).
+    if (!append && _isLoading && _loadingQuery == query && !refreshGroups) {
+      return true;
+    }
     if (append &&
         (_isLoading || _isLoadingMore || !hasMore || _loadedQuery != query)) {
       return true;
@@ -214,6 +221,7 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
     _deletingIds.add(id);
     notifyListeners();
     try {
+      if (notifierDisposed) return;
       await _service.deleteMyQuestion(gameName: gameName, questionId: id);
       if (!notifierDisposed) {
         _groupsDirty = true;
@@ -230,6 +238,7 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
     _updatingIds.add(id);
     notifyListeners();
     try {
+      if (notifierDisposed) return;
       await _service.setMyQuestionActive(
         gameName: gameName,
         questionId: id,

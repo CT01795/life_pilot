@@ -60,6 +60,33 @@ List<ModelBusinessPlan> _legacy(Iterable<ModelBusinessPlan> source) {
 }
 
 void main() {
+  test('already ordered plans still snapshot every key only once', () {
+    final source = List.generate(10000, _CountedPlan.new).reversed.toList();
+    final result = ModelBusinessPlanList.ordered(source);
+    expect(result, orderedEquals(source));
+    expect(source.every((p) => p.statusReads == 1 && p.dateReads == 1), isTrue);
+    expect(result.first, same(source.first));
+  });
+
+  test(
+    'ordering is checked after the final duplicate replaces an earlier row',
+    () {
+      final first = _plan('a', 'in_progress', 3);
+      final replacement = _plan('a', 'completed', 3);
+      final source = [
+        first,
+        _plan('b', 'in_progress', 2),
+        _plan('c', 'in_progress', 1),
+        replacement,
+      ];
+      final result = ModelBusinessPlanList.ordered(source);
+      expect(result, _legacy(source));
+      expect(result.map((p) => p.id), ['b', 'c', 'a']);
+      expect(result.last, same(replacement));
+      expect(first.status, 'in_progress');
+    },
+  );
+
   test(
     'status priority precedes newest creation date and source is unchanged',
     () {

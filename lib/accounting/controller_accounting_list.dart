@@ -8,20 +8,26 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
-import 'package:life_pilot/utils/text_normalization.dart';
+import 'package:life_pilot/utils/model_personal_data_scope.dart';
+import 'package:life_pilot/utils/in_flight_read_pool.dart';
 
 class ControllerAccountingList extends SafeChangeNotifier {
   final ServiceAccounting _service;
+  final Duration requestTimeout;
   ControllerAuth? auth;
-  String? _dataScopeKey;
+  ModelPersonalDataScope? _dataScopeKey;
   int _accountGeneration = 0;
   int _listRequest = 0;
   String? _loadingCategory;
   Future<void>? _loadFuture;
+  final _currencyReads =
+      InFlightReadPool<(ModelPersonalDataScope, String), String>();
+  int _currencyRevision = 0;
 
   ControllerAccountingList({
     required ServiceAccounting service,
     required this.auth,
+    this.requestTimeout = const Duration(seconds: 30),
   }) : _service = service,
        _dataScopeKey = _scopeKey(auth) {
     auth?.addListener(_onAuthChanged);
@@ -35,13 +41,16 @@ class ControllerAccountingList extends SafeChangeNotifier {
   @override
   void dispose() {
     auth?.removeListener(_onAuthChanged);
+    _currencyReads.invalidate();
     super.dispose();
   }
 
-  static String _scopeKey(ControllerAuth? auth) =>
-      '${normalizeText(auth?.currentAccount)}|'
-      '${auth?.preferredStorage.name ?? ''}|'
-      '${auth?.personalDataRevision ?? 0}';
+  static ModelPersonalDataScope _scopeKey(ControllerAuth? auth) =>
+      ModelPersonalDataScope(
+        account: auth?.currentAccount,
+        storage: auth?.preferredStorage,
+        revision: auth?.personalDataRevision ?? 0,
+      );
 
   bool isLoading = false;
   Object? loadError;
@@ -86,10 +95,11 @@ class ControllerAccountingList extends SafeChangeNotifier {
     int request,
   ) async {
     try {
-      final loaded = await _service.fetchAccounts(
-        user: user,
-        category: requestedCategory,
-      );
+      // Bound only the read, not create/delete operations. Timeout releases
+      // the shared request; its late response cannot publish or block retry.
+      final loaded = await _service
+          .fetchAccounts(user: user, category: requestedCategory)
+          .timeout(requestTimeout);
       if (!_isCurrent(generation) || request != _listRequest) return;
       accounts = loaded;
     } catch (error) {
@@ -114,6 +124,7 @@ class ControllerAccountingList extends SafeChangeNotifier {
     if (_dataScopeKey == nextScope) return;
     _dataScopeKey = nextScope;
     _accountGeneration++;
+    _currencyReads.invalidate();
     _listRequest++;
     _loadFuture = null;
     _loadingCategory = null;
@@ -135,6 +146,8 @@ class ControllerAccountingList extends SafeChangeNotifier {
   Future<void> setCategory(String category) async {
     if (notifierDisposed || _currentCategory == category) return;
     _currentCategory = category;
+    _currencyRevision++;
+    _currencyReads.invalidate();
     accounts = [];
     mainCurrency = null;
 
@@ -145,16 +158,34 @@ class ControllerAccountingList extends SafeChangeNotifier {
   Future<void> loadMainCurrency() async {
     if (notifierDisposed) return;
     final generation = _accountGeneration;
+    final revision = _currencyRevision;
     final selectedCategory = category;
     final user = auth?.currentAccount ?? '';
-    final currency = accounts.isNotEmpty
-        ? accounts.first.currency
-        : await _service.fetchLatestAccount(
-            user: user,
-            category: selectedCategory,
-          );
-    if (!_isCurrent(generation) || category != selectedCategory) return;
-    mainCurrency = currency;
+    bool isCurrent() =>
+        _isCurrent(generation) &&
+        revision == _currencyRevision &&
+        category == selectedCategory;
+    String? currency;
+    try {
+      currency = accounts.isNotEmpty
+          ? accounts.first.currency
+          : await _currencyReads.read(
+              (_scopeKey(auth), selectedCategory),
+              () => _service.fetchLatestAccount(
+                user: user,
+                category: selectedCategory,
+              ),
+            );
+    } catch (_) {
+      if (isCurrent()) rethrow;
+      return;
+    }
+    if (!isCurrent()) return;
+    // A list read may have finished while the fallback was pending. Prefer
+    // its current currency instead of publishing an older fallback response.
+    final resolved = accounts.isNotEmpty ? accounts.first.currency : currency;
+    if (mainCurrency == resolved) return;
+    mainCurrency = resolved;
     notifyListeners();
   }
 

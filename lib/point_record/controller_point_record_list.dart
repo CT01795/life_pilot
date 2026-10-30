@@ -8,12 +8,13 @@ import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
-import 'package:life_pilot/utils/text_normalization.dart';
+import 'package:life_pilot/utils/model_personal_data_scope.dart';
 
 class ControllerPointRecordList extends SafeChangeNotifier {
   final ServicePointRecord service;
+  final Duration requestTimeout;
   ControllerAuth? auth;
-  String? _dataScopeKey;
+  ModelPersonalDataScope? _dataScopeKey;
   int _accountGeneration = 0;
   int _listRequest = 0;
   String? _loadingCategory;
@@ -32,8 +33,11 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     await loadAccounts();
   }
 
-  ControllerPointRecordList({required this.service, required this.auth})
-    : _dataScopeKey = _scopeKey(auth) {
+  ControllerPointRecordList({
+    required this.service,
+    required this.auth,
+    this.requestTimeout = const Duration(seconds: 30),
+  }) : _dataScopeKey = _scopeKey(auth) {
     auth?.addListener(_onAuthChanged);
   }
 
@@ -48,10 +52,12 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     super.dispose();
   }
 
-  static String _scopeKey(ControllerAuth? auth) =>
-      '${normalizeText(auth?.currentAccount)}|'
-      '${auth?.preferredStorage.name ?? ''}|'
-      '${auth?.personalDataRevision ?? 0}';
+  static ModelPersonalDataScope _scopeKey(ControllerAuth? auth) =>
+      ModelPersonalDataScope(
+        account: auth?.currentAccount,
+        storage: auth?.preferredStorage,
+        revision: auth?.personalDataRevision ?? 0,
+      );
 
   List<ModelPointRecordAccount> accounts = [];
   bool isLoading = false;
@@ -96,10 +102,11 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     int request,
   ) async {
     try {
-      final loaded = await service.fetchAccounts(
-        user: user,
-        category: requestedCategory,
-      );
+      // Bound only the read, not create/delete operations. Timeout releases
+      // the shared request; its late response cannot publish or block retry.
+      final loaded = await service
+          .fetchAccounts(user: user, category: requestedCategory)
+          .timeout(requestTimeout);
       if (!_isCurrent(generation) || request != _listRequest) return;
       accounts = loaded;
     } catch (error) {

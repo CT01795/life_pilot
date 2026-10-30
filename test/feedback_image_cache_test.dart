@@ -17,6 +17,136 @@ ModelFeedback _model(
 Uint8List _bytes(int value) => Uint8List.fromList([value]);
 
 void main() {
+  for (final bulk in [false, true]) {
+    for (final fails in [false, true]) {
+      test(
+        'decoder re-entry shares the registered future (bulk=$bulk, failure=$fails)',
+        () async {
+          late ModelFeedback model;
+          Future<Object?>? joined;
+          final pending = Completer<Uint8List>();
+          var calls = 0;
+          model = _model(['image'], (_) {
+            calls++;
+            if (calls == 1) {
+              joined = bulk
+                  ? model.decodeScreenshotsAsync()
+                  : model.decodeScreenshotAsync(0);
+            }
+            if (fails) throw StateError('decoder');
+            return pending.future;
+          });
+          final first = bulk
+              ? model.decodeScreenshotsAsync()
+              : model.decodeScreenshotAsync(0);
+          expect(joined, same(first));
+          expect(calls, 1);
+          if (fails) {
+            if (bulk) {
+              await expectLater(first, throwsStateError);
+            } else {
+              expect(await first, isNull);
+            }
+          } else {
+            pending.complete(_bytes(1));
+            expect(
+              await first,
+              bulk
+                  ? [
+                      [1],
+                    ]
+                  : [1],
+            );
+          }
+        },
+      );
+    }
+
+    test(
+      'reentrant image replacement retains the newer future (bulk=$bulk)',
+      () async {
+        late ModelFeedback model;
+        Future<Object?>? replacement;
+        final old = Completer<Uint8List>(), fresh = Completer<Uint8List>();
+        final calls = <String>[];
+        model = _model(['old'], (source) {
+          calls.add(source);
+          if (source == 'old') {
+            model.screenshot = ['new'];
+            replacement = bulk
+                ? model.decodeScreenshotsAsync()
+                : model.decodeScreenshotAsync(0);
+            return old.future;
+          }
+          return fresh.future;
+        });
+        final first = bulk
+            ? model.decodeScreenshotsAsync()
+            : model.decodeScreenshotAsync(0);
+        fresh.complete(_bytes(2));
+        expect(
+          await replacement,
+          bulk
+              ? [
+                  [2],
+                ]
+              : [2],
+        );
+        old.complete(_bytes(1));
+        expect(
+          await first,
+          bulk
+              ? [
+                  [1],
+                ]
+              : [1],
+        );
+        if (bulk) {
+          expect(model.screenshotDecodeRawData!.single, [2]);
+        } else {
+          expect(model.decodeScreenshotAsync(0), same(replacement));
+        }
+        expect(calls, ['old', 'new']);
+      },
+    );
+  }
+
+  for (final synchronous in [false, true]) {
+    for (final lateFailure in [false, true]) {
+      test(
+        'bulk failure releases retry without waiting for sibling (sync=$synchronous, late error=$lateFailure)',
+        () async {
+          var fail = true;
+          final pending = Completer<Uint8List>();
+          final model = _model(['bad', 'pending'], (source) {
+            if (fail) {
+              if (source == 'pending') return pending.future;
+              if (synchronous) throw StateError('bad image');
+              return Future.error(StateError('bad image'));
+            }
+            return Future.value(_bytes(source == 'bad' ? 1 : 2));
+          });
+          await expectLater(model.decodeScreenshotsAsync(), throwsStateError);
+          expect(pending.isCompleted, isFalse);
+          expect(model.screenshotDecodeRawData, isNull);
+          fail = false;
+          final retried = await model.decodeScreenshotsAsync();
+          expect(retried, [
+            [1],
+            [2],
+          ]);
+          if (lateFailure) {
+            pending.completeError(StateError('late sibling'));
+          } else {
+            pending.complete(_bytes(9));
+          }
+          await Future<void>.delayed(Duration.zero);
+          expect(model.screenshotDecodeRawData, same(retried));
+        },
+      );
+    }
+  }
+
   test('single-image reads are lazy and share the exact future', () async {
     final calls = <String>[];
     final done = Completer<Uint8List>();

@@ -27,6 +27,22 @@ class _TextEvent extends EventItem {
 }
 
 void main() {
+  test('model language changes reuse text while filtering current labels', () {
+    final row = _TextEvent('e', DateTime(2026, 10, 1))..isFree = true;
+    final model = ModelEvent()
+      ..setEvents([row])
+      ..updateSearchKeywords('needle');
+    expect(model.getFilteredEvents(AppLocalizationsEn()), [row]);
+    expect(model.getFilteredEvents(AppLocalizationsZh()), [row]);
+    model.updateSearchKeywords('免費');
+    expect(model.getFilteredEvents(AppLocalizationsZh()), [row]);
+    expect(model.getFilteredEvents(AppLocalizationsEn()), isEmpty);
+    model.updateSearchKeywords('free');
+    expect(model.getFilteredEvents(AppLocalizationsEn()), [row]);
+    expect(model.getFilteredEvents(AppLocalizationsZh()), isEmpty);
+    expect(row.reads, 1);
+  });
+
   final loc = AppLocalizationsEn();
   test('equivalent locale instances reuse the same filtered projection', () {
     final row = _TextEvent('event', DateTime(2026, 10, 1));
