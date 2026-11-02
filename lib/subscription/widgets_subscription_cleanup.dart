@@ -8,7 +8,8 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
 class SubscriptionDataCleanup extends StatefulWidget {
-  const SubscriptionDataCleanup({super.key});
+  const SubscriptionDataCleanup({super.key, this.service});
+  final ServiceSubscription? service;
 
   @override
   State<SubscriptionDataCleanup> createState() =>
@@ -26,7 +27,18 @@ class _SubscriptionDataCleanupState extends State<SubscriptionDataCleanup> {
   }
 
   Future<void> _open() async {
+    if (_busy) return;
     final auth = context.read<ControllerAuth>();
+    final account = auth.currentAccount;
+    if (account == null) return;
+    final storage = auth.preferredStorage;
+    final administrator = auth.isSysAdmin;
+    bool current() =>
+        mounted &&
+        auth.currentAccount == account &&
+        auth.preferredStorage == storage &&
+        auth.isSysAdmin == administrator;
+    final service = widget.service ?? ServiceSubscription();
     final loc = AppLocalizations.of(context)!;
     final isLocal = auth.preferredStorage == DataStorageLocation.local;
     final target = auth.isSysAdmin && _email.text.trim().isNotEmpty
@@ -36,8 +48,8 @@ class _SubscriptionDataCleanupState extends State<SubscriptionDataCleanup> {
     try {
       final preview = isLocal
           ? const <SubscriptionCleanupPreview>[]
-          : await ServiceSubscription().fetchCleanupPreview(email: target);
-      if (!mounted) return;
+          : await service.fetchCleanupPreview(email: target);
+      if (!current()) return;
       final overages = preview.where((row) => row.excess > 0).toList();
       final mode = await showDialog<String>(
         context: context,
@@ -88,7 +100,7 @@ class _SubscriptionDataCleanupState extends State<SubscriptionDataCleanup> {
           ],
         ),
       );
-      if (mode == null || !mounted) return;
+      if (mode == null || !current()) return;
       final confirmed =
           await showDialog<bool>(
             context: context,
@@ -112,20 +124,18 @@ class _SubscriptionDataCleanupState extends State<SubscriptionDataCleanup> {
             ),
           ) ??
           false;
-      if (!confirmed || !mounted) return;
+      if (!confirmed || !current()) return;
       if (isLocal) {
-        await LocalDataStore.instance.deleteAllRecords(
-          owner: auth.currentAccount!,
-        );
+        await LocalDataStore.instance.deleteAllRecords(owner: account);
       } else {
-        await ServiceSubscription().cleanupData(email: target, mode: mode);
+        await service.cleanupData(email: target, mode: mode);
       }
-      if (!mounted) return;
+      if (!current()) return;
       await auth.refreshAfterPersonalDataCleanup();
-      if (!mounted) return;
+      if (!current()) return;
       AppNavigator.showSnackBar(loc.dataCleanupSuccess);
     } catch (error) {
-      if (mounted) {
+      if (current()) {
         AppNavigator.showErrorBar('${loc.dataCleanupFailed}\n$error');
       }
     } finally {

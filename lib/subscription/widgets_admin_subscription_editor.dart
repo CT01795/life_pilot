@@ -5,6 +5,7 @@ import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/subscription/subscription_constants.dart';
 import 'package:life_pilot/subscription/subscription_quota_presentation.dart';
 import 'package:life_pilot/subscription/subscription_quota_summary.dart';
+import 'package:life_pilot/subscription/widgets_admin_subscription_page.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
@@ -35,7 +36,8 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   bool _additive = false;
   Map<String, dynamic>? _lookedUpSubscription;
   List<Map<String, dynamic>> _lookedUpEntitlements = const [];
-  List<Map<String, dynamic>> _allUserSubscriptions = const [];
+  bool _showAllSubscriptions = false;
+  int _summaryListRevision = 0;
   bool _lookupLoading = false;
   bool _hasLookedUp = false;
   String? _lookedUpEmail;
@@ -227,7 +229,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                   ),
                 ],
               ),
-              if (_allUserSubscriptions.isNotEmpty) ...[
+              if (_showAllSubscriptions) ...[
                 Gaps.h8,
                 Align(
                   alignment: Alignment.centerLeft,
@@ -236,35 +238,12 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 320),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _allUserSubscriptions.length,
-                    itemBuilder: (context, index) {
-                      final row = _allUserSubscriptions[index];
-                      final email = parseStringValue(row['account']).isNotEmpty
-                          ? parseStringValue(row['account'])
-                          : parseStringValue(row['email']);
-                      final activeCount = parseIntValue(
-                        row['active_entitlements'],
-                      );
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.person_outline),
-                        title: Text(email),
-                        subtitle: Text(
-                          loc.adminSubscriptionActiveCount(activeCount),
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () async {
-                          _email.text = email;
-                          _allUserSubscriptions = const [];
-                          await _lookupSubscription();
-                        },
-                      );
-                    },
-                  ),
+                AdminSubscriptionSummaryList(
+                  key: ValueKey(_summaryListRevision),
+                  onSelected: (email) async {
+                    _email.text = email;
+                    await _lookupSubscription();
+                  },
                 ),
               ],
               if (_subscriptionExists && _lookedUpEntitlements.isEmpty)
@@ -664,23 +643,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   Future<void> _lookupSubscription() async {
     final email = _normalizedEmail;
     if (email.isEmpty) {
-      setState(() => _lookupLoading = true);
-      try {
-        final rows = await ServiceSubscription()
-            .fetchAllUserSubscriptionSummariesAsAdmin();
-        if (!mounted) return;
-        setState(() => _allUserSubscriptions = rows);
-      } catch (error) {
-        if (mounted) {
-          _show(
-            AppLocalizations.of(
-              context,
-            )!.adminSubscriptionSaveFailed(error.toString()),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _lookupLoading = false);
-      }
+      setState(() {
+        _showAllSubscriptions = true;
+        _summaryListRevision++;
+      });
       return;
     }
     setState(() {
@@ -689,20 +655,15 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       _lookedUpEmail = null;
       _lookedUpSubscription = null;
       _lookedUpEntitlements = const [];
-      _allUserSubscriptions = const [];
+      _showAllSubscriptions = false;
     });
     try {
       final service = ServiceSubscription();
-      final results = await Future.wait<Object?>([
-        service.fetchUserSubscriptionAsAdmin(email: email),
-        service.fetchUserEntitlementsAsAdmin(email: email),
-      ]);
-      final result = results[0] as Map<String, dynamic>?;
-      final entitlements = results[1] as List<Map<String, dynamic>>;
-      if (mounted) {
+      final result = await service.fetchUserSubscriptionOverviewAsAdmin(email);
+      if (mounted && normalizeText(_email.text) == normalizeText(email)) {
         setState(() {
-          _lookedUpSubscription = result;
-          _lookedUpEntitlements = entitlements;
+          _lookedUpSubscription = result.subscription;
+          _lookedUpEntitlements = result.entitlements;
           _lookedUpEmail = email;
           _hasLookedUp = true;
         });

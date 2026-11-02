@@ -10,6 +10,7 @@ import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:life_pilot/utils/service/export/personal_export_comparator.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/service/export/repository_personal_export_rows.dart';
+import 'package:life_pilot/auth/repository_account_deletion.dart';
 
 class ServicePersonalData {
   Future<String> export({
@@ -313,41 +314,23 @@ class ServicePersonalData {
     };
   }
 
-  Future<void> requestAccountDeletion() async {
-    await supabase.rpc('request_account_deletion');
-  }
+  Future<void> requestAccountDeletion() =>
+      RepositoryAccountDeletion().request();
 
-  Future<Map<String, dynamic>?> fetchMyAccountDeletionRequest() async {
-    final rows =
-        await supabase.rpc('get_my_account_deletion_request') as List<dynamic>;
-    if (rows.isEmpty) return null;
-    return Map<String, dynamic>.from(rows.first as Map);
-  }
+  Future<Map<String, dynamic>?> fetchMyAccountDeletionRequest() =>
+      RepositoryAccountDeletion().ownRequest();
 
-  Future<void> requestAccountDeletionCancellation() async {
-    await supabase.rpc('cancel_account_deletion_request');
-  }
+  Future<void> requestAccountDeletionCancellation() =>
+      RepositoryAccountDeletion().cancel();
 
-  Future<List<Map<String, dynamic>>> fetchAccountDeletionRequests() async {
-    final rows = await supabase.rpc('admin_list_account_deletion_requests');
-    return (rows as List<dynamic>)
-        .map((row) => Map<String, dynamic>.from(row as Map))
-        .toList(growable: false);
-  }
+  Future<List<Map<String, dynamic>>> fetchAccountDeletionRequests() =>
+      RepositoryAccountDeletion().adminRequests();
 
-  Future<void> approveAccountDeletion(String requestId) async {
-    await supabase.rpc(
-      'admin_delete_account_and_data',
-      params: {'p_request_id': requestId},
-    );
-  }
+  Future<void> approveAccountDeletion(String requestId) =>
+      RepositoryAccountDeletion().approve(requestId);
 
-  Future<void> confirmAccountDeletionCancellation(String requestId) async {
-    await supabase.rpc(
-      'admin_confirm_account_deletion_cancellation',
-      params: {'p_request_id': requestId},
-    );
-  }
+  Future<void> confirmAccountDeletionCancellation(String requestId) =>
+      RepositoryAccountDeletion().confirmCancellation(requestId);
 }
 
 class _ExportField {

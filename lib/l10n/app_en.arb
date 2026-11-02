@@ -1,4 +1,8 @@
 {
+  "refreshList": "Refresh list",
+  "@refreshList": {"description": "Reload the current list"},
+  "cloudDeleteUnconfirmedLocalCopyKept": "Cloud cleanup could not be confirmed. Your local copy has been kept. Do not repeat the transfer; refresh and contact an administrator to verify the result.",
+  "@cloudDeleteUnconfirmedLocalCopyKept": {"description": "Keep local transfer copies when the cloud deletion response is uncertain"},
   "cloudZeroHistoryTransferWarning": "Your cloud plan does not retain individual answers. They will be omitted and their device copies removed after transfer succeeds. Game scores and progress will still be transferred.",
   "@cloudZeroHistoryTransferWarning": {"description": "Shown when transferring data to a cloud plan that does not retain individual answers"},
   "cloudHistoryOmitted": "Moved to cloud; {count} individual answer records were omitted under your plan.",

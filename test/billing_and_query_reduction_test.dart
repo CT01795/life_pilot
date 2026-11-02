@@ -51,7 +51,10 @@ void main() {
       httpClient: MockClient((request) async {
         requests.add(request);
         final body =
-            request.url.path.endsWith('export_my_cloud_data_for_local') &&
+            (request.url.path.endsWith('export_my_cloud_data_for_local') ||
+                    request.url.path.endsWith(
+                      'export_my_personal_excel_rows',
+                    )) &&
                 request.url.queryParameters['offset'] == '1000'
             ? [
                 {
@@ -198,6 +201,10 @@ void main() {
       expect(
         requests.single.url.queryParameters['select'],
         isNot(contains('screenshot')),
+      );
+      expect(
+        requests.single.url.queryParameters['select']!.split(','),
+        isNot(contains('cc')),
       );
       response = {
         'screenshot': ['encoded-image'],

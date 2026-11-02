@@ -1,4 +1,8 @@
 {
+  "refreshList": "重新整理清單",
+  "@refreshList": {"description": "Reload the current list"},
+  "cloudDeleteUnconfirmedLocalCopyKept": "雲端清理結果尚未確認，已保留本機副本。請勿重複轉移，請先重新整理並聯絡管理者確認。",
+  "@cloudDeleteUnconfirmedLocalCopyKept": {"description": "Keep local transfer copies when the cloud deletion response is uncertain"},
   "cloudZeroHistoryTransferWarning": "雲端方案不保留逐題答題紀錄。轉移時會略過這些紀錄，確認轉移完成後會清除本機副本；遊戲總分與進度仍會轉移。",
   "@cloudZeroHistoryTransferWarning": {"description": "Shown when transferring data to a cloud plan that does not retain individual answers"},
   "cloudHistoryOmitted": "已轉至雲端；依方案設定，略過 {count} 筆逐題答題紀錄。",

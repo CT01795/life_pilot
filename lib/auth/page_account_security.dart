@@ -4,7 +4,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/auth/service_auth.dart';
 import 'package:life_pilot/auth/service_account_security.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/subscription/widgets_admin_account_deletion_requests.dart';
+import 'package:life_pilot/auth/widgets_admin_account_deletion_queue.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/service_api.dart';
@@ -517,7 +517,7 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
                       Gaps.h32,
                       const Divider(),
                       Gaps.h16,
-                      const AdminAccountDeletionRequests(),
+                      const AdminAccountDeletionQueue(),
                     ],
                   ],
                 ),

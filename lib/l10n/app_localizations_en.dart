@@ -9,6 +9,12 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get refreshList => 'Refresh list';
+
+  @override
+  String get cloudDeleteUnconfirmedLocalCopyKept => 'Cloud cleanup could not be confirmed. Your local copy has been kept. Do not repeat the transfer; refresh and contact an administrator to verify the result.';
+
+  @override
   String get cloudZeroHistoryTransferWarning => 'Your cloud plan does not retain individual answers. They will be omitted and their device copies removed after transfer succeeds. Game scores and progress will still be transferred.';
 
   @override

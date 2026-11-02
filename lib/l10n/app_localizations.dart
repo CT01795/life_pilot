@@ -99,7 +99,19 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
-  /// No description provided for @cloudZeroHistoryTransferWarning.
+  /// Reload the current list
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh list'**
+  String get refreshList;
+
+  /// Keep local transfer copies when the cloud deletion response is uncertain
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud cleanup could not be confirmed. Your local copy has been kept. Do not repeat the transfer; refresh and contact an administrator to verify the result.'**
+  String get cloudDeleteUnconfirmedLocalCopyKept;
+
+  /// Shown when transferring data to a cloud plan that does not retain individual answers
   ///
   /// In en, this message translates to:
   /// **'Your cloud plan does not retain individual answers. They will be omitted and their device copies removed after transfer succeeds. Game scores and progress will still be transferred.'**
@@ -111,19 +123,19 @@ abstract class AppLocalizations {
   /// **'Moved to cloud; {count} individual answer records were omitted under your plan.'**
   String cloudHistoryOmitted(int count);
 
-  /// No description provided for @billingCycle.
+  /// Label for billing cycle
   ///
   /// In en, this message translates to:
   /// **'Billing cycle'**
   String get billingCycle;
 
-  /// No description provided for @billingMonthly.
+  /// Label for billingMonthly
   ///
   /// In en, this message translates to:
   /// **'Monthly'**
   String get billingMonthly;
 
-  /// No description provided for @billingQuarterly.
+  /// Label for billingQuarterly
   ///
   /// In en, this message translates to:
   /// **'Quarterly'**
@@ -135,55 +147,55 @@ abstract class AppLocalizations {
   /// **'NT\${price} per month'**
   String billingMonthlyPrice(int price);
 
-  /// No description provided for @billingPeriodPrice.
+  /// Label for billingPeriodPrice
   ///
   /// In en, this message translates to:
   /// **'Price per billing period (TWD)'**
   String get billingPeriodPrice;
 
-  /// No description provided for @cloudAnswerRetention.
+  /// Label for cloudAnswerRetention
   ///
   /// In en, this message translates to:
   /// **'Cloud answer history days (0 = do not retain)'**
   String get cloudAnswerRetention;
 
-  /// No description provided for @answerHistoryNotRetained.
+  /// Label for answerHistoryNotRetained
   ///
   /// In en, this message translates to:
   /// **'Cloud answer history is not retained'**
   String get answerHistoryNotRetained;
 
-  /// No description provided for @coreQuotaExplanation.
+  /// Label for coreQuotaExplanation
   ///
   /// In en, this message translates to:
   /// **'Calendar events, accounting entries, points entries and memories each have a separate limit.'**
   String get coreQuotaExplanation;
 
-  /// No description provided for @coreQuotaWithoutPoints.
+  /// Label for coreQuotaWithoutPoints
   ///
   /// In en, this message translates to:
   /// **'Calendar events, accounting entries and memories each have a separate limit.'**
   String get coreQuotaWithoutPoints;
 
-  /// No description provided for @localImagesDeviceOnly.
+  /// Label for localImagesDeviceOnly
   ///
   /// In en, this message translates to:
   /// **'Device images use device storage; cloud image capacity is not included.'**
   String get localImagesDeviceOnly;
 
-  /// No description provided for @cloudSubmissionExplanation.
+  /// Label for cloudSubmissionExplanation
   ///
   /// In en, this message translates to:
   /// **'Event and place quotas count unexpired cloud submissions. Unlimited device data does not increase these quotas.'**
   String get cloudSubmissionExplanation;
 
-  /// No description provided for @activeEventSubmissions.
+  /// Label for activeEventSubmissions
   ///
   /// In en, this message translates to:
   /// **'Unexpired event submissions'**
   String get activeEventSubmissions;
 
-  /// No description provided for @activePlaceSubmissions.
+  /// Label for activePlaceSubmissions
   ///
   /// In en, this message translates to:
   /// **'Unexpired place submissions'**

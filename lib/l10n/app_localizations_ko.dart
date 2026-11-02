@@ -9,6 +9,12 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get refreshList => '목록 새로고침';
+
+  @override
+  String get cloudDeleteUnconfirmedLocalCopyKept => '클라우드 정리 결과를 확인할 수 없어 기기 사본을 보관했습니다. 전송을 반복하지 말고 새로고침한 후 관리자에게 결과 확인을 요청하세요.';
+
+  @override
   String get cloudZeroHistoryTransferWarning => '클라우드 요금제는 개별 답변을 보관하지 않습니다. 해당 기록은 전송에서 제외되며 전송 성공 후 기기 사본이 삭제됩니다. 게임 점수와 진행 상황은 전송됩니다.';
 
   @override
@@ -58,10 +64,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get activePlaceSubmissions => '만료되지 않은 장소 게시물';
 
   @override
-  String get subscriptionConfigurationMissing => '적용 가능한 이용 한도가 설정되지 않았습니다. 조회만 가능하며 추가·수정·삭제할 수 없습니다. 관리자에게 문의하세요.';
+  String get subscriptionConfigurationMissing => '적용 가능한 한도가 설정되지 않았습니다. 읽기만 가능하며 추가, 수정 및 삭제할 수 없습니다. 관리자에게 문의하세요.';
 
   @override
-  String get recordInputInvalid => '설명과 0보다 큰 값을 입력해 주세요.';
+  String get recordInputInvalid => '설명과 0보다 큰 값을 입력하세요.';
 
   @override
   String get recordTextInvalid => '형식이 올바르지 않습니다. 설명, + 또는 -, 0이 아닌 값(소수점 이하 최대 4자리)을 입력해 주세요. 예: 점심-120; 급여+30000. 아직 저장되지 않았습니다.';
@@ -660,10 +666,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get gameInstructionsScratchMaze => '편집기에서 Blockly 명령을 배치하고 시작을 눌러 미로를 통과해 목표에 도착하세요. 방향 블록 하나당 한 칸만 이동합니다. 더 멀리 이동하려면 블록을 추가하거나 반복 블록을 사용하세요.';
 
   @override
-  String get gameInstructionsMarioTranslation => 'Use the left, right, jump, and shoot controls. Press the question or words to play audio and collect the correct words to complete the translation.';
+  String get gameInstructionsMarioTranslation => '왼쪽, 오른쪽, 점프, 발사 버튼을 사용하세요. 문제나 단어를 누르면 음성이 재생됩니다. 올바른 단어를 모아 번역을 완성하세요.';
 
   @override
-  String get checkOption => 'Check';
+  String get checkOption => '체크';
 
   @override
   String get startSpeaking => '눌러서 말하기 시작';

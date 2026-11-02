@@ -109,6 +109,8 @@ class _PageSettingsState extends State<PageSettings> {
       }
       final friendlyMessage = upload
           ? _uploadFailureMessage(loc, result.failureReason)
+          : result.failureReason == 'cloud_delete_unconfirmed_local_copy_kept'
+          ? loc.cloudDeleteUnconfirmedLocalCopyKept
           : loc.dataMoveToLocalFailed;
       final rawReason = result.failureReason?.trim();
       await showDialog<void>(

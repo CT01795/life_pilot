@@ -9,6 +9,12 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get refreshList => '一覧を再読み込み';
+
+  @override
+  String get cloudDeleteUnconfirmedLocalCopyKept => 'クラウドの削除結果を確認できないため、この端末のコピーを保持しました。転送を繰り返さず、再読み込みして管理者に結果の確認を依頼してください。';
+
+  @override
   String get cloudZeroHistoryTransferWarning => 'クラウドプランでは個々の回答を保存しません。回答は転送せず、転送成功後に端末のコピーを削除します。ゲームのスコアと進捗は転送されます。';
 
   @override

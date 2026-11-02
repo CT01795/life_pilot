@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:life_pilot/feedback/model_feedback_page.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/feedback/model_feedback.dart';
 import 'package:life_pilot/feedback/model_feedback_list.dart';
@@ -13,13 +15,17 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     this.auth, {
     this.requestTimeout = const Duration(seconds: 30),
     this.historyTimeout = const Duration(seconds: 10),
-  }) : _service = service {
+    FeedbackPageLoader? pageLoader,
+  }) : _service = service,
+       _pageLoader = pageLoader {
     _account = auth.currentAccount;
     auth.addListener(_onAccountChanged);
   }
   String? _account;
   final Duration requestTimeout;
   final Duration historyTimeout;
+  final FeedbackPageLoader? _pageLoader;
+  FeedbackCursor? _cursor;
   int _revision = 0;
   final Set<int> _updating = {};
   final _imageLoads = <int, Future<void>>{};
@@ -64,6 +70,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     _feedbackList = const [];
     _visibleCache = null;
     _loadedStartDate = null;
+    _cursor = null;
     _updating.clear();
     _imageLoads.clear();
     isLoading = false;
@@ -102,6 +109,10 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
       _selectedStatusesCache ??= Set.unmodifiable(_selectedStatuses);
 
   Future<void> loadFeedback() async {
+    if (_pageLoader != null) {
+      if (isLoading) return;
+      return _loadPaged(replace: true);
+    }
     if (notifierDisposed || isLoading || _updating.isNotEmpty) return;
     final revision = ++_revision;
     _imageLoads.clear();
@@ -188,15 +199,18 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
 
   void toggleStatus(String status) {
     if (notifierDisposed) return;
+    if (_pageLoader != null && _updating.isNotEmpty) return;
     _selectedStatuses.contains(status)
         ? _selectedStatuses.remove(status)
         : _selectedStatuses.add(status);
     _selectedStatusesCache = null;
     _visibleCache = null;
     notifyListeners();
+    if (_pageLoader != null) unawaited(_loadPaged(replace: true));
   }
 
   Future<void> loadMore() async {
+    if (_pageLoader != null) return _loadPaged(replace: false);
     if (notifierDisposed ||
         isLoading ||
         isCheckingHistory ||
@@ -253,6 +267,69 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   }
 
   bool isUpdating(int id) => _updating.contains(id);
+
+  Future<void> _loadPaged({required bool replace}) async {
+    if (notifierDisposed ||
+        _updating.isNotEmpty ||
+        (!replace && (isLoading || isLoadingMore || !hasMore))) {
+      return;
+    }
+    final revision = replace ? ++_revision : _revision;
+    final statuses = Set<String>.of(_selectedStatuses);
+    if (replace) {
+      _cursor = null;
+      hasMore = false;
+      _imageLoads.clear();
+      isLoadingMore = false;
+      loadError = null;
+      historyError = null;
+      loadMoreError = null;
+      isCheckingHistory = false;
+    }
+    if (statuses.isEmpty) {
+      _feedbackList = const [];
+      _visibleCache = null;
+      hasMore = false;
+      isLoading = false;
+      notifyListeners();
+      return;
+    }
+    if (replace) {
+      isLoading = true;
+    } else {
+      isLoadingMore = true;
+      loadMoreError = null;
+    }
+    notifyListeners();
+    try {
+      final page = await _pageLoader!(
+        statuses: statuses,
+        before: replace ? null : _cursor,
+      ).timeout(requestTimeout);
+      if (!_active(revision)) return;
+      if (page.hasMore && page.cursor == null) {
+        throw const FormatException('Missing feedback cursor');
+      }
+      _feedbackList = replace ? page.rows : [..._feedbackList, ...page.rows];
+      _sortAndDeduplicate();
+      _cursor = page.cursor;
+      hasMore = page.hasMore;
+    } catch (error) {
+      if (_active(revision)) {
+        if (replace) {
+          loadError = error;
+        } else {
+          loadMoreError = error;
+        }
+      }
+    } finally {
+      if (_active(revision)) {
+        isLoading = false;
+        isLoadingMore = false;
+        notifyListeners();
+      }
+    }
+  }
 
   /// Null means ignored/stale; false means persistence failed.
   Future<bool?> updateStatus(

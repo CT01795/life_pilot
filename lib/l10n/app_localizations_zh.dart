@@ -9,6 +9,12 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get refreshList => '重新整理清單';
+
+  @override
+  String get cloudDeleteUnconfirmedLocalCopyKept => '雲端清理結果尚未確認，已保留本機副本。請勿重複轉移，請先重新整理並聯絡管理者確認。';
+
+  @override
   String get cloudZeroHistoryTransferWarning => '雲端方案不保留逐題答題紀錄。轉移時會略過這些紀錄，確認轉移完成後會清除本機副本；遊戲總分與進度仍會轉移。';
 
   @override

@@ -1,4 +1,8 @@
 {
+  "refreshList": "一覧を再読み込み",
+  "@refreshList": {"description": "Reload the current list"},
+  "cloudDeleteUnconfirmedLocalCopyKept": "クラウドの削除結果を確認できないため、この端末のコピーを保持しました。転送を繰り返さず、再読み込みして管理者に結果の確認を依頼してください。",
+  "@cloudDeleteUnconfirmedLocalCopyKept": {"description": "Keep local transfer copies when the cloud deletion response is uncertain"},
   "cloudZeroHistoryTransferWarning": "クラウドプランでは個々の回答を保存しません。回答は転送せず、転送成功後に端末のコピーを削除します。ゲームのスコアと進捗は転送されます。",
   "@cloudZeroHistoryTransferWarning": {"description": "Shown when transferring data to a cloud plan that does not retain individual answers"},
   "cloudHistoryOmitted": "クラウドへ移行しました。プランに従い回答履歴 {count} 件を除外しました。",

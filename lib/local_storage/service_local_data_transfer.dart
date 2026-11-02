@@ -5,6 +5,9 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
 import 'package:life_pilot/local_storage/model_cloud_restore_receipt.dart';
+import 'package:life_pilot/utils/repository_session_reads.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:life_pilot/local_storage/repository_cloud_transfer_export.dart';
 
 class LocalDataTransferResult {
   const LocalDataTransferResult({
@@ -21,10 +24,26 @@ class LocalDataTransferResult {
 }
 
 class ServiceLocalDataTransfer {
+  ServiceLocalDataTransfer({
+    SupabaseClient? client,
+    LocalDataStore? store,
+    ServiceGame? gameService,
+  }) : _clientOverride = client,
+       _storeOverride = store,
+       _gameService = gameService ?? ServiceGame();
+  final SupabaseClient? _clientOverride;
+  final LocalDataStore? _storeOverride;
+  final ServiceGame _gameService;
+  SupabaseClient get _client => _clientOverride ?? supabase;
+  LocalDataStore get _store => _storeOverride ?? LocalDataStore.instance;
   Future<Map<String, dynamic>?> cloudAnswerRetention() =>
-      RepositoryOptionalJsonRpc(
-        supabase,
-      ).read('get_my_cloud_answer_retention', rememberMissing: false);
+      RepositorySessionReads(_client).read(
+        'cloud-retention-preview',
+        'own',
+        () => RepositoryOptionalJsonRpc(
+          _client,
+        ).read('get_my_cloud_answer_retention', rememberMissing: false),
+      );
   static const _resources = [
     TableNames.calendarEvents,
     TableNames.memoryTrace,
@@ -48,64 +67,72 @@ class ServiceLocalDataTransfer {
   Future<LocalDataTransferResult> moveCloudToLocal(String account) async {
     final staged = <Map<String, Object?>>[];
     var dashboardSettingSaved = false;
+    var cloudDeleteStarted = false;
+    final session = _client.auth.currentSession;
+    void current() {
+      if (session == null ||
+          session.user.email?.trim().toLowerCase() !=
+              account.trim().toLowerCase() ||
+          _client.auth.currentUser?.id != session.user.id ||
+          _client.auth.currentSession?.accessToken != session.accessToken) {
+        throw StateError('Transfer account changed');
+      }
+    }
+
     try {
+      current();
       final gameList = List<Map<String, dynamic>>.from(
-        await supabase.from(TableNames.gameList).select(),
+        await _client
+            .from(TableNames.gameList)
+            .select('id,game_type,game_name,level'),
       );
-      await ServiceGame().cacheGameList(gameList);
-      final dashboardSetting = await supabase
+      current();
+      await _gameService.cacheGameList(gameList);
+      current();
+      final dashboardSetting = await _client
           .from(TableNames.dashboardSetting)
           .select()
           .eq(Fields.account, account)
           .maybeSingle();
-      final exported =
-          await supabase.rpc('export_my_cloud_data_for_local') as List<dynamic>;
-      for (final rawItem in exported) {
-        final exportItem = Map<String, dynamic>.from(rawItem as Map);
-        final resource = parseStringValue(exportItem['table_name']);
-        if (!_resources.contains(resource)) {
-          return LocalDataTransferResult(
-            moved: 0,
-            failed: 1,
-            failureReason: 'unsupported_local_resource:$resource',
-          );
-        }
-        final rawRow = exportItem['record'];
-        final row = Map<String, Object?>.from(rawRow as Map);
-        final id = parseOptionalStringValue(row[Fields.id]);
-        if (id == null || id.isEmpty) {
-          return const LocalDataTransferResult(moved: 0, failed: 1);
-        }
-        if (await LocalDataStore.instance.contains(
-          owner: account,
-          resource: resource,
-          id: id,
-        )) {
-          for (final item in staged) {
-            await LocalDataStore.instance.delete(
-              owner: account,
-              resource: parseStringValue(item['table_name']),
-              id: parseStringValue(item[Fields.id]),
-            );
+      current();
+      await for (final exported in RepositoryCloudTransferExport(
+        client: _client,
+      ).pages(account)) {
+        for (final rawItem in exported) {
+          current();
+          final exportItem = Map<String, dynamic>.from(rawItem as Map);
+          final resource = parseStringValue(exportItem['table_name']);
+          if (!_resources.contains(resource)) {
+            throw StateError('unsupported_local_resource:$resource');
           }
-          return LocalDataTransferResult(
-            moved: 0,
-            failed: 1,
-            failureReason: 'local_record_conflict:$resource:$id',
+          final rawRow = exportItem['record'];
+          final row = Map<String, Object?>.from(rawRow as Map);
+          final id = parseOptionalStringValue(row[Fields.id]);
+          if (id == null || id.isEmpty) {
+            throw const FormatException('Missing transfer record ID');
+          }
+          if (await _store.contains(
+            owner: account,
+            resource: resource,
+            id: id,
+          )) {
+            throw StateError('local_record_conflict:$resource:$id');
+          }
+          current();
+          await _store.put(
+            owner: account,
+            resource: resource,
+            id: id,
+            data: row,
+            syncState: LocalSyncState.movedFromCloud,
+            originalCloudId: id,
           );
+          staged.add({'table_name': resource, 'id': id});
         }
-        await LocalDataStore.instance.put(
-          owner: account,
-          resource: resource,
-          id: id,
-          data: row,
-          syncState: LocalSyncState.movedFromCloud,
-          originalCloudId: id,
-        );
-        staged.add({'table_name': resource, 'id': id});
       }
+      current();
       if (dashboardSetting != null) {
-        await LocalDataStore.instance.put(
+        await _store.put(
           owner: account,
           resource: TableNames.dashboardSetting,
           id: account.toLowerCase(),
@@ -114,24 +141,37 @@ class ServiceLocalDataTransfer {
         );
         dashboardSettingSaved = true;
       }
-      final deleted = await supabase.rpc(
-        'delete_cloud_records_and_revoke_shares_after_local_copy',
-        params: {'p_records': staged},
-      );
+      current();
+      cloudDeleteStarted = true;
+      final deleted = await _client
+          .rpc(
+            'delete_cloud_records_and_revoke_shares_after_local_copy',
+            params: {'p_records': staged},
+          )
+          .timeout(const Duration(seconds: 30));
       if ((tryParseIntValue(deleted) ?? -1) != staged.length) {
         throw StateError('cloud_delete_incomplete');
       }
       return LocalDataTransferResult(moved: staged.length, failed: 0);
     } catch (error) {
+      // A lost response is not proof of rollback. Preserve the only remaining
+      // copy if the cloud transaction may already have committed.
+      if (cloudDeleteStarted) {
+        return LocalDataTransferResult(
+          moved: 0,
+          failed: staged.isEmpty ? 1 : staged.length,
+          failureReason: 'cloud_delete_unconfirmed_local_copy_kept',
+        );
+      }
       for (final item in staged) {
-        await LocalDataStore.instance.delete(
+        await _store.delete(
           owner: account,
           resource: parseStringValue(item['table_name']),
           id: parseStringValue(item[Fields.id]),
         );
       }
       if (dashboardSettingSaved) {
-        await LocalDataStore.instance.delete(
+        await _store.delete(
           owner: account,
           resource: TableNames.dashboardSetting,
           id: account.toLowerCase(),
@@ -151,15 +191,12 @@ class ServiceLocalDataTransfer {
     bool allowOmittingAnswers = false,
   }) async {
     final payload = <Map<String, Object?>>[];
-    final dashboardSettings = await LocalDataStore.instance.list(
+    final dashboardSettings = await _store.list(
       owner: account,
       resource: TableNames.dashboardSetting,
     );
     for (final resource in _resources) {
-      final rows = await LocalDataStore.instance.list(
-        owner: account,
-        resource: resource,
-      );
+      final rows = await _store.list(owner: account, resource: resource);
       for (final row in rows) {
         final normalizedRow = _normalizeForCloud(resource, row);
         final id = parseOptionalStringValue(normalizedRow[Fields.id]);
@@ -174,11 +211,11 @@ class ServiceLocalDataTransfer {
       }
     }
     if (payload.isEmpty && dashboardSettings.isEmpty) {
-      await LocalDataStore.instance.deleteAllRecords(owner: account);
+      await _store.deleteAllRecords(owner: account);
       return const LocalDataTransferResult(moved: 0, failed: 0);
     }
     try {
-      final restored = await supabase.rpc(
+      final restored = await _client.rpc(
         retentionAware
             ? 'restore_local_personal_records_with_retention'
             : 'restore_local_personal_records_with_setting',
@@ -206,7 +243,7 @@ class ServiceLocalDataTransfer {
           failureReason: 'local_upload_incomplete',
         );
       }
-      await LocalDataStore.instance.deleteAllRecords(owner: account);
+      await _store.deleteAllRecords(owner: account);
       return LocalDataTransferResult(
         moved: restoredCount,
         failed: 0,

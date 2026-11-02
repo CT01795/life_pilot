@@ -26,14 +26,10 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
   DateTime _startsAt = DateTime.now();
   DateTime _endsAt = DateTime.now().add(const Duration(days: 30));
   bool _enabled = true;
-  bool _loading = true;
+  bool _loading = false;
+  bool _loaded = false;
+  bool _loadFailed = false;
   bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
 
   @override
   void dispose() {
@@ -54,16 +50,25 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
   }
 
   Future<void> _load() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _loadFailed = false;
+    });
     try {
       final periods = await _service.fetchQuotaFreePeriods();
       if (!mounted) return;
       setState(() {
         _periods = periods;
+        _loaded = true;
         _loading = false;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _loadFailed = true;
+      });
     }
   }
 
@@ -196,8 +201,20 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
         leading: const Icon(Icons.celebration_outlined),
         title: Text(loc.quotaFreePeriodTitle),
         subtitle: Text(loc.quotaFreePeriodDescription),
+        onExpansionChanged: (open) {
+          if (open && !_loaded) _load();
+        },
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: IconButton(
+              tooltip: loc.refreshList,
+              onPressed: _loading || _saving ? null : _load,
+              icon: const Icon(Icons.refresh),
+            ),
+          ),
+          if (_loadFailed) Text(loc.dashboardLoadFailed),
           if (_loading)
             const Padding(
               padding: EdgeInsets.all(16),

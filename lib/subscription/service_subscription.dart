@@ -1,10 +1,15 @@
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
+import 'package:life_pilot/subscription/model_subscription_cleanup_preview.dart';
+export 'package:life_pilot/subscription/model_subscription_cleanup_preview.dart';
+import 'package:life_pilot/subscription/repository_subscription_maintenance.dart';
 import 'package:life_pilot/subscription/model_quota_free_period.dart';
 export 'package:life_pilot/subscription/model_quota_free_period.dart';
 import 'package:life_pilot/subscription/repository_subscription_counts.dart';
 import 'package:life_pilot/subscription/repository_subscription_bootstrap.dart';
 import 'package:life_pilot/subscription/repository_pricing_catalog.dart';
 import 'package:life_pilot/subscription/model_billing_cycle.dart';
+import 'package:life_pilot/subscription/model_admin_subscription_overview.dart';
+import 'package:life_pilot/subscription/repository_admin_subscription_overview.dart';
 import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -13,18 +18,13 @@ import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceSubscription {
+  Future<AdminSubscriptionOverview> fetchUserSubscriptionOverviewAsAdmin(
+    String email,
+  ) => RepositoryAdminSubscriptionOverview(supabase).read(email);
   static bool _supportsCumulativeQuotaRpc = true;
 
-  Future<List<QuotaFreePeriod>> fetchQuotaFreePeriods() async {
-    final rows = await supabase.rpc('get_quota_free_period');
-    if (rows is! List) return const [];
-    return rows
-        .map(
-          (row) =>
-              QuotaFreePeriod.fromJson(Map<String, dynamic>.from(row as Map)),
-        )
-        .toList(growable: false);
-  }
+  Future<List<QuotaFreePeriod>> fetchQuotaFreePeriods() =>
+      RepositorySubscriptionMaintenance(supabase).periods();
 
   Future<void> saveQuotaFreePeriodAsAdmin({
     String? id,
@@ -35,25 +35,19 @@ class ServiceSubscription {
     int? reminderDays,
     List<String> targetAccounts = const [],
   }) async {
-    await supabase.rpc(
-      'admin_set_quota_free_period',
-      params: {
-        'p_period_id': id,
-        'p_name': name.trim(),
-        'p_starts_at': startsAt.toUtc().toIso8601String(),
-        'p_ends_at': endsAt.toUtc().toIso8601String(),
-        'p_enabled': enabled,
-        'p_reminder_days': reminderDays,
-        'p_target_accounts': targetAccounts,
-      },
-    );
+    await RepositorySubscriptionMaintenance(supabase).savePeriod({
+      'p_period_id': id,
+      'p_name': name.trim(),
+      'p_starts_at': startsAt.toUtc().toIso8601String(),
+      'p_ends_at': endsAt.toUtc().toIso8601String(),
+      'p_enabled': enabled,
+      'p_reminder_days': reminderDays,
+      'p_target_accounts': targetAccounts,
+    });
   }
 
   Future<void> deleteQuotaFreePeriodAsAdmin(String id) async {
-    await supabase.rpc(
-      'admin_delete_quota_free_period',
-      params: {'p_period_id': id},
-    );
+    await RepositorySubscriptionMaintenance(supabase).deletePeriod(id);
   }
 
   Future<Map<String, dynamic>?> fetchUserSubscriptionAsAdmin({
@@ -69,40 +63,14 @@ class ServiceSubscription {
     return Map<String, dynamic>.from(rows.first as Map);
   }
 
-  Future<List<Map<String, dynamic>>>
-  fetchAllUserSubscriptionSummariesAsAdmin() async {
-    final rows = await supabase.rpc('admin_list_user_subscription_summaries');
-    return (rows as List<dynamic>)
-        .map((row) => Map<String, dynamic>.from(row as Map))
-        .toList(growable: false);
-  }
-
   Future<List<SubscriptionCleanupPreview>> fetchCleanupPreview({
     String? email,
-  }) async {
-    final rows = await supabase.rpc(
-      'get_subscription_cleanup_preview',
-      params: {'p_email': email?.trim()},
-    );
-    return (rows as List<dynamic>)
-        .map(
-          (row) => SubscriptionCleanupPreview.fromJson(
-            Map<String, dynamic>.from(row as Map),
-          ),
-        )
-        .toList(growable: false);
-  }
+  }) => RepositorySubscriptionMaintenance(supabase).preview(email);
 
   Future<Map<String, dynamic>> cleanupData({
     String? email,
     required String mode,
-  }) async {
-    final result = await supabase.rpc(
-      'cleanup_subscription_data',
-      params: {'p_email': email?.trim(), 'p_mode': mode},
-    );
-    return Map<String, dynamic>.from(result as Map);
-  }
+  }) => RepositorySubscriptionMaintenance(supabase).cleanup(email, mode);
 
   Future<SubscriptionSnapshot> fetchMyUsage({
     String storagePlan = 'cloud',
@@ -696,34 +664,6 @@ class ServiceSubscription {
       RepositoryPricingCatalog().invalidate();
     }
   }
-}
-
-class SubscriptionCleanupPreview {
-  const SubscriptionCleanupPreview({
-    required this.email,
-    required this.resource,
-    required this.used,
-    required this.quota,
-    required this.excess,
-    this.graceEndsAt,
-  });
-
-  final String email;
-  final String resource;
-  final int used;
-  final int quota;
-  final int excess;
-  final DateTime? graceEndsAt;
-
-  factory SubscriptionCleanupPreview.fromJson(Map<String, dynamic> json) =>
-      SubscriptionCleanupPreview(
-        email: parseStringValue(json['target_email']),
-        resource: parseStringValue(json['resource']),
-        used: parseIntValue(json['used']),
-        quota: parseIntValue(json['quota']),
-        excess: parseIntValue(json['excess']),
-        graceEndsAt: tryParseDateTimeValue(json['grace_ends_at']),
-      );
 }
 
 class SubscriptionPricingVersion {

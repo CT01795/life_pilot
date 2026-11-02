@@ -4,6 +4,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/feedback/controller_feedback_admin.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
+import 'package:life_pilot/feedback/model_feedback_page.dart';
 import 'package:life_pilot/feedback/widgets_feedback_image_loader.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/value_parser.dart';
@@ -13,8 +14,11 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
 class PageFeedbackAdmin extends StatelessWidget {
-  const PageFeedbackAdmin({super.key, this.service});
+  const PageFeedbackAdmin({super.key, this.service, this.pageLoader});
   final ServiceFeedback? service;
+  /// Custom services may supply paging explicitly; legacy injected services
+  /// retain their existing date-window contract.
+  final FeedbackPageLoader? pageLoader;
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +30,15 @@ class PageFeedbackAdmin extends StatelessWidget {
       return Scaffold(body: Center(child: Text(loc.accessDenied)));
     }
 
+    final service = this.service ?? ServiceFeedback();
     return ChangeNotifierProvider(
-      create: (_) =>
-          ControllerFeedbackAdmin(service ?? ServiceFeedback(), auth)
-            ..loadFeedback(),
+      create: (_) => ControllerFeedbackAdmin(
+        service,
+        auth,
+        pageLoader:
+            pageLoader ??
+            (this.service == null ? service.loadFeedbackPage : null),
+      )..loadFeedback(),
       child: Consumer<ControllerFeedbackAdmin>(
         builder: (context, controller, _) {
           final visibleFeedback = controller.visibleFeedback;
