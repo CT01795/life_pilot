@@ -9,6 +9,12 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get viewFeedbackScreenshots => 'スクリーンショットを表示';
+
+  @override
+  String get noFeedbackScreenshots => 'スクリーンショットはありません';
+
+  @override
   String get refreshList => '一覧を再読み込み';
 
   @override

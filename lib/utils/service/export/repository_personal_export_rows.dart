@@ -1,6 +1,7 @@
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/utils/repository_session_reads.dart';
+import 'package:life_pilot/utils/service/export/model_personal_export_row.dart';
 
 /// Excel only. Cloud-to-device transfer must keep using the complete export.
 class RepositoryPersonalExportRows {
@@ -64,9 +65,10 @@ class RepositoryPersonalExportRows {
     final id = client.auth.currentUser?.id;
     assertOwner(id, email);
     final result = <Map<String, dynamic>>[];
+    final seen = <(String, String)>{};
     var legacy = false;
     const pageSize = 1000;
-    for (var offset = 0; ; offset += pageSize) {
+    for (var offset = 0; ;) {
       assertOwner(id, email);
       Future<List<Map<String, dynamic>>> readPage(
         String function,
@@ -74,7 +76,9 @@ class RepositoryPersonalExportRows {
           .rpc(function)
           .inFilter('table_name', tables)
           .select(
-            'table_name,${fields.map((field) => '$field:record->$field').join(',')}',
+            function == 'export_my_personal_excel_rows'
+                ? 'table_name,record'
+                : 'table_name,${fields.map((field) => '$field:record->$field').join(',')}',
           )
           .order('table_name')
           .order('record->>id')
@@ -95,8 +99,28 @@ class RepositoryPersonalExportRows {
         page = await readPage('export_my_cloud_data_for_local');
       }
       assertOwner(id, email);
-      result.addAll(page.map((row) => Map<String, dynamic>.unmodifiable(row)));
-      if (page.length < pageSize) break;
+      if (page.isEmpty) break;
+      for (final wire in page) {
+        final row = PersonalExportRow.fromWire(
+          wire,
+          nested: !legacy,
+          fields: fields,
+        ).values;
+        final table = row['table_name'], rowId = row['id'];
+        if (table is! String ||
+            !tables.contains(table) ||
+            (rowId is! String && rowId is! int) ||
+            rowId.toString().trim().isEmpty) {
+          throw const FormatException('Invalid Excel export record');
+        }
+        if (!seen.add((table, rowId.toString()))) {
+          throw const FormatException('Duplicate Excel export record');
+        }
+        result.add(row);
+      }
+      // A project may cap responses below our requested page size.
+      // Only an empty page confirms completion; advance by actual rows received.
+      offset += page.length;
     }
     return List.unmodifiable(result);
   }

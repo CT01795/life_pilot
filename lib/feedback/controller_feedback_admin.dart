@@ -30,8 +30,13 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   final Set<int> _updating = {};
   final _imageLoads = <int, Future<void>>{};
 
+  /// A retained dialog must not load a row from a previous account or list.
+  bool canReadScreenshots(ModelFeedback feedback) =>
+      _active(_revision) &&
+      _feedbackList.any((row) => identical(row, feedback));
+
   Future<void> loadScreenshots(ModelFeedback feedback) {
-    if (!_active(_revision)) {
+    if (!canReadScreenshots(feedback)) {
       return Future.error(StateError('Feedback request changed'));
     }
     if (feedback.screenshotsLoaded) return Future.value();
@@ -44,7 +49,9 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
           final images = await _service
               .loadScreenshots(feedback.id)
               .timeout(requestTimeout);
-          if (!_active(revision)) throw StateError('Feedback request changed');
+          if (!_active(revision) || !canReadScreenshots(feedback)) {
+            throw StateError('Feedback request changed');
+          }
           feedback.screenshot = List.unmodifiable(images);
           feedback.screenshotsLoaded = true;
         }).whenComplete(() {

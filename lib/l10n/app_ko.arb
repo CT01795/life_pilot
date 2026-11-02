@@ -1,4 +1,8 @@
 {
+  "viewFeedbackScreenshots": "스크린샷 보기",
+  "@viewFeedbackScreenshots": {"description": "Download feedback screenshots only when requested"},
+  "noFeedbackScreenshots": "첨부된 스크린샷이 없습니다",
+  "@noFeedbackScreenshots": {"description": "Feedback has no screenshots attached"},
   "refreshList": "목록 새로고침",
   "@refreshList": {"description": "Reload the current list"},
   "subscriptionConfigurationMissing": "적용 가능한 한도가 설정되지 않았습니다. 읽기만 가능하며 추가, 수정 및 삭제할 수 없습니다. 관리자에게 문의하세요.",

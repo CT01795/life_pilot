@@ -50,12 +50,17 @@ void main() {
       'key',
       httpClient: MockClient((request) async {
         requests.add(request);
-        final body =
-            (request.url.path.endsWith('export_my_cloud_data_for_local') ||
-                    request.url.path.endsWith(
-                      'export_my_personal_excel_rows',
-                    )) &&
-                request.url.queryParameters['offset'] == '1000'
+        final offset = int.parse(request.url.queryParameters['offset'] ?? '0');
+        final isExport =
+            request.url.path.endsWith('export_my_cloud_data_for_local') ||
+            request.url.path.endsWith('export_my_personal_excel_rows');
+        var body = isExport && offset > 0 && offset != 1000
+            ? []
+            : (request.url.path.endsWith('export_my_cloud_data_for_local') ||
+                      request.url.path.endsWith(
+                        'export_my_personal_excel_rows',
+                      )) &&
+                  request.url.queryParameters['offset'] == '1000'
             ? [
                 {
                   'table_name': 'memory_trace',
@@ -64,6 +69,17 @@ void main() {
                 },
               ]
             : response;
+        if (request.url.path.endsWith('export_my_personal_excel_rows')) {
+          body = (body as List)
+              .map(
+                (row) => {
+                  'table_name': row['table_name'],
+                  'record': Map<String, dynamic>.from(row as Map)
+                    ..remove('table_name'),
+                },
+              )
+              .toList();
+        }
         if (gate != null) await gate!.future;
         return http.Response(
           jsonEncode(body),
@@ -161,8 +177,8 @@ void main() {
       ).read('one@example.com');
       expect(rows.single['value'], 1234.5678);
       expect(rows.single['date'], '2028-01-01');
-      final params = requests.single.url.queryParameters;
-      expect(params['select'], contains('value:record->value'));
+      final params = requests.first.url.queryParameters;
+      expect(params['select'], 'table_name,record');
       expect(params['select'], isNot(contains('master_graph_url')));
       expect(params['select'], isNot(contains('sub_events')));
       expect(params['table_name'], isNot(contains('game_')));
@@ -181,7 +197,7 @@ void main() {
     ).read('one@example.com');
     expect(rows, hasLength(1001));
     expect(rows.last['start_date'], '2029-01-01');
-    expect(requests, hasLength(2));
+    expect(requests, hasLength(3));
   });
   test('Excel rejects mismatched account before any query', () async {
     await expectLater(

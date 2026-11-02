@@ -9,6 +9,12 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get viewFeedbackScreenshots => 'View screenshots';
+
+  @override
+  String get noFeedbackScreenshots => 'No screenshots';
+
+  @override
   String get refreshList => 'Refresh list';
 
   @override

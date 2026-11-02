@@ -45,7 +45,24 @@ void main() {
       'public-key',
       httpClient: MockClient((request) async {
         requests.add(request);
-        final pending = gate, body = payload, code = status;
+        final offset = int.parse(request.url.queryParameters['offset'] ?? '0');
+        final isExport =
+            request.url.path.endsWith('export_my_personal_excel_rows') ||
+            request.url.path.endsWith('export_my_cloud_data_for_local');
+        final pending = gate, code = status;
+        var body = isExport && offset > 0 ? [] : payload;
+        if (request.url.path.endsWith('export_my_personal_excel_rows') &&
+            code == 200) {
+          body = (body as List)
+              .map(
+                (row) => {
+                  'table_name': row['table_name'],
+                  'record': Map<String, dynamic>.from(row as Map)
+                    ..remove('table_name'),
+                },
+              )
+              .toList();
+        }
         if (pending != null) await pending.future;
         return http.Response(
           jsonEncode(body),

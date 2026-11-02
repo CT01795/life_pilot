@@ -1,4 +1,8 @@
 {
+  "viewFeedbackScreenshots": "View screenshots",
+  "@viewFeedbackScreenshots": {"description": "Download feedback screenshots only when requested"},
+  "noFeedbackScreenshots": "No screenshots",
+  "@noFeedbackScreenshots": {"description": "Feedback has no screenshots attached"},
   "refreshList": "Refresh list",
   "@refreshList": {"description": "Reload the current list"},
   "cloudDeleteUnconfirmedLocalCopyKept": "Cloud cleanup could not be confirmed. Your local copy has been kept. Do not repeat the transfer; refresh and contact an administrator to verify the result.",

@@ -71,7 +71,12 @@ void main() {
             {'id': '2'},
           ];
         } else {
-          body = request.url.queryParameters['offset'] == '1000'
+          final offset = int.parse(
+            request.url.queryParameters['offset'] ?? '0',
+          );
+          body = offset > 1000
+              ? []
+              : offset == 1000
               ? [
                   {'table_name': 'memory_trace', 'id': 'last'},
                 ]
@@ -79,6 +84,17 @@ void main() {
                   1000,
                   (i) => {'table_name': 'memory_trace', 'id': i.toString()},
                 );
+        }
+        if (path.endsWith('export_my_personal_excel_rows') && code == 200) {
+          body = (body as List)
+              .map(
+                (row) => {
+                  'table_name': row['table_name'],
+                  'record': Map<String, dynamic>.from(row as Map)
+                    ..remove('table_name'),
+                },
+              )
+              .toList();
         }
         final pending = gate;
         if (pending != null) {
@@ -157,27 +173,24 @@ void main() {
     },
   );
   for (final legacy in [false, true]) {
-    test(
-      'Excel all pages complete (legacy=$legacy)',
-      () async {
-        missing = legacy;
-        final rows = await RepositoryPersonalExportRows(
-          client: client,
-        ).read('one@example.com');
-        expect(rows, hasLength(1001));
-        expect(rows.last['id'], 'last');
-        expect(requests, hasLength(legacy ? 3 : 2));
-        if (!legacy) {
-          expect(
-            requests.every(
-              (r) => r.url.path.endsWith('export_my_personal_excel_rows'),
-            ),
-            isTrue,
-          );
-        }
-        expect(requests.last.url.queryParameters['offset'], '1000');
-      },
-    );
+    test('Excel all pages complete (legacy=$legacy)', () async {
+      missing = legacy;
+      final rows = await RepositoryPersonalExportRows(
+        client: client,
+      ).read('one@example.com');
+      expect(rows, hasLength(1001));
+      expect(rows.last['id'], 'last');
+      expect(requests, hasLength(legacy ? 4 : 3));
+      if (!legacy) {
+        expect(
+          requests.every(
+            (r) => r.url.path.endsWith('export_my_personal_excel_rows'),
+          ),
+          isTrue,
+        );
+      }
+      expect(requests.last.url.queryParameters['offset'], '1001');
+    });
   }
   test(
     'Excel denial never retries complete export with different permissions',

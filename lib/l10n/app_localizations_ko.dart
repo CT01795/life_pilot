@@ -9,6 +9,12 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get viewFeedbackScreenshots => '스크린샷 보기';
+
+  @override
+  String get noFeedbackScreenshots => '첨부된 스크린샷이 없습니다';
+
+  @override
   String get refreshList => '목록 새로고침';
 
   @override

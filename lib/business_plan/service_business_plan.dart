@@ -9,16 +9,13 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:uuid/uuid.dart';
+import 'package:life_pilot/business_plan/repository_business_plan_reads.dart';
 
 class ServiceBusinessPlan {
   // 1️⃣ 拉模板清單（給使用者選）
   Future<List<ModelPlanTemplate>> fetchTemplates() async {
     try {
-      final res = await supabase
-          .from(TableNames.businessPlanTemplate)
-          .select()
-          .eq(Fields.isValid, true)
-          .order(Fields.createdAt, ascending: true);
+      final res = await RepositoryBusinessPlanReads(supabase).templates();
 
       return (res as List)
           .map(
@@ -46,12 +43,9 @@ class ServiceBusinessPlan {
     List<String> sectionIdList = [];
     try {
       // 1. 查詢
-      final exist = await supabase
-          .from(TableNames.businessPlan)
-          .select()
-          .eq(Fields.createdBy, user)
-          .eq('title', title)
-          .maybeSingle();
+      final exist = await RepositoryBusinessPlanReads(
+        supabase,
+      ).existingPlan(user: user, title: title);
 
       if (exist != null) {
         if (exist[Fields.isValid] == false) {
@@ -74,11 +68,9 @@ class ServiceBusinessPlan {
       }
 
       // 2️⃣ 取得模板 sections
-      List responseSectionsTemplate = await supabase
-          .from(TableNames.businessPlanTemplateSection)
-          .select()
-          .eq('plan_id', templateId)
-          .order('sort_order', ascending: true);
+      final responseSectionsTemplate = await RepositoryBusinessPlanReads(
+        supabase,
+      ).sections(templateId);
 
       int i = 0;
       for (final s in responseSectionsTemplate) {
@@ -93,11 +85,9 @@ class ServiceBusinessPlan {
         });
 
         // 4️⃣ 建立題目
-        List responseQuestionsTemplate = await supabase
-            .from(TableNames.businessPlanTemplateQuestion)
-            .select()
-            .eq('section_id', s[Fields.id])
-            .order('sort_order', ascending: true);
+        final responseQuestionsTemplate = await RepositoryBusinessPlanReads(
+          supabase,
+        ).questions(s[Fields.id]);
 
         final questionRows = responseQuestionsTemplate.map((q) {
           return {
@@ -161,13 +151,9 @@ class ServiceBusinessPlan {
     required DateTime dateTo,
   }) async {
     try {
-      final res = await supabase
-          .from(TableNames.businessPlan)
-          .select()
-          .eq(Fields.createdBy, user)
-          .gte(Fields.createdAt, dateFrom.toUtc().toIso8601String())
-          .lt(Fields.createdAt, dateTo.toUtc().toIso8601String())
-          .order(Fields.createdAt, ascending: false);
+      final res = await RepositoryBusinessPlanReads(
+        supabase,
+      ).plans(user: user, from: dateFrom, to: dateTo);
       return (res as List).map((e) {
         return ModelBusinessPlan(
           id: e[Fields.id],

@@ -25,7 +25,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   final _email = TextEditingController();
   final _note = TextEditingController();
   final _extensionDays = TextEditingController(text: '90');
-  late Future<List<SubscriptionPricingVersion>> _versions;
+  Future<List<SubscriptionPricingVersion>>? _versions;
   String _plan = 'plus';
   String _storagePlan = SubscriptionStoragePlan.cloud;
   String? _versionId;
@@ -43,10 +43,14 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   String? _lookedUpEmail;
   String? _editingEntitlementId;
 
-  @override
-  void initState() {
-    super.initState();
-    _versions = ServiceSubscription().fetchPricingVersions();
+  void _loadVersions({bool refresh = false}) {
+    if (_versions != null && !refresh) return;
+    final request = ServiceSubscription().fetchPricingVersions();
+    // Keep immediate errors observed until FutureBuilder attaches next frame.
+    request.ignore();
+    setState(() {
+      _versions = request;
+    });
   }
 
   @override
@@ -200,8 +204,27 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
             ),
             title: Text(loc.adminSubscriptionTitle),
             subtitle: Text(loc.adminSubscriptionSubtitle),
+            onExpansionChanged: (open) {
+              if (open) _loadVersions();
+            },
             childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             children: [
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: IconButton(
+                  key: const ValueKey('admin-subscription-pricing-refresh'),
+                  tooltip: loc.refreshList,
+                  onPressed:
+                      _saving ||
+                          snapshot.connectionState == ConnectionState.waiting
+                      ? null
+                      : () => _loadVersions(refresh: true),
+                  icon: const Icon(Icons.refresh),
+                ),
+              ),
+              if (snapshot.connectionState == ConnectionState.waiting)
+                const LinearProgressIndicator(),
+              if (snapshot.hasError) Text(loc.dashboardLoadFailed),
               Row(
                 children: [
                   Expanded(
@@ -604,6 +627,8 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                   child: FilledButton.icon(
                     onPressed:
                         _saving ||
+                            snapshot.connectionState != ConnectionState.done ||
+                            snapshot.hasError ||
                             !_lookupMatchesCurrentEmail ||
                             !_lookedUpUserExists
                         ? null

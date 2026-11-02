@@ -9,6 +9,12 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get viewFeedbackScreenshots => '查看截圖';
+
+  @override
+  String get noFeedbackScreenshots => '沒有截圖';
+
+  @override
   String get refreshList => '重新整理清單';
 
   @override

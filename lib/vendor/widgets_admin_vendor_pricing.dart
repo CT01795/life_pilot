@@ -8,6 +8,7 @@ import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/subscription/repository_pricing_version_guard.dart';
 import 'package:life_pilot/subscription/model_billing_cycle.dart';
 import 'package:life_pilot/subscription/billing_cycle_labels.dart';
+import 'package:life_pilot/subscription/controller_pricing_list.dart';
 
 class AdminVendorPricing extends StatefulWidget {
   const AdminVendorPricing({super.key});
@@ -27,7 +28,9 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
   final _imageQuota = TextEditingController();
   final _analyticsDays = TextEditingController();
   final _multiplier = TextEditingController(text: '1');
-  late Future<List<VendorPricingPlan>> _plans;
+  late final _catalog = ControllerPricingList<VendorPricingPlan>(
+    load: _service.fetchPricingPlans,
+  );
   String _planCode = 'partner';
   BillingCycle _billingCycle = BillingCycle.quarter;
   String? _selectedPricingId;
@@ -41,11 +44,17 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
   @override
   void initState() {
     super.initState();
-    _plans = _service.fetchPricingPlans();
+    _catalog.addListener(_catalogChanged);
+  }
+
+  void _catalogChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _catalog.removeListener(_catalogChanged);
+    _catalog.dispose();
     for (final controller in [
       _version,
       _email,
@@ -118,7 +127,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
             : loc.adminVendorPricingUpdated,
       );
       _resetPricingForm();
-      setState(() => _plans = _service.fetchPricingPlans());
+      await _catalog.load(force: true);
     } catch (error) {
       if (mounted) {
         _message(
@@ -212,7 +221,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
       if (!mounted) return;
       if (_editingPricingId == plan.id) _resetPricingForm();
       _message(loc.adminPricingDeleted);
-      setState(() => _plans = _service.fetchPricingPlans());
+      await _catalog.load(force: true);
     } catch (error) {
       if (mounted) {
         _message(
@@ -227,6 +236,11 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
   }
 
   Future<void> _saveSubscription() async {
+    if (!_catalog.ready ||
+        !_catalog.rows.any((plan) => plan.id == _selectedPricingId) ||
+        _savingSubscription) {
+      return;
+    }
     final loc = AppLocalizations.of(context)!;
     final multiplier = _int(_multiplier);
     if (_email.text.trim().isEmpty ||
@@ -276,6 +290,9 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
             leading: const CircleAvatar(child: Icon(Icons.storefront)),
             title: Text(loc.adminVendorPricingTitle),
             subtitle: Text(loc.adminVendorPricingSubtitle),
+            onExpansionChanged: (open) {
+              if (open) _catalog.load();
+            },
             childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             children: [
               Align(
@@ -288,10 +305,10 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
                 ),
               ),
               Gaps.h8,
-              FutureBuilder<List<VendorPricingPlan>>(
-                future: _plans,
-                builder: (context, snapshot) {
-                  final plans = snapshot.data ?? const <VendorPricingPlan>[];
+              _catalogStatus(loc),
+              Builder(
+                builder: (context) {
+                  final plans = _catalog.rows;
                   return Column(
                     children: plans
                         .map(
@@ -446,6 +463,9 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
             leading: const CircleAvatar(child: Icon(Icons.badge_outlined)),
             title: Text(loc.adminVendorSubscriptionTitle),
             subtitle: Text(loc.adminVendorSubscriptionSubtitle),
+            onExpansionChanged: (open) {
+              if (open) _catalog.load();
+            },
             childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             children: [
               TextField(
@@ -456,15 +476,17 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
                 ),
               ),
               Gaps.h12,
-              FutureBuilder<List<VendorPricingPlan>>(
-                future: _plans,
-                builder: (context, snapshot) {
-                  final plans = snapshot.data ?? const <VendorPricingPlan>[];
+              _catalogStatus(loc),
+              Builder(
+                builder: (context) {
+                  final plans = _catalog.rows;
+                  final selected =
+                      plans.any((plan) => plan.id == _selectedPricingId)
+                      ? _selectedPricingId
+                      : null;
                   return DropdownButtonFormField<String>(
-                    initialValue:
-                        plans.any((plan) => plan.id == _selectedPricingId)
-                        ? _selectedPricingId
-                        : null,
+                    key: ValueKey(('vendor-pricing-selection', selected)),
+                    initialValue: selected,
                     isExpanded: true,
                     decoration: InputDecoration(
                       labelText: loc.adminSubscriptionPricingVersion,
@@ -477,7 +499,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
                           ),
                         )
                         .toList(growable: false),
-                    onChanged: _savingSubscription
+                    onChanged: _savingSubscription || !_catalog.ready
                         ? null
                         : (value) => setState(() {
                             _selectedPricingId = value;
@@ -522,7 +544,14 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
               ),
               Gaps.h12,
               FilledButton.icon(
-                onPressed: _savingSubscription ? null : _saveSubscription,
+                onPressed:
+                    _savingSubscription ||
+                        !_catalog.ready ||
+                        !_catalog.rows.any(
+                          (plan) => plan.id == _selectedPricingId,
+                        )
+                    ? null
+                    : _saveSubscription,
                 icon: const Icon(Icons.save_outlined),
                 label: Text(loc.adminSubscriptionSave),
               ),
@@ -532,6 +561,24 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
       ],
     );
   }
+
+  Widget _catalogStatus(AppLocalizations loc) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Align(
+        alignment: AlignmentDirectional.centerEnd,
+        child: IconButton(
+          tooltip: loc.refreshList,
+          onPressed: _catalog.loading || _savingPricing || _savingSubscription
+              ? null
+              : () => _catalog.load(force: true),
+          icon: const Icon(Icons.refresh),
+        ),
+      ),
+      if (_catalog.loading) const LinearProgressIndicator(),
+      if (_catalog.error != null) Text(loc.dashboardLoadFailed),
+    ],
+  );
 
   Widget _fields(AppLocalizations loc) {
     final fields = <(TextEditingController, String)>[

@@ -1,4 +1,8 @@
 {
+  "viewFeedbackScreenshots": "查看截圖",
+  "@viewFeedbackScreenshots": {"description": "Download feedback screenshots only when requested"},
+  "noFeedbackScreenshots": "沒有截圖",
+  "@noFeedbackScreenshots": {"description": "Feedback has no screenshots attached"},
   "refreshList": "重新整理清單",
   "@refreshList": {"description": "Reload the current list"},
   "cloudDeleteUnconfirmedLocalCopyKept": "雲端清理結果尚未確認，已保留本機副本。請勿重複轉移，請先重新整理並聯絡管理者確認。",

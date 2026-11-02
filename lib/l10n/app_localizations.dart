@@ -99,6 +99,18 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
+  /// Download feedback screenshots only when requested
+  ///
+  /// In en, this message translates to:
+  /// **'View screenshots'**
+  String get viewFeedbackScreenshots;
+
+  /// Feedback has no screenshots attached
+  ///
+  /// In en, this message translates to:
+  /// **'No screenshots'**
+  String get noFeedbackScreenshots;
+
   /// Reload the current list
   ///
   /// In en, this message translates to:

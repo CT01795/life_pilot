@@ -1,4 +1,8 @@
 {
+  "viewFeedbackScreenshots": "スクリーンショットを表示",
+  "@viewFeedbackScreenshots": {"description": "Download feedback screenshots only when requested"},
+  "noFeedbackScreenshots": "スクリーンショットはありません",
+  "@noFeedbackScreenshots": {"description": "Feedback has no screenshots attached"},
   "refreshList": "一覧を再読み込み",
   "@refreshList": {"description": "Reload the current list"},
   "cloudDeleteUnconfirmedLocalCopyKept": "クラウドの削除結果を確認できないため、この端末のコピーを保持しました。転送を繰り返さず、再読み込みして管理者に結果の確認を依頼してください。",

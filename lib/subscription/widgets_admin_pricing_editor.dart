@@ -39,14 +39,19 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
   PersonalPricingChoice _choice = PersonalPricingChoice.cloudPaid;
   BillingCycle _billingCycle = BillingCycle.quarter;
   bool _saving = false;
-  late Future<List<SubscriptionPricingVersion>> _versions;
+  Future<List<SubscriptionPricingVersion>>? _versions;
   String? _editingVersionId;
   String? _editingVersionName;
 
-  @override
-  void initState() {
-    super.initState();
-    _versions = ServiceSubscription().fetchPricingVersions();
+  void _loadVersions({bool refresh = false}) {
+    if (_versions != null && !refresh) return;
+    final request = ServiceSubscription().fetchPricingVersions();
+    // Observe immediate failures before the next frame attaches FutureBuilder.
+    // FutureBuilder still receives the original error and displays retry UI.
+    request.ignore();
+    setState(() {
+      _versions = request;
+    });
   }
 
   @override
@@ -122,9 +127,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
         createsNewVersion ? loc.adminPricingCreated : loc.adminPricingUpdated,
       );
       _resetForm();
-      setState(() {
-        _versions = service.fetchPricingVersions();
-      });
+      _loadVersions(refresh: true);
       widget.onSaved?.call();
     } catch (error) {
       if (mounted) {
@@ -229,9 +232,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
       if (!mounted) return;
       if (_editingVersionId == version.id) _resetForm();
       _message(loc.adminPricingDeleted);
-      setState(() {
-        _versions = ServiceSubscription().fetchPricingVersions();
-      });
+      _loadVersions(refresh: true);
       widget.onSaved?.call();
     } catch (error) {
       if (mounted) {
@@ -272,6 +273,9 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
         leading: const CircleAvatar(child: Icon(Icons.price_change_outlined)),
         title: Text(loc.adminPricingTitle),
         subtitle: Text(loc.adminPricingSubtitle),
+        onExpansionChanged: (open) {
+          if (open) _loadVersions();
+        },
         childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         children: [
           Align(
@@ -290,40 +294,57 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
               final versions =
                   snapshot.data ?? const <SubscriptionPricingVersion>[];
               return Column(
-                children: versions
-                    .map(
-                      (version) => ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.sell_outlined),
-                        title: Text(
-                          version.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          '${version.storagePlan == 'local' ? loc.dataStorageLocal : loc.dataStorageCloud} · ${billingPriceLabel(loc, version.priceTwd, version.billingCycle)}',
-                        ),
-                        trailing: PopupMenuButton<String>(
-                          enabled: !_saving,
-                          tooltip: MaterialLocalizations.of(
-                            context,
-                          ).showMenuTooltip,
-                          onSelected: (action) {
-                            if (action == 'edit') _editVersion(version);
-                            if (action == 'delete') _deleteVersion(version);
-                          },
-                          itemBuilder: (_) => [
-                            PopupMenuItem(value: 'edit', child: Text(loc.edit)),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Text(loc.delete),
-                            ),
-                          ],
-                        ),
-                        onTap: _saving ? null : () => _editVersion(version),
+                children: [
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: IconButton(
+                      key: const ValueKey('admin-pricing-refresh'),
+                      tooltip: loc.refreshList,
+                      onPressed:
+                          _saving ||
+                              snapshot.connectionState ==
+                                  ConnectionState.waiting
+                          ? null
+                          : () => _loadVersions(refresh: true),
+                      icon: const Icon(Icons.refresh),
+                    ),
+                  ),
+                  if (snapshot.connectionState == ConnectionState.waiting)
+                    const LinearProgressIndicator(),
+                  if (snapshot.hasError) Text(loc.dashboardLoadFailed),
+                  ...versions.map(
+                    (version) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.sell_outlined),
+                      title: Text(
+                        version.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    )
-                    .toList(growable: false),
+                      subtitle: Text(
+                        '${version.storagePlan == 'local' ? loc.dataStorageLocal : loc.dataStorageCloud} · ${billingPriceLabel(loc, version.priceTwd, version.billingCycle)}',
+                      ),
+                      trailing: PopupMenuButton<String>(
+                        enabled: !_saving,
+                        tooltip: MaterialLocalizations.of(
+                          context,
+                        ).showMenuTooltip,
+                        onSelected: (action) {
+                          if (action == 'edit') _editVersion(version);
+                          if (action == 'delete') _deleteVersion(version);
+                        },
+                        itemBuilder: (_) => [
+                          PopupMenuItem(value: 'edit', child: Text(loc.edit)),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Text(loc.delete),
+                          ),
+                        ],
+                      ),
+                      onTap: _saving ? null : () => _editVersion(version),
+                    ),
+                  ),
+                ],
               );
             },
           ),
