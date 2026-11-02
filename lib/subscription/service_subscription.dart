@@ -3,6 +3,8 @@ import 'package:life_pilot/subscription/model_quota_free_period.dart';
 export 'package:life_pilot/subscription/model_quota_free_period.dart';
 import 'package:life_pilot/subscription/repository_subscription_counts.dart';
 import 'package:life_pilot/subscription/repository_subscription_bootstrap.dart';
+import 'package:life_pilot/subscription/repository_pricing_catalog.dart';
+import 'package:life_pilot/subscription/model_billing_cycle.dart';
 import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -605,9 +607,14 @@ class ServiceSubscription {
     );
   }
 
-  Future<List<SubscriptionPricingVersion>> fetchPricingVersions() async {
-    final rows = await supabase.rpc('get_subscription_pricing_versions');
-    return (rows as List<dynamic>)
+  Future<List<SubscriptionPricingVersion>> fetchPricingVersions({
+    bool displayOnly = false,
+  }) async {
+    final rows = await RepositoryPricingCatalog().read(
+      vendor: false,
+      displayOnly: displayOnly,
+    );
+    return rows
         .map(
           (row) => SubscriptionPricingVersion.fromJson(
             Map<String, dynamic>.from(row as Map),
@@ -622,10 +629,12 @@ class ServiceSubscription {
     required DateTime effectiveAt,
     required int quarterlyPrice,
     required Map<String, int> quotas,
+    BillingCycle billingCycle = BillingCycle.quarter,
   }) async {
-    await supabase.rpc(
-      'admin_create_subscription_pricing_version',
-      params: {
+    await RepositoryPricingCatalog().save(
+      vendor: false,
+      payload: {
+        'billing_cycle': billingCycle.name,
         'p_version_name': name.trim(),
         'p_storage_plan': storagePlan,
         'p_effective_at': effectiveAt.toUtc().toIso8601String(),
@@ -651,11 +660,13 @@ class ServiceSubscription {
     required DateTime effectiveAt,
     required int quarterlyPrice,
     required Map<String, int> quotas,
+    BillingCycle billingCycle = BillingCycle.quarter,
   }) async {
-    await supabase.rpc(
-      'admin_update_subscription_pricing_version',
-      params: {
-        'p_pricing_version_id': pricingVersionId,
+    await RepositoryPricingCatalog().save(
+      vendor: false,
+      versionId: pricingVersionId,
+      payload: {
+        'billing_cycle': billingCycle.name,
         'p_version_name': name.trim(),
         'p_storage_plan': storagePlan,
         'p_effective_at': effectiveAt.toUtc().toIso8601String(),
@@ -675,10 +686,15 @@ class ServiceSubscription {
   }
 
   Future<void> deletePricingVersionAsAdmin({required String versionId}) async {
-    await supabase.rpc(
-      'admin_delete_subscription_pricing_version',
-      params: {'p_pricing_version_id': versionId},
-    );
+    RepositoryPricingCatalog().invalidate();
+    try {
+      await supabase.rpc(
+        'admin_delete_subscription_pricing_version',
+        params: {'p_pricing_version_id': versionId},
+      );
+    } finally {
+      RepositoryPricingCatalog().invalidate();
+    }
   }
 }
 
@@ -718,6 +734,7 @@ class SubscriptionPricingVersion {
     required this.effectiveAt,
     required this.quarterlyPriceTwd,
     required this.quotas,
+    this.billingCycle = BillingCycle.quarter,
   });
 
   final String id;
@@ -725,6 +742,9 @@ class SubscriptionPricingVersion {
   final String storagePlan;
   final DateTime effectiveAt;
   final int quarterlyPriceTwd;
+  // Legacy storage column name; amount is for billingCycle, never a conversion.
+  int get priceTwd => quarterlyPriceTwd;
+  final BillingCycle billingCycle;
   final Map<String, int> quotas;
 
   factory SubscriptionPricingVersion.fromJson(Map<String, dynamic> json) =>
@@ -735,6 +755,7 @@ class SubscriptionPricingVersion {
         effectiveAt:
             tryParseDateTimeValue(json['effective_at']) ?? DateTime.now(),
         quarterlyPriceTwd: parseIntValue(json['quarterly_price_twd']),
+        billingCycle: BillingCycle.from(json['billing_cycle']),
         quotas: {
           'calendar_events': parseIntValue(json['calendar_quota']),
           'recommended_events': parseIntValue(json['recommended_event_quota']),

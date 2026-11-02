@@ -37,82 +37,117 @@ class _PageSettingsState extends State<PageSettings> {
     final auth = context.read<ControllerAuth>();
     final account = auth.currentAccount;
     if (account == null) return;
+    final originalStorage = auth.preferredStorage;
     final loc = AppLocalizations.of(context)!;
-    final confirmed =
-        await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(
-              upload ? loc.dataUploadToCloudAction : loc.dataMoveToLocal,
-            ),
-            content: Text(
-              upload
-                  ? loc.dataUploadToCloudConfirm
-                  : loc.dataMoveToLocalConfirm,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(loc.cancel),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(loc.confirm),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    if (!confirmed || !mounted) return;
     setState(() => _transferring = true);
-    final service = ServiceLocalDataTransfer();
-    final result = upload
-        ? await service.uploadLocalToCloud(account)
-        : await service.moveCloudToLocal(account);
-    if (!mounted) return;
-    setState(() => _transferring = false);
-    if (!upload && result.succeeded) {
-      await auth.setPreferredStorage(DataStorageLocation.local);
-    } else if (upload && result.succeeded) {
-      await auth.setPreferredStorage(DataStorageLocation.cloud);
-    }
-    if (result.succeeded) {
-      AppNavigator.showSnackBar(
-        upload ? loc.dataUploadToCloudSuccess : loc.dataMoveToLocalSuccess,
-      );
-      if (widget.closeOnStorageChange && mounted) {
-        Navigator.of(context).pop();
+    try {
+      final service = ServiceLocalDataTransfer();
+      final policy = upload ? await service.cloudAnswerRetention() : null;
+      if (!mounted ||
+          auth.currentAccount != account ||
+          auth.preferredStorage != originalStorage) {
+        return;
       }
-      return;
-    }
-    final friendlyMessage = upload
-        ? _uploadFailureMessage(loc, result.failureReason)
-        : loc.dataMoveToLocalFailed;
-    final rawReason = result.failureReason?.trim();
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(
+      final omitAnswers = policy != null && policy['days'] == 0;
+      final confirmed =
+          await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: Text(
+                upload ? loc.dataUploadToCloudAction : loc.dataMoveToLocal,
+              ),
+              content: Text(
+                upload
+                    ? '${loc.dataUploadToCloudConfirm}${omitAnswers ? '\n\n${loc.cloudZeroHistoryTransferWarning}' : ''}'
+                    : loc.dataMoveToLocalConfirm,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: Text(loc.cancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: Text(loc.confirm),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+      if (!confirmed ||
+          !mounted ||
+          auth.currentAccount != account ||
+          auth.preferredStorage != originalStorage) {
+        return;
+      }
+      final result = upload
+          ? await service.uploadLocalToCloud(
+              account,
+              retentionAware: policy != null,
+              allowOmittingAnswers: omitAnswers,
+            )
+          : await service.moveCloudToLocal(account);
+      if (!mounted || auth.currentAccount != account) return;
+      if (!upload && result.succeeded) {
+        await auth.setPreferredStorage(DataStorageLocation.local);
+      } else if (upload && result.succeeded) {
+        await auth.setPreferredStorage(DataStorageLocation.cloud);
+      }
+      if (!mounted || auth.currentAccount != account) return;
+      if (result.succeeded) {
+        AppNavigator.showSnackBar(
+          upload
+              ? (result.omittedAnswers > 0
+                    ? loc.cloudHistoryOmitted(result.omittedAnswers)
+                    : loc.dataUploadToCloudSuccess)
+              : loc.dataMoveToLocalSuccess,
+        );
+        if (widget.closeOnStorageChange && mounted) {
+          Navigator.of(context).pop();
+        }
+        return;
+      }
+      final friendlyMessage = upload
+          ? _uploadFailureMessage(loc, result.failureReason)
+          : loc.dataMoveToLocalFailed;
+      final rawReason = result.failureReason?.trim();
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(
+            upload ? loc.dataUploadToCloudFailed : loc.dataMoveToLocalFailed,
+          ),
+          content: SingleChildScrollView(
+            child: SelectableText(
+              rawReason == null || rawReason.isEmpty
+                  ? friendlyMessage
+                  : '$friendlyMessage\n\n$rawReason',
+            ),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(loc.close),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      if (mounted && auth.currentAccount == account) {
+        AppNavigator.showErrorBar(
           upload ? loc.dataUploadToCloudFailed : loc.dataMoveToLocalFailed,
-        ),
-        content: SingleChildScrollView(
-          child: SelectableText(
-            rawReason == null || rawReason.isEmpty
-                ? friendlyMessage
-                : '$friendlyMessage\n\n$rawReason',
-          ),
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(loc.close),
-          ),
-        ],
-      ),
-    );
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _transferring = false);
+    }
   }
 
   String _uploadFailureMessage(AppLocalizations loc, String? reason) {
+    if (reason?.contains('answer_history_omission_confirmation_required') ==
+        true) {
+      return loc.cloudZeroHistoryTransferWarning;
+    }
     final match = RegExp(
       r'local_upload_quota_exceeded:([^:]+):(\d+):(\d+):(\d+)',
     ).firstMatch(reason ?? '');

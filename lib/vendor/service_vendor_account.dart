@@ -4,14 +4,18 @@ import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
+import 'package:life_pilot/subscription/repository_pricing_catalog.dart';
+import 'package:life_pilot/subscription/model_billing_cycle.dart';
 
 class ServiceVendorAccount {
   static final _initializers = Expando<RepositoryVendorInitialization>();
   final ServiceContentPerformance _performance;
   final bool preferSummaryRpc;
+  final bool displayPricing;
   ServiceVendorAccount({
     ServiceContentPerformance? performance,
     this.preferSummaryRpc = true,
+    this.displayPricing = false,
   }) : _performance = performance ?? ServiceContentPerformance();
   Future<void> ensureVendorAccount() async {
     final client = supabase;
@@ -26,8 +30,11 @@ class ServiceVendorAccount {
   }
 
   Future<List<VendorPricingPlan>> fetchPricingPlans() async {
-    final rows = await supabase.rpc('get_vendor_pricing_versions');
-    return (rows as List<dynamic>)
+    final rows = await RepositoryPricingCatalog().read(
+      vendor: true,
+      displayOnly: displayPricing,
+    );
+    return rows
         .map(
           (row) =>
               VendorPricingPlan.fromJson(Map<String, dynamic>.from(row as Map)),
@@ -93,10 +100,12 @@ class ServiceVendorAccount {
     required int attractionQuota,
     required int imageMegabytes,
     required int analyticsDays,
+    BillingCycle billingCycle = BillingCycle.quarter,
   }) async {
-    await supabase.rpc(
-      'admin_create_vendor_pricing_version',
-      params: {
+    await RepositoryPricingCatalog().save(
+      vendor: true,
+      payload: {
+        'billing_cycle': billingCycle.name,
         'p_plan_code': planCode,
         'p_version_name': versionName.trim(),
         'p_effective_at': effectiveAt.toUtc().toIso8601String(),
@@ -119,11 +128,13 @@ class ServiceVendorAccount {
     required int attractionQuota,
     required int imageMegabytes,
     required int analyticsDays,
+    BillingCycle billingCycle = BillingCycle.quarter,
   }) async {
-    await supabase.rpc(
-      'admin_update_vendor_pricing_version',
-      params: {
-        'p_pricing_version_id': pricingVersionId,
+    await RepositoryPricingCatalog().save(
+      vendor: true,
+      versionId: pricingVersionId,
+      payload: {
+        'billing_cycle': billingCycle.name,
         'p_plan_code': planCode,
         'p_version_name': versionName.trim(),
         'p_effective_at': effectiveAt.toUtc().toIso8601String(),
@@ -139,10 +150,15 @@ class ServiceVendorAccount {
   Future<void> deletePricingVersionAsAdmin({
     required String pricingVersionId,
   }) async {
-    await supabase.rpc(
-      'admin_delete_vendor_pricing_version',
-      params: {'p_pricing_version_id': pricingVersionId},
-    );
+    RepositoryPricingCatalog().invalidate();
+    try {
+      await supabase.rpc(
+        'admin_delete_vendor_pricing_version',
+        params: {'p_pricing_version_id': pricingVersionId},
+      );
+    } finally {
+      RepositoryPricingCatalog().invalidate();
+    }
   }
 
   Future<void> setSubscriptionAsAdmin({

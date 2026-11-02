@@ -9,6 +9,55 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get cloudZeroHistoryTransferWarning => 'クラウドプランでは個々の回答を保存しません。回答は転送せず、転送成功後に端末のコピーを削除します。ゲームのスコアと進捗は転送されます。';
+
+  @override
+  String cloudHistoryOmitted(int count) {
+    return 'クラウドへ移行しました。プランに従い回答履歴 $count 件を除外しました。';
+  }
+
+  @override
+  String get billingCycle => '支払い周期';
+
+  @override
+  String get billingMonthly => '月払い';
+
+  @override
+  String get billingQuarterly => '四半期払い';
+
+  @override
+  String billingMonthlyPrice(int price) {
+    return '月額 NT\$$price';
+  }
+
+  @override
+  String get billingPeriodPrice => '1期間の料金（TWD）';
+
+  @override
+  String get cloudAnswerRetention => 'クラウド回答履歴の保存日数（0＝保存しない）';
+
+  @override
+  String get answerHistoryNotRetained => 'クラウド回答履歴は保存しません';
+
+  @override
+  String get coreQuotaExplanation => '予定、家計明細、ポイント明細、思い出には、それぞれ個別の上限があります。';
+
+  @override
+  String get coreQuotaWithoutPoints => '予定、家計明細、思い出には、それぞれ個別の上限があります。';
+
+  @override
+  String get localImagesDeviceOnly => '端末の画像は端末容量を使用します。クラウド画像容量は含まれません。';
+
+  @override
+  String get cloudSubmissionExplanation => 'イベント・スポットの上限は期限前のクラウド投稿数です。端末データの無制限とは別に計算します。';
+
+  @override
+  String get activeEventSubmissions => '期限前のイベント投稿';
+
+  @override
+  String get activePlaceSubmissions => '期限前のスポット投稿';
+
+  @override
   String get subscriptionConfigurationMissing => '適用される利用枠が未設定です。閲覧のみ可能で、追加・編集・削除はできません。管理者にお問い合わせください。';
 
   @override
@@ -1116,7 +1165,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminPricingImageQuota => '画像容量（MB）';
 
   @override
-  String get adminPricingLocalZeroUnlimited => 'ローカル Plus では、上限欄の 0 は無制限を意味します。';
+  String get adminPricingLocalZeroUnlimited => '端末の基本記録と問題数は0で無制限です。クラウド投稿の上限は別枠です。クラウド回答履歴の0日は保存しません。';
 
   @override
   String get adminPricingMemoryQuota => '思い出';
@@ -1685,12 +1734,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String vendorPlanActivityQuota(int count) {
-    return '公開中イベント 最大 $count 件';
+    return '期限前のイベント投稿は最大 $count 件';
   }
 
   @override
   String vendorPlanAttractionQuota(int count) {
-    return '公開中スポット 最大 $count 件';
+    return '期限前のスポット投稿は最大 $count 件';
   }
 
   @override

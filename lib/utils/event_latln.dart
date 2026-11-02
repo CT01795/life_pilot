@@ -202,7 +202,7 @@ class ClusterItem {
       final query = '$address$currentCountry';
       final response = await RepositoryEventCloudOperations().geocode(
         query: query,
-        backend: () => apiSupabase.post('/external/geocode', {
+        backend: () => apiCloud.post('/external/geocode', {
           'query': query,
         }, bearerToken: accessToken),
       );

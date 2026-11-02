@@ -6,6 +6,8 @@ import 'package:life_pilot/vendor/service_vendor_account.dart';
 import 'package:life_pilot/vendor/vendor_plan_labels.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/subscription/repository_pricing_version_guard.dart';
+import 'package:life_pilot/subscription/model_billing_cycle.dart';
+import 'package:life_pilot/subscription/billing_cycle_labels.dart';
 
 class AdminVendorPricing extends StatefulWidget {
   const AdminVendorPricing({super.key});
@@ -27,6 +29,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
   final _multiplier = TextEditingController(text: '1');
   late Future<List<VendorPricingPlan>> _plans;
   String _planCode = 'partner';
+  BillingCycle _billingCycle = BillingCycle.quarter;
   String? _selectedPricingId;
   DateTime _effectiveAt = DateTime.now();
   DateTime _periodEnd = DateTime.now().add(const Duration(days: 90));
@@ -92,6 +95,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
           attractionQuota: values[2]!,
           imageMegabytes: values[3]!,
           analyticsDays: values[4]!,
+          billingCycle: _billingCycle,
         );
       } else {
         await _service.updatePricingVersionAsAdmin(
@@ -104,6 +108,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
           attractionQuota: values[2]!,
           imageMegabytes: values[3]!,
           analyticsDays: values[4]!,
+          billingCycle: _billingCycle,
         );
       }
       if (!mounted) return;
@@ -153,6 +158,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
       _editingPricingId = plan.id;
       _editingVersionName = plan.versionName;
       _planCode = plan.code;
+      _billingCycle = plan.billingCycle;
       _effectiveAt = plan.effectiveAt.toLocal();
       _version.text = plan.versionName;
       _price.text = '${plan.quarterlyPriceTwd}';
@@ -167,6 +173,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
     _editingPricingId = null;
     _editingVersionName = null;
     _planCode = 'partner';
+    _billingCycle = BillingCycle.quarter;
     _effectiveAt = DateTime.now();
     _version.clear();
     _price.clear();
@@ -297,7 +304,11 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             subtitle: Text(
-                              loc.vendorQuarterlyPrice(plan.quarterlyPriceTwd),
+                              billingPriceLabel(
+                                loc,
+                                plan.priceTwd,
+                                plan.billingCycle,
+                              ),
                             ),
                             trailing: PopupMenuButton<String>(
                               enabled: !_savingPricing,
@@ -352,7 +363,15 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
                 ],
                 onChanged: _savingPricing
                     ? null
-                    : (value) => setState(() => _planCode = value ?? 'partner'),
+                    : (value) => setState(() {
+                        _planCode = value ?? 'partner';
+                        if (_planCode == 'free') {
+                          _price.text = '0';
+                          _billingCycle = BillingCycle.quarter;
+                        } else if (_price.text == '0') {
+                          _price.clear();
+                        }
+                      }),
               ),
               Gaps.h12,
               TextField(
@@ -372,6 +391,22 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
                     setState(() => _effectiveAt = value);
                   }
                 },
+              ),
+              DropdownButtonFormField<BillingCycle>(
+                key: ValueKey(('billing', _billingCycle)),
+                initialValue: _billingCycle,
+                isExpanded: true,
+                decoration: InputDecoration(labelText: loc.billingCycle),
+                items: [
+                  for (final cycle in BillingCycle.values)
+                    DropdownMenuItem(
+                      value: cycle,
+                      child: Text(billingCycleLabel(loc, cycle)),
+                    ),
+                ],
+                onChanged: _savingPricing || _planCode == 'free'
+                    ? null
+                    : (value) => setState(() => _billingCycle = value!),
               ),
               _fields(loc),
               Gaps.h12,
@@ -444,7 +479,17 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
                         .toList(growable: false),
                     onChanged: _savingSubscription
                         ? null
-                        : (value) => setState(() => _selectedPricingId = value),
+                        : (value) => setState(() {
+                            _selectedPricingId = value;
+                            final plan = plans
+                                .where((p) => p.id == value)
+                                .firstOrNull;
+                            if (plan != null) {
+                              _periodEnd = plan.billingCycle.endFrom(
+                                DateTime.now(),
+                              );
+                            }
+                          }),
                   );
                 },
               ),
@@ -490,7 +535,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
 
   Widget _fields(AppLocalizations loc) {
     final fields = <(TextEditingController, String)>[
-      (_price, loc.adminPricingQuarterlyPrice),
+      (_price, loc.billingPeriodPrice),
       (_eventQuota, loc.vendorActiveActivities),
       (_attractionQuota, loc.vendorActiveAttractions),
       (_imageQuota, loc.adminPricingImageQuota),
@@ -512,6 +557,9 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
           crossAxisSpacing: 10,
         ),
         itemBuilder: (context, index) => TextField(
+          enabled:
+              !_savingPricing &&
+              !(fields[index].$1 == _price && _planCode == 'free'),
           controller: fields[index].$1,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(labelText: fields[index].$2),

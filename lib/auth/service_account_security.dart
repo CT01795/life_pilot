@@ -84,7 +84,7 @@ class ServiceAccountSecurity {
   }
 
   Future<String> createTemporaryPasswordForUser(String email) async {
-    final response = await apiSupabase.post('/account/admin/reset-password', {
+    final response = await apiCloud.post('/account/admin/reset-password', {
       'email': email.trim(),
     });
     if (response is! Map) {
@@ -101,7 +101,7 @@ class ServiceAccountSecurity {
     required String email,
     required String accountType,
   }) async {
-    final response = await apiSupabase.post('/account/admin/create-user', {
+    final response = await apiCloud.post('/account/admin/create-user', {
       'email': email.trim(),
       'account_type': accountType == 'vendor' ? 'vendor' : 'personal',
     });

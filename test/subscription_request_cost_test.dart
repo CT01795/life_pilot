@@ -118,10 +118,12 @@ void main() {
         expect(requests, hasLength(1));
         expect(
           requests.single.url.path,
-          endsWith('/admin_create_subscription_pricing_version'),
+          endsWith('/admin_save_pricing_version'),
         );
         expect(
-          jsonDecode(requests.single.body)['p_quarterly_price_twd'],
+          jsonDecode(
+            requests.single.body,
+          )['p_payload']['p_quarterly_price_twd'],
           price,
         );
       },
@@ -138,7 +140,7 @@ void main() {
         quarterlyPrice: 129,
         quotas: quotas,
       );
-      final params = jsonDecode(requests.single.body) as Map;
+      final params = jsonDecode(requests.single.body)['p_payload'] as Map;
       expect(params['p_recommended_event_quota'], 20);
       expect(params['p_recommended_attraction_quota'], 5);
     },

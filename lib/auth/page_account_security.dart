@@ -44,6 +44,7 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
   }
 
   Future<void> _changePassword() async {
+    final account = ServiceAuth.currentAccount();
     final loc = AppLocalizations.of(context)!;
     if (_busy || !(_formKey.currentState?.validate() ?? false)) return;
     FocusScope.of(context).unfocus();
@@ -53,14 +54,19 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
         currentPassword: _currentPassword.text,
         newPassword: _newPassword.text,
       );
+      if (!mounted || ServiceAuth.currentAccount() != account) return;
       _currentPassword.clear();
       _newPassword.clear();
       _confirmPassword.clear();
       AppNavigator.showSnackBar(loc.changePasswordSuccessful);
     } on AccountPasswordException catch (error) {
-      AppNavigator.showErrorBar(_passwordErrorMessage(loc, error.failure));
+      if (mounted && ServiceAuth.currentAccount() == account) {
+        AppNavigator.showErrorBar(_passwordErrorMessage(loc, error.failure));
+      }
     } catch (_) {
-      AppNavigator.showErrorBar(loc.changePasswordFailed);
+      if (mounted && ServiceAuth.currentAccount() == account) {
+        AppNavigator.showErrorBar(loc.changePasswordFailed);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -93,6 +99,7 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
     setState(() => _busy = true);
     try {
       final error = await ServiceAuth.resetPassword(email: account);
+      if (!mounted || ServiceAuth.currentAccount() != account) return;
       if (error == null) {
         AppNavigator.showSnackBar(loc.resetPasswordEmail);
       } else {
@@ -107,19 +114,24 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
     final loc = AppLocalizations.of(context)!;
     final account = ServiceAuth.currentAccount();
     if (_busy || account == null || account.isEmpty) return;
-    final opened = await _service.contactAdministrator(
-      subject: loc.adminPasswordHelpSubject,
-      body: loc.adminPasswordHelpBody(account),
-    );
-    if (!mounted) return;
-    if (opened) {
-      AppNavigator.showSnackBar(loc.adminPasswordHelpOpened);
-    } else {
-      AppNavigator.showErrorBar(
-        loc.adminPasswordHelpEmailUnavailable(
-          ServiceAccountSecurity.administratorEmail,
-        ),
+    setState(() => _busy = true);
+    try {
+      final opened = await _service.contactAdministrator(
+        subject: loc.adminPasswordHelpSubject,
+        body: loc.adminPasswordHelpBody(account),
       );
+      if (!mounted || ServiceAuth.currentAccount() != account) return;
+      if (opened) {
+        AppNavigator.showSnackBar(loc.adminPasswordHelpOpened);
+      } else {
+        AppNavigator.showErrorBar(
+          loc.adminPasswordHelpEmailUnavailable(
+            ServiceAccountSecurity.administratorEmail,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 

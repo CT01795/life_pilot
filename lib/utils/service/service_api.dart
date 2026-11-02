@@ -28,12 +28,14 @@ class ServiceApi {
   final String baseUrl;
   final Duration timeout;
   final AccessTokenProvider? accessTokenProvider;
+  final List<String>? allowedPathPrefixes;
   final http.Client _client;
 
   ServiceApi(
     this.baseUrl, {
     this.timeout = const Duration(seconds: 20),
     this.accessTokenProvider,
+    this.allowedPathPrefixes,
     http.Client? client,
   }) : _client = client ?? http.Client();
 
@@ -42,6 +44,18 @@ class ServiceApi {
         ? baseUrl.substring(0, baseUrl.length - 1)
         : baseUrl;
     final normalizedPath = path.startsWith('/') ? path.substring(1) : path;
+    if (allowedPathPrefixes != null &&
+        (!allowedPathPrefixes!.any(normalizedPath.startsWith) ||
+            normalizedPath.contains('..') ||
+            normalizedPath.contains('%') ||
+            normalizedPath.contains('\\') ||
+            normalizedPath.contains('://'))) {
+      throw ArgumentError.value(
+        path,
+        'path',
+        'This backend is reserved for stock operations',
+      );
+    }
 
     return Uri.parse('$normalizedBaseUrl/$normalizedPath');
   }

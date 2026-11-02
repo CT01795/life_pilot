@@ -4,8 +4,8 @@ import 'package:life_pilot/subscription/subscription_constants.dart';
 String subscriptionResourceLabel(AppLocalizations loc, String resource) =>
     switch (resource) {
       SubscriptionResource.calendarEvents => loc.personalEvent,
-      SubscriptionResource.recommendedEvents => loc.recommendEvent,
-      SubscriptionResource.recommendedAttractions => loc.recommendPlaces,
+      SubscriptionResource.recommendedEvents => loc.activeEventSubmissions,
+      SubscriptionResource.recommendedAttractions => loc.activePlaceSubmissions,
       SubscriptionResource.accountingDetail => loc.accountRecords,
       SubscriptionResource.pointRecordDetail => loc.pointsRecord,
       SubscriptionResource.memoryTrace => loc.memoryTrace,

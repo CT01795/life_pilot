@@ -121,7 +121,7 @@ class ServiceCalendar {
     final data = await RepositoryExternalCache().holidays(
       year: year,
       language: languageCode,
-      backend: () => apiSupabase.post('/external/holidays', {
+      backend: () => apiCloud.post('/external/holidays', {
         'start': yearStart.toIso8601String(),
         'end': yearEnd.toIso8601String(),
         'language_code': languageCode,

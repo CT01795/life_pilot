@@ -35,7 +35,9 @@ class ServiceFeedback {
     try {
       final response = await supabase
           .from(TableNames.feedback)
-          .select()
+          .select(
+            'id,subject,content,cc,created_by,created_at,is_ok,deal_by,deal_at,status',
+          )
           .gte(Fields.createdAt, dateFrom.toUtc().toIso8601String())
           .lt(Fields.createdAt, dateTo.toUtc().toIso8601String())
           .order(Fields.createdAt, ascending: false);
@@ -54,6 +56,24 @@ class ServiceFeedback {
         .lt(Fields.createdAt, before.toUtc().toIso8601String())
         .limit(1);
     return rows.isNotEmpty;
+  }
+
+  Future<List<String>> loadScreenshots(int id) async {
+    final client = supabase;
+    final owner = client.auth.currentUser?.id;
+    if (owner == null) throw StateError('Authentication required');
+    final row = await client
+        .from(TableNames.feedback)
+        .select('screenshot')
+        .eq('id', id)
+        .maybeSingle();
+    if (client.auth.currentUser?.id != owner) {
+      throw StateError('Feedback account changed');
+    }
+    if (row == null) throw StateError('Feedback no longer visible');
+    return (row['screenshot'] as List? ?? const [])
+        .map((value) => value as String)
+        .toList(growable: false);
   }
 
   Future<DateTime?> latestFeedbackDateBefore(DateTime before) async {

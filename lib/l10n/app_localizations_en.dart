@@ -9,6 +9,55 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get cloudZeroHistoryTransferWarning => 'Your cloud plan does not retain individual answers. They will be omitted and their device copies removed after transfer succeeds. Game scores and progress will still be transferred.';
+
+  @override
+  String cloudHistoryOmitted(int count) {
+    return 'Moved to cloud; $count individual answer records were omitted under your plan.';
+  }
+
+  @override
+  String get billingCycle => 'Billing cycle';
+
+  @override
+  String get billingMonthly => 'Monthly';
+
+  @override
+  String get billingQuarterly => 'Quarterly';
+
+  @override
+  String billingMonthlyPrice(int price) {
+    return 'NT\$$price per month';
+  }
+
+  @override
+  String get billingPeriodPrice => 'Price per billing period (TWD)';
+
+  @override
+  String get cloudAnswerRetention => 'Cloud answer history days (0 = do not retain)';
+
+  @override
+  String get answerHistoryNotRetained => 'Cloud answer history is not retained';
+
+  @override
+  String get coreQuotaExplanation => 'Calendar events, accounting entries, points entries and memories each have a separate limit.';
+
+  @override
+  String get coreQuotaWithoutPoints => 'Calendar events, accounting entries and memories each have a separate limit.';
+
+  @override
+  String get localImagesDeviceOnly => 'Device images use device storage; cloud image capacity is not included.';
+
+  @override
+  String get cloudSubmissionExplanation => 'Event and place quotas count unexpired cloud submissions. Unlimited device data does not increase these quotas.';
+
+  @override
+  String get activeEventSubmissions => 'Unexpired event submissions';
+
+  @override
+  String get activePlaceSubmissions => 'Unexpired place submissions';
+
+  @override
   String get subscriptionConfigurationMissing => 'No applicable allowance is configured. Read only: adding, editing and deleting are unavailable. Contact the administrator.';
 
   @override
@@ -1116,7 +1165,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPricingImageQuota => 'Images (MB)';
 
   @override
-  String get adminPricingLocalZeroUnlimited => 'For Local Plus, 0 in a quota field means unlimited.';
+  String get adminPricingLocalZeroUnlimited => '0 means unlimited device core records and questions. Cloud submission quotas are separate; 0 cloud history days means no retention.';
 
   @override
   String get adminPricingMemoryQuota => 'Memories';
@@ -1685,12 +1734,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String vendorPlanActivityQuota(int count) {
-    return 'Up to $count active activities';
+    return 'Up to $count unexpired event submissions';
   }
 
   @override
   String vendorPlanAttractionQuota(int count) {
-    return 'Up to $count active attractions';
+    return 'Up to $count unexpired place submissions';
   }
 
   @override

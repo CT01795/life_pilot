@@ -49,6 +49,28 @@ class _Auth extends ControllerAuth {
 }
 
 void main() {
+  test(
+    'read timeout releases busy state; late result cannot enable editing',
+    () async {
+      final service = _Service()..pending = Completer<List<String>>();
+      final c = ControllerModuleAuthorization(
+        service: service,
+        readTimeout: const Duration(milliseconds: 1),
+      );
+      addTearDown(c.dispose);
+      expect(
+        await c.search('a@example.com'),
+        ModuleAuthorizationResult.loadFailed,
+      );
+      expect(c.isLoading, isFalse);
+      expect(c.hasSearched, isFalse);
+      service.pending!.complete(['game']);
+      await Future<void>.delayed(Duration.zero);
+      expect(c.selectedKeys, isEmpty);
+      service.pending = null;
+      expect(await c.search('a@example.com'), ModuleAuthorizationResult.loaded);
+    },
+  );
   test('empty or unsearched account cannot be saved', () async {
     final service = _Service();
     final c = ControllerModuleAuthorization(service: service);

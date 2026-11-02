@@ -10,8 +10,11 @@ class RepositoryOptionalJsonRpc {
   Future<Map<String, dynamic>?> read(
     String function, {
     Map<String, dynamic> params = const {},
+    bool rememberMissing = true,
   }) async {
-    if (_missing[client]?.contains(function) == true) return null;
+    if (rememberMissing && _missing[client]?.contains(function) == true) {
+      return null;
+    }
     try {
       final result = await client.rpc(function, params: params);
       if (result is! Map) {
@@ -20,7 +23,7 @@ class RepositoryOptionalJsonRpc {
       return Map<String, dynamic>.from(result);
     } on PostgrestException catch (error) {
       if (error.code != 'PGRST202') rethrow;
-      (_missing[client] ??= <String>{}).add(function);
+      if (rememberMissing) (_missing[client] ??= <String>{}).add(function);
       return null;
     }
   }

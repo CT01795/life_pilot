@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/subscription/billing_cycle_labels.dart';
+import 'package:life_pilot/subscription/model_billing_cycle.dart';
 import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -34,6 +36,24 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
   SubscriptionPricingVersion? _latestCloudVersion;
   SubscriptionPricingVersion? _latestLocalVersion;
   int _adminSubscriptionEditorRevision = 0;
+  BillingCycle _billingCycle = BillingCycle.quarter;
+
+  void _selectBillingCycle(BillingCycle cycle) {
+    setState(() {
+      _billingCycle = cycle;
+      _latestCloudVersion = _availableVersions
+          .where(
+            (v) =>
+                v.storagePlan == 'cloud' &&
+                v.priceTwd > 0 &&
+                v.billingCycle == cycle,
+          )
+          .firstOrNull;
+      _latestLocalVersion = _availableVersions
+          .where((v) => v.storagePlan == 'local' && v.billingCycle == cycle)
+          .firstOrNull;
+    });
+  }
 
   @override
   void initState() {
@@ -47,7 +67,9 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
   }
 
   void _reloadPricingVersions() {
-    final future = ServiceSubscription().fetchPricingVersions();
+    final future = ServiceSubscription().fetchPricingVersions(
+      displayOnly: true,
+    );
     _pricingVersions = future;
     future.then<void>(
       (versions) {
@@ -65,13 +87,15 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               .where(
                 (version) =>
                     version.storagePlan == SubscriptionStoragePlan.cloud &&
-                    version.quarterlyPriceTwd > 0,
+                    version.quarterlyPriceTwd > 0 &&
+                    version.billingCycle == _billingCycle,
               )
               .firstOrNull;
           _latestLocalVersion = versions
               .where(
                 (version) =>
-                    version.storagePlan == SubscriptionStoragePlan.local,
+                    version.storagePlan == SubscriptionStoragePlan.local &&
+                    version.billingCycle == _billingCycle,
               )
               .firstOrNull;
           _adminSubscriptionEditorRevision++;
@@ -194,6 +218,20 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          DropdownButtonFormField<BillingCycle>(
+            initialValue: _billingCycle,
+            isExpanded: true,
+            decoration: InputDecoration(labelText: loc.billingCycle),
+            items: [
+              for (final cycle in BillingCycle.values)
+                DropdownMenuItem(
+                  value: cycle,
+                  child: Text(billingCycleLabel(loc, cycle)),
+                ),
+            ],
+            onChanged: (value) => _selectBillingCycle(value!),
+          ),
+          Gaps.h12,
           Card(
             child: ListTile(
               leading: Icon(
@@ -450,13 +488,15 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                   .where(
                     (version) =>
                         version.storagePlan == SubscriptionStoragePlan.cloud &&
-                        version.quarterlyPriceTwd > 0,
+                        version.quarterlyPriceTwd > 0 &&
+                        version.billingCycle == _billingCycle,
                   )
                   .firstOrNull;
               final latestLocal = snapshot.data!
                   .where(
                     (version) =>
-                        version.storagePlan == SubscriptionStoragePlan.local,
+                        version.storagePlan == SubscriptionStoragePlan.local &&
+                        version.billingCycle == _billingCycle,
                   )
                   .firstOrNull;
               final latestFreeCloud = snapshot.data!
@@ -518,7 +558,11 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                       title: loc.subscriptionCloudVersionName(
                         _latestCloudVersion!.name,
                       ),
-                      price: 'NT\$${_latestCloudVersion!.quarterlyPriceTwd}',
+                      price: billingPriceLabel(
+                        loc,
+                        _latestCloudVersion!.priceTwd,
+                        _latestCloudVersion!.billingCycle,
+                      ),
                       features: _versionFeatures(
                         loc,
                         _latestCloudVersion!,
@@ -538,10 +582,16 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                       title: loc.subscriptionLocalVersionName(
                         _latestLocalVersion!.name,
                       ),
-                      price: 'NT\$${_latestLocalVersion!.quarterlyPriceTwd}',
+                      price: billingPriceLabel(
+                        loc,
+                        _latestLocalVersion!.priceTwd,
+                        _latestLocalVersion!.billingCycle,
+                      ),
                       features: [
                         loc.subscriptionLocalRequiresActiveSubscription,
                         loc.subscriptionLocalPaidFeature,
+                        loc.localImagesDeviceOnly,
+                        loc.cloudSubmissionExplanation,
                         if (canUseGame) loc.subscriptionLocalAnswerHistory,
                         if (_latestFreeCloudVersion case final freeVersion?)
                           loc.subscriptionLocalPublicSubmissionQuota(
@@ -630,10 +680,14 @@ List<String> _versionFeatures(
     return [
       loc.subscriptionLocalRequiresActiveSubscription,
       loc.subscriptionLocalPaidFeature,
+      loc.localImagesDeviceOnly,
+      loc.cloudSubmissionExplanation,
       if (canUseGame) loc.subscriptionLocalAnswerHistory,
     ];
   }
   return [
+    canUsePoints ? loc.coreQuotaExplanation : loc.coreQuotaWithoutPoints,
+    loc.cloudSubmissionExplanation,
     for (final entry in version.quotas.entries)
       if (entry.key != SubscriptionResource.answerHistoryDays &&
           shouldShowSubscriptionResource(
@@ -643,7 +697,9 @@ List<String> _versionFeatures(
           ))
         '${subscriptionResourceLabel(loc, entry.key)}：${subscriptionQuotaValue(loc, entry.key, entry.value)}',
     if (canUseGame)
-      '${loc.adminPricingAnswerDays}：${version.quotas['answer_history_days'] ?? 0}',
+      (version.quotas['answer_history_days'] ?? 0) == 0
+          ? loc.answerHistoryNotRetained
+          : '${loc.cloudAnswerRetention}：${version.quotas['answer_history_days']}',
   ];
 }
 
@@ -679,11 +735,7 @@ class _PricingVersionCard extends StatelessWidget {
             ),
             Gaps.h4,
             Text(
-              loc.subscriptionVersionOffer(
-                version.name,
-                effectiveDate,
-                version.quarterlyPriceTwd,
-              ),
+              '${version.name} · $effectiveDate · ${billingPriceLabel(loc, version.priceTwd, version.billingCycle)}',
             ),
             const Divider(height: 24),
             if (version.storagePlan == SubscriptionStoragePlan.local) ...[
@@ -697,6 +749,8 @@ class _PricingVersionCard extends StatelessWidget {
                 leading: const Icon(Icons.all_inclusive),
                 title: Text(loc.subscriptionLocalPaidFeature),
               ),
+              Text(loc.localImagesDeviceOnly),
+              Text(loc.cloudSubmissionExplanation),
               if (canUseGame)
                 ListTile(
                   contentPadding: EdgeInsets.zero,

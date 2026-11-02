@@ -1,5 +1,6 @@
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/event/model_content_performance.dart';
+import 'package:life_pilot/subscription/model_billing_cycle.dart';
 
 class VendorPricingPlan {
   const VendorPricingPlan({
@@ -12,6 +13,7 @@ class VendorPricingPlan {
     required this.attractionQuota,
     required this.imageMegabytes,
     required this.analyticsDays,
+    this.billingCycle = BillingCycle.quarter,
   });
 
   final String id;
@@ -19,6 +21,8 @@ class VendorPricingPlan {
   final String versionName;
   final DateTime effectiveAt;
   final int quarterlyPriceTwd;
+  int get priceTwd => quarterlyPriceTwd;
+  final BillingCycle billingCycle;
   final int eventQuota;
   final int attractionQuota;
   final int imageMegabytes;
@@ -35,6 +39,7 @@ class VendorPricingPlan {
         effectiveAt:
             tryParseDateTimeValue(json['effective_at']) ?? DateTime.now(),
         quarterlyPriceTwd: parseIntValue(json['quarterly_price_twd']),
+        billingCycle: BillingCycle.from(json['billing_cycle']),
         eventQuota: parseIntValue(json['event_quota']),
         attractionQuota: parseIntValue(json['attraction_quota']),
         imageMegabytes: parseIntValue(json['image_megabytes']),

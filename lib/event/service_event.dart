@@ -86,7 +86,7 @@ class ServiceEvent {
     final response = await _cloudOperations.backfillCoordinates(
       tableName: tableName,
       offset: offset,
-      backend: () => apiSupabase.post('/external/map-geocode/backfill', {
+      backend: () => apiCloud.post('/external/map-geocode/backfill', {
         'table_name': tableName,
         'limit': 25,
         'offset': offset,
@@ -111,7 +111,7 @@ class ServiceEvent {
     final response = await _cloudOperations.mapCoordinates(
       tableName: tableName,
       eventId: event.id,
-      backend: () => apiSupabase.post('/external/map-geocode', {
+      backend: () => apiCloud.post('/external/map-geocode', {
         'table_name': tableName,
         'event_id': event.id,
       }),
@@ -133,7 +133,7 @@ class ServiceEvent {
         await RepositoryCloudGateway().rpcOrBackend(
           'life_pilot_run_daily_cleanup',
           backend: () =>
-              apiSupabase.post('event/cleanup_recommended_events', const {}),
+              apiCloud.post('event/cleanup_recommended_events', const {}),
         );
         _lastCleanupRequestDate = today;
       } catch (error, stackTrace) {

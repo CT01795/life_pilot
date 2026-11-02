@@ -77,7 +77,7 @@ class ServiceEventPublic {
     final response = await _cloudGateway.rpcOrBackend(
       'life_pilot_public_event_refresh',
       params: {'p_action': 'status'},
-      backend: () => apiSupabase.get('event/public_events_updated_today'),
+      backend: () => apiCloud.get('event/public_events_updated_today'),
     );
     return PublicEventRefreshStatus(
       updated: response is Map && response['updated'] == true,
@@ -90,7 +90,7 @@ class ServiceEventPublic {
       'life_pilot_public_event_refresh',
       params: {'p_action': 'start'},
       backend: () =>
-          apiSupabase.post('event/start_public_event_refresh', const {}),
+          apiCloud.post('event/start_public_event_refresh', const {}),
     );
     if (response is! Map) {
       return (null, PublicEventRefreshExecution.running);
@@ -114,7 +114,7 @@ class ServiceEventPublic {
     await _cloudGateway.rpcOrBackend(
       'life_pilot_public_event_refresh',
       params: {'p_action': completed ? 'complete' : 'abort', 'p_token': token},
-      backend: () => apiSupabase.post(
+      backend: () => apiCloud.post(
         completed
             ? 'event/complete_public_event_refresh'
             : 'event/abort_public_event_refresh',
@@ -161,7 +161,7 @@ class ServiceEventPublic {
       await _cloudGateway.rpcOrBackend(
         'life_pilot_public_event_refresh',
         params: {'p_action': 'heartbeat', 'p_token': token},
-        backend: () => apiSupabase.post(
+        backend: () => apiCloud.post(
           'event/heartbeat_public_event_refresh',
           {'token': token},
         ),
@@ -312,7 +312,7 @@ class ServiceEventPublic {
             ).importPublicEvents(
               sourceUrl: url,
               events: batch,
-              backend: () => apiSupabase.post('event/import_public_events', {
+              backend: () => apiCloud.post('event/import_public_events', {
                 'source_url': url,
                 'events': batch,
               }),
@@ -1270,7 +1270,7 @@ class ServiceEventPublic {
     DateTime today,
     String source,
   ) async {
-    final res = await apiSupabase.post('event/get_public_event_url_data', {
+    final res = await apiCloud.post('event/get_public_event_url_data', {
       'url': url,
       'method': 'GET',
     });
@@ -1369,7 +1369,7 @@ class ServiceEventPublic {
       String? organizer;
       try {
         if (masterUrl.isNotEmpty) {
-          final detailRes = await apiSupabase.post(
+          final detailRes = await apiCloud.post(
             'event/get_public_event_url_data',
             {'url': masterUrl, 'method': 'GET'},
           );

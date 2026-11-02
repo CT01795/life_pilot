@@ -9,6 +9,55 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get cloudZeroHistoryTransferWarning => '雲端方案不保留逐題答題紀錄。轉移時會略過這些紀錄，確認轉移完成後會清除本機副本；遊戲總分與進度仍會轉移。';
+
+  @override
+  String cloudHistoryOmitted(int count) {
+    return '已轉至雲端；依方案設定，略過 $count 筆逐題答題紀錄。';
+  }
+
+  @override
+  String get billingCycle => '付款週期';
+
+  @override
+  String get billingMonthly => '月繳';
+
+  @override
+  String get billingQuarterly => '季繳';
+
+  @override
+  String billingMonthlyPrice(int price) {
+    return '每月 NT\$$price';
+  }
+
+  @override
+  String get billingPeriodPrice => '每期價格（TWD）';
+
+  @override
+  String get cloudAnswerRetention => '雲端答題紀錄保留天數（0＝不保留）';
+
+  @override
+  String get answerHistoryNotRetained => '不保留雲端答題紀錄';
+
+  @override
+  String get coreQuotaExplanation => '核心資料為行事曆、記帳明細、積分明細及回憶，各自計算上限。';
+
+  @override
+  String get coreQuotaWithoutPoints => '行事曆、記帳明細及回憶，各自計算上限。';
+
+  @override
+  String get localImagesDeviceOnly => '本機圖片使用裝置空間；不含雲端圖片容量。';
+
+  @override
+  String get cloudSubmissionExplanation => '活動／景點額度指尚未到期的雲端投稿數，不受本機資料不限量影響。';
+
+  @override
+  String get activeEventSubmissions => '尚未到期的活動投稿';
+
+  @override
+  String get activePlaceSubmissions => '尚未到期的景點投稿';
+
+  @override
   String get subscriptionConfigurationMissing => '尚未設定適用額度，僅可讀取，無法新增、修改或刪除。請聯絡管理者。';
 
   @override
@@ -1116,7 +1165,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminPricingImageQuota => '圖片容量（MB）';
 
   @override
-  String get adminPricingLocalZeroUnlimited => '本機 Plus 的額度欄位填 0 代表不限量。';
+  String get adminPricingLocalZeroUnlimited => '本機核心資料與題目填 0 代表不限量；雲端投稿額度另計，雲端答題保留天數 0 代表不保留。';
 
   @override
   String get adminPricingMemoryQuota => '回憶紀錄';
@@ -1685,12 +1734,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String vendorPlanActivityQuota(int count) {
-    return '有效活動最多 $count 筆';
+    return '尚未到期的活動投稿最多 $count 筆';
   }
 
   @override
   String vendorPlanAttractionQuota(int count) {
-    return '有效景點最多 $count 筆';
+    return '尚未到期的景點投稿最多 $count 筆';
   }
 
   @override

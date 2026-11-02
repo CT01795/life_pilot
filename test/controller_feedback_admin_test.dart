@@ -46,6 +46,16 @@ class _Service extends ServiceFeedback {
   Completer<List<dynamic>>? pendingLoad;
   Completer<DateTime?>? pendingOlder;
   Completer<void>? pendingUpdate;
+  int imageReads = 0;
+  bool failImages = false;
+  Completer<List<String>>? pendingImages;
+  @override
+  Future<List<String>> loadScreenshots(int id) async {
+    imageReads++;
+    if (failImages) throw StateError('image offline');
+    return pendingImages?.future ?? ['encoded'];
+  }
+
   @override
   Future<List<dynamic>> loadFeedback({
     required DateTime dateFrom,
@@ -81,6 +91,51 @@ class _Service extends ServiceFeedback {
 }
 
 void main() {
+  test(
+    'feedback list does not load images; opening twice shares one request',
+    () async {
+      final auth = _Auth();
+      final service = _Service();
+      final c = ControllerFeedbackAdmin(service, auth);
+      addTearDown(c.dispose);
+      addTearDown(auth.dispose);
+      await c.loadFeedback();
+      expect(service.imageReads, 0);
+      final feedback = c.feedbackList.single;
+      service.pendingImages = Completer<List<String>>();
+      final a = c.loadScreenshots(feedback);
+      final b = c.loadScreenshots(feedback);
+      service.pendingImages!.complete(['encoded']);
+      await Future.wait([a, b]);
+      await c.loadScreenshots(feedback);
+      expect(service.imageReads, 1);
+      expect(feedback.screenshot, ['encoded']);
+    },
+  );
+  test(
+    'failed screenshot load retries and account switches discard old images',
+    () async {
+      final auth = _Auth();
+      final service = _Service();
+      final c = ControllerFeedbackAdmin(service, auth);
+      addTearDown(c.dispose);
+      addTearDown(auth.dispose);
+      await c.loadFeedback();
+      final feedback = c.feedbackList.single;
+      service.failImages = true;
+      await expectLater(c.loadScreenshots(feedback), throwsStateError);
+      expect(feedback.screenshotsLoaded, isFalse);
+      service.failImages = false;
+      service.pendingImages = Completer<List<String>>();
+      final pending = c.loadScreenshots(feedback);
+      final expectation = expectLater(pending, throwsStateError);
+      auth.switchAccount();
+      service.pendingImages!.complete(['old private image']);
+      await expectation;
+      expect(feedback.screenshot, isNull);
+      expect(service.imageReads, 2);
+    },
+  );
   TestWidgetsFlutterBinding.ensureInitialized();
   late _Auth auth;
   late _Service service;

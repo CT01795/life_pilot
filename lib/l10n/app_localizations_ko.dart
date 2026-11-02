@@ -9,6 +9,55 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get cloudZeroHistoryTransferWarning => '클라우드 요금제는 개별 답변을 보관하지 않습니다. 해당 기록은 전송에서 제외되며 전송 성공 후 기기 사본이 삭제됩니다. 게임 점수와 진행 상황은 전송됩니다.';
+
+  @override
+  String cloudHistoryOmitted(int count) {
+    return '클라우드로 이동했습니다. 요금제에 따라 개별 답변 $count개를 제외했습니다.';
+  }
+
+  @override
+  String get billingCycle => '결제 주기';
+
+  @override
+  String get billingMonthly => '월 결제';
+
+  @override
+  String get billingQuarterly => '분기 결제';
+
+  @override
+  String billingMonthlyPrice(int price) {
+    return '월 NT\$$price';
+  }
+
+  @override
+  String get billingPeriodPrice => '결제 주기당 요금 (TWD)';
+
+  @override
+  String get cloudAnswerRetention => '클라우드 답변 기록 보관 일수 (0 = 보관 안 함)';
+
+  @override
+  String get answerHistoryNotRetained => '클라우드 답변 기록을 보관하지 않습니다';
+
+  @override
+  String get coreQuotaExplanation => '일정, 가계부 내역, 포인트 내역, 추억의 한도는 각각 별도로 계산됩니다.';
+
+  @override
+  String get coreQuotaWithoutPoints => '일정, 가계부 내역, 추억의 한도는 각각 별도로 계산됩니다.';
+
+  @override
+  String get localImagesDeviceOnly => '기기 이미지는 기기 저장 공간을 사용하며 클라우드 이미지 용량은 포함되지 않습니다.';
+
+  @override
+  String get cloudSubmissionExplanation => '활동·장소 한도는 만료되지 않은 클라우드 게시물 수입니다. 기기 데이터 무제한과 별도로 계산됩니다.';
+
+  @override
+  String get activeEventSubmissions => '만료되지 않은 활동 게시물';
+
+  @override
+  String get activePlaceSubmissions => '만료되지 않은 장소 게시물';
+
+  @override
   String get subscriptionConfigurationMissing => '적용 가능한 이용 한도가 설정되지 않았습니다. 조회만 가능하며 추가·수정·삭제할 수 없습니다. 관리자에게 문의하세요.';
 
   @override
@@ -1116,7 +1165,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get adminPricingImageQuota => '이미지 용량 (MB)';
 
   @override
-  String get adminPricingLocalZeroUnlimited => '로컬 Plus에서 한도 항목의 0은 무제한을 의미합니다.';
+  String get adminPricingLocalZeroUnlimited => '기기 핵심 기록과 문제 수의 0은 무제한입니다. 클라우드 게시물 한도는 별도이며, 클라우드 답변 보관 일수 0은 보관하지 않음을 뜻합니다.';
 
   @override
   String get adminPricingMemoryQuota => '추억';
@@ -1685,12 +1734,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String vendorPlanActivityQuota(int count) {
-    return '활성 행사 최대 $count개';
+    return '만료되지 않은 활동 게시물 최대 $count개';
   }
 
   @override
   String vendorPlanAttractionQuota(int count) {
-    return '활성 명소 최대 $count개';
+    return '만료되지 않은 장소 게시물 최대 $count개';
   }
 
   @override

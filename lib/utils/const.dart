@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-String? weatherApiKey;
 double zoolLevel = 8;
 
 final String dbMacUrl = "http://100.76.202.70:8000";

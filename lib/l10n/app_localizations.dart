@@ -99,6 +99,96 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
+  /// No description provided for @cloudZeroHistoryTransferWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cloud plan does not retain individual answers. They will be omitted and their device copies removed after transfer succeeds. Game scores and progress will still be transferred.'**
+  String get cloudZeroHistoryTransferWarning;
+
+  /// No description provided for @cloudHistoryOmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved to cloud; {count} individual answer records were omitted under your plan.'**
+  String cloudHistoryOmitted(int count);
+
+  /// No description provided for @billingCycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing cycle'**
+  String get billingCycle;
+
+  /// No description provided for @billingMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get billingMonthly;
+
+  /// No description provided for @billingQuarterly.
+  ///
+  /// In en, this message translates to:
+  /// **'Quarterly'**
+  String get billingQuarterly;
+
+  /// No description provided for @billingMonthlyPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'NT\${price} per month'**
+  String billingMonthlyPrice(int price);
+
+  /// No description provided for @billingPeriodPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per billing period (TWD)'**
+  String get billingPeriodPrice;
+
+  /// No description provided for @cloudAnswerRetention.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud answer history days (0 = do not retain)'**
+  String get cloudAnswerRetention;
+
+  /// No description provided for @answerHistoryNotRetained.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud answer history is not retained'**
+  String get answerHistoryNotRetained;
+
+  /// No description provided for @coreQuotaExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar events, accounting entries, points entries and memories each have a separate limit.'**
+  String get coreQuotaExplanation;
+
+  /// No description provided for @coreQuotaWithoutPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar events, accounting entries and memories each have a separate limit.'**
+  String get coreQuotaWithoutPoints;
+
+  /// No description provided for @localImagesDeviceOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Device images use device storage; cloud image capacity is not included.'**
+  String get localImagesDeviceOnly;
+
+  /// No description provided for @cloudSubmissionExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Event and place quotas count unexpired cloud submissions. Unlimited device data does not increase these quotas.'**
+  String get cloudSubmissionExplanation;
+
+  /// No description provided for @activeEventSubmissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Unexpired event submissions'**
+  String get activeEventSubmissions;
+
+  /// No description provided for @activePlaceSubmissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Unexpired place submissions'**
+  String get activePlaceSubmissions;
+
   /// Shown when the subscription configuration is missing or invalid
   ///
   /// In en, this message translates to:
@@ -2244,7 +2334,7 @@ abstract class AppLocalizations {
   /// Label for adminPricingLocalZeroUnlimited
   ///
   /// In en, this message translates to:
-  /// **'For Local Plus, 0 in a quota field means unlimited.'**
+  /// **'0 means unlimited device core records and questions. Cloud submission quotas are separate; 0 cloud history days means no retention.'**
   String get adminPricingLocalZeroUnlimited;
 
   /// Label for adminPricingMemoryQuota
@@ -3276,13 +3366,13 @@ abstract class AppLocalizations {
   /// No description provided for @vendorPlanActivityQuota.
   ///
   /// In en, this message translates to:
-  /// **'Up to {count} active activities'**
+  /// **'Up to {count} unexpired event submissions'**
   String vendorPlanActivityQuota(int count);
 
   /// No description provided for @vendorPlanAttractionQuota.
   ///
   /// In en, this message translates to:
-  /// **'Up to {count} active attractions'**
+  /// **'Up to {count} unexpired place submissions'**
   String vendorPlanAttractionQuota(int count);
 
   /// No description provided for @vendorPlanImageQuota.

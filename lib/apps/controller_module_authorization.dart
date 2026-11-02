@@ -16,10 +16,13 @@ enum ModuleAuthorizationResult {
 
 /// Binds editable permissions to the account that was successfully looked up.
 class ControllerModuleAuthorization extends SafeChangeNotifier {
-  ControllerModuleAuthorization({required ServiceModule service})
-    : _service = service;
+  ControllerModuleAuthorization({
+    required ServiceModule service,
+    this.readTimeout = const Duration(seconds: 20),
+  }) : _service = service;
 
   final ServiceModule _service;
+  final Duration readTimeout;
   String _inputEmail = '';
   String? _loadedEmail;
   final Set<String> _selectedKeys = {};
@@ -63,7 +66,9 @@ class ControllerModuleAuthorization extends SafeChangeNotifier {
     _selectedKeys.clear();
     notifyListeners();
     try {
-      final keys = await _service.loadUserModulesAsAdmin(account);
+      final keys = await _service
+          .loadUserModulesAsAdmin(account)
+          .timeout(readTimeout);
       if (!_isCurrent(generation)) return null;
       _selectedKeys.addAll(keys);
       _loadedEmail = account;
@@ -98,7 +103,9 @@ class ControllerModuleAuthorization extends SafeChangeNotifier {
         moduleKeys: selected,
       );
       if (!_isCurrent(generation)) return null;
-      final saved = (await _service.loadUserModulesAsAdmin(account)).toSet();
+      final saved =
+          (await _service.loadUserModulesAsAdmin(account).timeout(readTimeout))
+              .toSet();
       if (!_isCurrent(generation)) return null;
       if (saved.length != selected.length || !saved.containsAll(selected)) {
         return ModuleAuthorizationResult.saveFailed;

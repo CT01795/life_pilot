@@ -35,7 +35,7 @@ class RepositoryExternalCache {
     );
     if (cached is! Map || cached['cached'] != true) return backend();
     if (cached['fresh'] != true) {
-      // Show existing holidays even while Render is asleep/unavailable.
+      // Show existing holidays while the Edge refresh is pending/unavailable.
       unawaited(() async {
         try {
           final refreshed = await backend();

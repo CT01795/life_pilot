@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/subscription/billing_cycle_labels.dart';
 import 'package:life_pilot/event/widgets_content_performance_link.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
@@ -47,7 +48,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
     super.initState();
     _controller = ControllerVendorDashboard(
       auth: context.read<ControllerAuth>(),
-      service: widget.service ?? ServiceVendorAccount(),
+      service: widget.service ?? ServiceVendorAccount(displayPricing: true),
     );
     unawaited(_controller.load());
   }
@@ -248,7 +249,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
                       width: cardWidth,
                       child: _VendorPlanCard(
                         plan: plan,
-                        selected: plan.code == status.plan.code,
+                        selected: plan.id == status.plan.id,
                         onTap: isAdmin ? _openVendorPlanManager : null,
                       ),
                     ),
@@ -777,7 +778,7 @@ class _VendorPlanCard extends StatelessWidget {
               Text(
                 plan.quarterlyPriceTwd == 0
                     ? loc.free
-                    : loc.vendorQuarterlyPrice(plan.quarterlyPriceTwd),
+                    : billingPriceLabel(loc, plan.priceTwd, plan.billingCycle),
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const Divider(height: 24),

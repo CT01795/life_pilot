@@ -4,7 +4,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/feedback/controller_feedback_admin.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
-import 'package:life_pilot/feedback/widgets_feedback_screenshots.dart';
+import 'package:life_pilot/feedback/widgets_feedback_image_loader.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -215,7 +215,8 @@ class PageFeedbackAdmin extends StatelessWidget {
                                       children: [
                                         Text(feedback.content),
                                         Gaps.h8,
-                                        WidgetsFeedbackScreenshots(
+                                        WidgetsFeedbackImageLoader(
+                                          controller: controller,
                                           feedback: feedback,
                                         ),
                                         Gaps.h8,

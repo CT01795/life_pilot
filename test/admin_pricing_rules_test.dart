@@ -38,6 +38,8 @@ void main() {
           jsonEncode(
             path.endsWith('admin_pricing_version_is_locked')
                 ? lockResult
+                : path.endsWith('get_pricing_catalog')
+                ? {'versions': []}
                 : path.endsWith('get_subscription_pricing_versions')
                 ? []
                 : null,
@@ -152,7 +154,7 @@ void main() {
     await tester.pumpAndSettle();
     for (final element in find.byType(TextField).evaluate()) {
       final field = element.widget as TextField;
-      if (field.decoration?.labelText == loc.adminPricingQuarterlyPrice) {
+      if (field.decoration?.labelText == loc.billingPeriodPrice) {
         expect(field.controller!.text, '0');
         expect(field.enabled, isFalse);
       } else {
@@ -167,9 +169,9 @@ void main() {
     await tester.tap(find.text(loc.adminPricingCreate));
     await tester.pumpAndSettle();
     final create = requests.singleWhere(
-      (r) => r.url.path.endsWith('admin_create_subscription_pricing_version'),
+      (r) => r.url.path.endsWith('admin_save_pricing_version'),
     );
-    final body = jsonDecode(create.body) as Map;
+    final body = jsonDecode(create.body)['p_payload'] as Map;
     expect(body['p_storage_plan'], 'cloud');
     expect(body['p_quarterly_price_twd'], 0);
     expect(tester.takeException(), isNull);

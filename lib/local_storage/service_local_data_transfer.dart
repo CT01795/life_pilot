@@ -3,20 +3,28 @@ import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
+import 'package:life_pilot/local_storage/model_cloud_restore_receipt.dart';
 
 class LocalDataTransferResult {
   const LocalDataTransferResult({
     required this.moved,
     required this.failed,
     this.failureReason,
+    this.omittedAnswers = 0,
   });
   final int moved;
   final int failed;
   final String? failureReason;
+  final int omittedAnswers;
   bool get succeeded => failed == 0;
 }
 
 class ServiceLocalDataTransfer {
+  Future<Map<String, dynamic>?> cloudAnswerRetention() =>
+      RepositoryOptionalJsonRpc(
+        supabase,
+      ).read('get_my_cloud_answer_retention', rememberMissing: false);
   static const _resources = [
     TableNames.calendarEvents,
     TableNames.memoryTrace,
@@ -137,7 +145,11 @@ class ServiceLocalDataTransfer {
     }
   }
 
-  Future<LocalDataTransferResult> uploadLocalToCloud(String account) async {
+  Future<LocalDataTransferResult> uploadLocalToCloud(
+    String account, {
+    bool retentionAware = false,
+    bool allowOmittingAnswers = false,
+  }) async {
     final payload = <Map<String, Object?>>[];
     final dashboardSettings = await LocalDataStore.instance.list(
       owner: account,
@@ -167,16 +179,27 @@ class ServiceLocalDataTransfer {
     }
     try {
       final restored = await supabase.rpc(
-        'restore_local_personal_records_with_setting',
+        retentionAware
+            ? 'restore_local_personal_records_with_retention'
+            : 'restore_local_personal_records_with_setting',
         params: {
+          if (retentionAware) 'p_allow_history_omission': allowOmittingAnswers,
           'p_records': payload,
           'p_dashboard_setting': dashboardSettings.isEmpty
               ? null
               : dashboardSettings.first,
         },
       );
-      final restoredCount = tryParseIntValue(restored) ?? 0;
-      if (restoredCount != payload.length) {
+      final receipt = retentionAware
+          ? CloudRestoreReceipt.parse(
+              restored,
+              expected: payload.length,
+              allowOmission: allowOmittingAnswers,
+            )
+          : null;
+      final restoredCount =
+          receipt?.restored ?? tryParseIntValue(restored) ?? 0;
+      if (restoredCount + (receipt?.omitted ?? 0) != payload.length) {
         return const LocalDataTransferResult(
           moved: 0,
           failed: 1,
@@ -184,7 +207,11 @@ class ServiceLocalDataTransfer {
         );
       }
       await LocalDataStore.instance.deleteAllRecords(owner: account);
-      return LocalDataTransferResult(moved: payload.length, failed: 0);
+      return LocalDataTransferResult(
+        moved: restoredCount,
+        failed: 0,
+        omittedAnswers: receipt?.omitted ?? 0,
+      );
     } catch (error) {
       return LocalDataTransferResult(
         moved: 0,

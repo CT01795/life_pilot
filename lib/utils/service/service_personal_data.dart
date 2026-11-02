@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:life_pilot/utils/service/export/personal_export_comparator.dart';
 import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/utils/service/export/repository_personal_export_rows.dart';
 
 class ServicePersonalData {
   Future<String> export({
@@ -16,7 +17,9 @@ class ServicePersonalData {
     required ServiceExportPlatform exporter,
     required AppLocalizations loc,
   }) async {
-    final cloudRows = await _fetchAllCloudRows();
+    final repository = RepositoryPersonalExportRows();
+    final owner = supabase.auth.currentUser?.id;
+    final cloudRows = await repository.read(email);
     final workbook = Excel.createExcel();
     final meta = workbook[loc.dataExportSummarySheet];
     workbook.delete('Sheet1');
@@ -28,26 +31,8 @@ class ServicePersonalData {
     _appendRowsByTable(workbook, cloudRows, loc);
     final bytes = Uint8List.fromList(workbook.encode()!);
     final stamp = DateTime.now().toLocal().toIso8601String().split('T').first;
+    repository.assertOwner(owner, email);
     return exporter.exportFile('life_pilot_data_$stamp.xlsx', bytes);
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchAllCloudRows() async {
-    const pageSize = 1000;
-    final result = <Map<String, dynamic>>[];
-    var offset = 0;
-    while (true) {
-      final page = await supabase
-          .rpc('export_my_cloud_data_for_local')
-          .range(offset, offset + pageSize - 1);
-      final rows = (page as List<dynamic>)
-          .whereType<Map>()
-          .map((row) => Map<String, dynamic>.from(row))
-          .toList(growable: false);
-      result.addAll(rows);
-      if (rows.length < pageSize) break;
-      offset += pageSize;
-    }
-    return result;
   }
 
   void _appendRowsByTable(Excel workbook, Object? rows, AppLocalizations loc) {

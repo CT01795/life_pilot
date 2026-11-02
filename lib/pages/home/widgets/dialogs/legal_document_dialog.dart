@@ -9,10 +9,12 @@ class LegalDocumentDialog extends StatefulWidget {
     super.key,
     required this.assetPath,
     this.onReadComplete,
+    this.bundle,
   });
 
   final String assetPath;
   final VoidCallback? onReadComplete;
+  final AssetBundle? bundle;
 
   @override
   State<LegalDocumentDialog> createState() => _LegalDocumentDialogState();
@@ -22,20 +24,36 @@ class _LegalDocumentDialogState extends State<LegalDocumentDialog> {
   final ScrollController _scrollController = ScrollController();
   late Future<String> _documentFuture;
   bool _hasReportedReadComplete = false;
+  int _revision = 0;
+  bool _documentReady = false;
+  bool _resetScrollOnContent = true;
+
+  void _loadDocument() {
+    final revision = ++_revision;
+    _documentReady = false;
+    _resetScrollOnContent = true;
+    _hasReportedReadComplete = false;
+    _documentFuture = (widget.bundle ?? rootBundle)
+        .loadString(widget.assetPath)
+        .then((text) {
+          if (mounted && revision == _revision) _documentReady = true;
+          return text;
+        });
+  }
 
   @override
   void initState() {
     super.initState();
-    _documentFuture = rootBundle.loadString(widget.assetPath);
+    _loadDocument();
     _scrollController.addListener(_checkReadComplete);
   }
 
   @override
   void didUpdateWidget(covariant LegalDocumentDialog oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.assetPath != widget.assetPath) {
-      _documentFuture = rootBundle.loadString(widget.assetPath);
-      _hasReportedReadComplete = false;
+    if (oldWidget.assetPath != widget.assetPath ||
+        oldWidget.bundle != widget.bundle) {
+      _loadDocument();
     }
   }
 
@@ -46,14 +64,18 @@ class _LegalDocumentDialogState extends State<LegalDocumentDialog> {
   }
 
   void _checkReadComplete() {
-    if (_hasReportedReadComplete || !_scrollController.hasClients) return;
+    if (!_documentReady ||
+        _hasReportedReadComplete ||
+        !_scrollController.hasClients) {
+      return;
+    }
     final position = _scrollController.position;
     if (position.pixels < position.maxScrollExtent - 8) return;
     _reportReadComplete();
   }
 
   void _checkFullyVisibleDocument() {
-    if (!_scrollController.hasClients) return;
+    if (!_documentReady || !_scrollController.hasClients) return;
     if (_scrollController.position.maxScrollExtent == 0) {
       _reportReadComplete();
     }
@@ -87,13 +109,21 @@ class _LegalDocumentDialogState extends State<LegalDocumentDialog> {
             if (snapshot.hasError) {
               return Center(child: Text(loc.unableToLoadDocument));
             }
-            if (!snapshot.hasData) {
+            if (!snapshot.hasData ||
+                snapshot.connectionState != ConnectionState.done) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            WidgetsBinding.instance.addPostFrameCallback(
-              (_) => _checkFullyVisibleDocument(),
-            );
+            final revision = _revision;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && revision == _revision) {
+                if (_resetScrollOnContent && _scrollController.hasClients) {
+                  _resetScrollOnContent = false;
+                  _scrollController.jumpTo(0);
+                }
+                _checkFullyVisibleDocument();
+              }
+            });
             return Column(
               children: [
                 Expanded(
@@ -114,11 +144,13 @@ class _LegalDocumentDialogState extends State<LegalDocumentDialog> {
                           size: 20,
                         ),
                         Gaps.w8,
-                        Text(
-                          loc.legalDocumentReadComplete,
-                          style: const TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.w600,
+                        Flexible(
+                          child: Text(
+                            loc.legalDocumentReadComplete,
+                            style: const TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],

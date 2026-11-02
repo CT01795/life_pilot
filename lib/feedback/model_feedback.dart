@@ -11,6 +11,7 @@ class ModelFeedback {
   final String content;
   final List<String>? cc;
   List<String>? screenshot; // base64
+  bool screenshotsLoaded;
   final String? createdBy;
   final DateTime createdAt;
   List<Uint8List>? _decodedScreenshots;
@@ -32,6 +33,7 @@ class ModelFeedback {
     required this.content,
     this.cc,
     this.screenshot,
+    this.screenshotsLoaded = true,
     this.createdBy,
     required this.createdAt,
     this.isOk,
@@ -50,6 +52,7 @@ class ModelFeedback {
       screenshot: (map['screenshot'] as List<dynamic>?)
           ?.map(parseStringValue)
           .toList(),
+      screenshotsLoaded: map.containsKey('screenshot'),
       createdBy: parseStringValue(map[Fields.createdBy]),
       createdAt: tryParseDateTimeValue(map[Fields.createdAt]) ?? DateTime.now(),
       isOk: map['is_ok'] is bool

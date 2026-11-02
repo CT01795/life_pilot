@@ -6,6 +6,8 @@ import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/subscription/model_personal_pricing_choice.dart';
 import 'package:life_pilot/subscription/repository_pricing_version_guard.dart';
+import 'package:life_pilot/subscription/model_billing_cycle.dart';
+import 'package:life_pilot/subscription/billing_cycle_labels.dart';
 
 class AdminPricingVersionEditor extends StatefulWidget {
   const AdminPricingVersionEditor({this.onSaved, super.key});
@@ -35,6 +37,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
   DateTime _effectiveAt = DateTime.now();
   String _storagePlan = 'cloud';
   PersonalPricingChoice _choice = PersonalPricingChoice.cloudPaid;
+  BillingCycle _billingCycle = BillingCycle.quarter;
   bool _saving = false;
   late Future<List<SubscriptionPricingVersion>> _versions;
   String? _editingVersionId;
@@ -63,6 +66,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
       _storagePlan = choice.storagePlan;
       if (choice.isFree) {
         _values['price']!.text = '0';
+        _billingCycle = BillingCycle.quarter;
       } else if (_values['price']!.text == '0') {
         _values['price']!.clear();
       }
@@ -99,6 +103,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
           storagePlan: _storagePlan,
           effectiveAt: _effectiveAt,
           quarterlyPrice: values['price']!,
+          billingCycle: _billingCycle,
           quotas: quotas,
         );
       } else {
@@ -108,6 +113,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
           storagePlan: _storagePlan,
           effectiveAt: _effectiveAt,
           quarterlyPrice: values['price']!,
+          billingCycle: _billingCycle,
           quotas: quotas,
         );
       }
@@ -157,6 +163,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
       _editingVersionName = version.name;
       _name.text = version.name;
       _storagePlan = version.storagePlan;
+      _billingCycle = version.billingCycle;
       _choice = PersonalPricingChoice.from(
         _storagePlan,
         version.quarterlyPriceTwd,
@@ -187,6 +194,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     _effectiveAt = DateTime.now();
     _storagePlan = 'cloud';
     _choice = PersonalPricingChoice.cloudPaid;
+    _billingCycle = BillingCycle.quarter;
     for (final controller in _values.values) {
       controller.clear();
     }
@@ -246,7 +254,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final labels = {
-      'price': loc.adminPricingQuarterlyPrice,
+      'price': loc.billingPeriodPrice,
       'calendar': loc.adminPricingCalendarQuota,
       'event': loc.recommendEvent,
       'attraction': loc.recommendPlaces,
@@ -256,7 +264,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
       'game': loc.adminPricingGameQuota,
       'share': loc.adminPricingShareQuota,
       'image': loc.adminPricingImageQuota,
-      'answerDays': loc.adminPricingAnswerDays,
+      'answerDays': loc.cloudAnswerRetention,
     };
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -293,7 +301,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         subtitle: Text(
-                          '${version.storagePlan == 'local' ? loc.dataStorageLocal : loc.dataStorageCloud} · ${loc.vendorQuarterlyPrice(version.quarterlyPriceTwd)}',
+                          '${version.storagePlan == 'local' ? loc.dataStorageLocal : loc.dataStorageCloud} · ${billingPriceLabel(loc, version.priceTwd, version.billingCycle)}',
                         ),
                         trailing: PopupMenuButton<String>(
                           enabled: !_saving,
@@ -380,6 +388,23 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
           ],
           Gaps.h8,
           Text(loc.adminPricingPriceRule),
+          Gaps.h8,
+          DropdownButtonFormField<BillingCycle>(
+            key: ValueKey(('billing', _billingCycle)),
+            initialValue: _billingCycle,
+            isExpanded: true,
+            decoration: InputDecoration(labelText: loc.billingCycle),
+            items: [
+              for (final cycle in BillingCycle.values)
+                DropdownMenuItem(
+                  value: cycle,
+                  child: Text(billingCycleLabel(loc, cycle)),
+                ),
+            ],
+            onChanged: _saving || _choice.isFree
+                ? null
+                : (value) => setState(() => _billingCycle = value!),
+          ),
           Gaps.h12,
           LayoutBuilder(
             builder: (context, constraints) {

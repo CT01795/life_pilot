@@ -92,7 +92,7 @@ class ServiceWeather {
       final response = await RepositoryExternalCache().weather(
         lat: event.lat!,
         lng: event.lng!,
-        backend: () => apiSupabase.post('/external/weather', {
+        backend: () => apiCloud.post('/external/weather', {
           'lat': event.lat,
           'lng': event.lng,
         }, bearerToken: accessToken),

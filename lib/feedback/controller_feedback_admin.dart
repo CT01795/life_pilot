@@ -22,6 +22,34 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   final Duration historyTimeout;
   int _revision = 0;
   final Set<int> _updating = {};
+  final _imageLoads = <int, Future<void>>{};
+
+  Future<void> loadScreenshots(ModelFeedback feedback) {
+    if (!_active(_revision)) {
+      return Future.error(StateError('Feedback request changed'));
+    }
+    if (feedback.screenshotsLoaded) return Future.value();
+    final active = _imageLoads[feedback.id];
+    if (active != null) return active;
+    final revision = _revision;
+    late Future<void> request;
+    request =
+        Future<void>.sync(() async {
+          final images = await _service
+              .loadScreenshots(feedback.id)
+              .timeout(requestTimeout);
+          if (!_active(revision)) throw StateError('Feedback request changed');
+          feedback.screenshot = List.unmodifiable(images);
+          feedback.screenshotsLoaded = true;
+        }).whenComplete(() {
+          if (identical(_imageLoads[feedback.id], request)) {
+            _imageLoads.remove(feedback.id);
+          }
+        });
+    _imageLoads[feedback.id] = request;
+    return request;
+  }
+
   List<ModelFeedback>? _visibleCache;
 
   bool _active(int revision) =>
@@ -37,6 +65,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     _visibleCache = null;
     _loadedStartDate = null;
     _updating.clear();
+    _imageLoads.clear();
     isLoading = false;
     isLoadingMore = false;
     hasMore = false;
@@ -75,6 +104,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   Future<void> loadFeedback() async {
     if (notifierDisposed || isLoading || _updating.isNotEmpty) return;
     final revision = ++_revision;
+    _imageLoads.clear();
     isLoadingMore = false;
     isLoading = true;
     loadError = null;

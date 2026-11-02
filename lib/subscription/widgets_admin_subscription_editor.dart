@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/subscription/billing_cycle_labels.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/subscription/subscription_constants.dart';
@@ -29,6 +30,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   String? _versionId;
   int _multiplier = 1;
   DateTime? _expiry = DateTime.now().add(const Duration(days: 90));
+  bool _automaticExpiry = true;
   bool _saving = false;
   bool _additive = false;
   Map<String, dynamic>? _lookedUpSubscription;
@@ -68,6 +70,12 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     if (_plan == 'plus' && selectedVersion == null) {
       _show(loc.adminSubscriptionNoPricing);
       return;
+    }
+    if (_plan == 'plus' && _automaticExpiry) {
+      _expiry = matchingVersions
+          .firstWhere((v) => v.id == selectedVersion)
+          .billingCycle
+          .endFrom(DateTime.now());
     }
     if (_plan == 'plus' &&
         (_expiry == null || !_expiry!.isAfter(DateTime.now()))) {
@@ -176,6 +184,12 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
             matchingVersions.any((version) => version.id == _versionId)
             ? _versionId
             : (matchingVersions.isEmpty ? null : matchingVersions.first.id);
+        final cycleExpiry = matchingVersions
+            .where((v) => v.id == selectedVersion)
+            .firstOrNull
+            ?.billingCycle
+            .endFrom(DateTime.now());
+        final shownExpiry = _automaticExpiry ? cycleExpiry : _expiry;
         return Card(
           clipBehavior: Clip.antiAlias,
           child: ExpansionTile(
@@ -229,10 +243,9 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                     itemCount: _allUserSubscriptions.length,
                     itemBuilder: (context, index) {
                       final row = _allUserSubscriptions[index];
-                      final email =
-                          parseStringValue(row['account']).isNotEmpty
-                              ? parseStringValue(row['account'])
-                              : parseStringValue(row['email']);
+                      final email = parseStringValue(row['account']).isNotEmpty
+                          ? parseStringValue(row['account'])
+                          : parseStringValue(row['email']);
                       final activeCount = parseIntValue(
                         row['active_entitlements'],
                       );
@@ -407,7 +420,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                   title: Text(loc.adminSubscriptionAddQuota),
                   subtitle: Text(loc.adminSubscriptionAddQuotaHint),
                   value: _additive,
-                  onChanged: (value) => setState(() => _additive = value),
+                  onChanged: (value) => setState(() {
+                    _additive = value;
+                    if (value) _automaticExpiry = true;
+                  }),
                 ),
                 LayoutBuilder(
                   builder: (context, constraints) => constraints.maxWidth < 380
@@ -473,7 +489,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                         (version) => DropdownMenuItem(
                           value: version.id,
                           child: Text(
-                            '${version.name} · NT\$${version.quarterlyPriceTwd}/季',
+                            '${version.name} · ${billingPriceLabel(loc, version.priceTwd, version.billingCycle)}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -485,7 +501,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                         (version) => Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            '${version.name} · NT\$${version.quarterlyPriceTwd}/季',
+                            '${version.name} · ${billingPriceLabel(loc, version.priceTwd, version.billingCycle)}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -494,7 +510,19 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                       .toList(),
                   onChanged: matchingVersions.isEmpty
                       ? null
-                      : (value) => setState(() => _versionId = value),
+                      : (value) => setState(() {
+                          _versionId = value;
+                          final version = matchingVersions
+                              .where((v) => v.id == value)
+                              .firstOrNull;
+                          if (version != null &&
+                              _editingEntitlementId == null) {
+                            _automaticExpiry = true;
+                            _expiry = version.billingCycle.endFrom(
+                              DateTime.now(),
+                            );
+                          }
+                        }),
                 ),
                 Gaps.h12,
                 DropdownButtonFormField<int>(
@@ -519,11 +547,11 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                   leading: const Icon(Icons.event_available_outlined),
                   title: Text(loc.adminSubscriptionExpiry),
                   subtitle: Text(
-                    _expiry == null
+                    shownExpiry == null
                         ? '-'
                         : MaterialLocalizations.of(
                             context,
-                          ).formatMediumDate(_expiry!),
+                          ).formatMediumDate(shownExpiry),
                   ),
                   onTap: _pickExpiry,
                 ),
@@ -626,10 +654,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       lastDate: DateTime.now().add(const Duration(days: 36500)),
     );
     if (value != null) {
-      setState(
-        () =>
-            _expiry = DateTime(value.year, value.month, value.day, 23, 59, 59),
-      );
+      setState(() {
+        _automaticExpiry = false;
+        _expiry = DateTime(value.year, value.month, value.day, 23, 59, 59);
+      });
     }
   }
 
@@ -720,10 +748,14 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     if (!_subscriptionExists) return;
     final subscription = _lookedUpSubscription!;
     final plan = parseStringValue(subscription['plan'], fallback: 'free');
-    final storagePlan =
-        parseStringValue(subscription['storage_plan'], fallback: 'cloud');
-        SubscriptionStoragePlan.cloud;
-    final pricingVersionId = parseStringValue(subscription['pricing_version_id']);
+    final storagePlan = parseStringValue(
+      subscription['storage_plan'],
+      fallback: 'cloud',
+    );
+    SubscriptionStoragePlan.cloud;
+    final pricingVersionId = parseStringValue(
+      subscription['pricing_version_id'],
+    );
     final parsedExpiry = tryParseDateTimeValue(
       parseStringValue(
         subscription['current_period_end'],
@@ -748,6 +780,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                 DateTime.now().add(const Duration(days: 90)));
       _note.text = parseStringValue(subscription['admin_note']);
       _additive = false;
+      _automaticExpiry = false;
     });
     _show(AppLocalizations.of(context)!.adminSubscriptionLoadedForEditing);
   }
@@ -798,7 +831,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     if (_saving) return;
     final loc = AppLocalizations.of(context)!;
     final id = parseStringValue(entitlement['id']);
-    final version = parseStringValue(entitlement['version_name'], fallback: '-');
+    final version = parseStringValue(
+      entitlement['version_name'],
+      fallback: '-',
+    );
     if (id.isEmpty) return;
     final confirmed =
         await showDialog<bool>(
@@ -944,9 +980,11 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     Map<String, dynamic> entitlement,
     List<SubscriptionPricingVersion> versions,
   ) {
-    final storagePlan =
-        parseStringValue(entitlement['storage_plan'], fallback: 'cloud');
-        SubscriptionStoragePlan.cloud;
+    final storagePlan = parseStringValue(
+      entitlement['storage_plan'],
+      fallback: 'cloud',
+    );
+    SubscriptionStoragePlan.cloud;
     final versionId = parseStringValue(entitlement['pricing_version_id']);
     final versionExists = versions.any(
       (version) =>
@@ -962,6 +1000,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       _versionId = versionExists ? versionId : null;
       _multiplier = parseIntValue(entitlement['quota_multiplier'], fallback: 1);
       _expiry = expiry;
+      _automaticExpiry = false;
       _note.text = parseStringValue(entitlement['admin_note']);
       _editingEntitlementId = parseStringValue(entitlement['id']);
       _additive = false;

@@ -1,6 +1,7 @@
 import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
 import 'package:life_pilot/subscription/model_quota_free_period.dart';
 import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/subscription/model_billing_cycle.dart';
 
 class SubscriptionUsage {
   const SubscriptionUsage({
@@ -95,6 +96,7 @@ class SubscriptionEntitlement {
     required this.pricePaidTwd,
     required this.endsAt,
     required this.quotas,
+    this.billingCycle = BillingCycle.quarter,
   });
 
   final String versionName;
@@ -102,6 +104,7 @@ class SubscriptionEntitlement {
   final String storagePlan;
   final int multiplier;
   final int pricePaidTwd;
+  final BillingCycle billingCycle;
   final DateTime endsAt;
   final Map<String, int> quotas;
 
@@ -117,6 +120,7 @@ class SubscriptionEntitlement {
       storagePlan: parseStringValue(json['storage_plan'], fallback: 'cloud'),
       multiplier: multiplier,
       pricePaidTwd: parseIntValue(json['quarterly_price_paid_twd']),
+      billingCycle: BillingCycle.from(rawQuotas['billing_cycle']),
       endsAt: tryParseDateTimeValue(json['ends_at']) ?? DateTime.now(),
       quotas: {
         for (final resource in subscriptionQuotaResources)
