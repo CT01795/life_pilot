@@ -597,7 +597,7 @@ class ServiceSubscription {
     required DateTime effectiveAt,
     required int quarterlyPrice,
     required Map<String, int> quotas,
-    BillingCycle billingCycle = BillingCycle.quarter,
+    BillingCycle billingCycle = BillingCycle.month,
   }) async {
     await RepositoryPricingCatalog().save(
       vendor: false,
@@ -628,7 +628,7 @@ class ServiceSubscription {
     required DateTime effectiveAt,
     required int quarterlyPrice,
     required Map<String, int> quotas,
-    BillingCycle billingCycle = BillingCycle.quarter,
+    BillingCycle billingCycle = BillingCycle.month,
   }) async {
     await RepositoryPricingCatalog().save(
       vendor: false,
@@ -674,7 +674,7 @@ class SubscriptionPricingVersion {
     required this.effectiveAt,
     required this.quarterlyPriceTwd,
     required this.quotas,
-    this.billingCycle = BillingCycle.quarter,
+    this.billingCycle = BillingCycle.month,
   });
 
   final String id;

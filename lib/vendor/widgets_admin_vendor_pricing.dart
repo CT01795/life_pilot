@@ -32,7 +32,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
     load: _service.fetchPricingPlans,
   );
   String _planCode = 'partner';
-  BillingCycle _billingCycle = BillingCycle.quarter;
+  BillingCycle _billingCycle = BillingCycle.month;
   String? _selectedPricingId;
   DateTime _effectiveAt = DateTime.now();
   DateTime _periodEnd = DateTime.now().add(const Duration(days: 90));
@@ -182,7 +182,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
     _editingPricingId = null;
     _editingVersionName = null;
     _planCode = 'partner';
-    _billingCycle = BillingCycle.quarter;
+    _billingCycle = BillingCycle.month;
     _effectiveAt = DateTime.now();
     _version.clear();
     _price.clear();
@@ -384,7 +384,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
                         _planCode = value ?? 'partner';
                         if (_planCode == 'free') {
                           _price.text = '0';
-                          _billingCycle = BillingCycle.quarter;
+                          _billingCycle = BillingCycle.month;
                         } else if (_price.text == '0') {
                           _price.clear();
                         }

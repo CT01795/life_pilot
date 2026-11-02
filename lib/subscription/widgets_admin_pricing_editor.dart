@@ -37,7 +37,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
   DateTime _effectiveAt = DateTime.now();
   String _storagePlan = 'cloud';
   PersonalPricingChoice _choice = PersonalPricingChoice.cloudPaid;
-  BillingCycle _billingCycle = BillingCycle.quarter;
+  BillingCycle _billingCycle = BillingCycle.month;
   bool _saving = false;
   Future<List<SubscriptionPricingVersion>>? _versions;
   String? _editingVersionId;
@@ -71,7 +71,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
       _storagePlan = choice.storagePlan;
       if (choice.isFree) {
         _values['price']!.text = '0';
-        _billingCycle = BillingCycle.quarter;
+        _billingCycle = BillingCycle.month;
       } else if (_values['price']!.text == '0') {
         _values['price']!.clear();
       }
@@ -197,7 +197,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     _effectiveAt = DateTime.now();
     _storagePlan = 'cloud';
     _choice = PersonalPricingChoice.cloudPaid;
-    _billingCycle = BillingCycle.quarter;
+    _billingCycle = BillingCycle.month;
     for (final controller in _values.values) {
       controller.clear();
     }

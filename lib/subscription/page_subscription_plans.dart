@@ -36,7 +36,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
   SubscriptionPricingVersion? _latestCloudVersion;
   SubscriptionPricingVersion? _latestLocalVersion;
   int _adminSubscriptionEditorRevision = 0;
-  BillingCycle _billingCycle = BillingCycle.quarter;
+  BillingCycle _billingCycle = BillingCycle.month;
 
   void _selectBillingCycle(BillingCycle cycle) {
     setState(() {

@@ -100,7 +100,7 @@ class ServiceVendorAccount {
     required int attractionQuota,
     required int imageMegabytes,
     required int analyticsDays,
-    BillingCycle billingCycle = BillingCycle.quarter,
+    BillingCycle billingCycle = BillingCycle.month,
   }) async {
     await RepositoryPricingCatalog().save(
       vendor: true,
@@ -128,7 +128,7 @@ class ServiceVendorAccount {
     required int attractionQuota,
     required int imageMegabytes,
     required int analyticsDays,
-    BillingCycle billingCycle = BillingCycle.quarter,
+    BillingCycle billingCycle = BillingCycle.month,
   }) async {
     await RepositoryPricingCatalog().save(
       vendor: true,

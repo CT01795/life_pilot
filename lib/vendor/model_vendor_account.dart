@@ -13,7 +13,7 @@ class VendorPricingPlan {
     required this.attractionQuota,
     required this.imageMegabytes,
     required this.analyticsDays,
-    this.billingCycle = BillingCycle.quarter,
+    this.billingCycle = BillingCycle.month,
   });
 
   final String id;

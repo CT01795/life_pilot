@@ -96,7 +96,7 @@ class SubscriptionEntitlement {
     required this.pricePaidTwd,
     required this.endsAt,
     required this.quotas,
-    this.billingCycle = BillingCycle.quarter,
+    this.billingCycle = BillingCycle.month,
   });
 
   final String versionName;
