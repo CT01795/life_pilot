@@ -1,8 +1,12 @@
 {
   "adminReactivateAccount": "계정 복원",
+  "@adminReactivateAccount": {"description": "Label for adminReactivateAccount"},
   "adminAccountReactivated": "계정이 복원되었습니다. 다시 로그인할 수 있습니다.",
+  "@adminAccountReactivated": {"description": "Label for adminAccountReactivated"},
   "adminAccountReactivationPurgeStarted": "영구 삭제가 시작되어 계정을 복원할 수 없습니다.",
+  "@adminAccountReactivationPurgeStarted": {"description": "Label for adminAccountReactivationPurgeStarted"},
   "previewAccountImage": "계정 이미지 미리보기",
+  "@previewAccountImage": {"description": "Label for previewAccountImage"},
   "ledgerSharedAccount": "공유 계정",
   "@ledgerSharedAccount": {"description": "Label for ledgerSharedAccount"},
   "accountPurgeMoreFiles": "파일 일부를 삭제했습니다. 계정은 비활성 상태입니다. 삭제를 다시 실행하여 계속하세요.",

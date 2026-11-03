@@ -1,8 +1,12 @@
 {
   "adminReactivateAccount": "Restore account",
+  "@adminReactivateAccount": {"description": "Label for adminReactivateAccount"},
   "adminAccountReactivated": "Account restored. The user can sign in again.",
+  "@adminAccountReactivated": {"description": "Label for adminAccountReactivated"},
   "adminAccountReactivationPurgeStarted": "Permanent deletion has started. This account cannot be restored.",
+  "@adminAccountReactivationPurgeStarted": {"description": "Label for adminAccountReactivationPurgeStarted"},
   "previewAccountImage": "Preview account image",
+  "@previewAccountImage": {"description": "Label for previewAccountImage"},
   "ledgerSharedAccount": "Shared account",
   "@ledgerSharedAccount": {"description": "Label for ledgerSharedAccount"},
   "accountPurgeMoreFiles": "A batch of files was removed. The account remains disabled. Run deletion again to continue.",

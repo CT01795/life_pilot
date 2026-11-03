@@ -1,8 +1,12 @@
 {
   "adminReactivateAccount": "恢復帳號",
+  "@adminReactivateAccount": {"description": "管理員恢復帳號的按鈕"},
   "adminAccountReactivated": "帳號已恢復，使用者可重新登入。",
+  "@adminAccountReactivated": {"description": "Label for adminAccountReactivated"},
   "adminAccountReactivationPurgeStarted": "正式刪除已開始，無法恢復帳號。",
+  "@adminAccountReactivationPurgeStarted": {"description": "Label for adminAccountReactivationPurgeStarted"},
   "previewAccountImage": "預覽帳戶圖片",
+  "@previewAccountImage": {"description": "Label for previewAccountImage"},
   "ledgerSharedAccount": "共享帳戶",
   "@ledgerSharedAccount": {"description": "Label for ledgerSharedAccount"},
   "accountPurgeMoreFiles": "已清理一批檔案，帳號仍停用。請再次執行刪除以繼續。",

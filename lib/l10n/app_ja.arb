@@ -1,8 +1,12 @@
 {
   "adminReactivateAccount": "アカウントを復元",
+  "@adminReactivateAccount": {"description": "Label for adminReactivateAccount"},
   "adminAccountReactivated": "アカウントを復元しました。再度ログインできます。",
+  "@adminAccountReactivated": {"description": "Label for adminAccountReactivated"},
   "adminAccountReactivationPurgeStarted": "完全削除が始まっているため、復元できません。",
+  "@adminAccountReactivationPurgeStarted": {"description": "Label for adminAccountReactivationPurgeStarted"},
   "previewAccountImage": "アカウント画像をプレビュー",
+  "@previewAccountImage": {"description": "Label for previewAccountImage"},
   "ledgerSharedAccount": "共有アカウント",
   "@ledgerSharedAccount": {"description": "Label for ledgerSharedAccount"},
   "accountPurgeMoreFiles": "一部のファイルを削除しました。アカウントは無効のままです。削除を再実行してください。",
