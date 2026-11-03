@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:life_pilot/auth/service_account_security.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
@@ -66,9 +66,19 @@ class ServiceAuth {
       return error;
     }
 
-    return _handle(() async {
+    final result = await _handle(() async {
       await supabase.auth.signInWithPassword(email: email, password: password);
     }, defaultError: ErrorFields.loginError);
+    if (result == ErrorFields.wrongUserPassword) {
+      try {
+        if (await ServiceAccountSecurity().isEmailDisabled(email)) {
+          return ErrorFields.accountDisabled;
+        }
+      } catch (_) {
+        // Preserve the credential error if the optional lookup is unavailable.
+      }
+    }
+    return result;
   }
 
   static Future<String?> register({
@@ -76,43 +86,20 @@ class ServiceAuth {
     required String password,
     String accountType = 'personal',
   }) async {
-    final error = _checkRegistrationFields(email: email, password: password);
-    if (error != null) {
-      return error;
-    }
-
-    return _handle(() async {
-      final response = await supabase.auth.signUp(
-        email: email,
-        password: password,
-        data: {
-          'privacy_policy_version': AuthConstants.privacyPolicyVersion,
-          'terms_of_service_version': AuthConstants.termsOfServiceVersion,
-          'account_type': accountType == 'vendor' ? 'vendor' : 'personal',
-        },
-      );
-      if (response.user?.identities?.isEmpty == true) {
-        throw const AuthException('User already registered');
-      }
-    }, defaultError: ErrorFields.registerError);
-  }
-
-  // 🔄 重設密碼
-  static Future<String?> resetPassword({required String email}) async {
-    if (email.isEmpty) {
-      return ErrorFields.noEmailError;
-    }
-    if (!_emailPattern.hasMatch(email)) {
+    if (email.trim().isEmpty) return ErrorFields.noEmailError;
+    if (!_emailPattern.hasMatch(email.trim())) {
       return ErrorFields.invalidEmailError;
     }
+    // Registration now requires administrator approval; never trigger Auth mail.
+    return ErrorFields.adminRegistrationRequired;
+  }
 
-    return _handle(() async {
-      final redirectTo = kIsWeb
-          ? 'https://ct01795.github.io/life_pilot/?recovery=1'
-          : 'lifepilot://reset-password';
-
-      await supabase.auth.resetPasswordForEmail(email, redirectTo: redirectTo);
-    }, defaultError: ErrorFields.resetPasswordError);
+  static Future<String?> resetPassword({required String email}) async {
+    if (email.trim().isEmpty) return ErrorFields.noEmailError;
+    if (!_emailPattern.hasMatch(email.trim())) {
+      return ErrorFields.invalidEmailError;
+    }
+    return ErrorFields.adminPasswordRequestRequired;
   }
 
   // 🚪 Sign out
@@ -138,21 +125,6 @@ class ServiceAuth {
     return null;
   }
 
-  static String? _checkRegistrationFields({
-    required String email,
-    required String password,
-  }) {
-    final emptyFieldError = _checkEmptyFields(email: email, password: password);
-    if (emptyFieldError != null) return emptyFieldError;
-    if (!_emailPattern.hasMatch(email)) {
-      return ErrorFields.invalidEmailError;
-    }
-    if (password.length < AuthConstants.minimumPasswordLength) {
-      return ErrorFields.weakPasswordError;
-    }
-    return null;
-  }
-
   static Future<String?> _handle(
     Future<void> Function() action, {
     required String defaultError,
@@ -171,6 +143,9 @@ class ServiceAuth {
 
   static String _mapSupabaseError(AuthException e, String defaultError) {
     final message = e.message.toLowerCase();
+    if (e.code == 'user_banned' || message.contains('user is banned')) {
+      return ErrorFields.accountDisabled;
+    }
     if (e.code == 'over_email_send_rate_limit' ||
         message.contains('email rate limit exceeded')) {
       return ErrorFields.emailRateLimitExceededError;
@@ -183,7 +158,8 @@ class ServiceAuth {
     if (message.contains('invalid email')) {
       return ErrorFields.invalidEmailError;
     }
-    if (message.contains("invalid login credentials")) {
+    if (e.code == 'invalid_credentials' ||
+        message.contains("invalid login credentials")) {
       return ErrorFields.wrongUserPassword;
     }
     if (message.contains("email not confirmed")) {

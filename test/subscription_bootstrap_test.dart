@@ -103,6 +103,50 @@ void main() {
     );
   }
   test(
+    'device mode preserves cloud submission, sharing and image limits',
+    () async {
+      payload['usage'] = [
+        {'resource': 'calendar_shares', 'used': 1, 'quota': 5},
+        {'resource': 'image_bytes', 'used': 100, 'quota': 1024},
+      ];
+      payload['cumulative_quotas'] = {
+        'recommended_events': 99,
+        'calendar_shares': 0,
+        'image_bytes': 0,
+      };
+      payload['cloud_recommendation_quotas'] = {
+        'recommended_events': 20,
+        'recommended_attractions': 0,
+      };
+      final snapshot = await ServiceSubscription().fetchMyUsage(
+        storagePlan: 'local',
+      );
+      expect(snapshot['recommended_events']!.quota, 20);
+      expect(snapshot['recommended_attractions']!.quota, 0);
+      expect(snapshot['calendar_shares']!.quota, 5);
+      expect(snapshot['image_bytes']!.quota, 1024);
+      expect(requests, hasLength(1));
+    },
+  );
+  test('missing cloud plan retains independent local authorization', () async {
+    payload['status'] = {'status': 'configuration_missing'};
+    payload['entitlements'] = [
+      {
+        'storage_plan': 'local',
+        'ends_at': '2099-01-01T00:00:00Z',
+        'entitlement_snapshot': {
+          'special_authorization': true,
+          'calendar_events': 0,
+        },
+      },
+    ];
+    final snapshot = await ServiceSubscription().fetchMyUsage();
+    expect(snapshot.configurationMissing, isTrue);
+    expect(snapshot.entitlements.single.isSpecialAuthorization, isTrue);
+    expect(snapshot.entitlements.single.quotas['calendar_events'], 0);
+    expect(requests, hasLength(1));
+  });
+  test(
     'zero configured quota is not confused with missing configuration',
     () async {
       payload['cumulative_quotas']['calendar_events'] = 0;

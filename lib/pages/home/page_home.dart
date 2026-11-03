@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/accounting/page_ledger_sharing.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -124,6 +125,9 @@ class _PageHomeState extends State<PageHome> {
     final pointsEnabled = context.select<ControllerPageMain, bool>(
       (controller) => controller.canAccess(PageType.pointsRecord),
     );
+    final accountingEnabled = context.select<ControllerPageMain, bool>(
+      (controller) => controller.canAccess(PageType.accountRecords),
+    );
     final account = context.watch<ModelAuthView>().account;
     if (account != null &&
         account.isNotEmpty &&
@@ -197,6 +201,16 @@ class _PageHomeState extends State<PageHome> {
                     ),
                   ),
                   Gaps.h16,
+                  if (account != null &&
+                      account.isNotEmpty &&
+                      (accountingEnabled || pointsEnabled)) ...[
+                    LedgerHomeLinksCard(
+                      key: ValueKey(account),
+                      showAccounting: accountingEnabled,
+                      showPoints: pointsEnabled,
+                    ),
+                    Gaps.h16,
+                  ],
                   TodayScheduleCard(
                     key: _scheduleKey,
                     showPoints: pointsEnabled,

@@ -227,6 +227,18 @@ void main() {
     expect(result.overdueCount, 1);
     expect(result.nextFreeAt, DateTime(2026, 10, 15, 10));
   });
+  test('end-only schedule needs review only at its explicit end', () {
+    final rows = [event('end-only', start: null, end: 600)];
+    final before = ModelScheduleOverview.from(
+      rows,
+      DateTime(2026, 10, 15, 9, 59, 59),
+    );
+    final atEnd = ModelScheduleOverview.from(rows, DateTime(2026, 10, 15, 10));
+    expect(before.overdueCount, 0);
+    expect(before.nextEventNeedsReview, false);
+    expect(atEnd.overdueCount, 1);
+    expect(atEnd.nextEventNeedsReview, true);
+  });
   test('multi-day missing end time ends after the final day', () {
     final result = ModelScheduleOverview.from([
       event('trip', start: 480, end: null, endOffset: 1),
@@ -487,7 +499,9 @@ class _LegacyOverview {
 
   static bool _hasEnded(CalendarEvent event, DateTime now) {
     final interval = _interval(event);
-    return interval != null && !interval.end.isAfter(now);
+    final end =
+        interval?.end ?? (event.startTime == null ? event.explicitEndAt : null);
+    return end != null && !end.isAfter(now);
   }
 
   static ({DateTime start, DateTime end})? _interval(CalendarEvent event) {

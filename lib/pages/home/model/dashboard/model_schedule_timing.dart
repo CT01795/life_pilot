@@ -13,7 +13,12 @@ class ModelScheduleTiming {
   static ModelScheduleTiming? forEvent(CalendarEvent event, DateTime now) {
     final startDate = event.startDate;
     final startTime = event.startTime;
-    if (startDate == null || startTime == null) return null;
+    final explicitEnd = event.explicitEndAt;
+    if (startDate == null || startTime == null) {
+      return explicitEnd != null && !explicitEnd.isAfter(now)
+          ? const ModelScheduleTiming._(ScheduleTimingKind.needsReview)
+          : null;
+    }
     final startsAt = DateTime(
       startDate.year,
       startDate.month,
@@ -23,18 +28,8 @@ class ModelScheduleTiming {
     );
     // Preserve the existing whole-minute thresholds and countdown rounding.
     final minutes = startsAt.difference(now).inMinutes;
-    if (minutes < 0) {
-      final endDate = event.endDate ?? startDate;
-      final endTime = event.endTime;
-      final endsAt = endTime != null
-          ? DateTime(
-              endDate.year,
-              endDate.month,
-              endDate.day,
-              endTime.hour,
-              endTime.minute,
-            )
-          : startsAt.add(const Duration(hours: 1));
+    if (minutes < 0 || (explicitEnd != null && !startsAt.isAfter(now))) {
+      final endsAt = explicitEnd ?? startsAt.add(const Duration(hours: 1));
       return ModelScheduleTiming._(
         !endsAt.isAfter(now)
             ? ScheduleTimingKind.needsReview

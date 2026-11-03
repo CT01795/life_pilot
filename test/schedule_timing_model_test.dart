@@ -28,7 +28,7 @@ CalendarEvent event({DateTime? start, DateTime? end, bool endClock = true}) {
   if (day == null || time == null) return null;
   final start = DateTime(day.year, day.month, day.day, time.hour, time.minute);
   final minutes = start.difference(now).inMinutes;
-  if (minutes < 0) {
+  if (minutes < 0 || (event.endTime != null && !start.isAfter(now))) {
     final endDay = event.endDate ?? day;
     final endClock = event.endTime;
     final end = endClock != null
@@ -139,6 +139,22 @@ void main() {
       DateTime(2026, 10, 19, 10),
     )!;
     expect(timing.kind, ScheduleTimingKind.needsReview);
+  });
+
+  test('explicit end is respected even without a start clock', () {
+    final row = CalendarEvent.fromJson({
+      'id': 'end-only',
+      'start_date': '2026-10-19',
+      'end_time': '10:00:00',
+    });
+    expect(
+      ModelScheduleTiming.forEvent(row, DateTime(2026, 10, 19, 9, 59, 59)),
+      isNull,
+    );
+    expect(
+      ModelScheduleTiming.forEvent(row, DateTime(2026, 10, 19, 10))?.kind,
+      ScheduleTimingKind.needsReview,
+    );
   });
 
   test(

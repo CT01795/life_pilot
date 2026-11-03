@@ -29,5 +29,10 @@ String subscriptionQuotaValue(
 
 bool localQuotaIsUnlimited(String resource, int value) =>
     value == 0 &&
-    resource != SubscriptionResource.recommendedEvents &&
-    resource != SubscriptionResource.recommendedAttractions;
+    const {
+      SubscriptionResource.calendarEvents,
+      SubscriptionResource.accountingDetail,
+      SubscriptionResource.pointRecordDetail,
+      SubscriptionResource.memoryTrace,
+      SubscriptionResource.gameQuestions,
+    }.contains(resource);

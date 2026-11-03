@@ -1,4 +1,5 @@
 import 'package:life_pilot/utils/repository_session_reads.dart';
+import 'package:life_pilot/utils/service/service_cloud_api.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/auth/model_account_deletion_page.dart';
@@ -74,8 +75,52 @@ class RepositoryAccountDeletion {
 
   Future<void> request() => _mutate('request_account_deletion');
   Future<void> cancel() => _mutate('cancel_account_deletion_request');
-  Future<void> approve(String id) =>
-      _mutate('admin_delete_account_and_data', {'p_request_id': id});
+  Future<void> approve(String id) => _purge(id);
+  Future<void> disable(String id) =>
+      _mutate('admin_disable_account_for_deletion', {'p_request_id': id});
+  Future<void> deleteDisabled(String id) => _purge(id);
+  Future<void> reactivate(String id) =>
+      _mutate('admin_reactivate_disabled_account', {'p_request_id': id});
+
+  Future<void> _purge(String id) async {
+    final reads = RepositorySessionReads(client);
+    reads.invalidate(_group);
+    try {
+      final response = await ServiceCloudApi(
+        client: client,
+      ).post('/account/admin/purge-account', {'request_id': id});
+      if (response is Map && response['completed'] == true) return;
+      if (response is Map && response['completed'] == false) {
+        throw StateError('account_storage_purge_more_files');
+      }
+      throw const FormatException('Invalid account purge response');
+    } finally {
+      reads.invalidate(_group);
+    }
+  }
+
+  Future<AccountDeletionPage> disabledPage({
+    AccountDeletionCursor? after,
+    required int offset,
+    required bool legacy,
+  }) async {
+    final rows =
+        await client.rpc(
+              'admin_list_disabled_accounts',
+              params: {'p_offset': offset},
+            )
+            as List;
+    return AccountDeletionPage.fromRows([
+      for (final row in rows)
+        {
+          'id': row['id'],
+          'email': row['email'],
+          'status': 'pending',
+          'requested_at': row['disabled_at'],
+        },
+    ], legacy: true);
+  }
+
   Future<void> confirmCancellation(String id) => _mutate(
     'admin_confirm_account_deletion_cancellation',
     {'p_request_id': id},

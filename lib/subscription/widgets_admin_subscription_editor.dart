@@ -6,6 +6,7 @@ import 'package:life_pilot/subscription/subscription_constants.dart';
 import 'package:life_pilot/subscription/subscription_quota_presentation.dart';
 import 'package:life_pilot/subscription/subscription_quota_summary.dart';
 import 'package:life_pilot/subscription/widgets_admin_subscription_page.dart';
+import 'package:life_pilot/subscription/widgets_admin_special_authorization.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
@@ -168,6 +169,23 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     context,
   ).showSnackBar(SnackBar(content: Text(message)));
 
+  Future<void> _addSpecialAuthorization() async {
+    final email = _email.text.trim();
+    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
+      _show(AppLocalizations.of(context)!.invalidEmail);
+      return;
+    }
+    final saved = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AdminSpecialAuthorizationDialog(email: email),
+    );
+    if (!mounted || saved != true) return;
+    _show(AppLocalizations.of(context)!.adminSubscriptionSaved);
+    widget.onSaved?.call();
+    await _lookupSubscription();
+  }
+
   List<SubscriptionPricingVersion> _paidVersionsForStorage(
     List<SubscriptionPricingVersion> versions,
   ) => versions
@@ -252,6 +270,13 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                   ),
                 ],
               ),
+              TextButton.icon(
+                onPressed: _saving || _lookupLoading
+                    ? null
+                    : _addSpecialAuthorization,
+                icon: const Icon(Icons.add_moderator_outlined),
+                label: Text(loc.adminSpecialAuthorization),
+              ),
               if (_showAllSubscriptions) ...[
                 Gaps.h8,
                 Align(
@@ -319,16 +344,17 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                     trailing: Wrap(
                       spacing: 2,
                       children: [
-                        IconButton(
-                          tooltip: loc.edit,
-                          onPressed: _saving
-                              ? null
-                              : () => _loadEntitlementIntoForm(
-                                  entitlement,
-                                  versions,
-                                ),
-                          icon: const Icon(Icons.edit_outlined),
-                        ),
+                        if (entitlement['pricing_version_id'] != null)
+                          IconButton(
+                            tooltip: loc.edit,
+                            onPressed: _saving
+                                ? null
+                                : () => _loadEntitlementIntoForm(
+                                    entitlement,
+                                    versions,
+                                  ),
+                            icon: const Icon(Icons.edit_outlined),
+                          ),
                         IconButton(
                           tooltip: loc.delete,
                           onPressed: _saving

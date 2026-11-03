@@ -61,6 +61,10 @@ class ModelAuthView extends SafeChangeNotifier {
     required AppLocalizations loc,
   }) {
     final errorMap = {
+      ErrorFields.accountDisabled: loc.accountDisabled,
+      ErrorFields.adminRegistrationRequired:
+          loc.registrationAdminApprovalDescription,
+      ErrorFields.adminPasswordRequestRequired: loc.passwordHelpDescription,
       ErrorFields.noRecoverySession: loc.noRecoverySession,
       ErrorFields.resetPasswordError: loc.resetPasswordError,
       ErrorFields.wrongUserPassword: loc.wrongUserPassword,

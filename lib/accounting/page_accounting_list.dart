@@ -1,6 +1,8 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:life_pilot/accounting/repository_account_image.dart';
+import 'package:life_pilot/accounting/widgets_account_image_tile.dart';
+import 'package:life_pilot/accounting/page_ledger_sharing.dart';
+import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
@@ -76,7 +78,18 @@ class _PageAccountingListState extends State<PageAccountingList>
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      body: _buildBody(),
+      body: Column(
+        children: [
+          if (context.watch<ModelAuthView?>()?.account
+              case final String account)
+            SharedLedgerOverview(
+              key: ValueKey(account),
+              kind: LedgerKind.accounting,
+            ),
+          const LedgerSharingButton(kind: LedgerKind.accounting),
+          Expanded(child: _buildBody()),
+        ],
+      ),
       bottomNavigationBar: Container(
         color: Colors.blueAccent, // 背景色
         child: SafeArea(
@@ -242,57 +255,30 @@ class _AccountCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ===== 圖片 =====
-                  Tooltip(
-                    message: loc.changeAccountImage,
-                    child: GestureDetector(
-                      onTap: () async {
-                        final picker = ImagePicker();
-                        final pickedFile = await picker.pickImage(
-                          source: ImageSource.gallery,
-                          maxWidth: 512,
-                          maxHeight: 512,
-                          imageQuality: 75,
-                        );
-                        if (pickedFile != null) {
-                          await context
-                              .read<ControllerAccountingList>()
-                              .updateAccountImage(account.id, pickedFile);
-                        }
-                      },
-                      child: Container(
-                        width: MediaQuery.sizeOf(context).width < 400
-                            ? 84
-                            : 120,
-                        height: MediaQuery.sizeOf(context).width < 400
-                            ? 84
-                            : 120,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Stack(
-                            children: [
-                              // 先顯示文字或占位背景
-                              Container(
-                                color: Colors.grey[200],
-                                alignment: Alignment.center,
-                                child: Text(
-                                  account.accountName[0],
-                                  style: const TextStyle(fontSize: 32),
-                                ),
-                              ),
-                              // 如果有圖片，慢慢載入
-                              AccountImage(
-                                imageBytes: account.masterGraphUrl,
-                                accountName: account.accountName,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                  AccountImageTile(
+                    name: account.accountName,
+                    imageBytes: account.masterGraphUrl,
+                    loadImage: () => const RepositoryAccountImage().read(
+                      table: TableNames.accountingAccount,
+                      accountId: account.id,
+                      owner: auth.account ?? '',
                     ),
+                    changeImage: () async {
+                      final owner = auth.account;
+                      final picked = await ImagePicker().pickImage(
+                        source: ImageSource.gallery,
+                        maxWidth: 512,
+                        maxHeight: 512,
+                        imageQuality: 75,
+                      );
+                      if (picked != null &&
+                          context.mounted &&
+                          auth.account == owner) {
+                        await context
+                            .read<ControllerAccountingList>()
+                            .updateAccountImage(account.id, picked);
+                      }
+                    },
                   ),
 
                   SizedBox(
@@ -400,48 +386,6 @@ class _AccountCard extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class AccountImage extends StatelessWidget {
-  final Uint8List? imageBytes;
-  final String accountName;
-
-  const AccountImage({
-    super.key,
-    required this.imageBytes,
-    required this.accountName,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cacheSize = (120 * MediaQuery.devicePixelRatioOf(context)).round();
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: imageBytes != null
-            ? Image.memory(
-                imageBytes!,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-                cacheWidth: cacheSize,
-                cacheHeight: cacheSize,
-                filterQuality: FilterQuality.low,
-              )
-            : Center(
-                child: Text(
-                  accountName[0],
-                  style: const TextStyle(fontSize: 32),
-                ),
-              ),
-      ),
     );
   }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/accounting/page_ledger_sharing.dart';
+import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:life_pilot/record_statistics/model_record_explorer_metrics.dart';
@@ -220,6 +222,9 @@ class _PagePointRecordDetailViewState
           },
         ),
         title: Text(account.accountName),
+        actions: [
+          LedgerSharingButton(kind: LedgerKind.points, accountId: account.id),
+        ],
       ),
       body: CustomScrollView(
         scrollCacheExtent: const ScrollCacheExtent.pixels(240),

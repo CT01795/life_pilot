@@ -257,6 +257,10 @@ enum MSG {
 
 // -------------------- Error Fields --------------------
 class ErrorFields {
+  static const String adminRegistrationRequired = 'adminRegistrationRequired';
+  static const String accountDisabled = 'accountDisabled';
+  static const String adminPasswordRequestRequired =
+      'adminPasswordRequestRequired';
   static const String wrongUserPassword = 'wrongUserPassword';
   static const String emailNotConfirmed = 'emailNotConfirmed';
   static const String loginError = 'loginError';

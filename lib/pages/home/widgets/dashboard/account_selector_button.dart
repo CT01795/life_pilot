@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
@@ -24,6 +25,7 @@ class AccountSelectorButton extends StatelessWidget {
     final auth = context.read<ModelAuthView>();
 
     return DashboardAccountSelector(
+      sharedKind: LedgerKind.accounting,
       icon: Icons.account_balance_wallet,
       selectedAccountId: accountId,
       selectedAccountName: accountName,

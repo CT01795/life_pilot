@@ -9,6 +9,7 @@ import 'package:life_pilot/subscription/repository_pricing_version_guard.dart';
 import 'package:life_pilot/subscription/model_billing_cycle.dart';
 import 'package:life_pilot/subscription/billing_cycle_labels.dart';
 import 'package:life_pilot/subscription/controller_pricing_list.dart';
+import 'package:life_pilot/subscription/widgets_admin_special_authorization.dart';
 
 class AdminVendorPricing extends StatefulWidget {
   const AdminVendorPricing({super.key});
@@ -141,18 +142,23 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
     }
   }
 
-  Future<bool> _canChange(VendorPricingPlan plan) async {
+  Future<bool> _canChange(
+    VendorPricingPlan plan, {
+    bool deleting = false,
+  }) async {
     if (_savingPricing) return false;
     final loc = AppLocalizations.of(context)!;
     setState(() => _savingPricing = true);
     try {
-      final locked = await RepositoryPricingVersionGuard().isLocked(
-        plan.id,
-        vendor: true,
-      );
+      final guard = RepositoryPricingVersionGuard();
+      final locked = await guard.isLocked(plan.id, vendor: true);
+      final canDelete =
+          deleting &&
+          locked &&
+          await guard.canForceDelete(plan.id, vendor: true);
       if (!mounted) return false;
-      if (locked) _message(loc.adminPricingDeleteInUse);
-      return !locked;
+      if (locked && !canDelete) _message(loc.adminPricingDeleteInUse);
+      return !locked || canDelete;
     } catch (error) {
       if (mounted) _message(loc.adminPricingCreateFailed(error.toString()));
       return false;
@@ -193,7 +199,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
   }
 
   Future<void> _deletePricing(VendorPricingPlan plan) async {
-    if (!await _canChange(plan) || !mounted) return;
+    if (!await _canChange(plan, deleting: true) || !mounted) return;
     final loc = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -474,6 +480,32 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
                 decoration: InputDecoration(
                   labelText: loc.adminSubscriptionEmail,
                 ),
+              ),
+              TextButton.icon(
+                onPressed: _savingSubscription
+                    ? null
+                    : () async {
+                        final email = _email.text.trim();
+                        if (!RegExp(
+                          r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+                        ).hasMatch(email)) {
+                          _message(loc.invalidEmail);
+                          return;
+                        }
+                        final saved = await showDialog<bool>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => AdminSpecialAuthorizationDialog(
+                            email: email,
+                            vendor: true,
+                          ),
+                        );
+                        if (mounted && saved == true) {
+                          _message(loc.adminVendorSubscriptionSaved);
+                        }
+                      },
+                icon: const Icon(Icons.add_moderator_outlined),
+                label: Text(loc.adminSpecialAuthorization),
               ),
               Gaps.h12,
               _catalogStatus(loc),

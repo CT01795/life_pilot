@@ -9,6 +9,78 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get adminReactivateAccount => '恢復帳號';
+
+  @override
+  String get adminAccountReactivated => '帳號已恢復，使用者可重新登入。';
+
+  @override
+  String get adminAccountReactivationPurgeStarted => '正式刪除已開始，無法恢復帳號。';
+
+  @override
+  String get previewAccountImage => '預覽帳戶圖片';
+
+  @override
+  String get ledgerSharedAccount => '共享帳戶';
+
+  @override
+  String get accountPurgeMoreFiles => '已清理一批檔案，帳號仍停用。請再次執行刪除以繼續。';
+
+  @override
+  String get accountPurgeInProgress => '這筆刪除正在處理中，請稍後重試。';
+
+  @override
+  String get adminDisableAccount => '停用帳號';
+
+  @override
+  String get adminDisabledAccounts => '已停用帳號';
+
+  @override
+  String get accountDisabled => '此帳號不可使用';
+
+  @override
+  String get ledgerHomeLinks => '首頁共享帳戶';
+
+  @override
+  String get ledgerLinkHome => '連結到首頁';
+
+  @override
+  String get ledgerUnlinkHome => '移除首頁連結';
+
+  @override
+  String get ledgerSubmitProposal => '送出變更提案';
+
+  @override
+  String get ledgerProposalSent => '提案已送出，等待分享者審核。';
+
+  @override
+  String get ledgerStopProposals => '停止接受變更提案';
+
+  @override
+  String get ledgerApproveProposal => '核可提案';
+
+  @override
+  String get ledgerRejectProposal => '拒絕提案';
+
+  @override
+  String get ledgerShareAccount => '分享帳戶';
+
+  @override
+  String get ledgerSharedWithMe => '收到的共享帳戶';
+
+  @override
+  String get ledgerAllowProposals => '允許提交變更提案';
+
+  @override
+  String get ledgerPendingProposals => '待審核提案';
+
+  @override
+  String get adminSpecialAuthorization => '新增特殊授權';
+
+  @override
+  String get adminSpecialAuthorizationFee => '費用（新台幣，0 表示免費）';
+
+  @override
   String get viewFeedbackScreenshots => '查看截圖';
 
   @override
@@ -830,9 +902,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountSecurity => '帳號安全';
 
   @override
-  String adminPasswordHelpBody(String account) {
-    return '您好，我無法登入 Life Pilot，請協助處理密碼修改。\n\n帳號：$account\n\n管理員處理後，請回覆此信箱通知結果。';
-  }
+  String get adminPasswordHelpBody => '您好，我無法登入 Life Pilot，請協助處理密碼修改。\n\n管理員處理後，請回覆此信箱通知結果。';
 
   @override
   String adminPasswordHelpEmailUnavailable(String email) {
@@ -884,10 +954,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get personalAccountTitle => '一般使用者帳號';
 
   @override
-  String get registrationAdminApprovalTitle => '驗證信額度已滿';
+  String get registrationAdminApprovalTitle => '申請建立帳號';
 
   @override
-  String get registrationAdminApprovalDescription => '目前無法寄出驗證信。可將申請內容寄給管理員；管理員核准並建立帳號後，會回覆臨時密碼，請耐心等候。';
+  String get registrationAdminApprovalDescription => '註冊不需填寫密碼。請填入帳號送出；核准並建立帳號後，管理員會回覆臨時密碼。';
 
   @override
   String get registrationAdminApprovalAction => '寄給管理員';
@@ -896,12 +966,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get registrationAdminApprovalSubject => 'Life Pilot 帳號建立申請';
 
   @override
-  String registrationAdminApprovalBody(String email, String accountType) {
-    return '申請信箱：$email\n帳號類型：$accountType\n\n因驗證信額度已滿，請管理員核准後協助建立帳號，並回覆臨時密碼。';
+  String registrationAdminApprovalBody(String accountType) {
+    return '帳號類型：$accountType\n\n我已閱讀並同意目前的隱私權政策與服務條款。請管理員審核並協助建立帳號，再回覆此信箱通知結果。';
   }
 
   @override
-  String get registrationAdminApprovalOpened => '已開啟郵件草稿；送出後請等待管理員核准。';
+  String get registrationAdminApprovalOpened => '已開啟郵件草稿，請確認後寄出。帳號尚未建立，請等待管理員核准。';
 
   @override
   String get adminTemporaryPasswordCopied => '已複製臨時密碼。';
@@ -1005,10 +1075,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get passwordDoesNotMeetPolicy => '新密碼不符合安全規則，請增加英文字母、數字或符號後再試。';
 
   @override
-  String get passwordHelpDescription => '忘記目前密碼時，可以透過驗證信自行重設，或寄信請管理員協助。';
+  String get passwordHelpDescription => '忘記密碼請寄信給管理員；處理後，管理員會回覆此信箱。';
 
   @override
-  String get passwordHelpTitle => '其他重設方式';
+  String get passwordHelpTitle => '管理員協助';
 
   @override
   String get passwordMismatch => '兩次輸入的密碼不一致。';

@@ -21,6 +21,10 @@ import 'package:life_pilot/local_storage/repository_local_record_editor.dart';
 import 'package:life_pilot/local_storage/repository_local_account_summary.dart';
 
 class ServicePointRecord {
+  static const _accountModelColumns =
+      'id,account,category,master_graph_url,points';
+  static const _pointDetailColumns =
+      'id,account_id,created_at,date,primary_category,group,description,type,value';
   final _localAccountSummary = RepositoryLocalAccountSummary();
   final _localEventAccounts = RepositoryLocalEventAccount();
   final _localHistory = RepositoryLocalRecordHistory();
@@ -97,7 +101,7 @@ class ServicePointRecord {
       }
       var response = await supabase
           .from(currentTable)
-          .select()
+          .select(_accountModelColumns)
           .eq(Fields.id, eventId)
           .eq(Fields.createdBy, user)
           .eq(Fields.isValid, true)
@@ -117,7 +121,7 @@ class ServicePointRecord {
         if (linkedAccountId != null) {
           response = await supabase
               .from(currentTable)
-              .select()
+              .select(_accountModelColumns)
               .eq(Fields.id, linkedAccountId)
               .eq(Fields.createdBy, user)
               .eq(Fields.isValid, true)
@@ -315,7 +319,7 @@ class ServicePointRecord {
       // 查詢是否已存在
       final exist = await supabase
           .from(TableNames.pointRecordAccount)
-          .select()
+          .select('id,is_valid')
           .eq(Fields.createdBy, user)
           .eq(Fields.account, name)
           .eq('category', category)
@@ -330,7 +334,7 @@ class ServicePointRecord {
               .from(TableNames.pointRecordAccount)
               .update({Fields.isValid: true})
               .eq(Fields.id, exist[Fields.id])
-              .select()
+              .select(_accountModelColumns)
               .single();
         } else {
           throw Exception('Account already exists');
@@ -347,7 +351,7 @@ class ServicePointRecord {
               'points': 0,
               Fields.isValid: true,
             })
-            .select()
+            .select(_accountModelColumns)
             .single();
       }
 
@@ -443,7 +447,7 @@ class ServicePointRecord {
           .update({'master_graph_url': base64Encode(imageBytes)})
           .eq(Fields.id, accountId)
           .eq(Fields.isValid, true)
-          .select();
+          .select(Fields.id);
 
       if (result.isEmpty) {
         throw Exception("account not found or invalid");
@@ -500,7 +504,7 @@ class ServicePointRecord {
     final upperBound = recordDayUpperBound(dateTo);
     var query = supabase
         .from(TableNames.pointRecordDetail)
-        .select()
+        .select(_pointDetailColumns)
         .eq('account_id', accountId)
         .ilike('type', type);
     if (includeReservedRecords) {
@@ -541,7 +545,7 @@ class ServicePointRecord {
     if (includeLatestFallback && !hasRegularRecord) {
       final fallback = await supabase
           .from(TableNames.pointRecordDetail)
-          .select()
+          .select(_pointDetailColumns)
           .eq('account_id', accountId)
           .ilike('type', type)
           .neq('primary_category', reservedRecordCategory)

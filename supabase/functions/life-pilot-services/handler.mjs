@@ -86,6 +86,10 @@ export function createHandler({ env, fetchImpl = fetch, now = Date.now }) {
       const code = object(value) ? String(value.message ?? value.code ?? '') : '';
       if (code.includes('rate_limit') || code.includes('daily_service_budget')) fail(429, 'service_rate_limit_exceeded');
       if (userAuth && code.includes('user_not_found')) fail(401, 'user_not_found');
+      if (userAuth && response.status === 401 && code === 'user_banned') fail(401, 'user_banned');
+      if (userAuth && response.status === 409 && code === 'account_storage_purge_in_progress') {
+        fail(409, 'account_storage_purge_in_progress');
+      }
       fail(userAuth && response.status === 401 ? 401 : userAuth && response.status === 403 ? 403 : 502, 'upstream_request_rejected');
     }
     return value;
@@ -122,6 +126,9 @@ export function createHandler({ env, fetchImpl = fetch, now = Date.now }) {
           apikey: key, Authorization: admin ? `Bearer ${key}` : authorization, 'Content-Type': 'application/json',
         }, body: JSON.stringify(params) }, !admin);
       };
+      const disabled = await rpc('is_my_life_pilot_account_disabled');
+      if (disabled === true) fail(401, 'user_banned');
+      if (disabled !== false) fail(502, 'account_status_unavailable');
       let adminCheck;
       const requireAdmin = async () => {
         adminCheck ??= rpc('life_pilot_is_admin');
@@ -258,12 +265,49 @@ export function createHandler({ env, fetchImpl = fetch, now = Date.now }) {
         }
         return respond({ items });
       }
+      if (route === 'account/admin/purge-account') {
+        await requireAdmin();
+        const id = body.request_id;
+        if (typeof id !== 'string' || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id)) {
+          fail(400, 'invalid_deletion_request');
+        }
+        const batch = await rpc('admin_prepare_account_storage_purge', { p_request_id: id });
+        if (typeof batch?.token !== 'string' || !Array.isArray(batch.files) || batch.files.length > 100) {
+          fail(502, 'invalid_account_storage_purge_batch');
+        }
+        const buckets = new Map();
+        for (const file of batch.files) {
+          if (typeof file?.bucket_id !== 'string' || !file.bucket_id || file.bucket_id === '.' ||
+              file.bucket_id === '..' || typeof file.name !== 'string' || !file.name) {
+            fail(502, 'invalid_account_storage_purge_batch');
+          }
+          if (!buckets.has(file.bucket_id)) buckets.set(file.bucket_id, []);
+          buckets.get(file.bucket_id).push(file.name);
+        }
+        if (buckets.size) {
+          const key = env('LIFE_PILOT_SERVICE_ROLE_KEY') || required('SUPABASE_SERVICE_ROLE_KEY');
+          for (const [bucket, paths] of buckets) {
+            const removed = await jsonFetch(base + '/storage/v1/object/' + encodeURIComponent(bucket), {
+              method: 'DELETE',
+              headers: { apikey: key, Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prefixes: paths }),
+            });
+            if (!Array.isArray(removed)) fail(502, 'account_storage_purge_failed');
+          }
+        }
+        const completed = await rpc('admin_finish_account_storage_purge', {
+          p_request_id: id, p_token: batch.token, p_finish: true,
+        });
+        if (typeof completed !== 'boolean') fail(502, 'invalid_account_storage_purge_result');
+        return respond({ completed });
+      }
       if (['account/admin/create-user', 'account/admin/reset-password'].includes(route)) {
         await requireAdmin();
         const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) fail(400, 'invalid_email');
         await admit('account_admin', 30, 1000);
         const existing = await rpc('life_pilot_edge_find_auth_user', { p_email: email }, true);
+        if (existing?.disabled === true) fail(403, 'account_disabled');
         const creating = route.endsWith('create-user');
         if (creating && existing?.confirmed === true) fail(409, 'user_already_exists');
         if (!creating && !existing?.id) fail(404, 'account_not_found');

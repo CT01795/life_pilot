@@ -21,6 +21,8 @@ import 'package:life_pilot/local_storage/repository_local_record_editor.dart';
 import 'package:life_pilot/local_storage/repository_local_account_summary.dart';
 
 class ServiceAccounting {
+  static const _accountModelColumns =
+      'id,account,category,master_graph_url,balance,main_currency,exchange_rate';
   final _localAccountSummary = RepositoryLocalAccountSummary();
   final _localEventAccounts = RepositoryLocalEventAccount();
   final _localHistory = RepositoryLocalRecordHistory();
@@ -97,7 +99,7 @@ class ServiceAccounting {
       }
       var response = await supabase
           .from(TableNames.accountingAccount)
-          .select()
+          .select(_accountModelColumns)
           .eq(Fields.id, eventId)
           .eq(Fields.createdBy, user)
           .eq(Fields.isValid, true)
@@ -117,7 +119,7 @@ class ServiceAccounting {
         if (linkedAccountId != null) {
           response = await supabase
               .from(TableNames.accountingAccount)
-              .select()
+              .select(_accountModelColumns)
               .eq(Fields.id, linkedAccountId)
               .eq(Fields.createdBy, user)
               .eq(Fields.isValid, true)
@@ -321,7 +323,7 @@ class ServiceAccounting {
       // 1. 查詢是否已存在
       final exist = await supabase
           .from(TableNames.accountingAccount)
-          .select()
+          .select('id,is_valid')
           .eq(Fields.createdBy, user)
           .eq(Fields.account, name)
           .eq('category', category)
@@ -336,7 +338,7 @@ class ServiceAccounting {
               .from(TableNames.accountingAccount)
               .update({Fields.isValid: true})
               .eq(Fields.id, exist[Fields.id])
-              .select()
+              .select(_accountModelColumns)
               .single();
         } else {
           throw Exception('Account already exists');
@@ -355,7 +357,7 @@ class ServiceAccounting {
               'exchange_rate': null,
               Fields.isValid: true,
             })
-            .select()
+            .select(_accountModelColumns)
             .single();
       }
 
@@ -457,7 +459,7 @@ class ServiceAccounting {
           .update({'master_graph_url': base64Encode(imageBytes)})
           .eq(Fields.id, accountId)
           .eq(Fields.isValid, true)
-          .select();
+          .select(Fields.id);
 
       if ((result as List).isEmpty) {
         throw Exception('Account not found');
@@ -497,7 +499,7 @@ class ServiceAccounting {
     final upperBound = recordDayUpperBound(dateTo);
     var query = supabase
         .from(TableNames.accountingDetail)
-        .select()
+        .select(_accountingDetailColumns)
         .eq('account_id', accountId)
         .ilike('type', type);
     if (includeReservedRecords) {
@@ -538,7 +540,7 @@ class ServiceAccounting {
     if (includeLatestFallback && !hasRegularRecord) {
       final fallback = await supabase
           .from(TableNames.accountingDetail)
-          .select()
+          .select(_accountingDetailColumns)
           .eq('account_id', accountId)
           .ilike('type', type)
           .neq('primary_category', reservedRecordCategory)
@@ -622,6 +624,9 @@ class ServiceAccounting {
     if (rows.isEmpty) return null;
     return tryParseDateTimeValue(rows.first['date'], toLocal: true);
   }
+
+  static const _accountingDetailColumns =
+      'id,account_id,created_at,date,primary_category,group,description,type,value,currency';
 
   ModelAccountingDetail _mapDetail(
     Map<String, dynamic> detail,

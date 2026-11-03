@@ -587,7 +587,7 @@ class ServiceEvent {
         query = query.eq(Fields.account, currentAccount);
       }
 
-      final result = await query.select();
+      final result = await query.select(Fields.id);
 
       if (result.isEmpty) {
         throw Exception("event not found");

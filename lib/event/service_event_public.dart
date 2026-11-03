@@ -10,11 +10,11 @@ import 'package:html/parser.dart' show parse;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/event/event_date_time_parser.dart';
 import 'package:life_pilot/event/event_deduplication_key.dart';
+import 'package:life_pilot/event/repository_import_deletion_keys.dart';
 import 'package:life_pilot/event/event_import_validator.dart';
 import 'package:life_pilot/event/event_http_requester.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/public_event_refresh.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -161,10 +161,9 @@ class ServiceEventPublic {
       await _cloudGateway.rpcOrBackend(
         'life_pilot_public_event_refresh',
         params: {'p_action': 'heartbeat', 'p_token': token},
-        backend: () => apiCloud.post(
-          'event/heartbeat_public_event_refresh',
-          {'token': token},
-        ),
+        backend: () => apiCloud.post('event/heartbeat_public_event_refresh', {
+          'token': token,
+        }),
       );
     } catch (error, stackTrace) {
       logger.e(
@@ -179,7 +178,7 @@ class ServiceEventPublic {
     try {
       final response = await supabase
           .from(TableNames.recommendEventUrl)
-          .select()
+          .select('master_url')
           .eq('master_url', url)
           .eq('start_date', today.toUtc().toIso8601String())
           .limit(1)
@@ -212,6 +211,7 @@ class ServiceEventPublic {
 
   Future<Set<String>> _insertIfNotExists(
     List<EventItem> events,
+    RepositoryImportDeletionKeys importKeys,
     Set<String> dbNameDateSet,
     String url,
     DateTime checkedAt,
@@ -223,6 +223,7 @@ class ServiceEventPublic {
       rejectionCounts.update(reason, (count) => count + 1, ifAbsent: () => 1);
     }
 
+    final validEvents = <EventItem>[];
     for (final e in events) {
       final rejectionReason = EventImportValidator.rejectionReason(
         event: e,
@@ -236,6 +237,18 @@ class ServiceEventPublic {
         continue;
       }
 
+      validEvents.add(e);
+    }
+
+    final dates = validEvents
+        .map((event) => event.startDate)
+        .whereType<DateTime>();
+    await Future.wait<void>([
+      importKeys.read(dates).then(dbNameDateSet.addAll),
+      importKeys.readNewExistingDays(dates).then(dbNameDateSet.addAll),
+    ]);
+
+    for (final e in validEvents) {
       e.city = EventCityNormalizer.normalize(e.city);
       final tmpName = EventDeduplicationKey.byName(e);
       final tmpNameIgnoringTime = EventDeduplicationKey.byNameIgnoringTime(e);
@@ -664,58 +677,8 @@ class ServiceEventPublic {
   }
 
   Future<void> _fetchAndSaveAllEvents() async {
-    //==================================== 取得目前資料庫事件 ====================================
-    List<EventItem> historyList =
-        (await ServiceEvent().getEvents(
-          tableName: TableNames.recommendEvents,
-          inputUser: AuthConstants.systemEventOwnerEmail,
-        ) ??
-        []);
-    final res = await supabase.from(TableNames.recommendEventsDeleted).select();
-    final deletedList = (res as List)
-        .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
-        .toList()
-        .map((e) {
-          e.startDate = e.startDate?.toLocal();
-          e.endDate = e.endDate?.toLocal();
-          return e;
-        })
-        .toList();
-
-    Set<String> dbNameDateSet = historyList
-        .map(EventDeduplicationKey.byName)
-        .where((name) => name.isNotEmpty)
-        .toSet();
-    dbNameDateSet.addAll(
-      historyList
-          .map(EventDeduplicationKey.byNameIgnoringTime)
-          .where((name) => name.isNotEmpty)
-          .toSet(),
-    );
-    dbNameDateSet.addAll(
-      historyList
-          .map(EventDeduplicationKey.byId)
-          .where((id) => id.isNotEmpty)
-          .toSet(),
-    );
-    dbNameDateSet.addAll(
-      deletedList
-          .map(EventDeduplicationKey.byName)
-          .where((name) => name.isNotEmpty)
-          .toSet(),
-    );
-    dbNameDateSet.addAll(
-      deletedList
-          .map(EventDeduplicationKey.byNameIgnoringTime)
-          .where((name) => name.isNotEmpty)
-          .toSet(),
-    );
-    dbNameDateSet.addAll(
-      deletedList
-          .map(EventDeduplicationKey.byId)
-          .where((id) => id.isNotEmpty)
-          .toSet(),
-    );
+    final importKeys = RepositoryImportDeletionKeys(supabase);
+    Set<String> dbNameDateSet = <String>{};
     DateTime today = DateUtils.dateOnly(DateTime.now());
     //==================================== 取得外部資源事件 strolltimes.com/weekend ====================================
     String strolltimesWeekendUrl =
@@ -733,6 +696,7 @@ class ServiceEventPublic {
         //==================================== strolltimesList事件寫入 ====================================
         dbNameDateSet = await _insertIfNotExists(
           strolltimesList,
+          importKeys,
           dbNameDateSet,
           strolltimesWeekendUrl,
           today,
@@ -756,6 +720,7 @@ class ServiceEventPublic {
           //==================================== strolltimesList事件寫入 ====================================
           dbNameDateSet = await _insertIfNotExists(
             strolltimesList,
+            importKeys,
             dbNameDateSet,
             strolltimesEventsUrl,
             today,
@@ -800,6 +765,7 @@ class ServiceEventPublic {
           //==================================== cloud.culture.tw事件寫入 ====================================
           dbNameDateSet = await _insertIfNotExists(
             cloudCultureList,
+            importKeys,
             dbNameDateSet,
             cloudCultureUrl,
             today,
@@ -826,6 +792,7 @@ class ServiceEventPublic {
 
         dbNameDateSet = await _insertIfNotExists(
           accupassList,
+          importKeys,
           dbNameDateSet,
           accupassUrl,
           today,
@@ -851,6 +818,7 @@ class ServiceEventPublic {
 
           dbNameDateSet = await _insertIfNotExists(
             paperWindmillList,
+            importKeys,
             dbNameDateSet,
             paperWindmillUrl,
             today,
@@ -880,6 +848,7 @@ class ServiceEventPublic {
 
           dbNameDateSet = await _insertIfNotExists(
             taiwanNetList,
+            importKeys,
             dbNameDateSet,
             taiwanNetUrl,
             today,
@@ -905,6 +874,7 @@ class ServiceEventPublic {
 
         dbNameDateSet = await _insertIfNotExists(
           ntpcList,
+          importKeys,
           dbNameDateSet,
           ntpcUrl,
           today,
@@ -930,6 +900,7 @@ class ServiceEventPublic {
 
         dbNameDateSet = await _insertIfNotExists(
           taipeiOpenDataList,
+          importKeys,
           dbNameDateSet,
           taipeiOpenDataUrl,
           today,
@@ -952,6 +923,7 @@ class ServiceEventPublic {
 
           dbNameDateSet = await _insertIfNotExists(
             moclUrlList,
+            importKeys,
             dbNameDateSet,
             moclUrl,
             today,

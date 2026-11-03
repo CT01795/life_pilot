@@ -13,6 +13,8 @@ enum AccountPasswordFailure {
   unknown,
 }
 
+enum RegistrationEmailStatus { available, registered, disabled, invalid }
+
 class AccountPasswordException implements Exception {
   const AccountPasswordException(this.failure);
 
@@ -21,6 +23,23 @@ class AccountPasswordException implements Exception {
 
 class ServiceAccountSecurity {
   static const administratorEmail = 'minavi@alumni.nccu.edu.tw';
+
+  Future<RegistrationEmailStatus> registrationEmailStatus(String email) async {
+    final result = await supabase.rpc(
+      'life_pilot_registration_email_status',
+      params: {'p_email': email.trim()},
+    );
+    return RegistrationEmailStatus.values.byName(result as String);
+  }
+
+  Future<bool> isEmailDisabled(String email) async {
+    final result = await supabase.rpc(
+      'is_life_pilot_email_disabled',
+      params: {'p_email': email.trim()},
+    );
+    if (result is! bool) throw const FormatException('Invalid account status');
+    return result;
+  }
 
   Future<void> changePassword({
     required String currentPassword,

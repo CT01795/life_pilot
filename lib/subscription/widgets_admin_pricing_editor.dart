@@ -142,15 +142,21 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     }
   }
 
-  Future<bool> _canChange(SubscriptionPricingVersion version) async {
+  Future<bool> _canChange(
+    SubscriptionPricingVersion version, {
+    bool deleting = false,
+  }) async {
     if (_saving) return false;
     final loc = AppLocalizations.of(context)!;
     setState(() => _saving = true);
     try {
-      final locked = await RepositoryPricingVersionGuard().isLocked(version.id);
+      final guard = RepositoryPricingVersionGuard();
+      final locked = await guard.isLocked(version.id);
+      final canDelete =
+          deleting && locked && await guard.canForceDelete(version.id);
       if (!mounted) return false;
-      if (locked) _message(loc.adminPricingDeleteInUse);
-      return !locked;
+      if (locked && !canDelete) _message(loc.adminPricingDeleteInUse);
+      return !locked || canDelete;
     } catch (error) {
       if (mounted) _message(loc.adminPricingCreateFailed(error.toString()));
       return false;
@@ -204,7 +210,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
   }
 
   Future<void> _deleteVersion(SubscriptionPricingVersion version) async {
-    if (!await _canChange(version) || !mounted) return;
+    if (!await _canChange(version, deleting: true) || !mounted) return;
     final loc = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,

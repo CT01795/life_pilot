@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/auth/service_account_security.dart';
+import 'package:life_pilot/auth/controller_account_mail_request.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/widgets/dialogs/legal_document_dialog.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
@@ -9,7 +10,8 @@ import 'package:life_pilot/utils/widgets/widgets_language_toggle_dropdown.dart';
 import 'package:provider/provider.dart';
 
 class PageRegister extends StatefulWidget {
-  const PageRegister({super.key});
+  const PageRegister({super.key, this.security});
+  final ServiceAccountSecurity? security;
 
   @override
   State<PageRegister> createState() => _PageRegisterState();
@@ -19,12 +21,11 @@ class _PageRegisterState extends State<PageRegister> {
   static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   late final TextEditingController _emailController;
-  late final TextEditingController _passwordController;
-  late final TextEditingController _confirmPasswordController;
+  late final _requests = ControllerAccountMailRequest(
+    service: widget.security ?? ServiceAccountSecurity(),
+  );
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late final FocusNode _emailFocusNode;
-  late final FocusNode _passwordFocusNode;
-  late final FocusNode _confirmPasswordFocusNode;
   late final ModelAuthView _authView; // ✅ 改用 Model 層來管理 ControllerAuth
 
   late bool _initialized;
@@ -32,25 +33,17 @@ class _PageRegisterState extends State<PageRegister> {
   late bool _hasReadPrivacyPolicy;
   late bool _hasReadTermsOfService;
   late bool _isSubmitting;
-  late bool _obscurePassword;
-  late bool _obscureConfirmPassword;
 
   @override
   void initState() {
     super.initState();
     _emailController = TextEditingController();
-    _passwordController = TextEditingController();
-    _confirmPasswordController = TextEditingController();
     _emailFocusNode = FocusNode();
-    _passwordFocusNode = FocusNode();
-    _confirmPasswordFocusNode = FocusNode();
     _initialized = false;
     _hasAcceptedLegalTerms = false;
     _hasReadPrivacyPolicy = false;
     _hasReadTermsOfService = false;
     _isSubmitting = false;
-    _obscurePassword = true;
-    _obscureConfirmPassword = true;
   }
 
   @override
@@ -59,7 +52,6 @@ class _PageRegisterState extends State<PageRegister> {
     if (!_initialized) {
       _authView = context.read<ModelAuthView>(); // ✅ 使用 Model 來統一處理狀態
       _emailController.text = _authView.getRegisterEmail() ?? '';
-      _emailController.text = _authView.getRegisterEmail() ?? '';
       _initialized = true;
       _hasAcceptedLegalTerms = false;
     }
@@ -67,12 +59,9 @@ class _PageRegisterState extends State<PageRegister> {
 
   @override
   void dispose() {
+    _requests.dispose();
     _emailFocusNode.dispose();
-    _passwordFocusNode.dispose();
-    _confirmPasswordFocusNode.dispose();
     _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -85,77 +74,37 @@ class _PageRegisterState extends State<PageRegister> {
     }
     FocusScope.of(context).unfocus();
     final email = _emailController.text.trim();
-    final password = _passwordController.text;
     setState(() => _isSubmitting = true);
-
-    String? error;
     try {
-      error = await _authView.register(email: email, password: password);
+      final accountType = _authView.registrationAccountType == 'vendor'
+          ? loc.vendorRegistrationTitle
+          : loc.personalAccountTitle;
+      final result = await _requests.send(
+        email: email,
+        subject: loc.registrationAdminApprovalSubject,
+        body: loc.registrationAdminApprovalBody(accountType),
+        checkRegistrationEligibility: true,
+      );
+      if (!mounted || result == null) return;
+      if (result == AccountMailRequestResult.opened) {
+        AppNavigator.showSnackBar(loc.registrationAdminApprovalOpened);
+      } else if (result == AccountMailRequestResult.disabled) {
+        AppNavigator.showErrorBar(loc.accountDisabled);
+      } else if (result == AccountMailRequestResult.registered) {
+        AppNavigator.showErrorBar(loc.emailAlreadyInUse);
+      } else if (result == AccountMailRequestResult.statusUnavailable) {
+        AppNavigator.showErrorBar(loc.networkError);
+      } else {
+        AppNavigator.showErrorBar(
+          result == AccountMailRequestResult.invalidEmail
+              ? loc.invalidEmail
+              : loc.adminPasswordHelpEmailUnavailable(
+                  ServiceAccountSecurity.administratorEmail,
+                ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
-    }
-
-    if (error == null) {
-      AppNavigator.showSnackBar(
-        _authView.isLoggedIn
-            ? loc.registrationSuccessful
-            : loc.registrationVerificationRequired,
-      );
-      return;
-    }
-
-    if (mounted && error.isNotEmpty) {
-      if (error == ErrorFields.emailRateLimitExceededError) {
-        await _requestAdministratorApproval(loc, email);
-        return;
-      }
-      AppNavigator.showErrorBar(
-        _authView.showLoginError(message: error, loc: loc),
-      );
-    }
-  }
-
-  Future<void> _requestAdministratorApproval(
-    AppLocalizations loc,
-    String email,
-  ) async {
-    final accountType = _authView.registrationAccountType == 'vendor'
-        ? loc.vendorRegistrationTitle
-        : loc.personalAccountTitle;
-    final contact =
-        await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(loc.registrationAdminApprovalTitle),
-            content: Text(loc.registrationAdminApprovalDescription),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(loc.cancel),
-              ),
-              FilledButton.icon(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                icon: const Icon(Icons.forward_to_inbox_outlined),
-                label: Text(loc.registrationAdminApprovalAction),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    if (!contact || !mounted) return;
-    final opened = await ServiceAccountSecurity().contactAdministrator(
-      subject: loc.registrationAdminApprovalSubject,
-      body: loc.registrationAdminApprovalBody(email, accountType),
-    );
-    if (!mounted) return;
-    if (opened) {
-      AppNavigator.showSnackBar(loc.registrationAdminApprovalOpened);
-    } else {
-      AppNavigator.showErrorBar(
-        loc.adminPasswordHelpEmailUnavailable(
-          ServiceAccountSecurity.administratorEmail,
-        ),
-      );
     }
   }
 
@@ -264,89 +213,11 @@ class _PageRegisterState extends State<PageRegister> {
                         }
                         return null;
                       },
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) {
-                        _passwordFocusNode.requestFocus(); // 跳到下一個輸入欄
-                      },
-                    ),
-                    Gaps.h16,
-                    TextFormField(
-                      controller: _passwordController,
-                      focusNode: _passwordFocusNode,
-                      autofillHints: const [AutofillHints.newPassword],
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: loc.password,
-                        suffixIcon: IconButton(
-                          tooltip: _obscurePassword
-                              ? loc.showPassword
-                              : loc.hidePassword,
-                          onPressed: () {
-                            setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            );
-                          },
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                          ),
-                        ),
-                      ),
-                      validator: (value) {
-                        final password = value ?? '';
-                        if (password.isEmpty) return loc.noPasswordError;
-                        if (password.length <
-                            AuthConstants.minimumPasswordLength) {
-                          return loc.weakPassword;
-                        }
-                        return null;
-                      },
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) {
-                        _confirmPasswordFocusNode.requestFocus();
-                      },
-                    ),
-                    Gaps.h16,
-                    TextFormField(
-                      controller: _confirmPasswordController,
-                      focusNode: _confirmPasswordFocusNode,
-                      autofillHints: const [AutofillHints.newPassword],
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      obscureText: _obscureConfirmPassword,
-                      decoration: InputDecoration(
-                        labelText: loc.confirmPassword,
-                        suffixIcon: IconButton(
-                          tooltip: _obscureConfirmPassword
-                              ? loc.showPassword
-                              : loc.hidePassword,
-                          onPressed: () {
-                            setState(
-                              () => _obscureConfirmPassword =
-                                  !_obscureConfirmPassword,
-                            );
-                          },
-                          icon: Icon(
-                            _obscureConfirmPassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                          ),
-                        ),
-                      ),
-                      validator: (value) {
-                        if ((value ?? '') != _passwordController.text) {
-                          return loc.passwordMismatch;
-                        }
-                        return null;
-                      },
                       textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) async {
-                        await _tryRegister(loc);
-                      },
+                      onFieldSubmitted: (_) => _tryRegister(loc),
                     ),
+                    Gaps.h16,
+                    Text(loc.registrationAdminApprovalDescription),
                     Gaps.h16,
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -454,7 +325,7 @@ class _PageRegisterState extends State<PageRegister> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : Text(loc.register),
+                              : Text(loc.registrationAdminApprovalAction),
                         ),
                         TextButton(onPressed: _goBack, child: Text(loc.back)),
                       ],

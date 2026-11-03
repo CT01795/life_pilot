@@ -99,6 +99,150 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
+  /// No description provided for @adminReactivateAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore account'**
+  String get adminReactivateAccount;
+
+  /// No description provided for @adminAccountReactivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Account restored. The user can sign in again.'**
+  String get adminAccountReactivated;
+
+  /// No description provided for @adminAccountReactivationPurgeStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanent deletion has started. This account cannot be restored.'**
+  String get adminAccountReactivationPurgeStarted;
+
+  /// No description provided for @previewAccountImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview account image'**
+  String get previewAccountImage;
+
+  /// Label for ledgerSharedAccount
+  ///
+  /// In en, this message translates to:
+  /// **'Shared account'**
+  String get ledgerSharedAccount;
+
+  /// Shown when a batch of files was removed but the account remains disabled
+  ///
+  /// In en, this message translates to:
+  /// **'A batch of files was removed. The account remains disabled. Run deletion again to continue.'**
+  String get accountPurgeMoreFiles;
+
+  /// Shown when a deletion is in progress and the user tries to start another one
+  ///
+  /// In en, this message translates to:
+  /// **'This deletion is in progress. Try again later.'**
+  String get accountPurgeInProgress;
+
+  /// Label for adminDisableAccount
+  ///
+  /// In en, this message translates to:
+  /// **'Disable account'**
+  String get adminDisableAccount;
+
+  /// Label for adminDisabledAccounts
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled accounts'**
+  String get adminDisabledAccounts;
+
+  /// Label for accountDisabled
+  ///
+  /// In en, this message translates to:
+  /// **'This account cannot be used.'**
+  String get accountDisabled;
+
+  /// Label for ledgerHomeLinks
+  ///
+  /// In en, this message translates to:
+  /// **'Shared accounts on home'**
+  String get ledgerHomeLinks;
+
+  /// Label for ledgerLinkHome
+  ///
+  /// In en, this message translates to:
+  /// **'Link to home'**
+  String get ledgerLinkHome;
+
+  /// Label for ledgerUnlinkHome
+  ///
+  /// In en, this message translates to:
+  /// **'Remove home link'**
+  String get ledgerUnlinkHome;
+
+  /// Label for ledgerSubmitProposal
+  ///
+  /// In en, this message translates to:
+  /// **'Submit change proposal'**
+  String get ledgerSubmitProposal;
+
+  /// Label for ledgerProposalSent
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal sent. It is pending the owner\'s review.'**
+  String get ledgerProposalSent;
+
+  /// Label for ledgerStopProposals
+  ///
+  /// In en, this message translates to:
+  /// **'Stop accepting proposals'**
+  String get ledgerStopProposals;
+
+  /// Label for ledgerApproveProposal
+  ///
+  /// In en, this message translates to:
+  /// **'Approve proposal'**
+  String get ledgerApproveProposal;
+
+  /// Label for ledgerRejectProposal
+  ///
+  /// In en, this message translates to:
+  /// **'Reject proposal'**
+  String get ledgerRejectProposal;
+
+  /// Label for ledgerShareAccount
+  ///
+  /// In en, this message translates to:
+  /// **'Share account'**
+  String get ledgerShareAccount;
+
+  /// Label for ledgerSharedWithMe
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts shared with me'**
+  String get ledgerSharedWithMe;
+
+  /// Label for ledgerAllowProposals
+  ///
+  /// In en, this message translates to:
+  /// **'Allow change proposals'**
+  String get ledgerAllowProposals;
+
+  /// Label for ledgerPendingProposals
+  ///
+  /// In en, this message translates to:
+  /// **'Pending proposals'**
+  String get ledgerPendingProposals;
+
+  /// Label for adminSpecialAuthorization
+  ///
+  /// In en, this message translates to:
+  /// **'Add special authorization'**
+  String get adminSpecialAuthorization;
+
+  /// Label for adminSpecialAuthorizationFee
+  ///
+  /// In en, this message translates to:
+  /// **'Fee (TWD, 0 means free)'**
+  String get adminSpecialAuthorizationFee;
+
   /// Download feedback screenshots only when requested
   ///
   /// In en, this message translates to:
@@ -1701,11 +1845,11 @@ abstract class AppLocalizations {
   /// **'Account security'**
   String get accountSecurity;
 
-  /// No description provided for @adminPasswordHelpBody.
+  /// Label for admin password help body
   ///
   /// In en, this message translates to:
-  /// **'Hello, I cannot sign in to Life Pilot. Please help with my password change.\n\nAccount: {account}\n\nPlease reply to this email after the request has been handled.'**
-  String adminPasswordHelpBody(String account);
+  /// **'Hello, I cannot sign in to Life Pilot. Please help with my password change.\n\nPlease reply to this email after the request has been handled.'**
+  String get adminPasswordHelpBody;
 
   /// No description provided for @adminPasswordHelpEmailUnavailable.
   ///
@@ -1800,13 +1944,13 @@ abstract class AppLocalizations {
   /// Registration email quota fallback title
   ///
   /// In en, this message translates to:
-  /// **'Verification email limit reached'**
+  /// **'Request an account'**
   String get registrationAdminApprovalTitle;
 
   /// Registration email quota fallback instructions
   ///
   /// In en, this message translates to:
-  /// **'A verification email cannot be sent right now. Send the request to the administrator and wait for approval. After creating the account, the administrator will reply with a temporary password.'**
+  /// **'No password is needed to register. Enter your email address and submit your request. Once approved and your account is created, the administrator will reply with a temporary password.'**
   String get registrationAdminApprovalDescription;
 
   /// Open an email draft for administrator approval
@@ -1824,13 +1968,13 @@ abstract class AppLocalizations {
   /// No description provided for @registrationAdminApprovalBody.
   ///
   /// In en, this message translates to:
-  /// **'Requested email: {email}\nAccount type: {accountType}\n\nThe verification email limit was reached. Please approve and create this account, then reply with a temporary password.'**
-  String registrationAdminApprovalBody(String email, String accountType);
+  /// **'Account type: {accountType}\n\nI have read and accepted the current Privacy Policy and Terms of Service. Please review this request, create the account, and reply to this address with the result.'**
+  String registrationAdminApprovalBody(String accountType);
 
   /// Administrator approval email draft opened
   ///
   /// In en, this message translates to:
-  /// **'The email draft is open. Send it and wait for administrator approval.'**
+  /// **'Email draft opened. Review and send it. Your account has not been created yet; wait for administrator approval.'**
   String get registrationAdminApprovalOpened;
 
   /// Label for admin temporary password copied
@@ -2034,13 +2178,13 @@ abstract class AppLocalizations {
   /// Label for password help description
   ///
   /// In en, this message translates to:
-  /// **'If you forgot your current password, reset it by verification email or ask the administrator for help.'**
+  /// **'If you forgot your password, email the administrator, who will reply after processing your request.'**
   String get passwordHelpDescription;
 
   /// Label for password help title
   ///
   /// In en, this message translates to:
-  /// **'Other reset options'**
+  /// **'Administrator assistance'**
   String get passwordHelpTitle;
 
   /// Password confirmation mismatch error

@@ -20,6 +20,11 @@ class LocalDataStore {
   final Map<String, Future<List<Map<String, dynamic>>>> _listCache = {};
   final Map<String, bool> _createAllowed = {};
   final Map<String, bool> _deleteAllowed = {};
+  final Map<String, bool Function()> _writeChecks = {};
+
+  void setWriteCheck(String owner, bool Function() check) {
+    _writeChecks[owner.toLowerCase()] = check;
+  }
 
   void setDeleteAllowed(String owner, bool allowed) {
     _deleteAllowed[owner.toLowerCase()] = allowed;
@@ -38,6 +43,7 @@ class LocalDataStore {
   void clearCreatePermission(String owner) {
     _createAllowed.remove(owner.toLowerCase());
     _deleteAllowed.remove(owner.toLowerCase());
+    _writeChecks.remove(owner.toLowerCase());
   }
 
   Future<Database> get _db async {
@@ -134,7 +140,9 @@ class LocalDataStore {
     await database.transaction((transaction) async {
       final record = _records.record(_recordKey(owner, resource, id));
       final existed = await record.exists(transaction);
-      if (_createAllowed[owner.toLowerCase()] == false) {
+      final ownerKey = owner.toLowerCase();
+      if (_createAllowed[ownerKey] == false ||
+          _writeChecks[ownerKey]?.call() == false) {
         throw StateError('local_subscription_expired_read_only');
       }
       await record.put(transaction, {

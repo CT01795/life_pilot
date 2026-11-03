@@ -12,6 +12,7 @@ function setup(overrides = {}) {
     calls.push({ url, options, body });
     if (overrides.fetch) { const result = await overrides.fetch(url, options, body); if (result) return result; }
     if (url.pathname === '/auth/v1/user') return json({ id: 'owner', email: 'admin@example.com' });
+    if (url.pathname.endsWith('is_my_life_pilot_account_disabled')) return json(overrides.disabled ?? false);
     if (url.pathname.endsWith('life_pilot_is_admin')) return json(overrides.admin ?? true);
     if (url.pathname.endsWith('life_pilot_edge_find_auth_user')) return json(overrides.existing ?? null);
     if (url.pathname.endsWith('life_pilot_edge_claim')) return json(overrides.lease ?? { cached: false, claimed: true, token: 'lease' });
@@ -35,6 +36,58 @@ test('no bearer token performs no outgoing requests', async () => {
 test('untrusted origins cannot reach authentication or providers', async () => {
   const s = setup(); const r = await s.run('external/geocode', {}, { Origin: 'https://evil.example', Authorization: 'Bearer caller' });
   assert.equal(r.response.status, 403); assert.equal(s.calls.length, 0);
+});
+test('a disabled actor cannot reach even a cached Edge service', async () => {
+  const s = setup({ disabled: true, lease: { cached: true, payload: {} } });
+  const r = await s.run('external/geocode', { query: 'Taipei' });
+  assert.equal(r.response.status, 401);
+  assert.equal(r.data.code, 'user_banned');
+  assert.equal(s.calls.length, 2);
+  assert.equal(s.calls[1].options.headers.Authorization, 'Bearer caller');
+});
+test('disabled target is not overwritten or treated as a disabled administrator', async () => {
+  const s = setup({ existing: { id: 'target', confirmed: false, disabled: true } });
+  for (const action of ['create-user', 'reset-password']) {
+    const r = await s.run('account/admin/' + action, { email: 'a@example.com' });
+    assert.equal(r.response.status, 403);
+    assert.equal(r.data.code, 'account_disabled');
+  }
+  assert.equal(s.calls.some((c) => c.url.pathname.includes('/admin/users')), false);
+});
+test('account purge deletes only paths returned by the admin RPC before finalizing', async () => {
+  const requestId = '00000000-0000-0000-0000-000000000099';
+  const s = setup({ fetch: (url, options, body) => {
+    if (url.pathname.endsWith('admin_prepare_account_storage_purge')) {
+      assert.equal(options.headers.Authorization, 'Bearer caller');
+      assert.deepEqual(body, { p_request_id: requestId });
+      return json({ token: 'lease', files: [{ bucket_id: 'account-images', name: 'owner/avatar.png' }] });
+    }
+    if (url.pathname === '/storage/v1/object/account-images') {
+      assert.equal(options.method, 'DELETE');
+      assert.equal(options.headers.Authorization, 'Bearer server-key');
+      assert.deepEqual(body, { prefixes: ['owner/avatar.png'] });
+      return json([]);
+    }
+    if (url.pathname.endsWith('admin_finish_account_storage_purge')) {
+      assert.equal(options.headers.Authorization, 'Bearer caller');
+      assert.deepEqual(body, { p_request_id: requestId, p_token: 'lease', p_finish: true });
+      return json(true);
+    }
+  } });
+  const result = await s.run('account/admin/purge-account', { request_id: requestId, files: ['unrelated.png'] });
+  assert.equal(result.response.status, 200);
+  assert.deepEqual(result.data, { completed: true });
+});
+test('account purge does not finalize after a Storage failure', async () => {
+  const s = setup({ fetch: (url) => {
+    if (url.pathname.endsWith('admin_prepare_account_storage_purge')) {
+      return json({ token: 'lease', files: [{ bucket_id: 'account-images', name: 'owner/avatar.png' }] });
+    }
+    if (url.pathname.startsWith('/storage/')) return json({ message: 'failed' }, 500);
+  } });
+  const result = await s.run('account/admin/purge-account', { request_id: '00000000-0000-0000-0000-000000000099' });
+  assert.equal(result.response.status, 502);
+  assert.equal(s.calls.some(c => c.url.pathname.endsWith('admin_finish_account_storage_purge')), false);
 });
 test('non-admin cannot look up or modify auth users', async () => {
   const s = setup({ admin: false }); const r = await s.run('account/admin/reset-password', { email: 'a@example.com' });

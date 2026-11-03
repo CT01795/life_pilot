@@ -142,15 +142,14 @@ class ControllerAuth extends SafeChangeNotifier {
   void _syncLocalCreatePermission() {
     final account = _currentAccount;
     if (account == null) return;
+    final localConfigured =
+        !subscriptionConfigurationMissing || hasActiveLocalSubscription;
     LocalDataStore.instance.setCreateAllowed(
       account,
-      !subscriptionConfigurationMissing &&
-          (isSysAdmin || _quotaFreePeriodActive || canUseLocalStorage),
+      localConfigured && canUseLocalStorage,
     );
-    LocalDataStore.instance.setDeleteAllowed(
-      account,
-      !subscriptionConfigurationMissing,
-    );
+    LocalDataStore.instance.setDeleteAllowed(account, localConfigured);
+    LocalDataStore.instance.setWriteCheck(account, () => canUseLocalStorage);
   }
 
   DataStorageLocation get preferredStorage => _preferredStorage;
@@ -393,6 +392,8 @@ class ControllerAuth extends SafeChangeNotifier {
       ),
       'recommended_events': ?recommendedEventUsage,
       'recommended_attractions': ?recommendedAttractionUsage,
+      'calendar_shares': ?base['calendar_shares'],
+      'image_bytes': ?base['image_bytes'],
     };
 
     final now = DateTime.now();
@@ -417,11 +418,21 @@ class ControllerAuth extends SafeChangeNotifier {
         plan: 'free',
         usage: {
           for (final entry in localUsage.entries)
-            entry.key: SubscriptionUsage(
-              resource: entry.value.resource,
-              used: entry.value.used,
-              quota: 0,
-            ),
+            entry.key:
+                entry.value.isUnlimited &&
+                    const {
+                      'calendar_events',
+                      'accounting_detail',
+                      'point_record_detail',
+                      'memory_trace',
+                      'game_questions',
+                    }.contains(entry.key)
+                ? SubscriptionUsage(
+                    resource: entry.value.resource,
+                    used: entry.value.used,
+                    quota: 0,
+                  )
+                : entry.value,
         },
         status: 'inactive',
         storagePlan: 'local',
@@ -614,6 +625,27 @@ class ControllerAuth extends SafeChangeNotifier {
       if (remoteUser == null || remoteUser.id != localUser.id) {
         await _signOutInvalidAccount();
         return AccountValidationResult.signedOut;
+      }
+      try {
+        final disabled = await supabase.rpc(
+          'is_my_life_pilot_account_disabled',
+        );
+        if (supabase.auth.currentUser?.id != localUser.id) {
+          return AccountValidationResult.unavailable;
+        }
+        if (disabled == true) {
+          await _signOutInvalidAccount();
+          return AccountValidationResult.signedOut;
+        }
+      } on PostgrestException catch (error) {
+        if (error.code == 'PT401' && error.message == 'user_banned') {
+          if (supabase.auth.currentUser?.id != localUser.id) {
+            return AccountValidationResult.unavailable;
+          }
+          await _signOutInvalidAccount();
+          return AccountValidationResult.signedOut;
+        }
+        if (error.code != 'PGRST202') rethrow;
       }
       return AccountValidationResult.valid;
     } on AuthException catch (error, stackTrace) {

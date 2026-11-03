@@ -9,6 +9,78 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get adminReactivateAccount => 'Restore account';
+
+  @override
+  String get adminAccountReactivated => 'Account restored. The user can sign in again.';
+
+  @override
+  String get adminAccountReactivationPurgeStarted => 'Permanent deletion has started. This account cannot be restored.';
+
+  @override
+  String get previewAccountImage => 'Preview account image';
+
+  @override
+  String get ledgerSharedAccount => 'Shared account';
+
+  @override
+  String get accountPurgeMoreFiles => 'A batch of files was removed. The account remains disabled. Run deletion again to continue.';
+
+  @override
+  String get accountPurgeInProgress => 'This deletion is in progress. Try again later.';
+
+  @override
+  String get adminDisableAccount => 'Disable account';
+
+  @override
+  String get adminDisabledAccounts => 'Disabled accounts';
+
+  @override
+  String get accountDisabled => 'This account cannot be used.';
+
+  @override
+  String get ledgerHomeLinks => 'Shared accounts on home';
+
+  @override
+  String get ledgerLinkHome => 'Link to home';
+
+  @override
+  String get ledgerUnlinkHome => 'Remove home link';
+
+  @override
+  String get ledgerSubmitProposal => 'Submit change proposal';
+
+  @override
+  String get ledgerProposalSent => 'Proposal sent. It is pending the owner\'s review.';
+
+  @override
+  String get ledgerStopProposals => 'Stop accepting proposals';
+
+  @override
+  String get ledgerApproveProposal => 'Approve proposal';
+
+  @override
+  String get ledgerRejectProposal => 'Reject proposal';
+
+  @override
+  String get ledgerShareAccount => 'Share account';
+
+  @override
+  String get ledgerSharedWithMe => 'Accounts shared with me';
+
+  @override
+  String get ledgerAllowProposals => 'Allow change proposals';
+
+  @override
+  String get ledgerPendingProposals => 'Pending proposals';
+
+  @override
+  String get adminSpecialAuthorization => 'Add special authorization';
+
+  @override
+  String get adminSpecialAuthorizationFee => 'Fee (TWD, 0 means free)';
+
+  @override
   String get viewFeedbackScreenshots => 'View screenshots';
 
   @override
@@ -830,9 +902,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountSecurity => 'Account security';
 
   @override
-  String adminPasswordHelpBody(String account) {
-    return 'Hello, I cannot sign in to Life Pilot. Please help with my password change.\n\nAccount: $account\n\nPlease reply to this email after the request has been handled.';
-  }
+  String get adminPasswordHelpBody => 'Hello, I cannot sign in to Life Pilot. Please help with my password change.\n\nPlease reply to this email after the request has been handled.';
 
   @override
   String adminPasswordHelpEmailUnavailable(String email) {
@@ -884,10 +954,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get personalAccountTitle => 'Personal account';
 
   @override
-  String get registrationAdminApprovalTitle => 'Verification email limit reached';
+  String get registrationAdminApprovalTitle => 'Request an account';
 
   @override
-  String get registrationAdminApprovalDescription => 'A verification email cannot be sent right now. Send the request to the administrator and wait for approval. After creating the account, the administrator will reply with a temporary password.';
+  String get registrationAdminApprovalDescription => 'No password is needed to register. Enter your email address and submit your request. Once approved and your account is created, the administrator will reply with a temporary password.';
 
   @override
   String get registrationAdminApprovalAction => 'Email administrator';
@@ -896,12 +966,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get registrationAdminApprovalSubject => 'Life Pilot account request';
 
   @override
-  String registrationAdminApprovalBody(String email, String accountType) {
-    return 'Requested email: $email\nAccount type: $accountType\n\nThe verification email limit was reached. Please approve and create this account, then reply with a temporary password.';
+  String registrationAdminApprovalBody(String accountType) {
+    return 'Account type: $accountType\n\nI have read and accepted the current Privacy Policy and Terms of Service. Please review this request, create the account, and reply to this address with the result.';
   }
 
   @override
-  String get registrationAdminApprovalOpened => 'The email draft is open. Send it and wait for administrator approval.';
+  String get registrationAdminApprovalOpened => 'Email draft opened. Review and send it. Your account has not been created yet; wait for administrator approval.';
 
   @override
   String get adminTemporaryPasswordCopied => 'Temporary password copied.';
@@ -1005,10 +1075,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordDoesNotMeetPolicy => 'The new password does not meet the security requirements. Add letters, numbers, or symbols and try again.';
 
   @override
-  String get passwordHelpDescription => 'If you forgot your current password, reset it by verification email or ask the administrator for help.';
+  String get passwordHelpDescription => 'If you forgot your password, email the administrator, who will reply after processing your request.';
 
   @override
-  String get passwordHelpTitle => 'Other reset options';
+  String get passwordHelpTitle => 'Administrator assistance';
 
   @override
   String get passwordMismatch => 'Passwords do not match.';

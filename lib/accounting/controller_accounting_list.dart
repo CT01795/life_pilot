@@ -98,7 +98,11 @@ class ControllerAccountingList extends SafeChangeNotifier {
       // Bound only the read, not create/delete operations. Timeout releases
       // the shared request; its late response cannot publish or block retry.
       final loaded = await _service
-          .fetchAccounts(user: user, category: requestedCategory)
+          .fetchAccounts(
+            user: user,
+            category: requestedCategory,
+            includeGraph: false,
+          )
           .timeout(requestTimeout);
       if (!_isCurrent(generation) || request != _listRequest) return;
       accounts = loaded;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -24,6 +25,7 @@ class PointSelectorButton extends StatelessWidget {
     final auth = context.read<ModelAuthView>();
 
     return DashboardAccountSelector(
+      sharedKind: LedgerKind.points,
       icon: Icons.stars,
       selectedAccountId: accountId,
       selectedAccountName: accountName,

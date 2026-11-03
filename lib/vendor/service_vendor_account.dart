@@ -8,6 +8,23 @@ import 'package:life_pilot/subscription/repository_pricing_catalog.dart';
 import 'package:life_pilot/subscription/model_billing_cycle.dart';
 
 class ServiceVendorAccount {
+  Future<void> addSpecialAuthorization({
+    required String email,
+    required DateTime endsAt,
+    required int feeTwd,
+    required Map<String, int> quotas,
+  }) async {
+    await supabase.rpc(
+      'admin_add_vendor_special_authorization',
+      params: {
+        'p_email': email.trim(),
+        'p_ends_at': endsAt.toUtc().toIso8601String(),
+        'p_fee_twd': feeTwd,
+        'p_quotas': quotas,
+      },
+    );
+  }
+
   static final _initializers = Expando<RepositoryVendorInitialization>();
   final ServiceContentPerformance _performance;
   final bool preferSummaryRpc;

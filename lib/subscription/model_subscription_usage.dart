@@ -97,6 +97,7 @@ class SubscriptionEntitlement {
     required this.endsAt,
     required this.quotas,
     this.billingCycle = BillingCycle.month,
+    this.isSpecialAuthorization = false,
   });
 
   final String versionName;
@@ -107,6 +108,7 @@ class SubscriptionEntitlement {
   final BillingCycle billingCycle;
   final DateTime endsAt;
   final Map<String, int> quotas;
+  final bool isSpecialAuthorization;
 
   factory SubscriptionEntitlement.fromJson(Map<String, dynamic> json) {
     final rawQuotas = Map<String, dynamic>.from(
@@ -121,6 +123,7 @@ class SubscriptionEntitlement {
       multiplier: multiplier,
       pricePaidTwd: parseIntValue(json['quarterly_price_paid_twd']),
       billingCycle: BillingCycle.from(rawQuotas['billing_cycle']),
+      isSpecialAuthorization: rawQuotas['special_authorization'] == true,
       endsAt: tryParseDateTimeValue(json['ends_at']) ?? DateTime.now(),
       quotas: {
         for (final resource in subscriptionQuotaResources)

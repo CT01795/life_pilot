@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
@@ -8,14 +6,14 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/auth/service_account_security.dart';
+import 'package:life_pilot/auth/controller_account_mail_request.dart';
 import 'package:life_pilot/utils/widgets/widgets_language_toggle_dropdown.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 
-enum _PasswordHelpChoice { emailVerification, administrator }
-
 class PageLogin extends StatefulWidget {
-  const PageLogin({super.key});
+  const PageLogin({super.key, this.security});
+  final ServiceAccountSecurity? security;
 
   @override
   State<PageLogin> createState() => _PageLoginState();
@@ -31,8 +29,9 @@ class _PageLoginState extends State<PageLogin> {
   late final FocusNode _passwordFocusNode;
   bool _isSubmitting = false;
   bool _isSendingResetEmail = false;
-  int _resetEmailCooldownSeconds = 0;
-  Timer? _resetEmailCooldownTimer;
+  late final _requests = ControllerAccountMailRequest(
+    service: widget.security ?? ServiceAccountSecurity(),
+  );
   bool _obscurePassword = true;
   late final ModelAuthView _authView; // ✅ 改成 Model 層，而非 Controller 直接呼叫
 
@@ -59,7 +58,7 @@ class _PageLoginState extends State<PageLogin> {
 
   @override
   void dispose() {
-    _resetEmailCooldownTimer?.cancel();
+    _requests.dispose();
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
     _emailController.dispose();
@@ -107,37 +106,6 @@ class _PageLoginState extends State<PageLogin> {
     }
   }
 
-  // 🔹 重設密碼流程
-  Future<void> _handleResetPassword() async {
-    if (!mounted ||
-        _isSubmitting ||
-        _isSendingResetEmail ||
-        _resetEmailCooldownSeconds > 0) {
-      return;
-    }
-    FocusScope.of(context).unfocus();
-    final email = _emailController.text.trim();
-    setState(() => _isSendingResetEmail = true);
-
-    String? error;
-    try {
-      error = await _authView.resetPassword(email: email);
-    } finally {
-      if (mounted) setState(() => _isSendingResetEmail = false);
-    }
-
-    if (!mounted) return;
-    final loc = AppLocalizations.of(context)!; // ✅ 每次 build 都取最新
-    if (error?.isNotEmpty ?? false) {
-      AppNavigator.showErrorBar(
-        _authView.showLoginError(message: error!, loc: loc),
-      );
-    } else {
-      _startResetEmailCooldown();
-      AppNavigator.showSnackBar(loc.resetPasswordEmail);
-    }
-  }
-
   Future<void> _showPasswordRecoveryOptions() async {
     if (_isSubmitting || _isSendingResetEmail) return;
     final loc = AppLocalizations.of(context)!;
@@ -153,95 +121,26 @@ class _PageLoginState extends State<PageLogin> {
       return;
     }
 
-    final choice = await showDialog<_PasswordHelpChoice>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        scrollable: true,
-        title: Text(loc.passwordRecoveryChoiceTitle),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 460),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(loc.passwordRecoveryChoiceDescription),
-              Gaps.h16,
-              ListTile(
-                leading: const Icon(Icons.mark_email_read_outlined),
-                title: Text(loc.resetByEmailVerification),
-                subtitle: Text(loc.resetByEmailVerificationDescription),
-                onTap: () => Navigator.pop(
-                  dialogContext,
-                  _PasswordHelpChoice.emailVerification,
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.support_agent_outlined),
-                title: Text(loc.askAdministrator),
-                subtitle: Text(loc.askAdministratorDescription),
-                onTap: () => Navigator.pop(
-                  dialogContext,
-                  _PasswordHelpChoice.administrator,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(loc.cancel),
-          ),
-        ],
-      ),
-    );
-    if (!mounted) return;
-    switch (choice) {
-      case _PasswordHelpChoice.emailVerification:
-        await _handleResetPassword();
-        return;
-      case _PasswordHelpChoice.administrator:
-        await _contactAdministrator(email);
-        return;
-      case null:
-        return;
-    }
-  }
-
-  Future<void> _contactAdministrator(String email) async {
-    final loc = AppLocalizations.of(context)!;
-    final opened = await ServiceAccountSecurity().contactAdministrator(
-      subject: loc.adminPasswordHelpSubject,
-      body: loc.adminPasswordHelpBody(email),
-    );
-    if (!mounted) return;
-    if (opened) {
-      AppNavigator.showSnackBar(loc.adminPasswordHelpOpened);
-    } else {
-      AppNavigator.showErrorBar(
-        loc.adminPasswordHelpEmailUnavailable(
-          ServiceAccountSecurity.administratorEmail,
-        ),
+    setState(() => _isSendingResetEmail = true);
+    try {
+      final result = await _requests.send(
+        email: email,
+        subject: loc.adminPasswordHelpSubject,
+        body: loc.adminPasswordHelpBody,
       );
+      if (!mounted || result == null) return;
+      if (result == AccountMailRequestResult.opened) {
+        AppNavigator.showSnackBar(loc.adminPasswordHelpOpened);
+      } else {
+        AppNavigator.showErrorBar(
+          loc.adminPasswordHelpEmailUnavailable(
+            ServiceAccountSecurity.administratorEmail,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSendingResetEmail = false);
     }
-  }
-
-  void _startResetEmailCooldown() {
-    _resetEmailCooldownTimer?.cancel();
-    setState(() => _resetEmailCooldownSeconds = 60);
-    _resetEmailCooldownTimer = Timer.periodic(const Duration(seconds: 1), (
-      timer,
-    ) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      if (_resetEmailCooldownSeconds <= 1) {
-        timer.cancel();
-        setState(() => _resetEmailCooldownSeconds = 0);
-        return;
-      }
-      setState(() => _resetEmailCooldownSeconds--);
-    });
   }
 
   @override
@@ -348,10 +247,7 @@ class _PageLoginState extends State<PageLogin> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: TextButton(
-                        onPressed:
-                            _isSubmitting ||
-                                _isSendingResetEmail ||
-                                _resetEmailCooldownSeconds > 0
+                        onPressed: _isSubmitting || _isSendingResetEmail
                             ? null
                             : _showPasswordRecoveryOptions,
                         child: _isSendingResetEmail
@@ -361,13 +257,7 @@ class _PageLoginState extends State<PageLogin> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : AdaptiveButtonLabel(
-                                _resetEmailCooldownSeconds > 0
-                                    ? loc.resetPasswordCooldown(
-                                        _resetEmailCooldownSeconds,
-                                      )
-                                    : loc.resetPassword,
-                              ),
+                            : AdaptiveButtonLabel(loc.resetPassword),
                       ),
                     ),
                     Gaps.h16,

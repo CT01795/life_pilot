@@ -89,7 +89,10 @@ class ControllerAccountDeletionQueue extends SafeChangeNotifier {
   }
 
   /// Never retry a destructive operation automatically. Null = obsolete scope.
-  Future<bool?> process(AccountDeletionRequest request) async {
+  Future<bool?> process(
+    AccountDeletionRequest request, {
+    Future<void> Function(String)? insteadOfApprove,
+  }) async {
     if (!_current(_revision) ||
         loading ||
         working ||
@@ -101,9 +104,9 @@ class ControllerAccountDeletionQueue extends SafeChangeNotifier {
     actionError = null;
     notifyListeners();
     try {
-      await (request.isCancellation ? _confirmCancellation : _approve)(
-        request.id,
-      );
+      await (request.isCancellation
+          ? _confirmCancellation
+          : (insteadOfApprove ?? _approve))(request.id);
       if (!_current(revision)) return null;
       rows = List.unmodifiable(rows.where((row) => row.id != request.id));
       if (_legacy && _offset > 0) _offset--;

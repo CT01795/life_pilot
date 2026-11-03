@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/accounting/page_ledger_sharing.dart';
+import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 
 class DashboardAccountOption {
@@ -6,11 +8,13 @@ class DashboardAccountOption {
     required this.id,
     required this.name,
     required this.category,
+    this.sharedKind,
   });
 
   final String id;
   final String name;
   final String category;
+  final LedgerKind? sharedKind;
 }
 
 class _DashboardAccountSelection {
@@ -41,6 +45,7 @@ class DashboardAccountSelector extends StatefulWidget {
     required this.onChanged,
     required this.onOpenAccountPage,
     required this.accountPageLabel,
+    this.sharedKind,
   });
 
   final IconData icon;
@@ -50,6 +55,7 @@ class DashboardAccountSelector extends StatefulWidget {
   final DashboardAccountChanged onChanged;
   final VoidCallback onOpenAccountPage;
   final String accountPageLabel;
+  final LedgerKind? sharedKind;
 
   @override
   State<DashboardAccountSelector> createState() =>
@@ -57,6 +63,7 @@ class DashboardAccountSelector extends StatefulWidget {
 }
 
 class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
+  static const _sharedPageSize = 12;
   bool _isLoading = false;
 
   @override
@@ -88,7 +95,8 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
   Future<void> _selectAccount(AppLocalizations loc) async {
     setState(() => _isLoading = true);
     try {
-      final accounts = await widget.loadAccounts();
+      final shared = _loadSharedAccounts();
+      final accounts = [...await widget.loadAccounts(), ...await shared];
       if (!mounted) return;
 
       if (accounts.isEmpty) {
@@ -96,8 +104,24 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
         return;
       }
 
-      final selection = await _showAccountDialog(loc, accounts);
-      if (selection == null) return;
+      final selection = await _showAccountDialog(
+        loc,
+        accounts,
+        sharedCount: accounts.where((a) => a.sharedKind != null).length,
+      );
+      if (!mounted || selection == null) return;
+
+      final option = selection.account;
+      final kind = option?.sharedKind;
+      if (option != null && kind != null) {
+        await openSharedLedger(
+          context,
+          kind: kind,
+          shareId: option.id,
+          name: option.name,
+        );
+        return;
+      }
 
       try {
         await widget.onChanged(
@@ -114,6 +138,33 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<List<DashboardAccountOption>> _loadSharedAccounts([
+    int offset = 0,
+  ]) async {
+    final kind = widget.sharedKind;
+    if (kind == null) return const [];
+    try {
+      return (await ServiceLedgerSharing().receivedKindPage(
+            kind,
+            offset,
+            limit: _sharedPageSize,
+          ))
+          .map(
+            (row) => DashboardAccountOption(
+              id: row['share_id'] as String,
+              name: row['account_name'] as String? ?? '',
+              category: '',
+              sharedKind: kind,
+            ),
+          )
+          .toList(growable: false);
+    } catch (_) {
+      if (offset != 0) rethrow;
+      // Local/owned account selection remains available if cloud reads fail.
+      return const [];
     }
   }
 
@@ -140,56 +191,97 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
 
   Future<_DashboardAccountSelection?> _showAccountDialog(
     AppLocalizations loc,
-    List<DashboardAccountOption> accounts,
-  ) => showDialog<_DashboardAccountSelection>(
-    context: context,
-    builder: (dialogContext) {
-      final hasClearOption = widget.selectedAccountId != null;
-      final itemCount = accounts.length + (hasClearOption ? 1 : 0);
-      final maxContentHeight = MediaQuery.sizeOf(dialogContext).height * 0.6;
-      final contentHeight = (itemCount * 72.0)
-          .clamp(72.0, maxContentHeight)
-          .toDouble();
+    List<DashboardAccountOption> accounts, {
+    required int sharedCount,
+  }) {
+    var offset = sharedCount;
+    var hasMore = sharedCount == _sharedPageSize;
+    var loadingMore = false;
+    return showDialog<_DashboardAccountSelection>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, update) {
+          final hasClearOption = widget.selectedAccountId != null;
+          final accountCount = accounts.length + (hasClearOption ? 1 : 0);
+          final itemCount = accountCount + (hasMore ? 1 : 0);
+          final maxContentHeight =
+              MediaQuery.sizeOf(dialogContext).height * 0.6;
+          final contentHeight = (itemCount * 72.0)
+              .clamp(0.0, maxContentHeight)
+              .toDouble();
 
-      return AlertDialog(
-        title: Text(loc.selectAccount),
-        contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-        content: SizedBox(
-          width: MediaQuery.sizeOf(
-            dialogContext,
-          ).width.clamp(0, 420).toDouble(),
-          height: contentHeight,
-          child: ListView.separated(
-            itemCount: itemCount,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (_, index) {
-              if (hasClearOption && index == 0) {
-                return ListTile(
-                  leading: const Icon(Icons.clear),
-                  title: Text(loc.clear),
-                  onTap: () => Navigator.pop(
-                    dialogContext,
-                    const _DashboardAccountSelection.clear(),
-                  ),
-                );
-              }
+          return AlertDialog(
+            title: Text(loc.selectAccount),
+            contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            content: SizedBox(
+              width: MediaQuery.sizeOf(
+                dialogContext,
+              ).width.clamp(0, 420).toDouble(),
+              height: contentHeight,
+              child: ListView.separated(
+                itemCount: itemCount,
+                separatorBuilder: (_, _) => const Divider(height: 1),
+                itemBuilder: (_, index) {
+                  if (index == accountCount) {
+                    return TextButton(
+                      onPressed: loadingMore
+                          ? null
+                          : () async {
+                              update(() => loadingMore = true);
+                              try {
+                                final page = await _loadSharedAccounts(offset);
+                                if (!dialogContext.mounted) return;
+                                update(() {
+                                  accounts.addAll(page);
+                                  offset += page.length;
+                                  hasMore = page.length == _sharedPageSize;
+                                });
+                              } catch (_) {
+                                if (mounted && dialogContext.mounted) {
+                                  _showMessage(loc.accountListLoadFailed);
+                                }
+                              } finally {
+                                if (dialogContext.mounted) {
+                                  update(() => loadingMore = false);
+                                }
+                              }
+                            },
+                      child: Text(loc.clickHereToSeeMore),
+                    );
+                  }
+                  if (hasClearOption && index == 0) {
+                    return ListTile(
+                      leading: const Icon(Icons.clear),
+                      title: Text(loc.clear),
+                      onTap: () => Navigator.pop(
+                        dialogContext,
+                        const _DashboardAccountSelection.clear(),
+                      ),
+                    );
+                  }
 
-              final accountIndex = index - (hasClearOption ? 1 : 0);
-              final account = accounts[accountIndex];
-              return ListTile(
-                title: Text(account.name),
-                subtitle: Text(_categoryLabel(loc, account.category)),
-                onTap: () => Navigator.pop(
-                  dialogContext,
-                  _DashboardAccountSelection.account(account),
-                ),
-              );
-            },
-          ),
-        ),
-      );
-    },
-  );
+                  final accountIndex = index - (hasClearOption ? 1 : 0);
+                  final account = accounts[accountIndex];
+                  return ListTile(
+                    title: Text(account.name),
+                    subtitle: Text(
+                      account.sharedKind == null
+                          ? _categoryLabel(loc, account.category)
+                          : loc.ledgerSharedAccount,
+                    ),
+                    onTap: () => Navigator.pop(
+                      dialogContext,
+                      _DashboardAccountSelection.account(account),
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   String _categoryLabel(AppLocalizations loc, String category) =>
       switch (category) {

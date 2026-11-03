@@ -26,6 +26,13 @@ class CalendarEvent {
 
   final bool isCompleted;
 
+  DateTime? get explicitEndAt {
+    final date = endDate ?? startDate;
+    final time = endTime;
+    if (date == null || time == null) return null;
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
   CalendarEvent({
     required this.id,
     required this.name,

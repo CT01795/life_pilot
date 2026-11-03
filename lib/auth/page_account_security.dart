@@ -88,28 +88,6 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
     };
   }
 
-  Future<void> _sendResetEmail() async {
-    final loc = AppLocalizations.of(context)!;
-    if (_busy) return;
-    final account = ServiceAuth.currentAccount();
-    if (account == null || account.isEmpty) {
-      AppNavigator.showErrorBar(loc.noEmailError);
-      return;
-    }
-    setState(() => _busy = true);
-    try {
-      final error = await ServiceAuth.resetPassword(email: account);
-      if (!mounted || ServiceAuth.currentAccount() != account) return;
-      if (error == null) {
-        AppNavigator.showSnackBar(loc.resetPasswordEmail);
-      } else {
-        AppNavigator.showErrorBar(loc.resetPasswordError);
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
   Future<void> _contactAdministrator() async {
     final loc = AppLocalizations.of(context)!;
     final account = ServiceAuth.currentAccount();
@@ -118,7 +96,7 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
     try {
       final opened = await _service.contactAdministrator(
         subject: loc.adminPasswordHelpSubject,
-        body: loc.adminPasswordHelpBody(account),
+        body: loc.adminPasswordHelpBody,
       );
       if (!mounted || ServiceAuth.currentAccount() != account) return;
       if (opened) {
@@ -154,7 +132,9 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
     } on ServiceApiException catch (error) {
       if (!mounted) return;
       AppNavigator.showErrorBar(
-        error.statusCode == 404
+        error.message.contains('account_disabled')
+            ? loc.accountDisabled
+            : error.statusCode == 404
             ? loc.adminPasswordResetUserNotFound
             : loc.adminPasswordResetFailed,
       );
@@ -187,7 +167,9 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
     } on ServiceApiException catch (error) {
       if (!mounted) return;
       AppNavigator.showErrorBar(
-        error.statusCode == 409
+        error.message.contains('account_disabled')
+            ? loc.accountDisabled
+            : error.statusCode == 409
             ? loc.adminAccountCreateAlreadyExists
             : loc.adminAccountCreateFailed,
       );
@@ -371,12 +353,6 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
                     Text(loc.passwordHelpDescription),
                     Gaps.h16,
                     OutlinedButton.icon(
-                      onPressed: _busy ? null : _sendResetEmail,
-                      icon: const Icon(Icons.mark_email_read_outlined),
-                      label: AdaptiveButtonLabel(loc.resetByEmailVerification),
-                    ),
-                    Gaps.h8,
-                    OutlinedButton.icon(
                       onPressed: _busy ? null : _contactAdministrator,
                       icon: const Icon(Icons.support_agent_outlined),
                       label: AdaptiveButtonLabel(loc.askAdministrator),
@@ -518,6 +494,7 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
                       const Divider(),
                       Gaps.h16,
                       const AdminAccountDeletionQueue(),
+                      const AdminAccountDeletionQueue(disabled: true),
                     ],
                   ],
                 ),

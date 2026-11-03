@@ -110,6 +110,13 @@ class ServiceSubscription {
         usage: const {},
         status: 'configuration_missing',
         storagePlan: storagePlan,
+        entitlements: entitlementRows
+            .map(
+              (row) => SubscriptionEntitlement.fromJson(
+                Map<String, dynamic>.from(row as Map),
+              ),
+            )
+            .toList(growable: false),
         promotionPeriods: promotionPeriods,
       );
     }
@@ -118,14 +125,20 @@ class ServiceSubscription {
         : (bootstrap['cumulative_quotas'] as Map).map(
             (key, value) => MapEntry(key.toString(), parseIntValue(value)),
           );
+    final cloudRecommendationQuotas = bootstrap?['cloud_recommendation_quotas'];
     final recommendationUsage = bootstrap?['vendor'] == true
         ? <SubscriptionUsage>[]
         : await _fetchRecommendationUsage(
             entitlementRows,
             status,
-            storagePlan: storagePlan,
+            storagePlan: 'cloud',
             counts: (bootstrap?['recommendation_counts'] as List?)?.cast<int>(),
-            resolvedQuotas: bundledQuotas,
+            resolvedQuotas: storagePlan == 'cloud'
+                ? bundledQuotas
+                : (cloudRecommendationQuotas as Map?)?.map(
+                    (key, value) =>
+                        MapEntry(key.toString(), parseIntValue(value)),
+                  ),
           );
     var items = <SubscriptionUsage>[
       ...(rows as List<dynamic>).map(
@@ -139,16 +152,10 @@ class ServiceSubscription {
     // may hold valid cloud and local subscriptions at the same time.
     final cumulativeQuotas =
         bundledQuotas ?? await _fetchCumulativeQuotas(storagePlan: storagePlan);
-    if (cumulativeQuotas.isNotEmpty) {
+    if (storagePlan == 'cloud' && cumulativeQuotas.isNotEmpty) {
       items = items
           .map(
-            (item) =>
-                cumulativeQuotas.containsKey(item.resource) &&
-                    !(storagePlan == 'local' &&
-                        (item.resource == 'recommended_events' ||
-                            item.resource == 'recommended_attractions') &&
-                        cumulativeQuotas[item.resource] == 0 &&
-                        item.quota > 0)
+            (item) => cumulativeQuotas.containsKey(item.resource)
                 ? SubscriptionUsage(
                     resource: item.resource,
                     used: item.used,
@@ -268,6 +275,22 @@ class ServiceSubscription {
     Map<String, int>? resolvedQuotas,
   }) async {
     try {
+      if (counts != null &&
+          resolvedQuotas?.containsKey('recommended_events') == true &&
+          resolvedQuotas?.containsKey('recommended_attractions') == true) {
+        return [
+          SubscriptionUsage(
+            resource: 'recommended_events',
+            used: counts[0],
+            quota: resolvedQuotas!['recommended_events']!,
+          ),
+          SubscriptionUsage(
+            resource: 'recommended_attractions',
+            used: counts[1],
+            quota: resolvedQuotas['recommended_attractions']!,
+          ),
+        ];
+      }
       final account = supabase.auth.currentUser?.email?.toLowerCase();
       if (account == null || account.isEmpty) return const [];
       final now = DateTime.now();
@@ -550,6 +573,27 @@ class ServiceSubscription {
         'p_quota_multiplier': multiplier,
         'p_expires_at': expiresAt?.toUtc().toIso8601String(),
         'p_admin_note': note.trim(),
+      },
+    );
+  }
+
+  Future<void> addPersonalSpecialAuthorization({
+    required String email,
+    required String storagePlan,
+    required DateTime endsAt,
+    required int feeTwd,
+    required Map<String, int> quotas,
+  }) async {
+    await supabase.rpc(
+      'admin_add_personal_special_authorization',
+      params: {
+        'p_email': email.trim(),
+        'p_storage_plan': storagePlan,
+        'p_ends_at': endsAt.toUtc().toIso8601String(),
+        'p_fee_twd': feeTwd,
+        'p_quotas': storagePlan == 'local'
+            ? {for (final key in subscriptionQuotaResources) key: 0}
+            : quotas,
       },
     );
   }

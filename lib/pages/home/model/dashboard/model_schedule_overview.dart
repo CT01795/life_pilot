@@ -193,8 +193,10 @@ class ModelScheduleOverview {
   }
 
   static bool _hasEnded(_ScheduledEvent event, DateTime now) {
-    final interval = event.interval;
-    return interval != null && !interval.end.isAfter(now);
+    final end =
+        event.interval?.end ??
+        (event.event.startTime == null ? event.event.explicitEndAt : null);
+    return end != null && !end.isAfter(now);
   }
 
   static ({DateTime start, DateTime end})? _interval(
@@ -205,18 +207,11 @@ class ModelScheduleOverview {
     final startTime = event.startTime;
     if (startDate == null || startTime == null) return null;
     final endDate = event.endDate ?? startDate;
-    final endTime = event.endTime;
-    final end = endTime != null
-        ? DateTime(
-            endDate.year,
-            endDate.month,
-            endDate.day,
-            endTime.hour,
-            endTime.minute,
-          )
-        : _dateOnly(endDate).isAfter(_dateOnly(startDate))
-        ? _dateOnly(endDate).add(const Duration(days: 1))
-        : start.add(const Duration(hours: 1));
+    final end =
+        event.explicitEndAt ??
+        (_dateOnly(endDate).isAfter(_dateOnly(startDate))
+            ? _dateOnly(endDate).add(const Duration(days: 1))
+            : start.add(const Duration(hours: 1)));
     return end.isAfter(start) ? (start: start, end: end) : null;
   }
 }

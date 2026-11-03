@@ -9,6 +9,78 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get adminReactivateAccount => '계정 복원';
+
+  @override
+  String get adminAccountReactivated => '계정이 복원되었습니다. 다시 로그인할 수 있습니다.';
+
+  @override
+  String get adminAccountReactivationPurgeStarted => '영구 삭제가 시작되어 계정을 복원할 수 없습니다.';
+
+  @override
+  String get previewAccountImage => '계정 이미지 미리보기';
+
+  @override
+  String get ledgerSharedAccount => '공유 계정';
+
+  @override
+  String get accountPurgeMoreFiles => '파일 일부를 삭제했습니다. 계정은 비활성 상태입니다. 삭제를 다시 실행하여 계속하세요.';
+
+  @override
+  String get accountPurgeInProgress => '삭제를 처리 중입니다. 잠시 후 다시 시도하세요.';
+
+  @override
+  String get adminDisableAccount => '계정 비활성화';
+
+  @override
+  String get adminDisabledAccounts => '비활성화된 계정';
+
+  @override
+  String get accountDisabled => '이 계정은 사용할 수 없습니다.';
+
+  @override
+  String get ledgerHomeLinks => '홈 공유 계정';
+
+  @override
+  String get ledgerLinkHome => '홈에 연결';
+
+  @override
+  String get ledgerUnlinkHome => '홈 연결 해제';
+
+  @override
+  String get ledgerSubmitProposal => '변경 제안 제출';
+
+  @override
+  String get ledgerProposalSent => '제안을 보냈습니다. 공유자의 검토를 기다리는 중입니다.';
+
+  @override
+  String get ledgerStopProposals => '변경 제안 받기 중지';
+
+  @override
+  String get ledgerApproveProposal => '제안 승인';
+
+  @override
+  String get ledgerRejectProposal => '제안 거절';
+
+  @override
+  String get ledgerShareAccount => '계정 공유';
+
+  @override
+  String get ledgerSharedWithMe => '나에게 공유된 계정';
+
+  @override
+  String get ledgerAllowProposals => '변경 제안 허용';
+
+  @override
+  String get ledgerPendingProposals => '검토 대기 제안';
+
+  @override
+  String get adminSpecialAuthorization => '특별 권한 추가';
+
+  @override
+  String get adminSpecialAuthorizationFee => '요금(대만 달러, 0은 무료)';
+
+  @override
   String get viewFeedbackScreenshots => '스크린샷 보기';
 
   @override
@@ -830,9 +902,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get accountSecurity => '계정 보안';
 
   @override
-  String adminPasswordHelpBody(String account) {
-    return 'Life Pilot에 로그인할 수 없습니다. 비밀번호 변경을 도와주세요.\n\n계정: $account\n\n처리 후 이 이메일 주소로 결과를 회신해 주세요.';
-  }
+  String get adminPasswordHelpBody => 'Life Pilot에 로그인할 수 없습니다. 비밀번호 변경을 도와주세요.\n\n처리 후 이 이메일 주소로 결과를 회신해 주세요.';
 
   @override
   String adminPasswordHelpEmailUnavailable(String email) {
@@ -884,10 +954,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get personalAccountTitle => '일반 사용자 계정';
 
   @override
-  String get registrationAdminApprovalTitle => '인증 메일 한도 도달';
+  String get registrationAdminApprovalTitle => '계정 생성 신청';
 
   @override
-  String get registrationAdminApprovalDescription => '현재 인증 메일을 보낼 수 없습니다. 관리자에게 신청을 보내고 승인을 기다리세요. 계정이 생성되면 관리자가 임시 비밀번호를 회신합니다.';
+  String get registrationAdminApprovalDescription => '가입 시 비밀번호를 입력할 필요가 없습니다. 이메일 주소를 입력하고 신청을 제출하세요. 승인 후 계정이 생성되면 관리자가 임시 비밀번호를 회신합니다.';
 
   @override
   String get registrationAdminApprovalAction => '관리자에게 이메일';
@@ -896,12 +966,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get registrationAdminApprovalSubject => 'Life Pilot 계정 생성 신청';
 
   @override
-  String registrationAdminApprovalBody(String email, String accountType) {
-    return '신청 이메일: $email\n계정 유형: $accountType\n\n인증 메일 한도에 도달했습니다. 승인 후 계정을 생성하고 임시 비밀번호를 회신해 주세요.';
+  String registrationAdminApprovalBody(String accountType) {
+    return '계정 유형: $accountType\n\n현재 개인정보 처리방침과 이용약관을 읽고 동의했습니다. 신청을 검토하여 계정을 생성하고 이 이메일로 결과를 회신해 주세요.';
   }
 
   @override
-  String get registrationAdminApprovalOpened => '메일 초안을 열었습니다. 전송 후 관리자 승인을 기다리세요.';
+  String get registrationAdminApprovalOpened => '이메일 초안을 열었습니다. 확인 후 직접 보내세요. 계정은 아직 생성되지 않았으며 관리자 승인이 필요합니다.';
 
   @override
   String get adminTemporaryPasswordCopied => '임시 비밀번호를 복사했습니다.';
@@ -1005,10 +1075,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get passwordDoesNotMeetPolicy => '새 비밀번호가 보안 요구사항을 충족하지 않습니다. 영문자, 숫자 또는 기호를 추가한 후 다시 시도해 주세요.';
 
   @override
-  String get passwordHelpDescription => '현재 비밀번호를 잊은 경우 인증 이메일로 재설정하거나 관리자에게 도움을 요청할 수 있습니다.';
+  String get passwordHelpDescription => '비밀번호를 잊은 경우 관리자에게 이메일을 보내세요. 처리 후 관리자가 회신합니다.';
 
   @override
-  String get passwordHelpTitle => '기타 재설정 방법';
+  String get passwordHelpTitle => '관리자 지원';
 
   @override
   String get passwordMismatch => '비밀번호가 일치하지 않습니다.';
