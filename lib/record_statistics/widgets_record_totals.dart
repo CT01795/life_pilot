@@ -90,44 +90,18 @@ class _WidgetsRecordTotalsState extends State<WidgetsRecordTotals> {
     animation: controller,
     builder: (context, _) {
       final loc = AppLocalizations.of(context)!;
-      final points = widget.kind == RecordStatisticsKind.points;
-      final formats = RecordStatisticsFormats.forLocale(loc.localeName);
       final data = controller.data;
-      String value(num? number) => number == null
-          ? '—'
-          : '${formats.value(number)} ${points ? loc.pointsUnit : widget.currency ?? ''}'
-                .trim();
-      Widget row(String label, num? number) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          spacing: 12,
-          runSpacing: 4,
-          children: [
-            Text(label),
-            Text(
-              value(number),
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                color: number != null && number < 0
-                    ? Theme.of(context).colorScheme.error
-                    : null,
-              ),
-            ),
-          ],
-        ),
-      );
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!widget.monthOnly)
-            row(points ? loc.totalPoints : loc.totalIncomeExpense, data?.total),
-          row(
-            points ? loc.monthlyPoints : loc.monthlyIncomeExpense,
-            data?.month,
+          RecordTotalsDisplay(
+            points: widget.kind == RecordStatisticsKind.points,
+            currency: widget.currency,
+            total: data?.total,
+            month: data?.month,
+            today: data?.today,
+            monthOnly: widget.monthOnly,
           ),
-          if (!widget.monthOnly)
-            row(points ? loc.todayPoints : loc.todayIncomeExpense, data?.today),
           if (controller.loading) const LinearProgressIndicator(),
           if (controller.error != null)
             TextButton.icon(
@@ -161,4 +135,61 @@ class _WidgetsRecordTotalsState extends State<WidgetsRecordTotals> {
       );
     },
   );
+}
+
+/// Shared presentation for owned and shared accounts. No queries are issued here.
+class RecordTotalsDisplay extends StatelessWidget {
+  const RecordTotalsDisplay({
+    required this.points,
+    this.currency,
+    this.total,
+    this.month,
+    this.today,
+    this.monthOnly = false,
+    super.key,
+  });
+  final bool points;
+  final String? currency;
+  final num? total, month, today;
+  final bool monthOnly;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final formats = RecordStatisticsFormats.forLocale(loc.localeName);
+    String value(num? number) => number == null
+        ? '—'
+        : '${formats.value(number)} ${points ? loc.pointsUnit : currency ?? ''}'
+              .trim();
+    Widget row(String label, num? number) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        spacing: 12,
+        runSpacing: 4,
+        children: [
+          Text(label),
+          Text(
+            value(number),
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: number != null && number < 0
+                  ? Theme.of(context).colorScheme.error
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (!monthOnly)
+          row(points ? loc.totalPoints : loc.totalIncomeExpense, total),
+        row(points ? loc.monthlyPoints : loc.monthlyIncomeExpense, month),
+        if (!monthOnly)
+          row(points ? loc.todayPoints : loc.todayIncomeExpense, today),
+      ],
+    );
+  }
 }

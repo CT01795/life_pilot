@@ -1,5 +1,28 @@
 import 'package:flutter/services.dart';
 
+class GroupedIntegerInputFormatter extends TextInputFormatter {
+  const GroupedIntegerInputFormatter();
+
+  static final _allowed = RegExp(r'^[0-9,]*$');
+
+  static int? tryParse(String? text) =>
+      int.tryParse((text ?? '').replaceAll(',', '').trim());
+
+  static String format(String digits) => const GroupedIntegerInputFormatter()
+      .formatEditUpdate(TextEditingValue.empty, TextEditingValue(text: digits))
+      .text;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) => _allowed.hasMatch(newValue.text)
+      ? const DecimalInputFormatter(
+          decimalPlaces: 0,
+        ).formatEditUpdate(oldValue, newValue)
+      : oldValue;
+}
+
 /// Keeps an optional leading minus sign, one decimal point, and at most four
 /// fractional digits. Extra characters are removed without clearing the rest.
 class DecimalInputFormatter extends TextInputFormatter {

@@ -15,6 +15,9 @@ class AccountSelectorButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final shared = context.select(
+      (ControllerDashboard c) => c.sharedLedger(points: false),
+    );
     final accountName = context.select<ControllerDashboard, String?>(
       (dashboard) => dashboard.setting.accountingAccountName,
     );
@@ -26,9 +29,15 @@ class AccountSelectorButton extends StatelessWidget {
 
     return DashboardAccountSelector(
       sharedKind: LedgerKind.accounting,
+      onSharedChanged: (option) => dashboard.selectSharedLedger(
+        points: false,
+        selection: (id: option.id, name: option.name),
+      ),
       icon: Icons.account_balance_wallet,
-      selectedAccountId: accountId,
-      selectedAccountName: accountName,
+      selectedAccountId: shared?.id ?? accountId,
+      selectedAccountName: shared == null
+          ? accountName
+          : '${shared.name} · ${loc.ledgerSharedAccount}',
       accountPageLabel: loc.accountRecords,
       loadAccounts: () async {
         final accounts = await context.read<ServiceAccounting>().fetchAccounts(
@@ -49,6 +58,7 @@ class AccountSelectorButton extends StatelessWidget {
       onChanged: (selected) async {
         final user = auth.account;
         if (user == null) return;
+        dashboard.selectSharedLedger(points: false, selection: null);
         await dashboard.changeAccountingAccount(
           account: user,
           accountId: selected?.id,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/accounting/page_ledger_sharing.dart';
+import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:intl/intl.dart';
@@ -32,6 +34,9 @@ class PointSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final shared = context.select(
+      (ControllerDashboard c) => c.sharedLedger(points: true),
+    );
     final colorScheme = Theme.of(context).colorScheme;
     final records = context.select<ControllerDashboard, List<PointRecordItem>>(
       (m) => m.state.todayPoints,
@@ -87,7 +92,9 @@ class PointSummaryCard extends StatelessWidget {
                     Gaps.w8,
                     const Expanded(child: PointSelectorButton()),
                   ],
-                  if (!isExpanded)
+                  if (!isExpanded && shared != null)
+                    Text(loc.ledgerSharedAccount),
+                  if (!isExpanded && shared == null)
                     DashboardHeaderSummary(
                       value: formatter.format(todayTotal),
                       tooltip: loc.todayPoints,
@@ -108,7 +115,14 @@ class PointSummaryCard extends StatelessWidget {
               ),
             ),
             if (isExpanded) ...[
-              if (!hasSelectedAccount)
+              if (shared != null)
+                SharedLedgerHomePreview(
+                  key: ValueKey(shared.id),
+                  kind: LedgerKind.points,
+                  id: shared.id,
+                  name: shared.name,
+                )
+              else if (!hasSelectedAccount)
                 ListTile(
                   leading: const Icon(Icons.info_outline),
                   title: Text(loc.selectAccount),
@@ -174,11 +188,15 @@ class PointSummaryCard extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () async {
-                    if (context
-                            .read<ControllerDashboard>()
-                            .setting
-                            .pointAccountId !=
-                        null) {
+                    if (context.read<ControllerDashboard>().sharedLedger(
+                              points: true,
+                            ) !=
+                            null ||
+                        context
+                                .read<ControllerDashboard>()
+                                .setting
+                                .pointAccountId !=
+                            null) {
                       await openHomePointDetails(context);
                     } else if (context.mounted) {
                       context.read<ControllerPageMain>().changePage(

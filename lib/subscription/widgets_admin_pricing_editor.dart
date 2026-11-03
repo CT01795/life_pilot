@@ -3,7 +3,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
-import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/utils/decimal_input_formatter.dart';
 import 'package:life_pilot/subscription/model_personal_pricing_choice.dart';
 import 'package:life_pilot/subscription/repository_pricing_version_guard.dart';
 import 'package:life_pilot/subscription/model_billing_cycle.dart';
@@ -63,7 +63,8 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     super.dispose();
   }
 
-  int? _number(String key) => tryParseIntValue(_values[key]!.text);
+  int? _number(String key) =>
+      GroupedIntegerInputFormatter.tryParse(_values[key]!.text);
 
   void _changePricingChoice(PersonalPricingChoice choice) {
     setState(() {
@@ -193,6 +194,9 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
           '${(version.quotas['image_bytes'] ?? 0) ~/ (1024 * 1024)}';
       _values['answerDays']!.text =
           '${version.quotas['answer_history_days'] ?? 0}';
+      for (final controller in _values.values) {
+        controller.text = GroupedIntegerInputFormatter.format(controller.text);
+      }
     });
   }
 
@@ -457,6 +461,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
                         !_saving && !(entry.key == 'price' && _choice.isFree),
                     controller: entry.value,
                     keyboardType: TextInputType.number,
+                    inputFormatters: const [GroupedIntegerInputFormatter()],
                     decoration: InputDecoration(labelText: labels[entry.key]),
                   );
                 },

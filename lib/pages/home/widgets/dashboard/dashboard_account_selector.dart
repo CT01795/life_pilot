@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/accounting/page_ledger_sharing.dart';
 import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 
@@ -46,6 +45,7 @@ class DashboardAccountSelector extends StatefulWidget {
     required this.onOpenAccountPage,
     required this.accountPageLabel,
     this.sharedKind,
+    this.onSharedChanged,
   });
 
   final IconData icon;
@@ -56,6 +56,7 @@ class DashboardAccountSelector extends StatefulWidget {
   final VoidCallback onOpenAccountPage;
   final String accountPageLabel;
   final LedgerKind? sharedKind;
+  final ValueChanged<DashboardAccountOption>? onSharedChanged;
 
   @override
   State<DashboardAccountSelector> createState() =>
@@ -114,12 +115,7 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
       final option = selection.account;
       final kind = option?.sharedKind;
       if (option != null && kind != null) {
-        await openSharedLedger(
-          context,
-          kind: kind,
-          shareId: option.id,
-          name: option.name,
-        );
+        widget.onSharedChanged?.call(option);
         return;
       }
 

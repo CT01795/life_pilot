@@ -15,6 +15,9 @@ class PointSelectorButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final shared = context.select(
+      (ControllerDashboard c) => c.sharedLedger(points: true),
+    );
     final accountName = context.select<ControllerDashboard, String?>(
       (dashboard) => dashboard.setting.pointAccountName,
     );
@@ -26,9 +29,15 @@ class PointSelectorButton extends StatelessWidget {
 
     return DashboardAccountSelector(
       sharedKind: LedgerKind.points,
+      onSharedChanged: (option) => dashboard.selectSharedLedger(
+        points: true,
+        selection: (id: option.id, name: option.name),
+      ),
       icon: Icons.stars,
-      selectedAccountId: accountId,
-      selectedAccountName: accountName,
+      selectedAccountId: shared?.id ?? accountId,
+      selectedAccountName: shared == null
+          ? accountName
+          : '${shared.name} · ${loc.ledgerSharedAccount}',
       accountPageLabel: loc.pointsRecord,
       loadAccounts: () async {
         final accounts = await context.read<ServicePointRecord>().fetchAccounts(
@@ -49,6 +58,7 @@ class PointSelectorButton extends StatelessWidget {
       onChanged: (selected) async {
         final user = auth.account;
         if (user == null) return;
+        dashboard.selectSharedLedger(points: true, selection: null);
         await dashboard.changePointAccount(
           account: user,
           accountId: selected?.id,

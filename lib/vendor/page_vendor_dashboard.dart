@@ -18,6 +18,7 @@ import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/vendor/model_vendor_dashboard.dart';
 import 'package:life_pilot/vendor/controller_vendor_dashboard.dart';
+import 'package:life_pilot/subscription/subscription_quota_presentation.dart';
 import 'package:life_pilot/vendor/service_vendor_account.dart';
 import 'package:life_pilot/vendor/vendor_plan_labels.dart';
 import 'package:life_pilot/vendor/widgets_admin_vendor_pricing.dart';
@@ -707,7 +708,10 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
           Row(
             children: [
               Expanded(child: Text(label)),
-              Text(quota == null ? '$used / ∞' : '$used / $quota$suffix'),
+              Text(
+                '${formatSubscriptionNumber(loc, used)} / '
+                '${quota == null ? '∞' : '${formatSubscriptionNumber(loc, quota)}$suffix'}',
+              ),
             ],
           ),
           if (remaining != null) ...[

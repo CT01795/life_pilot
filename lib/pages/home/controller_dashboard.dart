@@ -82,6 +82,24 @@ class ControllerDashboard extends SafeChangeNotifier {
 
   DashboardSetting get setting => _setting;
 
+  final _sharedLedgers = <bool, ({String id, String name})>{};
+
+  ({String id, String name})? sharedLedger({required bool points}) =>
+      _sharedLedgers[points];
+
+  void selectSharedLedger({
+    required bool points,
+    required ({String id, String name})? selection,
+  }) {
+    if (_sharedLedgers[points] == selection) return;
+    if (selection == null) {
+      _sharedLedgers.remove(points);
+    } else {
+      _sharedLedgers[points] = selection;
+    }
+    notifyListeners();
+  }
+
   List<DashboardCity> _eventCities = [];
   bool _eventCitiesLoaded = false;
   RefreshRequestCoordinator _eventCityRequests = RefreshRequestCoordinator();
@@ -95,6 +113,7 @@ class ControllerDashboard extends SafeChangeNotifier {
   List<DashboardCity> get placeCities => _placeCities;
 
   void switchAccount(String? account) {
+    _sharedLedgers.clear();
     _accountGeneration++;
     _eventCompletions.clear();
     _activeAccount = account;

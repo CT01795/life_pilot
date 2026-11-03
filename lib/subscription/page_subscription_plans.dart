@@ -399,11 +399,11 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                         usage.resource,
                       );
                       final used = usage.resource == 'image_bytes'
-                          ? '${(usage.used / 1024 / 1024).toStringAsFixed(1)} MB'
-                          : usage.used.toString();
+                          ? '${formatSubscriptionNumber(loc, usage.used / 1024 / 1024, fractionDigits: 1)} MB'
+                          : formatSubscriptionNumber(loc, usage.used);
                       final quota = usage.resource == 'image_bytes'
-                          ? '${(usage.quota / 1024 / 1024).toStringAsFixed(0)} MB'
-                          : usage.quota.toString();
+                          ? '${formatSubscriptionNumber(loc, usage.quota / 1024 / 1024)} MB'
+                          : formatSubscriptionNumber(loc, usage.quota);
                       return ListTile(
                         dense: true,
                         leading: usage.isUnlimited
@@ -699,7 +699,7 @@ List<String> _versionFeatures(
     if (canUseGame)
       (version.quotas['answer_history_days'] ?? 0) == 0
           ? loc.answerHistoryNotRetained
-          : '${loc.cloudAnswerRetention}：${version.quotas['answer_history_days']}',
+          : '${loc.cloudAnswerRetention}：${formatSubscriptionNumber(loc, version.quotas['answer_history_days'] ?? 0)}',
   ];
 }
 

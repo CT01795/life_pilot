@@ -15,11 +15,13 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
   int _accountGeneration = 0;
   int _requestId = 0;
   final String accountId;
+  final void Function()? onRecordsChanged;
 
   ControllerPointRecordDetail({
     required this.service,
     required this.auth,
     required this.accountId,
+    this.onRecordsChanged,
   }) : _accountKey = _scopeKey(auth) {
     auth?.addListener(_onAuthChanged);
   }
@@ -238,6 +240,9 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     );
 
     if (!_isCurrent(generation)) return;
+    if (inputAccountId == null || inputAccountId == accountId) {
+      onRecordsChanged?.call();
+    }
     await auth?.refreshSubscriptionUsage();
     if (!_isCurrent(generation)) return;
 
@@ -257,6 +262,7 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
       newSecondaryCategory: preview.secondaryCategory,
     );
     if (!_isCurrent(generation)) return;
+    onRecordsChanged?.call();
     await loadToday();
   }
 
@@ -265,6 +271,7 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     if (!_isCurrent(generation)) return;
     await service.deletePointRecordDetail(detailId: detailId);
     if (!_isCurrent(generation)) return;
+    onRecordsChanged?.call();
     await auth?.refreshSubscriptionUsage();
     if (!_isCurrent(generation)) return;
     await loadToday();

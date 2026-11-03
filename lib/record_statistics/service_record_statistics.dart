@@ -1,3 +1,4 @@
+import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:life_pilot/record_statistics/model_local_record_statistics.dart';
@@ -14,6 +15,7 @@ class ServiceRecordStatistics {
   static const _maximumLocalProjections = 8;
   final LocalDataStore localStore;
   final bool preferAggregateRpc;
+  final String? sharedLedgerId;
   List<Map<String, dynamic>>? _localSource;
   Object? _localScope;
   final Map<(String, String?), ModelLocalRecordStatistics> _localProjections =
@@ -21,6 +23,7 @@ class ServiceRecordStatistics {
   ServiceRecordStatistics({
     LocalDataStore? localStore,
     this.preferAggregateRpc = true,
+    this.sharedLedgerId,
   }) : localStore = localStore ?? LocalDataStore.instance;
 
   Future<ModelLocalRecordStatistics?> _readLocal({
@@ -118,6 +121,9 @@ class ServiceRecordStatistics {
     bool Function()? shouldContinue,
   }) async {
     if (shouldContinue?.call() == false) return [];
+    if (sharedLedgerId case final String id) {
+      return ServiceLedgerSharing().statistics(id, now);
+    }
     if (storage == DataStorageLocation.local) {
       final projection = await _readLocal(
         owner: owner,

@@ -99,25 +99,79 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
-  /// No description provided for @adminReactivateAccount.
+  /// Recipient action to decline a shared ledger
+  ///
+  /// In en, this message translates to:
+  /// **'Stop viewing'**
+  String get ledgerDeclineShare;
+
+  /// Confirm that only shared access is removed
+  ///
+  /// In en, this message translates to:
+  /// **'You will lose access to this shared account. The original account data will not be deleted.'**
+  String get ledgerDeclineShareExplanation;
+
+  /// Ask before declining a shared ledger
+  ///
+  /// In en, this message translates to:
+  /// **'Stop viewing this shared account?'**
+  String get ledgerDeclineShareConfirm;
+
+  /// Shared ledger management action or confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing'**
+  String get ledgerStopSharing;
+
+  /// Shared ledger management action or confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing this account?'**
+  String get ledgerStopSharingConfirm;
+
+  /// Shared ledger management action or confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Allow this person to submit change proposals?'**
+  String get ledgerAllowProposalsConfirm;
+
+  /// Shared ledger management action or confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Stop accepting change proposals? Pending proposals will be rejected.'**
+  String get ledgerStopProposalsConfirm;
+
+  /// Shared ledger statistics endpoint is not deployed
+  ///
+  /// In en, this message translates to:
+  /// **'Shared account statistics are not set up yet. Contact an administrator.'**
+  String get sharedLedgerStatisticsUnavailable;
+
+  /// Shared ledger statistics request failed
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load shared account statistics.'**
+  String get sharedLedgerStatisticsLoadFailed;
+
+  /// Label for adminReactivateAccount
   ///
   /// In en, this message translates to:
   /// **'Restore account'**
   String get adminReactivateAccount;
 
-  /// No description provided for @adminAccountReactivated.
+  /// Label for adminAccountReactivated
   ///
   /// In en, this message translates to:
   /// **'Account restored. The user can sign in again.'**
   String get adminAccountReactivated;
 
-  /// No description provided for @adminAccountReactivationPurgeStarted.
+  /// Label for adminAccountReactivationPurgeStarted
   ///
   /// In en, this message translates to:
   /// **'Permanent deletion has started. This account cannot be restored.'**
   String get adminAccountReactivationPurgeStarted;
 
-  /// No description provided for @previewAccountImage.
+  /// Label for previewAccountImage
   ///
   /// In en, this message translates to:
   /// **'Preview account image'**

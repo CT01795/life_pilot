@@ -735,16 +735,20 @@ class ServicePointRecord {
         );
         return;
       }
-      await supabase
-          .from(TableNames.pointRecordDetail)
-          .update({
+      await supabase.rpc(
+        'update_my_ledger_detail',
+        params: {
+          'p_kind': 'points',
+          'p_detail_id': detailId,
+          'p_changes': {
             'value': newValue,
             'description': newDescription,
             'date': newDate.toUtc().toIso8601String(),
             'primary_category': newPrimaryCategory,
             'group': parseStringValue(newSecondaryCategory).trim(),
-          })
-          .eq(Fields.id, detailId);
+          },
+        },
+      );
     } catch (e, st) {
       logger.e('updatePointRecordDetail failed $e\n$st');
       rethrow;

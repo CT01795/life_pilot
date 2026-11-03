@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/accounting/page_ledger_sharing.dart';
+import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:intl/intl.dart';
@@ -32,6 +34,9 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final shared = context.select(
+      (ControllerDashboard c) => c.sharedLedger(points: false),
+    );
     final colorScheme = Theme.of(context).colorScheme;
     final records = context
         .select<ControllerDashboard, List<IncomeExpenseItem>>(
@@ -91,7 +96,9 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                     Gaps.w8,
                     const Expanded(child: AccountSelectorButton()),
                   ],
-                  if (!isExpanded)
+                  if (!isExpanded && shared != null)
+                    Text(loc.ledgerSharedAccount),
+                  if (!isExpanded && shared == null)
                     DashboardHeaderSummary(
                       value: '${formatter.format(todayTotal)} $currency',
                       tooltip: loc.todayIncomeExpense,
@@ -112,7 +119,14 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
               ),
             ),
             if (isExpanded) ...[
-              if (!hasSelectedAccount)
+              if (shared != null)
+                SharedLedgerHomePreview(
+                  key: ValueKey(shared.id),
+                  kind: LedgerKind.accounting,
+                  id: shared.id,
+                  name: shared.name,
+                )
+              else if (!hasSelectedAccount)
                 ListTile(
                   leading: const Icon(Icons.info_outline),
                   title: Text(loc.selectAccount),
@@ -178,11 +192,15 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () async {
-                    if (context
-                            .read<ControllerDashboard>()
-                            .setting
-                            .accountingAccountId !=
-                        null) {
+                    if (context.read<ControllerDashboard>().sharedLedger(
+                              points: false,
+                            ) !=
+                            null ||
+                        context
+                                .read<ControllerDashboard>()
+                                .setting
+                                .accountingAccountId !=
+                            null) {
                       await openHomeAccountingDetails(context);
                     } else if (context.mounted) {
                       context.read<ControllerPageMain>().changePage(

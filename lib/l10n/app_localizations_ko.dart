@@ -9,6 +9,33 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get ledgerDeclineShare => '보기 취소';
+
+  @override
+  String get ledgerDeclineShareExplanation => '이 공유 계정을 더 이상 볼 수 없습니다. 원래 계정 데이터는 삭제되지 않습니다.';
+
+  @override
+  String get ledgerDeclineShareConfirm => '이 공유 계정의 보기를 취소하시겠어요?';
+
+  @override
+  String get ledgerStopSharing => '공유 중지';
+
+  @override
+  String get ledgerStopSharingConfirm => '이 계정의 공유를 중지하시겠어요?';
+
+  @override
+  String get ledgerAllowProposalsConfirm => '이 사용자에게 변경 제안 제출을 허용하시겠어요?';
+
+  @override
+  String get ledgerStopProposalsConfirm => '변경 제안 접수를 중지하시겠어요? 검토 대기 중인 제안은 거절됩니다.';
+
+  @override
+  String get sharedLedgerStatisticsUnavailable => '공유 계정 통계가 아직 설정되지 않았습니다. 관리자에게 문의하세요.';
+
+  @override
+  String get sharedLedgerStatisticsLoadFailed => '공유 계정 통계를 불러올 수 없습니다.';
+
+  @override
   String get adminReactivateAccount => '계정 복원';
 
   @override
@@ -111,7 +138,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String billingMonthlyPrice(int price) {
-    return '월 NT\$$price';
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    return '월 NT\$$priceString';
   }
 
   @override
@@ -1321,7 +1351,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String adminSubscriptionActiveCount(int count) {
-    return '유효 한도 $count건';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '유효 한도 $countString건';
   }
 
   @override
@@ -1482,7 +1515,14 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
-    return '업로드 취소: $resource은(는) 현재 클라우드에서 $used개를 사용 중이며, 이번 $incoming개를 추가하면 요금제 한도 $quota개를 초과합니다.';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat incomingNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String incomingString = incomingNumberFormat.format(incoming);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String quotaString = quotaNumberFormat.format(quota);
+
+    return '업로드 취소: $resource은(는) 현재 클라우드에서 $usedString개를 사용 중이며, 이번 $incomingString개를 추가하면 요금제 한도 $quotaString개를 초과합니다.';
   }
 
   @override
@@ -1715,7 +1755,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String subscriptionLocalPublicSubmissionQuota(int events, int attractions) {
-    return '추천 활동 $events개, 추천 장소 $attractions개';
+    final intl.NumberFormat eventsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String eventsString = eventsNumberFormat.format(events);
+    final intl.NumberFormat attractionsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String attractionsString = attractionsNumberFormat.format(attractions);
+
+    return '추천 활동 $eventsString개, 추천 장소 $attractionsString개';
   }
 
   @override
@@ -1726,7 +1771,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String subscriptionLocalUsage(int used) {
-    return '이 기기: $used개／제한 없음';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+
+    return '이 기기: $usedString개／제한 없음';
   }
 
   @override
@@ -1752,7 +1800,14 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String subscriptionOverageItem(String resource, int used, int quota, int excess) {
-    return '$resource: $used/$quota ($excess개 초과)';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String quotaString = quotaNumberFormat.format(quota);
+    final intl.NumberFormat excessNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String excessString = excessNumberFormat.format(excess);
+
+    return '$resource: $usedString/$quotaString ($excessString개 초과)';
   }
 
   @override
@@ -1787,7 +1842,14 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
-    return '클라우드 한도에 도달했습니다. $quota개 중 $used개를 사용 중이며 $remaining개를 더 추가할 수 있습니다. 기존 데이터를 삭제하거나 이 기기로 전환하거나 Plus로 업그레이드하세요.';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String quotaString = quotaNumberFormat.format(quota);
+    final intl.NumberFormat remainingNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String remainingString = remainingNumberFormat.format(remaining);
+
+    return '클라우드 한도에 도달했습니다. $quotaString개 중 $usedString개를 사용 중이며 $remainingString개를 더 추가할 수 있습니다. 기존 데이터를 삭제하거나 이 기기로 전환하거나 Plus로 업그레이드하세요.';
   }
 
   @override
@@ -1795,7 +1857,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String subscriptionUsage(int used, int quota) {
-    return '사용 $used／$quota';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String quotaString = quotaNumberFormat.format(quota);
+
+    return '사용 $usedString／$quotaString';
   }
 
   @override
@@ -1816,17 +1883,26 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String vendorPlanActivityQuota(int count) {
-    return '만료되지 않은 활동 게시물 최대 $count개';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '만료되지 않은 활동 게시물 최대 $countString개';
   }
 
   @override
   String vendorPlanAttractionQuota(int count) {
-    return '만료되지 않은 장소 게시물 최대 $count개';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '만료되지 않은 장소 게시물 최대 $countString개';
   }
 
   @override
   String vendorPlanImageQuota(int count) {
-    return '이미지 용량 $count MB';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '이미지 용량 $countString MB';
   }
 
   @override
@@ -1846,7 +1922,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String vendorQuotaRemaining(int count, String suffix) {
-    return '남은 한도 $count$suffix';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '남은 한도 $countString$suffix';
   }
 
   @override
@@ -2375,7 +2454,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String vendorQuarterlyPrice(int price) {
-    return '분기 NT\$$price';
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    return '분기 NT\$$priceString';
   }
 
   @override
@@ -3064,7 +3146,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String vendorPlanAnalyticsDays(int count) {
-    return '최근 $count일 분석';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '최근 $countString일 분석';
   }
 
   @override

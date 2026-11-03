@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/accounting/page_ledger_sharing.dart';
-import 'package:life_pilot/accounting/service_ledger_sharing.dart';
+import 'package:life_pilot/utils/widgets/widgets_ledger_record_tile.dart';
 import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:life_pilot/record_statistics/model_record_explorer_metrics.dart';
@@ -12,14 +11,12 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/controller_speech.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/decimal_input_formatter.dart';
-import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:life_pilot/utils/record_categories.dart';
-import 'package:life_pilot/utils/record_date_time.dart';
+import 'package:life_pilot/accounting/widgets_accounting_record_dialog.dart';
 import 'package:life_pilot/utils/record_filter.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/utils/widgets/widgets_record_explorer.dart';
@@ -32,12 +29,14 @@ class PageAccountingDetail extends StatelessWidget {
   final ModelAccountingAccount account;
   final ServiceAccounting service;
   final bool returnAfterSubmit;
+  final VoidCallback? onRecordsChanged;
   final String? linkedEventId;
   const PageAccountingDetail({
     super.key,
     required this.service,
     required this.account,
     this.returnAfterSubmit = false,
+    this.onRecordsChanged,
     this.linkedEventId,
   });
 
@@ -50,6 +49,7 @@ class PageAccountingDetail extends StatelessWidget {
             service: service,
             auth: context.read<ControllerAuth>(),
             accountId: account.id,
+            onRecordsChanged: onRecordsChanged,
             loadAllRecords: account.category == AccountCategory.project.name,
           ),
           update: (_, auth, controller) {
@@ -57,6 +57,7 @@ class PageAccountingDetail extends StatelessWidget {
               service: service,
               auth: auth,
               accountId: account.id,
+              onRecordsChanged: onRecordsChanged,
               loadAllRecords: account.category == AccountCategory.project.name,
             );
             controller.updateAuth(auth, notify: false);
@@ -224,12 +225,6 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
           },
         ),
         title: Text(account.accountName),
-        actions: [
-          LedgerSharingButton(
-            kind: LedgerKind.accounting,
-            accountId: account.id,
-          ),
-        ],
       ),
       body: CustomScrollView(
         scrollCacheExtent: const ScrollCacheExtent.pixels(240),
@@ -388,46 +383,16 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
           );
         }
         final record = visibleRecords[index];
-        return ListTile(
+        return WidgetsLedgerRecordTile(
           key: ValueKey(record.id),
-          title: Text(
-            record.description,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '${record.displayTime}  '
-                  '[${RecordCategories.label(AppLocalizations.of(context)!, record.primaryCategory)}]',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Gaps.w8,
-              Flexible(
-                child: Text(
-                  record.value > 0
-                      ? '+${numberFormatter.format(record.value)} ${record.currency}'
-                      : '${numberFormatter.format(record.value)} ${record.currency}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
-                  style: TextStyle(
-                    color: record.value >= 0 ? Colors.green : Colors.red,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          trailing: IconButton(
-            tooltip: AppLocalizations.of(context)!.delete,
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () => _deleteRecord(controller, record.id),
-          ),
-          onTap: () async {
+          description: record.description,
+          displayTime: record.displayTime,
+          primaryCategory: record.primaryCategory,
+          value: record.value,
+          formatter: numberFormatter,
+          currency: record.currency,
+          onDelete: () => _deleteRecord(controller, record.id),
+          onEdit: () async {
             final updated = await _showEditDetailDialog(
               context,
               AccountingPreview(
@@ -691,227 +656,10 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     BuildContext context,
     AccountingPreview record, {
     bool isNew = false,
-  }) async {
-    bool isIncome = record.value > 0;
-    final valueController = TextEditingController(
-      text: isNew ? '' : NumberFormat('#,##0.####').format(record.value.abs()),
-    );
-    final descController = TextEditingController(text: record.description);
-    String currency = currencyList.contains(record.currency)
-        ? record.currency!
-        : (widget.account.currency ?? currencyList.first);
-    DateTime selectedDate = record.date ?? DateTime.now();
-    String primaryCategory = record.primaryCategory;
-    final secondaryController = TextEditingController(
-      text: record.secondaryCategory ?? '',
-    );
-    final loc = AppLocalizations.of(context)!;
-
-    String? validationError;
-    final result = await showDialog<AccountingPreview>(
-      context: context,
-      builder: (context) {
-        // ✅ 使用 StatefulBuilder 來控制 dialog 內的狀態
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text(isNew ? loc.manualEntry : loc.editRecord),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SegmentedButton<bool>(
-                      segments: [
-                        ButtonSegment(
-                          value: false,
-                          icon: const Icon(Icons.remove_circle_outline),
-                          label: Text(loc.eventExpense),
-                        ),
-                        ButtonSegment(
-                          value: true,
-                          icon: const Icon(Icons.add_circle_outline),
-                          label: Text(loc.eventIncome),
-                        ),
-                      ],
-                      selected: {isIncome},
-                      onSelectionChanged: (value) {
-                        if (value.isEmpty) return;
-                        setState(() {
-                          isIncome = value.first;
-                          final categories = isIncome
-                              ? RecordCategories.accountingIncome
-                              : RecordCategories.accountingExpense;
-                          if (!categories.contains(primaryCategory) &&
-                              primaryCategory != RecordCategories.reserved) {
-                            primaryCategory = RecordCategories.uncategorized;
-                          }
-                        });
-                      },
-                    ),
-                    Gaps.h8,
-                    TextField(
-                      controller: descController,
-                      decoration: InputDecoration(labelText: loc.description),
-                    ),
-                    TextField(
-                      controller: valueController,
-                      decoration: InputDecoration(
-                        labelText: loc.recordValue,
-                        errorText: validationError,
-                        errorMaxLines: 3,
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: const [DecimalInputFormatter()],
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.calendar_today),
-                      title: Text(loc.recordDate),
-                      subtitle: Text(
-                        DateFormat.yMd(
-                          Localizations.localeOf(context).toString(),
-                        ).format(selectedDate),
-                      ),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: selectedDate,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime.now().add(
-                            const Duration(days: 3650),
-                          ),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            selectedDate = replaceRecordDate(
-                              selectedDate,
-                              picked,
-                            );
-                          });
-                        }
-                      },
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.access_time),
-                      title: Text(loc.recordTime),
-                      subtitle: Text(
-                        MaterialLocalizations.of(
-                          context,
-                        ).formatTimeOfDay(TimeOfDay.fromDateTime(selectedDate)),
-                      ),
-                      onTap: () async {
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.fromDateTime(selectedDate),
-                        );
-                        if (picked == null) return;
-                        setState(() {
-                          selectedDate = replaceRecordTime(
-                            selectedDate,
-                            picked,
-                          );
-                        });
-                      },
-                    ),
-                    DropdownButtonFormField<String>(
-                      key: ValueKey(isIncome),
-                      isExpanded: true,
-                      initialValue:
-                          <String>{
-                            RecordCategories.reserved,
-                            ...(isIncome
-                                ? RecordCategories.accountingIncome
-                                : RecordCategories.accountingExpense),
-                          }.contains(primaryCategory)
-                          ? primaryCategory
-                          : RecordCategories.uncategorized,
-                      decoration: InputDecoration(
-                        labelText: loc.recordPrimaryCategory,
-                      ),
-                      items:
-                          <String>[
-                                RecordCategories.reserved,
-                                ...(isIncome
-                                    ? RecordCategories.accountingIncome
-                                    : RecordCategories.accountingExpense),
-                              ]
-                              .map(
-                                (category) => DropdownMenuItem(
-                                  value: category,
-                                  child: Text(
-                                    RecordCategories.label(loc, category),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                      onChanged: (value) {
-                        if (value != null) primaryCategory = value;
-                      },
-                    ),
-                    TextField(
-                      controller: secondaryController,
-                      decoration: InputDecoration(
-                        labelText: loc.recordSecondaryCategory,
-                      ),
-                    ),
-                    DropdownButton<String>(
-                      value: currency,
-                      isExpanded: true,
-                      items: currencyList
-                          .map(
-                            (c) => DropdownMenuItem(value: c, child: Text(c)),
-                          )
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() {
-                            currency = val; // ✅ 正確更新幣別
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, null),
-                  child: Text(loc.cancel),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    final v = tryParseNumValue(
-                      valueController.text.replaceAll(',', ''),
-                    );
-                    if (v == null ||
-                        !v.isFinite ||
-                        v <= 0 ||
-                        descController.text.trim().isEmpty) {
-                      setState(() => validationError = loc.recordInputInvalid);
-                      return;
-                    }
-                    Navigator.pop(
-                      context,
-                      record.copyWith(
-                        value: isIncome ? v : -v,
-                        description: descController.text.trim(),
-                        currency: currency,
-                        date: selectedDate,
-                        primaryCategory: primaryCategory,
-                        secondaryCategory: secondaryController.text.trim(),
-                      ),
-                    );
-                  },
-                  child: Text(loc.save),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    return result;
-  }
+  }) => showAccountingRecordDialog(
+    context,
+    record,
+    isNew: isNew,
+    defaultCurrency: widget.account.currency,
+  );
 }

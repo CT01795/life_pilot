@@ -19,6 +19,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
   int _listRequest = 0;
   String? _loadingCategory;
   Future<void>? _loadFuture;
+  final _accountRefreshes = <String, Object>{};
 
   String? _currentCategory;
   String get category => _currentCategory == null
@@ -67,6 +68,44 @@ class ControllerPointRecordList extends SafeChangeNotifier {
       !notifierDisposed &&
       generation == _accountGeneration &&
       _dataScopeKey == _scopeKey(auth);
+
+  /// After a detail write, reload only the account already in this list.
+  Future<void> refreshAccount(String accountId) async {
+    final generation = _accountGeneration;
+    final selectedCategory = category;
+    final user = auth?.currentAccount;
+    if (!_isCurrent(generation) || user == null || user.isEmpty) return;
+    final ticket = Object();
+    _accountRefreshes[accountId] = ticket;
+    bool current() =>
+        _isCurrent(generation) &&
+        category == selectedCategory &&
+        identical(_accountRefreshes[accountId], ticket);
+    try {
+      await _loadFuture;
+      if (!current() || !accounts.any((row) => row.id == accountId)) return;
+      final request = _listRequest;
+      final updated = await service
+          .fetchAccountById(user: user, accountId: accountId)
+          .timeout(requestTimeout);
+      if (!current() || request != _listRequest) return;
+      if (updated == null) {
+        await loadAccounts();
+        return;
+      }
+      accounts = [
+        for (final row in accounts)
+          if (row.id == accountId) updated else row,
+      ];
+      notifyListeners();
+    } catch (_) {
+      if (current()) await loadAccounts();
+    } finally {
+      if (identical(_accountRefreshes[accountId], ticket)) {
+        _accountRefreshes.remove(accountId);
+      }
+    }
+  }
 
   Future<void> loadAccounts({String? inputCategory}) {
     if (notifierDisposed) return Future.value();

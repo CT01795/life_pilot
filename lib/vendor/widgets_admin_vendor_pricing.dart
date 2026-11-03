@@ -4,7 +4,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/vendor/service_vendor_account.dart';
 import 'package:life_pilot/vendor/vendor_plan_labels.dart';
-import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/utils/decimal_input_formatter.dart';
 import 'package:life_pilot/subscription/repository_pricing_version_guard.dart';
 import 'package:life_pilot/subscription/model_billing_cycle.dart';
 import 'package:life_pilot/subscription/billing_cycle_labels.dart';
@@ -73,7 +73,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
   }
 
   int? _int(TextEditingController controller) =>
-      tryParseIntValue(controller.text);
+      GroupedIntegerInputFormatter.tryParse(controller.text);
 
   Future<void> _savePricing() async {
     final loc = AppLocalizations.of(context)!;
@@ -181,6 +181,15 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
       _attractionQuota.text = '${plan.attractionQuota}';
       _imageQuota.text = '${plan.imageMegabytes}';
       _analyticsDays.text = '${plan.analyticsDays}';
+      for (final controller in [
+        _price,
+        _eventQuota,
+        _attractionQuota,
+        _imageQuota,
+        _analyticsDays,
+      ]) {
+        controller.text = GroupedIntegerInputFormatter.format(controller.text);
+      }
     });
   }
 
@@ -641,6 +650,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
               !(fields[index].$1 == _price && _planCode == 'free'),
           controller: fields[index].$1,
           keyboardType: TextInputType.number,
+          inputFormatters: const [GroupedIntegerInputFormatter()],
           decoration: InputDecoration(labelText: fields[index].$2),
         ),
       ),

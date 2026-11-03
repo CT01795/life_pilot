@@ -9,6 +9,33 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get ledgerDeclineShare => '取消查看';
+
+  @override
+  String get ledgerDeclineShareExplanation => '取消後將無法再查看此共享帳戶，但不會刪除原帳戶資料。';
+
+  @override
+  String get ledgerDeclineShareConfirm => '確定要取消查看此共享帳戶嗎？';
+
+  @override
+  String get ledgerStopSharing => '停止分享';
+
+  @override
+  String get ledgerStopSharingConfirm => '確定要停止分享此帳戶嗎？';
+
+  @override
+  String get ledgerAllowProposalsConfirm => '確定要允許對方提交變更提案嗎？';
+
+  @override
+  String get ledgerStopProposalsConfirm => '確定要停止接受變更提案嗎？尚未審核的提案將被拒絕。';
+
+  @override
+  String get sharedLedgerStatisticsUnavailable => '共享帳戶統計尚未啟用，請聯絡管理者。';
+
+  @override
+  String get sharedLedgerStatisticsLoadFailed => '無法載入共享帳戶統計。';
+
+  @override
   String get adminReactivateAccount => '恢復帳號';
 
   @override
@@ -111,7 +138,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String billingMonthlyPrice(int price) {
-    return '每月 NT\$$price';
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    return '每月 NT\$$priceString';
   }
 
   @override
@@ -1321,7 +1351,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String adminSubscriptionActiveCount(int count) {
-    return '有效額度 $count 筆';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '有效額度 $countString 筆';
   }
 
   @override
@@ -1482,7 +1515,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
-    return '已取消上傳：$resource 雲端目前已有 $used 筆，本次要上傳 $incoming 筆，但方案額度為 $quota 筆。';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat incomingNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String incomingString = incomingNumberFormat.format(incoming);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String quotaString = quotaNumberFormat.format(quota);
+
+    return '已取消上傳：$resource 雲端目前已有 $usedString 筆，本次要上傳 $incomingString 筆，但方案額度為 $quotaString 筆。';
   }
 
   @override
@@ -1715,7 +1755,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String subscriptionLocalPublicSubmissionQuota(int events, int attractions) {
-    return '推薦活動 $events 筆、推薦景點 $attractions 筆';
+    final intl.NumberFormat eventsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String eventsString = eventsNumberFormat.format(events);
+    final intl.NumberFormat attractionsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String attractionsString = attractionsNumberFormat.format(attractions);
+
+    return '推薦活動 $eventsString 筆、推薦景點 $attractionsString 筆';
   }
 
   @override
@@ -1726,7 +1771,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String subscriptionLocalUsage(int used) {
-    return '此裝置已使用 $used 筆／不限制';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+
+    return '此裝置已使用 $usedString 筆／不限制';
   }
 
   @override
@@ -1752,7 +1800,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String subscriptionOverageItem(String resource, int used, int quota, int excess) {
-    return '$resource：已用 $used／額度 $quota，超出 $excess';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String quotaString = quotaNumberFormat.format(quota);
+    final intl.NumberFormat excessNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String excessString = excessNumberFormat.format(excess);
+
+    return '$resource：已用 $usedString／額度 $quotaString，超出 $excessString';
   }
 
   @override
@@ -1787,7 +1842,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
-    return '雲端額度已滿：目前已使用 $used／$quota 筆，還可新增 $remaining 筆。請先刪除舊資料、改存此裝置，或升級 Plus。';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String quotaString = quotaNumberFormat.format(quota);
+    final intl.NumberFormat remainingNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String remainingString = remainingNumberFormat.format(remaining);
+
+    return '雲端額度已滿：目前已使用 $usedString／$quotaString 筆，還可新增 $remainingString 筆。請先刪除舊資料、改存此裝置，或升級 Plus。';
   }
 
   @override
@@ -1795,7 +1857,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String subscriptionUsage(int used, int quota) {
-    return '已使用 $used／$quota';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String quotaString = quotaNumberFormat.format(quota);
+
+    return '已使用 $usedString／$quotaString';
   }
 
   @override
@@ -1816,17 +1883,26 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String vendorPlanActivityQuota(int count) {
-    return '尚未到期的活動投稿最多 $count 筆';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '尚未到期的活動投稿最多 $countString 筆';
   }
 
   @override
   String vendorPlanAttractionQuota(int count) {
-    return '尚未到期的景點投稿最多 $count 筆';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '尚未到期的景點投稿最多 $countString 筆';
   }
 
   @override
   String vendorPlanImageQuota(int count) {
-    return '圖片容量 $count MB';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '圖片容量 $countString MB';
   }
 
   @override
@@ -1846,7 +1922,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String vendorQuotaRemaining(int count, String suffix) {
-    return '尚可使用 $count$suffix';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '尚可使用 $countString$suffix';
   }
 
   @override
@@ -2375,7 +2454,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String vendorQuarterlyPrice(int price) {
-    return '每季 NT\$$price';
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    return '每季 NT\$$priceString';
   }
 
   @override
@@ -3064,7 +3146,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String vendorPlanAnalyticsDays(int count) {
-    return '最近 $count 天成效統計';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '最近 $countString 天成效統計';
   }
 
   @override

@@ -110,18 +110,7 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      body: Column(
-        children: [
-          if (context.watch<ModelAuthView?>()?.account
-              case final String account)
-            SharedLedgerOverview(
-              key: ValueKey(account),
-              kind: LedgerKind.points,
-            ),
-          const LedgerSharingButton(kind: LedgerKind.points),
-          Expanded(child: _buildBody()),
-        ],
-      ),
+      body: Column(children: [Expanded(child: _buildBody())]),
       bottomNavigationBar: Container(
         color: Colors.blueAccent, // 背景色
         child: SafeArea(
@@ -161,6 +150,7 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
   }
 
   Widget _buildAccountList() {
+    final owner = context.watch<ModelAuthView?>()?.account;
     return Selector<ControllerPointRecordList, bool>(
       selector: (_, c) => c.isLoading,
       builder: (context, isLoading, _) {
@@ -175,7 +165,7 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
         >(
           selector: (_, c) => c.accounts,
           builder: (context, accounts, _) {
-            if (accounts.isEmpty) {
+            if (accounts.isEmpty && owner == null) {
               if (context.read<ControllerPointRecordList>().loadError != null) {
                 return const SizedBox.shrink();
               }
@@ -187,11 +177,18 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
             return ListView.builder(
               scrollCacheExtent: const ScrollCacheExtent.pixels(240),
               addAutomaticKeepAlives: false,
-              itemCount: accounts.length,
+              itemCount: accounts.length + (owner == null ? 0 : 1),
               itemBuilder: (context, index) {
+                if (owner != null && index == 0) {
+                  return SharedLedgerOverview(
+                    key: ValueKey(owner),
+                    kind: LedgerKind.points,
+                  );
+                }
+                final account = accounts[index - (owner == null ? 0 : 1)];
                 return _AccountCard(
-                  key: ValueKey(accounts[index].id),
-                  accountId: accounts[index].id, // ✅ 只傳 id
+                  key: ValueKey(account.id),
+                  accountId: account.id,
                 );
               },
             );
@@ -270,17 +267,19 @@ class _AccountCard extends StatelessWidget {
           elevation: 2,
           child: InkWell(
             onTap: () async {
-              final needReload = await Navigator.push<bool>(
+              var recordsChanged = false;
+              await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
                   builder: (_) => PagePointRecordDetail(
                     service: context.read<ServicePointRecord>(),
                     account: account,
+                    onRecordsChanged: () => recordsChanged = true,
                   ),
                 ),
               );
-              if (needReload == true) {
-                await controller.loadAccounts();
+              if (context.mounted && recordsChanged) {
+                await controller.refreshAccount(account.id);
               }
             },
             child: Padding(
@@ -344,6 +343,12 @@ class _AccountCard extends StatelessWidget {
                           total: account.points,
                           revision: account,
                         ),
+                        LedgerReviewButton(
+                          kind: LedgerKind.points,
+                          accountId: account.id,
+                          onApproved: () =>
+                              controller.refreshAccount(account.id),
+                        ),
                       ],
                     ),
                   ),
@@ -351,7 +356,10 @@ class _AccountCard extends StatelessWidget {
                   Column(
                     mainAxisSize: MainAxisSize.min, // 依內容大小自適應
                     children: [
-                      Gaps.h80,
+                      LedgerSharingButton(
+                        kind: LedgerKind.points,
+                        accountId: account.id,
+                      ),
                       // ===== 刪除 =====
                       IconButton(
                         tooltip: loc.delete,

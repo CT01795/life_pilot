@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
+import 'package:life_pilot/subscription/subscription_quota_presentation.dart';
+import 'package:life_pilot/utils/decimal_input_formatter.dart';
 import 'package:life_pilot/vendor/service_vendor_account.dart';
 
 class AdminSpecialAuthorizationDialog extends StatefulWidget {
@@ -106,7 +108,9 @@ class _AdminSpecialAuthorizationDialogState
             'image_bytes': loc.adminPricingImageQuota,
             'answer_history_days': loc.adminPricingAnswerDays,
           };
-    final expiry = _expiry;
+    // The stored expiry is exclusive; show the last day of access.
+    final expiryDay = _expiry?.subtract(const Duration(seconds: 1));
+    final dates = MaterialLocalizations.of(context);
     return PopScope(
       canPop: !_saving,
       child: AlertDialog(
@@ -145,11 +149,11 @@ class _AdminSpecialAuthorizationDialogState
                 onPressed: _saving ? null : _chooseDate,
                 icon: const Icon(Icons.event),
                 label: Text(
-                  expiry == null
+                  expiryDay == null
                       ? loc.adminSubscriptionExpiry
-                      : MaterialLocalizations.of(context).formatMediumDate(
-                          expiry.subtract(const Duration(seconds: 1)),
-                        ),
+                      : expiryDay.year == DateTime.now().year
+                      ? dates.formatMediumDate(expiryDay)
+                      : dates.formatFullDate(expiryDay),
                 ),
               ),
               _number(
@@ -203,11 +207,14 @@ class _AdminSpecialAuthorizationDialogState
     initialValue: initialValue,
     enabled: !_saving,
     keyboardType: TextInputType.number,
+    inputFormatters: const [GroupedIntegerInputFormatter()],
     decoration: InputDecoration(labelText: label),
     validator: (raw) {
-      final value = int.tryParse(raw?.trim() ?? '');
-      return value != null && value >= 0 && value <= max ? null : '0–$max';
+      final value = GroupedIntegerInputFormatter.tryParse(raw);
+      return value != null && value >= 0 && value <= max
+          ? null
+          : '0–${formatSubscriptionNumber(AppLocalizations.of(context)!, max)}';
     },
-    onSaved: (raw) => onSaved(int.parse(raw!.trim())),
+    onSaved: (raw) => onSaved(GroupedIntegerInputFormatter.tryParse(raw)!),
   );
 }

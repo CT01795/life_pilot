@@ -36,6 +36,7 @@ class _Auth extends ControllerAuth {
 
 class _Requests {
   int creates = 0;
+  final refreshed = <String>[];
   final categories = <String>[];
   final pending = <Completer<List<String>>>[];
   bool immediate = false;
@@ -55,6 +56,20 @@ class _Accounting extends ServiceAccounting {
   final _Requests requests;
   Completer<String>? pendingCurrency;
   int creates = 0;
+  @override
+  Future<ModelAccountingAccount?> fetchAccountById({
+    required String user,
+    required String accountId,
+  }) async {
+    requests.refreshed.add(accountId);
+    return ModelAccountingAccount(
+      id: accountId,
+      accountName: accountId,
+      category: 'personal',
+      balance: 42,
+    );
+  }
+
   @override
   Future<List<ModelAccountingAccount>> fetchAccounts({
     required String user,
@@ -102,6 +117,20 @@ class _Accounting extends ServiceAccounting {
 class _Points extends ServicePointRecord {
   _Points(this.requests);
   final _Requests requests;
+  @override
+  Future<ModelPointRecordAccount?> fetchAccountById({
+    required String user,
+    required String accountId,
+  }) async {
+    requests.refreshed.add(accountId);
+    return ModelPointRecordAccount(
+      id: accountId,
+      accountName: accountId,
+      category: 'personal',
+      points: 42,
+    );
+  }
+
   @override
   Future<List<ModelPointRecordAccount>> fetchAccounts({
     required String user,
@@ -172,6 +201,38 @@ Widget _app(Widget child) => MaterialApp(
 );
 
 void main() {
+  test(
+    'refresh reads only the changed account for accounting and points',
+    () async {
+      final auth = _Auth();
+      addTearDown(auth.dispose);
+      final accountingRequests = _Requests()..immediate = true;
+      final pointsRequests = _Requests()..immediate = true;
+      final accounting = ControllerAccountingList(
+        service: _Accounting(accountingRequests),
+        auth: auth,
+      );
+      final points = ControllerPointRecordList(
+        service: _Points(pointsRequests),
+        auth: auth,
+      );
+      addTearDown(accounting.dispose);
+      addTearDown(points.dispose);
+      await Future.wait([accounting.loadAccounts(), points.loadAccounts()]);
+      final accountingId = accounting.accounts.single.id;
+      final pointsId = points.accounts.single.id;
+      await Future.wait([
+        accounting.refreshAccount(accountingId),
+        points.refreshAccount(pointsId),
+      ]);
+      expect(accountingRequests.categories, hasLength(1));
+      expect(pointsRequests.categories, hasLength(1));
+      expect(accountingRequests.refreshed, [accountingId]);
+      expect(pointsRequests.refreshed, [pointsId]);
+      expect(accounting.accounts.single.balance, 42);
+      expect(points.accounts.single.points, 42);
+    },
+  );
   for (final accounting in [true, false]) {
     group(accounting ? 'accounting' : 'points', () {
       late _Auth auth;

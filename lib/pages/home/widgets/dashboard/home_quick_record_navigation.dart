@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/accounting/page_ledger_sharing.dart';
+import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/accounting/page_accounting_detail.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
@@ -33,6 +35,7 @@ class _HomeRecordScope {
       !auth.notifierDisposed &&
       !dashboard.notifierDisposed &&
       auth.dataScope == dataScope &&
+      dashboard.sharedLedger(points: points) == null &&
       selection ==
           (points
               ? (
@@ -46,6 +49,19 @@ class _HomeRecordScope {
 }
 
 Future<void> openHomeAccountingQuickAdd(BuildContext context) async {
+  final shared = context.read<ControllerDashboard>().sharedLedger(
+    points: false,
+  );
+  if (shared != null) {
+    await openSharedLedger(
+      context,
+      kind: LedgerKind.accounting,
+      shareId: shared.id,
+      name: shared.name,
+      proposeOnOpen: true,
+    );
+    return;
+  }
   final loc = AppLocalizations.of(context)!;
   final dashboard = context.read<ControllerDashboard>();
   final auth = context.read<ModelAuthView>();
@@ -87,6 +103,19 @@ Future<void> openHomeAccountingQuickAdd(BuildContext context) async {
 }
 
 Future<void> openHomeAccountingDetails(BuildContext context) async {
+  final shared = context.read<ControllerDashboard>().sharedLedger(
+    points: false,
+  );
+  if (shared != null) {
+    await openSharedLedger(
+      context,
+      kind: LedgerKind.accounting,
+      shareId: shared.id,
+      name: shared.name,
+      proposeOnOpen: false,
+    );
+    return;
+  }
   final dashboard = context.read<ControllerDashboard>();
   final auth = context.read<ModelAuthView>();
   final scope = _HomeRecordScope(auth, dashboard, points: false);
@@ -109,6 +138,17 @@ Future<void> openHomeAccountingDetails(BuildContext context) async {
 }
 
 Future<void> openHomePointQuickAdd(BuildContext context) async {
+  final shared = context.read<ControllerDashboard>().sharedLedger(points: true);
+  if (shared != null) {
+    await openSharedLedger(
+      context,
+      kind: LedgerKind.points,
+      shareId: shared.id,
+      name: shared.name,
+      proposeOnOpen: true,
+    );
+    return;
+  }
   final loc = AppLocalizations.of(context)!;
   final dashboard = context.read<ControllerDashboard>();
   final auth = context.read<ModelAuthView>();
@@ -150,6 +190,17 @@ Future<void> openHomePointQuickAdd(BuildContext context) async {
 }
 
 Future<void> openHomePointDetails(BuildContext context) async {
+  final shared = context.read<ControllerDashboard>().sharedLedger(points: true);
+  if (shared != null) {
+    await openSharedLedger(
+      context,
+      kind: LedgerKind.points,
+      shareId: shared.id,
+      name: shared.name,
+      proposeOnOpen: false,
+    );
+    return;
+  }
   final dashboard = context.read<ControllerDashboard>();
   final auth = context.read<ModelAuthView>();
   final scope = _HomeRecordScope(auth, dashboard, points: true);

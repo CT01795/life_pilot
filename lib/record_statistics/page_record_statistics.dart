@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/record_statistics/controller_record_statistics.dart';
@@ -69,10 +70,28 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
           }
           if (data == null) {
             _presentation = null;
+            final error = controller.error;
+            final shared = widget.service?.sharedLedgerId != null;
+            final code = error is PostgrestException ? error.code : null;
             return Center(
-              child: TextButton(
-                onPressed: () => controller.load(),
-                child: Text(loc.retry),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (shared && error != null)
+                      Text(
+                        code == 'PGRST202'
+                            ? loc.sharedLedgerStatisticsUnavailable
+                            : '${loc.sharedLedgerStatisticsLoadFailed}${code == null ? '' : ' ($code)'}',
+                        textAlign: TextAlign.center,
+                      ),
+                    TextButton(
+                      onPressed: () => controller.load(),
+                      child: Text(loc.retry),
+                    ),
+                  ],
+                ),
               ),
             );
           }

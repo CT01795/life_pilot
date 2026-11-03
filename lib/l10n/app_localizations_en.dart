@@ -9,6 +9,33 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get ledgerDeclineShare => 'Stop viewing';
+
+  @override
+  String get ledgerDeclineShareExplanation => 'You will lose access to this shared account. The original account data will not be deleted.';
+
+  @override
+  String get ledgerDeclineShareConfirm => 'Stop viewing this shared account?';
+
+  @override
+  String get ledgerStopSharing => 'Stop sharing';
+
+  @override
+  String get ledgerStopSharingConfirm => 'Stop sharing this account?';
+
+  @override
+  String get ledgerAllowProposalsConfirm => 'Allow this person to submit change proposals?';
+
+  @override
+  String get ledgerStopProposalsConfirm => 'Stop accepting change proposals? Pending proposals will be rejected.';
+
+  @override
+  String get sharedLedgerStatisticsUnavailable => 'Shared account statistics are not set up yet. Contact an administrator.';
+
+  @override
+  String get sharedLedgerStatisticsLoadFailed => 'Could not load shared account statistics.';
+
+  @override
   String get adminReactivateAccount => 'Restore account';
 
   @override
@@ -111,7 +138,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String billingMonthlyPrice(int price) {
-    return 'NT\$$price per month';
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    return 'NT\$$priceString per month';
   }
 
   @override
@@ -1321,7 +1351,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String adminSubscriptionActiveCount(int count) {
-    return '$count active allowances';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString active allowances';
   }
 
   @override
@@ -1482,7 +1515,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
-    return 'Upload cancelled: $resource currently uses $used cloud records; this upload adds $incoming, but the plan limit is $quota.';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat incomingNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String incomingString = incomingNumberFormat.format(incoming);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String quotaString = quotaNumberFormat.format(quota);
+
+    return 'Upload cancelled: $resource currently uses $usedString cloud records; this upload adds $incomingString, but the plan limit is $quotaString.';
   }
 
   @override
@@ -1715,7 +1755,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String subscriptionLocalPublicSubmissionQuota(int events, int attractions) {
-    return '$events recommended activities and $attractions recommended places';
+    final intl.NumberFormat eventsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String eventsString = eventsNumberFormat.format(events);
+    final intl.NumberFormat attractionsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String attractionsString = attractionsNumberFormat.format(attractions);
+
+    return '$eventsString recommended activities and $attractionsString recommended places';
   }
 
   @override
@@ -1726,7 +1771,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String subscriptionLocalUsage(int used) {
-    return 'Stored on this device: $used / No limit';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+
+    return 'Stored on this device: $usedString / No limit';
   }
 
   @override
@@ -1752,7 +1800,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String subscriptionOverageItem(String resource, int used, int quota, int excess) {
-    return '$resource: $used/$quota (over by $excess)';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String quotaString = quotaNumberFormat.format(quota);
+    final intl.NumberFormat excessNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String excessString = excessNumberFormat.format(excess);
+
+    return '$resource: $usedString/$quotaString (over by $excessString)';
   }
 
   @override
@@ -1787,7 +1842,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
-    return 'Cloud limit reached: $used of $quota records are in use, so $remaining more can be added. Delete an older record, switch to this device, or upgrade to Plus.';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String quotaString = quotaNumberFormat.format(quota);
+    final intl.NumberFormat remainingNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String remainingString = remainingNumberFormat.format(remaining);
+
+    return 'Cloud limit reached: $usedString of $quotaString records are in use, so $remainingString more can be added. Delete an older record, switch to this device, or upgrade to Plus.';
   }
 
   @override
@@ -1795,7 +1857,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String subscriptionUsage(int used, int quota) {
-    return 'Used $used / $quota';
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String usedString = usedNumberFormat.format(used);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String quotaString = quotaNumberFormat.format(quota);
+
+    return 'Used $usedString / $quotaString';
   }
 
   @override
@@ -1816,17 +1883,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String vendorPlanActivityQuota(int count) {
-    return 'Up to $count unexpired event submissions';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Up to $countString unexpired event submissions';
   }
 
   @override
   String vendorPlanAttractionQuota(int count) {
-    return 'Up to $count unexpired place submissions';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Up to $countString unexpired place submissions';
   }
 
   @override
   String vendorPlanImageQuota(int count) {
-    return '$count MB image storage';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString MB image storage';
   }
 
   @override
@@ -1846,7 +1922,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String vendorQuotaRemaining(int count, String suffix) {
-    return '$count$suffix remaining';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString$suffix remaining';
   }
 
   @override
@@ -2375,7 +2454,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String vendorQuarterlyPrice(int price) {
-    return 'NT\$$price / quarter';
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    return 'NT\$$priceString / quarter';
   }
 
   @override
@@ -3064,7 +3146,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String vendorPlanAnalyticsDays(int count) {
-    return 'Analytics for the latest $count days';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Analytics for the latest $countString days';
   }
 
   @override

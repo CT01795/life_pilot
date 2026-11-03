@@ -15,6 +15,7 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   int _accountGeneration = 0;
   int _requestId = 0;
   final String accountId;
+  final void Function()? onRecordsChanged;
   final bool loadAllRecords;
   num? currentExchangeRate;
 
@@ -22,6 +23,7 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
     required ServiceAccounting service,
     required this.auth,
     required this.accountId,
+    this.onRecordsChanged,
     this.loadAllRecords = false,
     this.currentExchangeRate,
   }) : _service = service,
@@ -271,6 +273,9 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
     );
 
     if (!_isCurrent(generation)) return;
+    if (inputAccountId == null || inputAccountId == accountId) {
+      onRecordsChanged?.call();
+    }
     await auth?.refreshSubscriptionUsage();
     if (!_isCurrent(generation)) return;
 
@@ -296,6 +301,7 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
       newSecondaryCategory: preview.secondaryCategory,
     );
     if (!_isCurrent(generation)) return;
+    onRecordsChanged?.call();
     await loadToday();
   }
 
@@ -304,6 +310,7 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
     if (!_isCurrent(generation)) return;
     await _service.deleteAccountingDetail(detailId: detailId);
     if (!_isCurrent(generation)) return;
+    onRecordsChanged?.call();
     await auth?.refreshSubscriptionUsage();
     if (!_isCurrent(generation)) return;
     await loadToday();

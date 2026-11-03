@@ -283,7 +283,9 @@ void main() {
       late _Auth auth;
       late _Requests requests;
       late _Harness h;
+      late int changeSignals;
       setUp(() {
+        changeSignals = 0;
         auth = _Auth();
         requests = _Requests();
         h = accounting
@@ -292,6 +294,7 @@ void main() {
                   service: _Accounting(requests),
                   auth: auth,
                   accountId: 'acct',
+                  onRecordsChanged: () => changeSignals++,
                 ),
               )
             : _Harness.points(
@@ -299,6 +302,7 @@ void main() {
                   service: _Points(requests),
                   auth: auth,
                   accountId: 'acct',
+                  onRecordsChanged: () => changeSignals++,
                 ),
               );
       });
@@ -663,6 +667,7 @@ void main() {
               }
               requests.writes.single.complete();
               await pending;
+              expect(changeSignals, 0);
               expect(auth.usageReads, 0);
               expect(requests.pages, isEmpty);
             },
@@ -681,6 +686,7 @@ void main() {
           requests.histories.single.complete(false);
           await pending;
           expect(h.ids(), ['saved']);
+          expect(changeSignals, 1);
         },
       );
       test('disposed controller ignores reads and all writes', () async {
@@ -691,6 +697,7 @@ void main() {
         await h.update();
         await h.delete();
         expect(requests.writes, isEmpty);
+        expect(changeSignals, 0);
         expect(requests.pages, isEmpty);
       });
     });
