@@ -4,18 +4,56 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
 
-class AccountImageTile extends StatelessWidget {
+class AccountImageTile extends StatefulWidget {
   const AccountImageTile({
     required this.name,
     required this.loadImage,
-    required this.changeImage,
+    this.changeImage,
+    this.loadThumbnail,
     this.imageBytes,
     super.key,
   });
   final String name;
   final Uint8List? imageBytes;
   final Future<Uint8List?> Function() loadImage;
-  final VoidCallback changeImage;
+  final VoidCallback? changeImage;
+  final Future<Uint8List?> Function()? loadThumbnail;
+
+  @override
+  State<AccountImageTile> createState() => _AccountImageTileState();
+}
+
+class _AccountImageTileState extends State<AccountImageTile> {
+  Future<Uint8List?>? _original;
+  late Future<Uint8List?> _cover = _loadCover();
+
+  Future<Uint8List?> _loadOriginal() async {
+    if (widget.imageBytes case final bytes?) return bytes;
+    final request = _original ??= Future.sync(widget.loadImage);
+    try {
+      return await request;
+    } catch (_) {
+      if (identical(_original, request)) _original = null;
+      rethrow;
+    }
+  }
+
+  Future<Uint8List?> _loadCover() async {
+    if (widget.imageBytes case final bytes?) return bytes;
+    final thumbnail = await widget.loadThumbnail?.call();
+    if (thumbnail != null || !mounted) return thumbnail;
+    // Older accounts may only have an original. Reuse it in the preview.
+    return _loadOriginal();
+  }
+
+  @override
+  void didUpdateWidget(covariant AccountImageTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.imageBytes, widget.imageBytes)) {
+      _original = null;
+      _cover = _loadCover();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,31 +74,42 @@ class AccountImageTile extends StatelessWidget {
                 onTap: () => showDialog<void>(
                   context: context,
                   builder: (_) => _AccountImagePreview(
-                    name: name,
-                    loadImage: () => imageBytes == null
-                        ? loadImage()
-                        : Future.value(imageBytes),
+                    name: widget.name,
+                    loadImage: _loadOriginal,
                   ),
                 ),
-                child: imageBytes == null
-                    ? Center(
-                        child: Text(
-                          name.isEmpty ? '' : name.characters.first,
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                      )
-                    : Image.memory(imageBytes!, fit: BoxFit.cover),
+                child: FutureBuilder<Uint8List?>(
+                  future: _cover,
+                  builder: (context, snapshot) {
+                    final bytes = widget.imageBytes ?? snapshot.data;
+                    final placeholder = Center(
+                      child: Text(
+                        widget.name.isEmpty ? '' : widget.name.characters.first,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    );
+                    return bytes == null
+                        ? placeholder
+                        : Image.memory(
+                            bytes,
+                            fit: BoxFit.cover,
+                            cacheWidth: 240,
+                            errorBuilder: (_, _, _) => placeholder,
+                          );
+                  },
+                ),
               ),
             ),
-            PositionedDirectional(
-              end: 0,
-              bottom: 0,
-              child: IconButton.filledTonal(
-                tooltip: loc.changeAccountImage,
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                onPressed: changeImage,
+            if (widget.changeImage != null)
+              PositionedDirectional(
+                end: 0,
+                bottom: 0,
+                child: IconButton.filledTonal(
+                  tooltip: loc.changeAccountImage,
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  onPressed: widget.changeImage,
+                ),
               ),
-            ),
           ],
         ),
       ),

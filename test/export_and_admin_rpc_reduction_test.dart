@@ -121,22 +121,19 @@ void main() {
     expect(jsonDecode(requests.single.body), {'p_email': 'one@example.com'});
     expect(() => result.entitlements.clear(), throwsUnsupportedError);
   });
-  test(
-    'only missing admin RPC enables two legacy reads; later deployment is detected',
-    () async {
-      missing = true;
-      expect(
-        (await RepositoryAdminSubscriptionOverview(
-          client,
-        ).read('one@example.com')).entitlements,
-        hasLength(2),
-      );
-      expect(requests, hasLength(3));
-      missing = false;
-      await RepositoryAdminSubscriptionOverview(client).read('one@example.com');
-      expect(requests, hasLength(4));
-    },
-  );
+  test('missing admin overview never calls the two legacy queries', () async {
+    missing = true;
+    await expectLater(
+      RepositoryAdminSubscriptionOverview(client).read('one@example.com'),
+      throwsA(
+        isA<PostgrestException>().having((e) => e.code, 'code', 'PGRST202'),
+      ),
+    );
+    expect(requests, hasLength(1));
+    missing = false;
+    await RepositoryAdminSubscriptionOverview(client).read('one@example.com');
+    expect(requests, hasLength(2));
+  });
   test('admin permission failure never enables legacy queries', () async {
     denied = true;
     await expectLater(
@@ -156,42 +153,33 @@ void main() {
       expect(requests, hasLength(1));
     },
   );
-  test(
-    'admin response from old session is discarded before any fallback',
-    () async {
-      missing = true;
-      gate = Completer<void>();
-      final request = RepositoryAdminSubscriptionOverview(
-        client,
-      ).read('one@example.com');
-      final checked = expectLater(request, throwsStateError);
-      await Future<void>.delayed(Duration.zero);
-      await login(client, 'two');
-      gate!.complete();
-      await checked;
-      expect(requests, hasLength(1));
-    },
-  );
-  for (final legacy in [false, true]) {
-    test('Excel all pages complete (legacy=$legacy)', () async {
-      missing = legacy;
-      final rows = await RepositoryPersonalExportRows(
-        client: client,
-      ).read('one@example.com');
-      expect(rows, hasLength(1001));
-      expect(rows.last['id'], 'last');
-      expect(requests, hasLength(legacy ? 4 : 3));
-      if (!legacy) {
-        expect(
-          requests.every(
-            (r) => r.url.path.endsWith('export_my_personal_excel_rows'),
-          ),
-          isTrue,
-        );
-      }
-      expect(requests.last.url.queryParameters['offset'], '1001');
-    });
-  }
+  test('admin response from old session is discarded', () async {
+    gate = Completer<void>();
+    final request = RepositoryAdminSubscriptionOverview(
+      client,
+    ).read('one@example.com');
+    final checked = expectLater(request, throwsStateError);
+    await Future<void>.delayed(Duration.zero);
+    await login(client, 'two');
+    gate!.complete();
+    await checked;
+    expect(requests, hasLength(1));
+  });
+  test('Excel fetches all pages using only the projected endpoint', () async {
+    final rows = await RepositoryPersonalExportRows(
+      client: client,
+    ).read('one@example.com');
+    expect(rows, hasLength(1001));
+    expect(rows.last['id'], 'last');
+    expect(requests, hasLength(3));
+    expect(
+      requests.every(
+        (r) => r.url.path.endsWith('export_my_personal_excel_rows'),
+      ),
+      isTrue,
+    );
+    expect(requests.last.url.queryParameters['offset'], '1001');
+  });
   test(
     'Excel denial never retries complete export with different permissions',
     () async {

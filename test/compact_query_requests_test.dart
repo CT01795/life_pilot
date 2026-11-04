@@ -17,8 +17,10 @@ void main() {
   late SupabaseClient client;
   late List<http.Request> requests;
   dynamic response;
+  var status = 200;
   setUp(() async {
     requests = [];
+    status = 200;
     client = SupabaseClient(
       'https://example.supabase.co',
       'test-key',
@@ -26,7 +28,7 @@ void main() {
         requests.add(request);
         return http.Response(
           jsonEncode(response),
-          200,
+          status,
           request: request,
           headers: {'content-type': 'application/json'},
         );
@@ -49,6 +51,68 @@ void main() {
     );
   });
   tearDown(() => client.dispose());
+  for (final attractions in [false, true]) {
+    test(
+      'empty performance page without totals is not an error ($attractions)',
+      () async {
+        response = {'items': [], 'totals': null, 'next_offset': null};
+        final result = await ServiceContentPerformance().read(
+          owner: 'one@example.com',
+          attractions: attractions,
+          statisticsOnly: true,
+          period: ContentPerformancePeriod(now: DateTime(2026, 11, 4)),
+        );
+        expect(result.items, isEmpty);
+        expect(result.hasMore, isFalse);
+        expect(requests, hasLength(1));
+      },
+    );
+  }
+  test('missing performance page never reads raw recommendations', () async {
+    status = 404;
+    response = {'code': 'PGRST202', 'message': 'missing'};
+    await expectLater(
+      ServiceContentPerformance().read(
+        owner: 'one@example.com',
+        attractions: true,
+        statisticsOnly: true,
+        period: ContentPerformancePeriod(now: DateTime(2026, 11, 4)),
+      ),
+      throwsA(
+        isA<PostgrestException>().having((e) => e.code, 'code', 'PGRST202'),
+      ),
+    );
+    expect(
+      requests.single.url.pathSegments.last,
+      'get_my_content_performance_page',
+    );
+  });
+  test('missing dashboard and chart RPCs never download raw detail', () async {
+    status = 404;
+    response = {'code': 'PGRST202', 'message': 'missing'};
+    final missing = throwsA(
+      isA<PostgrestException>().having((e) => e.code, 'code', 'PGRST202'),
+    );
+    await expectLater(
+      ServiceVendorAccount().fetchMetrics('one@example.com'),
+      missing,
+    );
+    await expectLater(
+      ServiceRecordStatistics().read(
+        owner: 'one@example.com',
+        storage: DataStorageLocation.cloud,
+        accountId: 'a',
+        kind: RecordStatisticsKind.accounting,
+        now: DateTime(2026, 10),
+        history: true,
+      ),
+      missing,
+    );
+    expect(requests.map((r) => r.url.pathSegments.last), [
+      'get_my_vendor_dashboard_metrics',
+      'get_my_record_statistics',
+    ]);
+  });
   test(
     'vendor dashboard retrieves totals and five previews in one request',
     () async {

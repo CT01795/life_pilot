@@ -150,7 +150,9 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
   }
 
   Widget _buildAccountList() {
-    final owner = context.watch<ModelAuthView?>()?.account;
+    final scope = context.watch<ModelAuthView?>()?.dataScope;
+    final owner = scope?.account;
+    final showShares = owner != null && scope?.storage.name == 'cloud';
     return Selector<ControllerPointRecordList, bool>(
       selector: (_, c) => c.isLoading,
       builder: (context, isLoading, _) {
@@ -165,7 +167,7 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
         >(
           selector: (_, c) => c.accounts,
           builder: (context, accounts, _) {
-            if (accounts.isEmpty && owner == null) {
+            if (accounts.isEmpty && !showShares) {
               if (context.read<ControllerPointRecordList>().loadError != null) {
                 return const SizedBox.shrink();
               }
@@ -177,15 +179,15 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
             return ListView.builder(
               scrollCacheExtent: const ScrollCacheExtent.pixels(240),
               addAutomaticKeepAlives: false,
-              itemCount: accounts.length + (owner == null ? 0 : 1),
+              itemCount: accounts.length + (showShares ? 1 : 0),
               itemBuilder: (context, index) {
-                if (owner != null && index == 0) {
+                if (showShares && index == 0) {
                   return SharedLedgerOverview(
                     key: ValueKey(owner),
                     kind: LedgerKind.points,
                   );
                 }
-                final account = accounts[index - (owner == null ? 0 : 1)];
+                final account = accounts[index - (showShares ? 1 : 0)];
                 return _AccountCard(
                   key: ValueKey(account.id),
                   accountId: account.id,
@@ -291,6 +293,13 @@ class _AccountCard extends StatelessWidget {
                   AccountImageTile(
                     name: account.accountName,
                     imageBytes: account.masterGraphUrl,
+                    loadThumbnail: () => const RepositoryAccountImage().read(
+                      table: TableNames.pointRecordAccount,
+                      accountId: account.id,
+                      owner: auth.account ?? '',
+                      thumbnail: true,
+                      storage: auth.dataScope.storage,
+                    ),
                     loadImage: () => const RepositoryAccountImage().read(
                       table: TableNames.pointRecordAccount,
                       accountId: account.id,
@@ -343,12 +352,13 @@ class _AccountCard extends StatelessWidget {
                           total: account.points,
                           revision: account,
                         ),
-                        LedgerReviewButton(
-                          kind: LedgerKind.points,
-                          accountId: account.id,
-                          onApproved: () =>
-                              controller.refreshAccount(account.id),
-                        ),
+                        if (auth.dataScope.storage.name == 'cloud')
+                          LedgerReviewButton(
+                            kind: LedgerKind.points,
+                            accountId: account.id,
+                            onApproved: () =>
+                                controller.refreshAccount(account.id),
+                          ),
                       ],
                     ),
                   ),
@@ -356,10 +366,11 @@ class _AccountCard extends StatelessWidget {
                   Column(
                     mainAxisSize: MainAxisSize.min, // 依內容大小自適應
                     children: [
-                      LedgerSharingButton(
-                        kind: LedgerKind.points,
-                        accountId: account.id,
-                      ),
+                      if (auth.dataScope.storage.name == 'cloud')
+                        LedgerSharingButton(
+                          kind: LedgerKind.points,
+                          accountId: account.id,
+                        ),
                       // ===== 刪除 =====
                       IconButton(
                         tooltip: loc.delete,

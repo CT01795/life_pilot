@@ -3,7 +3,6 @@ import 'package:life_pilot/utils/service/service_cloud_api.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/auth/model_account_deletion_page.dart';
-import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
 
 /// Account deletion is an authenticated server workflow, separate from Excel.
 /// Writes never share a Future or retry automatically: the outcome may be final.
@@ -30,27 +29,17 @@ class RepositoryAccountDeletion {
         legacy,
       ),
       () async {
-        if (!legacy) {
-          final result = await RepositoryOptionalJsonRpc(client).read(
-            'admin_list_account_deletion_requests_page',
-            params: {
-              'p_after': after?.toJson(),
-              'p_limit': AccountDeletionPage.size,
-            },
-            rememberMissing: false,
-          );
-          if (result != null) {
-            if (result['rows'] is! List) {
-              throw const FormatException('Invalid deletion page');
-            }
-            return AccountDeletionPage.fromRows(result['rows'] as List);
-          }
+        final result = await client.rpc(
+          'admin_list_account_deletion_requests_page',
+          params: {
+            'p_after': after?.toJson(),
+            'p_limit': AccountDeletionPage.size,
+          },
+        );
+        if (result is! Map || result['rows'] is! List) {
+          throw const FormatException('Invalid deletion page');
         }
-        final rows = await client
-            .rpc('admin_list_account_deletion_requests')
-            .select('id,email,status,requested_at,cancellation_requested_at')
-            .range(offset, offset + AccountDeletionPage.size);
-        return AccountDeletionPage.fromRows(rows, legacy: true);
+        return AccountDeletionPage.fromRows(result['rows'] as List);
       },
     );
   }
@@ -62,15 +51,6 @@ class RepositoryAccountDeletion {
         return rows.isEmpty
             ? null
             : Map<String, dynamic>.unmodifiable(rows.first as Map);
-      });
-
-  Future<List<Map<String, dynamic>>> adminRequests() =>
-      RepositorySessionReads(client).read(_group, 'admin', () async {
-        final rows =
-            await client.rpc('admin_list_account_deletion_requests') as List;
-        return List.unmodifiable(
-          rows.map((row) => Map<String, dynamic>.unmodifiable(row as Map)),
-        );
       });
 
   Future<void> request() => _mutate('request_account_deletion');

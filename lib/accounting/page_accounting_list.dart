@@ -118,7 +118,9 @@ class _PageAccountingListState extends State<PageAccountingList>
   }
 
   Widget _buildAccountList() {
-    final owner = context.watch<ModelAuthView?>()?.account;
+    final scope = context.watch<ModelAuthView?>()?.dataScope;
+    final owner = scope?.account;
+    final showShares = owner != null && scope?.storage.name == 'cloud';
     return Selector<ControllerAccountingList, bool>(
       selector: (_, c) => c.isLoading,
       builder: (context, isLoading, _) {
@@ -130,7 +132,7 @@ class _PageAccountingListState extends State<PageAccountingList>
         return Selector<ControllerAccountingList, List<ModelAccountingAccount>>(
           selector: (_, c) => c.accounts,
           builder: (context, accounts, _) {
-            if (accounts.isEmpty && owner == null) {
+            if (accounts.isEmpty && !showShares) {
               if (context.read<ControllerAccountingList>().loadError != null) {
                 return const SizedBox.shrink();
               }
@@ -142,15 +144,15 @@ class _PageAccountingListState extends State<PageAccountingList>
             return ListView.builder(
               scrollCacheExtent: const ScrollCacheExtent.pixels(240),
               addAutomaticKeepAlives: false,
-              itemCount: accounts.length + (owner == null ? 0 : 1),
+              itemCount: accounts.length + (showShares ? 1 : 0),
               itemBuilder: (context, index) {
-                if (owner != null && index == 0) {
+                if (showShares && index == 0) {
                   return SharedLedgerOverview(
                     key: ValueKey(owner),
                     kind: LedgerKind.accounting,
                   );
                 }
-                final account = accounts[index - (owner == null ? 0 : 1)];
+                final account = accounts[index - (showShares ? 1 : 0)];
                 return _AccountCard(
                   key: ValueKey(account.id),
                   accountId: account.id,
@@ -257,6 +259,13 @@ class _AccountCard extends StatelessWidget {
                   AccountImageTile(
                     name: account.accountName,
                     imageBytes: account.masterGraphUrl,
+                    loadThumbnail: () => const RepositoryAccountImage().read(
+                      table: TableNames.accountingAccount,
+                      accountId: account.id,
+                      owner: auth.account ?? '',
+                      thumbnail: true,
+                      storage: auth.dataScope.storage,
+                    ),
                     loadImage: () => const RepositoryAccountImage().read(
                       table: TableNames.accountingAccount,
                       accountId: account.id,
@@ -309,12 +318,13 @@ class _AccountCard extends StatelessWidget {
                           total: account.balance,
                           revision: account,
                         ),
-                        LedgerReviewButton(
-                          kind: LedgerKind.accounting,
-                          accountId: account.id,
-                          onApproved: () =>
-                              controller.refreshAccount(account.id),
-                        ),
+                        if (auth.dataScope.storage.name == 'cloud')
+                          LedgerReviewButton(
+                            kind: LedgerKind.accounting,
+                            accountId: account.id,
+                            onApproved: () =>
+                                controller.refreshAccount(account.id),
+                          ),
                       ],
                     ),
                   ),
@@ -347,10 +357,11 @@ class _AccountCard extends StatelessWidget {
                           }
                         },
                       ),
-                      LedgerSharingButton(
-                        kind: LedgerKind.accounting,
-                        accountId: account.id,
-                      ),
+                      if (auth.dataScope.storage.name == 'cloud')
+                        LedgerSharingButton(
+                          kind: LedgerKind.accounting,
+                          accountId: account.id,
+                        ),
                       // ===== 刪除 =====
                       IconButton(
                         tooltip: loc.delete,

@@ -276,23 +276,11 @@ class ServiceGame {
       return passedLevels.fold<int>(0, max);
     }
 
-    try {
-      final result = await supabase.rpc(
-        'get_user_game_highest_passed_level',
-        params: {'p_game_type': gameType, 'p_game_name': gameName},
-      );
-      return parseIntValue(result);
-    } on PostgrestException catch (error) {
-      // Keep older deployments usable until the accompanying migration is
-      // installed. This fallback can be removed after every environment has
-      // the summary RPC.
-      if (error.code != '42883' && error.code != 'PGRST202') rethrow;
-      final progress = await fetchUserProgress(userName, gameType, gameName);
-      return progress
-          .where((row) => row.isPass ?? false)
-          .map((row) => row.level ?? 0)
-          .fold<int>(0, max);
-    }
+    final result = await supabase.rpc(
+      'get_user_game_highest_passed_level',
+      params: {'p_game_type': gameType, 'p_game_name': gameName},
+    );
+    return parseIntValue(result);
   }
 
   Future<List<ModelGameUser>> fetchUserProgressPage({

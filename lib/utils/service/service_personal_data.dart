@@ -323,9 +323,6 @@ class ServicePersonalData {
   Future<void> requestAccountDeletionCancellation() =>
       RepositoryAccountDeletion().cancel();
 
-  Future<List<Map<String, dynamic>>> fetchAccountDeletionRequests() =>
-      RepositoryAccountDeletion().adminRequests();
-
   Future<void> approveAccountDeletion(String requestId) =>
       RepositoryAccountDeletion().approve(requestId);
 

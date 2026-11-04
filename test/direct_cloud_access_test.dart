@@ -37,12 +37,11 @@ void main() {
   });
   tearDown(() => client.dispose());
 
-  test('successful RPC never invokes Render fallback', () async {
+  test('successful RPC uses Supabase directly', () async {
     response = {'updated': true, 'running': false};
-    final value = await gateway.rpcOrBackend(
+    final value = await gateway.rpc(
       'life_pilot_public_event_refresh',
       params: {'p_action': 'status'},
-      backend: () => throw StateError('Render must not run'),
     );
     expect(value, response);
     expect(
@@ -52,36 +51,30 @@ void main() {
     expect(jsonDecode(requests.single.body), {'p_action': 'status'});
   });
 
-  test('only undeployed RPC uses legacy backend once', () async {
-    status = 404;
-    response = {'code': 'PGRST202', 'message': 'Function not found'};
-    var calls = 0;
-    final value = await gateway.rpcOrBackend(
-      'missing',
-      backend: () async {
-        calls++;
-        return {'legacy': true};
-      },
-    );
-    expect(value, {'legacy': true});
-    expect(calls, 1);
-  });
-
-  for (final code in ['42501', 'PGRST301', 'P0001', '42P01', '42883']) {
-    test('$code cannot bypass the database error through Render', () async {
-      status = 403;
+  for (final code in [
+    'PGRST202',
+    '42501',
+    'PGRST301',
+    'P0001',
+    '42P01',
+    '42883',
+  ]) {
+    test('$code propagates without a provider request', () async {
+      status = code == 'PGRST202' ? 404 : 403;
       response = {'code': code, 'message': 'Rejected'};
-      var calls = 0;
-      await expectLater(
-        gateway.rpcOrBackend(
-          'rejected',
-          backend: () async {
-            calls++;
-          },
-        ),
-        throwsA(isA<PostgrestException>()),
+      final rejects = throwsA(
+        isA<PostgrestException>().having((e) => e.code, 'code', code),
       );
-      expect(calls, 0);
+      Future<dynamic> unexpected() async =>
+          throw StateError('Provider must not run');
+      await expectLater(
+        cache.weather(lat: 25, lng: 121, backend: unexpected),
+        rejects,
+      );
+      await expectLater(
+        cache.holidays(year: 2026, language: 'zh', backend: unexpected),
+        rejects,
+      );
     });
   }
 
@@ -97,22 +90,19 @@ void main() {
     expect(jsonDecode(requests.single.body), {'p_lat': 25.1, 'p_lng': 121.5});
   });
 
-  test('weather miss or undeployed cache calls backend once', () async {
-    for (final deployed in [true, false]) {
-      status = deployed ? 200 : 404;
-      response = deployed ? null : {'code': 'PGRST202', 'message': 'Not found'};
-      var calls = 0;
-      final result = await cache.weather(
-        lat: 25,
-        lng: 121,
-        backend: () async {
-          calls++;
-          return {'items': [], 'expires_at': '2027-01-01T00:00:00Z'};
-        },
-      );
-      expect(result['items'], isEmpty);
-      expect(calls, 1);
-    }
+  test('weather cache miss calls provider once', () async {
+    response = null;
+    var calls = 0;
+    final result = await cache.weather(
+      lat: 25,
+      lng: 121,
+      backend: () async {
+        calls++;
+        return {'items': [], 'expires_at': '2027-01-01T00:00:00Z'};
+      },
+    );
+    expect(result['items'], isEmpty);
+    expect(calls, 1);
   });
 
   test(

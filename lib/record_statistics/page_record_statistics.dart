@@ -121,6 +121,8 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
             );
           }
           final rows = presentation.rows;
+          final points = widget.kind == RecordStatisticsKind.points;
+          final currency = widget.currency ?? data.currency;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -129,8 +131,12 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               Text(
-                '${loc.lastTwelveMonths} ${widget.currency ?? loc.pointsUnit}',
+                points
+                    ? '${loc.lastTwelveMonths} ${loc.pointsUnit}'
+                    : loc.lastTwelveMonths,
               ),
+              if (!points && currency != null && currency.trim().isNotEmpty)
+                Text('${loc.currencyLabel}：${currency.trim()}'),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,

@@ -211,21 +211,16 @@ void main() {
     expect(page.cursor!.userId, uuid(50));
     expect(jsonDecode(requests.single.body)['p_limit'], 50);
   });
-  test(
-    'admin missing function fallback is bounded; next legacy page skips repeat probe',
-    () async {
-      missing = true;
-      final repo = RepositoryAdminSubscriptionPage(client),
-          first = await RepositoryAdminSubscriptionPage(client).read();
-      expect(first.legacy, isTrue);
-      expect(first.rows, hasLength(50));
-      expect(requests, hasLength(2));
-      expect(requests.last.url.queryParameters['limit'], '51');
-      await repo.read(offset: 50, legacy: true);
-      expect(requests, hasLength(3));
-      expect(requests.last.url.queryParameters['offset'], '50');
-    },
-  );
+  test('missing subscription page RPC does not query the old list', () async {
+    missing = true;
+    await expectLater(
+      RepositoryAdminSubscriptionPage(client).read(),
+      throwsA(
+        isA<PostgrestException>().having((e) => e.code, 'code', 'PGRST202'),
+      ),
+    );
+    expect(requests, hasLength(1));
+  });
   test('admin permission error never falls back to the old list', () async {
     denied = true;
     await expectLater(
@@ -257,11 +252,11 @@ void main() {
         auth,
         pageLoader: ({required statuses, before}) async {
           cursors.add(before?.id);
-        if (before == null) {
+          if (before == null) {
             return FeedbackPage.fromRows(
               List.generate(51, (i) => feedback(100 - i)),
             );
-        }
+          }
           if (fail) throw StateError('offline');
           return FeedbackPage.fromRows([feedback(50)]);
         },

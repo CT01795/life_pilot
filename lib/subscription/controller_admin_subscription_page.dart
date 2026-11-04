@@ -19,7 +19,6 @@ class ControllerAdminSubscriptionPage extends SafeChangeNotifier {
   Object? error;
   bool retryMore = false;
   AdminSubscriptionCursor? _cursor;
-  bool _legacy = false;
   bool _current(int revision) =>
       !notifierDisposed &&
       revision == _revision &&
@@ -34,7 +33,6 @@ class ControllerAdminSubscriptionPage extends SafeChangeNotifier {
     error = null;
     retryMore = false;
     _cursor = null;
-    _legacy = false;
     notifyListeners();
   }
 
@@ -49,15 +47,14 @@ class ControllerAdminSubscriptionPage extends SafeChangeNotifier {
       final page = await _load(
         after: more ? _cursor : null,
         offset: more ? rows.length : 0,
-        legacy: more && _legacy,
+        legacy: false,
       );
       if (!_current(revision)) return;
-      if (page.hasMore && !page.legacy && page.cursor == null) {
+      if (page.hasMore && page.cursor == null) {
         throw const FormatException('Missing subscription cursor');
       }
       rows = List.unmodifiable(more ? [...rows, ...page.rows] : page.rows);
       _cursor = page.cursor;
-      _legacy = page.legacy;
       hasMore = page.hasMore;
     } catch (failure) {
       if (_current(revision)) error = failure;

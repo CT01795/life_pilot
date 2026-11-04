@@ -1,6 +1,5 @@
 import 'package:life_pilot/utils/record_row_utils.dart';
 import 'package:life_pilot/utils/repository_session_reads.dart';
-import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -48,10 +47,8 @@ class RepositoryCloudRecordHistory {
         includeLatest,
         revision,
       ),
-      () => RepositoryOptionalJsonRpc(client).read(
-        includeLatest
-            ? 'get_my_ledger_history_window_v2'
-            : 'get_my_ledger_history_window',
+      () => client.rpc(
+        'get_my_ledger_history_window_v2',
         params: {
           'p_kind': kind,
           'p_account_id': accountId,
@@ -59,24 +56,26 @@ class RepositoryCloudRecordHistory {
           'p_from': boundary,
           'p_until': upper,
           'p_include_reserved': includeReserved,
-          if (includeLatest) 'p_include_latest': true,
+          'p_include_latest': includeLatest,
         },
       ),
     );
     if (client.auth.currentSession?.accessToken != token) {
       throw StateError('Ledger history account changed');
     }
-    final rows = result?['rows'];
-    if (rows is! List) return null;
+    if (result is! Map || result['rows'] is! List) {
+      throw const FormatException('Invalid ledger history window');
+    }
+    final rows = result['rows'] as List;
     if (revision == _revision) {
       final nextBoundary =
           tryParseDateTimeValue(
-            result?['next_before'],
+            result['next_before'],
           )?.toUtc().toIso8601String() ??
           boundary;
       _windowHint = (
         key: (client, token, table, accountId, type, nextBoundary),
-        date: tryParseDateTimeValue(result?['next_date'], toLocal: true),
+        date: tryParseDateTimeValue(result['next_date'], toLocal: true),
         readAt: DateTime.now(),
       );
     }

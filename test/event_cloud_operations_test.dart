@@ -58,21 +58,18 @@ void main() {
       },
     );
   }
-  test('cache miss and undeployed RPC each call backend once', () async {
-    for (final deployed in [true, false]) {
-      status = deployed ? 200 : 404;
-      response = deployed ? null : {'code': 'PGRST202', 'message': 'Not found'};
-      var calls = 0;
-      final result = await repository.geocode(
-        query: 'Taipei',
-        backend: () async {
-          calls++;
-          return {'lat': 25, 'lng': 121};
-        },
-      );
-      expect(result['lat'], 25);
-      expect(calls, 1);
-    }
+  test('geocode cache miss calls provider once', () async {
+    response = null;
+    var calls = 0;
+    final result = await repository.geocode(
+      query: 'Taipei',
+      backend: () async {
+        calls++;
+        return {'lat': 25, 'lng': 121};
+      },
+    );
+    expect(result['lat'], 25);
+    expect(calls, 1);
   });
   test('map coordinate lookup passes only table and event ID', () async {
     response = {'lat': 25, 'lng': 121};
@@ -156,7 +153,6 @@ void main() {
       await repository.importPublicEvents(
         sourceUrl: 'https://strolltimes.com/test',
         events: rows,
-        backend: noBackend,
       ),
       response,
     );
@@ -169,23 +165,8 @@ void main() {
       'p_events': rows,
     });
   });
-  test('undeployed import RPC retains original import handler', () async {
-    response = {'code': 'PGRST202', 'message': 'missing'};
-    status = 404;
-    var calls = 0;
-    await repository.importPublicEvents(
-      sourceUrl: 'https://strolltimes.com/test',
-      events: [
-        {'id': 'new'},
-      ],
-      backend: () async {
-        calls++;
-        return {'status': 'ok'};
-      },
-    );
-    expect(calls, 1);
-  });
-  for (final code in ['42501', 'P0001', '22023', '42P01']) {
+
+  for (final code in ['PGRST202', '42501', 'P0001', '22023', '42P01']) {
     test(
       '$code never bypasses validation or permissions through backend',
       () async {
@@ -215,7 +196,6 @@ void main() {
           repository.importPublicEvents(
             sourceUrl: 'https://evil.test',
             events: [{}],
-            backend: noBackend,
           ),
           throwsA(isA<PostgrestException>()),
         );

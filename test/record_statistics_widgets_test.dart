@@ -226,6 +226,7 @@ void main() {
       await tester.tap(find.text(loc.recordStatistics));
       await tester.pumpAndSettle();
       expect(find.byType(PageRecordStatistics), findsOneWidget);
+      expect(find.text('${loc.currencyLabel}：TWD'), findsOneWidget);
       expect(records.calls, 2);
       final currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
       final previousMonth = DateTime(currentMonth.year, currentMonth.month - 1);

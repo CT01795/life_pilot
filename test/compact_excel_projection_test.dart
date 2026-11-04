@@ -101,15 +101,9 @@ void main() {
       () {
         final compact = PersonalExportRow.fromWire(
           nested(row),
-          nested: true,
           fields: RepositoryPersonalExportRows.fields,
         ).values;
-        final old = PersonalExportRow.fromWire(
-          expanded(row),
-          nested: false,
-          fields: RepositoryPersonalExportRows.fields,
-        ).values;
-        expect(compact, old);
+        expect(compact, expanded(row));
         expect(compact.keys, containsAll(RepositoryPersonalExportRows.fields));
         expect(() => compact['value'] = 0, throwsUnsupportedError);
       },
@@ -129,7 +123,6 @@ void main() {
       });
       final decoded = PersonalExportRow.fromWire(
         wire,
-        nested: true,
         fields: RepositoryPersonalExportRows.fields,
       ).values;
       expect(decoded, expanded(row));
@@ -140,11 +133,10 @@ void main() {
   for (final invalid in [null, [], 'not an object']) {
     test('invalid nested record stays an error: $invalid', () {
       expect(
-        () => PersonalExportRow.fromWire(
-          {'table_name': 'calendar_events', 'record': invalid},
-          nested: true,
-          fields: RepositoryPersonalExportRows.fields,
-        ),
+        () => PersonalExportRow.fromWire({
+          'table_name': 'calendar_events',
+          'record': invalid,
+        }, fields: RepositoryPersonalExportRows.fields),
         throwsFormatException,
       );
     });
@@ -152,11 +144,10 @@ void main() {
 
   late SupabaseClient client;
   late List<http.Request> requests;
-  var legacy = false, malformed = false, wireBytes = 0;
+  var legacy = false, malformed = false;
   setUp(() async {
     legacy = false;
     malformed = false;
-    wireBytes = 0;
     requests = [];
     client = SupabaseClient(
       'https://example.supabase.co',
@@ -182,7 +173,6 @@ void main() {
                   : rows.map(nested).toList()
             : rows.map(expanded).toList();
         final body = jsonEncode(payload);
-        wireBytes += utf8.encode(body).length;
         return http.Response(
           body,
           200,
@@ -210,50 +200,35 @@ void main() {
   tearDown(() => client.dispose());
 
   for (final language in ['zh', 'en', 'ja', 'ko']) {
-    test(
-      '$language: actual workbook cells/sheets are identical with fewer wire bytes',
-      () async {
-        final loc = await AppLocalizations.delegate.load(Locale(language));
-        final capture = _Capture();
-        await ServicePersonalData().export(
-          email: 'one@example.com',
-          exporter: capture,
-          loc: loc,
-        );
-        final modernWorkbook = workbook(capture.bytes), modernBytes = wireBytes;
-        expect(
-          requests.every(
-            (r) => r.url.queryParameters['select'] == 'table_name,record',
-          ),
-          isTrue,
-        );
-        expect(modernWorkbook, hasLength(7));
-        expect(modernWorkbook.containsKey('Sheet1'), isFalse);
-        legacy = true;
-        wireBytes = 0;
-        requests.clear();
-        await ServicePersonalData().export(
-          email: 'one@example.com',
-          exporter: capture,
-          loc: loc,
-        );
-        expect(workbook(capture.bytes), modernWorkbook);
-        expect(modernBytes, lessThan(wireBytes));
-        final successful = requests.where(
-          (r) => r.url.path.endsWith('export_my_cloud_data_for_local'),
-        );
-        expect(successful, hasLength(2));
-        expect(
-          successful.first.url.queryParameters['select'],
-          contains('value:record->value'),
-        );
-        expect(
-          successful.first.url.queryParameters['select'],
-          isNot(contains('master_graph_url')),
-        );
-      },
-    );
+    test('$language: workbook uses the projected Excel endpoint', () async {
+      final loc = await AppLocalizations.delegate.load(Locale(language));
+      final capture = _Capture();
+      await ServicePersonalData().export(
+        email: 'one@example.com',
+        exporter: capture,
+        loc: loc,
+      );
+      final modernWorkbook = workbook(capture.bytes);
+      expect(
+        requests.every(
+          (r) => r.url.queryParameters['select'] == 'table_name,record',
+        ),
+        isTrue,
+      );
+      expect(modernWorkbook, hasLength(7));
+      expect(modernWorkbook.containsKey('Sheet1'), isFalse);
+    });
   }
+  test('missing Excel RPC does not call the transfer export', () async {
+    legacy = true;
+    await expectLater(
+      RepositoryPersonalExportRows(client: client).read('one@example.com'),
+      throwsA(
+        isA<PostgrestException>().having((e) => e.code, 'code', 'PGRST202'),
+      ),
+    );
+    expect(requests.single.url.path, endsWith('export_my_personal_excel_rows'));
+  });
   test(
     'malformed modern response is not replaced by a complete legacy export',
     () async {

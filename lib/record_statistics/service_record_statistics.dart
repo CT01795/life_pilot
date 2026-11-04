@@ -7,24 +7,19 @@ import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/paged_row_reader.dart';
-import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics_buckets.dart';
 
 class ServiceRecordStatistics {
   // Performance cache only, unrelated to subscription/storage quotas.
   static const _maximumLocalProjections = 8;
   final LocalDataStore localStore;
-  final bool preferAggregateRpc;
   final String? sharedLedgerId;
   List<Map<String, dynamic>>? _localSource;
   Object? _localScope;
   final Map<(String, String?), ModelLocalRecordStatistics> _localProjections =
       {};
-  ServiceRecordStatistics({
-    LocalDataStore? localStore,
-    this.preferAggregateRpc = true,
-    this.sharedLedgerId,
-  }) : localStore = localStore ?? LocalDataStore.instance;
+  ServiceRecordStatistics({LocalDataStore? localStore, this.sharedLedgerId})
+    : localStore = localStore ?? LocalDataStore.instance;
 
   Future<ModelLocalRecordStatistics?> _readLocal({
     required String owner,
@@ -142,12 +137,12 @@ class ServiceRecordStatistics {
       history: history,
     );
     final normalizedOwner = owner.toLowerCase();
-    if (history && preferAggregateRpc) {
+    if (history) {
       final client = supabase;
       if (client.auth.currentUser?.email?.toLowerCase() != normalizedOwner) {
         throw StateError('Account scope changed');
       }
-      final summary = await RepositoryOptionalJsonRpc(client).read(
+      final summary = await client.rpc(
         'get_my_record_statistics',
         params: {
           'p_account_id': accountId,
@@ -176,9 +171,13 @@ class ServiceRecordStatistics {
       if (client.auth.currentUser?.email?.toLowerCase() != normalizedOwner) {
         throw StateError('Account scope changed');
       }
-      if (summary != null) {
-        return ModelRecordStatisticsBuckets.toRows(summary, now);
+      if (summary is! Map) {
+        throw const FormatException('Invalid statistics summary');
       }
+      return ModelRecordStatisticsBuckets.toRows(
+        Map<String, dynamic>.from(summary),
+        now,
+      );
     }
     return readAllPagedRows(
       shouldContinue: shouldContinue,

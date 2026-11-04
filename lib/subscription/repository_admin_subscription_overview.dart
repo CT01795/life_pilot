@@ -1,5 +1,4 @@
 import 'package:life_pilot/subscription/model_admin_subscription_overview.dart';
-import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// One round trip for a lookup; no completed permission/subscription cache.
@@ -14,12 +13,8 @@ class RepositoryAdminSubscriptionOverview {
       throw StateError('Authentication required');
     }
     final params = {'p_email': email.trim().toLowerCase()};
-    var result = await RepositoryOptionalJsonRpc(client)
-        .read(
-          'admin_get_user_subscription_overview',
-          params: params,
-          rememberMissing: false,
-        )
+    final result = await client
+        .rpc('admin_get_user_subscription_overview', params: params)
         .timeout(const Duration(seconds: 30));
     void checkOwner() {
       if (client.auth.currentUser?.id != owner ||
@@ -29,18 +24,11 @@ class RepositoryAdminSubscriptionOverview {
     }
 
     checkOwner();
-    if (result == null) {
-      final rows = await Future.wait([
-        client.rpc('admin_get_user_subscription', params: params),
-        client.rpc('admin_get_user_subscription_entitlements', params: params),
-      ]).timeout(const Duration(seconds: 30));
-      checkOwner();
-      final subscriptions = rows[0] as List;
-      result = {
-        'subscription': subscriptions.isEmpty ? null : subscriptions.first,
-        'entitlements': rows[1],
-      };
+    if (result is! Map) {
+      throw const FormatException('Invalid subscription overview');
     }
-    return AdminSubscriptionOverview.fromJson(result);
+    return AdminSubscriptionOverview.fromJson(
+      Map<String, dynamic>.from(result),
+    );
   }
 }

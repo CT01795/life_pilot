@@ -23,6 +23,7 @@ class ServiceLedgerSharing {
   final SupabaseClient? _client;
   SupabaseClient get _db => _client ?? supabase;
   static const _group = 'ledger-sharing';
+  static const _homeLinksGroup = 'ledger-sharing-home-links';
   static const _pendingGroup = 'ledger-sharing-pending';
   static const pageSize = 30;
   static const _totalsBatchSize = 12;
@@ -48,20 +49,24 @@ class ServiceLedgerSharing {
       >();
 
   Future<List<Map<String, dynamic>>> homeLinks() =>
-      RepositorySessionReads(_db).read(_group, 'home-links', () async {
+      RepositorySessionReads(_db).read(_homeLinksGroup, 'home-links', () async {
         final rows = await _db.rpc('list_my_ledger_home_links');
         return List<Map<String, dynamic>>.from(rows as List);
       });
 
   Future<void> setHomeLink(String id, bool linked) async {
-    await _write('set_my_ledger_home_link', {
-      'p_share_id': id,
-      'p_linked': linked,
-    });
+    final client = _db;
+    final reads = RepositorySessionReads(client);
+    reads.invalidate(_homeLinksGroup);
+    try {
+      await client.rpc(
+        'set_my_ledger_home_link',
+        params: {'p_share_id': id, 'p_linked': linked},
+      );
+    } finally {
+      reads.invalidate(_homeLinksGroup);
+    }
   }
-
-  Future<List<Map<String, dynamic>>> received(int offset) =>
-      _read('list_my_shared_ledgers', {}, offset);
 
   Future<List<Map<String, dynamic>>> overviewPage(
     LedgerKind kind,
@@ -104,26 +109,7 @@ class ServiceLedgerSharing {
     LedgerKind kind,
     int offset, {
     int limit = pageSize,
-  }) async {
-    final db = _db;
-    if (!_isUnavailable(db, _kindRpc)) {
-      try {
-        return await _read(
-          _kindRpc,
-          {'p_kind': kind.name},
-          offset,
-          limit: limit,
-        );
-      } on PostgrestException catch (error) {
-        if (error.code != 'PGRST202') rethrow;
-        _markUnavailable(db, _kindRpc);
-      }
-    }
-    return (await receivedFor(
-      kind,
-      maxResults: offset + limit,
-    )).skip(offset).take(limit).toList(growable: false);
-  }
+  }) => _read(_kindRpc, {'p_kind': kind.name}, offset, limit: limit);
 
   Future<List<Map<String, dynamic>>> receivedFor(
     LedgerKind kind, {
@@ -139,29 +125,12 @@ class ServiceLedgerSharing {
     int? maxResults,
   ) async {
     final result = <Map<String, dynamic>>[];
-    final db = _db;
-    var legacy = _isUnavailable(db, _kindRpc);
     var offset = 0;
     while (maxResults == null || result.length < maxResults) {
-      final limit = legacy || maxResults == null
+      final limit = maxResults == null
           ? pageSize
           : (maxResults - result.length).clamp(1, pageSize).toInt();
-      final List<Map<String, dynamic>> page;
-      try {
-        page = legacy
-            ? await received(offset)
-            : await _read(
-                _kindRpc,
-                {'p_kind': kind.name},
-                offset,
-                limit: limit,
-              );
-      } on PostgrestException catch (error) {
-        if (legacy || offset != 0 || error.code != 'PGRST202') rethrow;
-        _markUnavailable(db, _kindRpc);
-        legacy = true;
-        continue;
-      }
+      final page = await receivedKindPage(kind, offset, limit: limit);
       result.addAll(page.where((row) => row['kind'] == kind.name));
       if (page.length < limit) break;
       offset += page.length;
@@ -173,30 +142,6 @@ class ServiceLedgerSharing {
 
   Future<List<Map<String, dynamic>>> entries(String id, int offset) =>
       _read('read_my_shared_ledger_entries', {'p_share_id': id}, offset);
-
-  Future<List<Map<String, dynamic>>> previewEntries(String id) {
-    const rpc = 'read_my_shared_ledger_preview';
-    final db = _db;
-    return RepositorySessionReads(db).read(_group, ('preview', id), () async {
-      if (!_isUnavailable(db, rpc)) {
-        try {
-          final rows = await db.rpc(rpc, params: {'p_share_id': id}) as List;
-          return List<Map<String, dynamic>>.unmodifiable(
-            rows.map((row) => Map<String, dynamic>.unmodifiable(row as Map)),
-          );
-        } on PostgrestException catch (error) {
-          if (error.code != 'PGRST202') rethrow;
-          _markUnavailable(db, rpc);
-        }
-      }
-      return _read(
-        'read_my_shared_ledger_entries',
-        {'p_share_id': id},
-        0,
-        limit: 5,
-      );
-    });
-  }
 
   Future<List<Map<String, dynamic>>> statistics(String id, DateTime now) =>
       RepositorySessionReads(_db).read(
@@ -232,42 +177,25 @@ class ServiceLedgerSharing {
     return RepositorySessionReads(
       db,
     ).read(_group, ('home-preview', id, day), () async {
-      if (!_isUnavailable(db, rpc)) {
-        try {
-          final result =
-              await db.rpc(
-                    rpc,
-                    params: {
-                      'p_share_id': id,
-                      'p_month_start': utc(DateTime(day.year, day.month)),
-                      'p_month_end': utc(DateTime(day.year, day.month + 1)),
-                      'p_day_start': utc(day),
-                      'p_day_end': utc(
-                        DateTime(day.year, day.month, day.day + 1),
-                      ),
-                    },
-                  )
-                  as Map;
-          return (
-            totals: Map<String, dynamic>.unmodifiable(result['totals'] as Map),
-            entries: List<Map<String, dynamic>>.unmodifiable(
-              (result['entries'] as List).map(
-                (row) => Map<String, dynamic>.unmodifiable(row as Map),
-              ),
-            ),
-          );
-        } on PostgrestException catch (error) {
-          if (error.code != 'PGRST202') rethrow;
-          _markUnavailable(db, rpc);
-        }
-      }
-      final result = await Future.wait<Object>([
-        totals(id, now: now),
-        previewEntries(id),
-      ]);
+      final result =
+          await db.rpc(
+                rpc,
+                params: {
+                  'p_share_id': id,
+                  'p_month_start': utc(DateTime(day.year, day.month)),
+                  'p_month_end': utc(DateTime(day.year, day.month + 1)),
+                  'p_day_start': utc(day),
+                  'p_day_end': utc(DateTime(day.year, day.month, day.day + 1)),
+                },
+              )
+              as Map;
       return (
-        totals: result[0] as Map<String, dynamic>,
-        entries: result[1] as List<Map<String, dynamic>>,
+        totals: Map<String, dynamic>.unmodifiable(result['totals'] as Map),
+        entries: List<Map<String, dynamic>>.unmodifiable(
+          (result['entries'] as List).map(
+            (row) => Map<String, dynamic>.unmodifiable(row as Map),
+          ),
+        ),
       );
     });
   }
@@ -278,48 +206,35 @@ class ServiceLedgerSharing {
     final now = DateTime.now();
     final day = DateTime(now.year, now.month, now.day);
     String utc(DateTime date) => date.toUtc().toIso8601String();
-    final snapshot = RepositorySessionReads(db).read<Map?>(
+    final snapshot = RepositorySessionReads(db).read<Map>(
       _group,
       ('detail-first', id, day),
       () async {
-        if (_isUnavailable(db, rpc)) return null;
-        try {
-          return await db.rpc(
-                rpc,
-                params: {
-                  'p_share_id': id,
-                  'p_limit': pageSize,
-                  'p_month_start': utc(DateTime(day.year, day.month)),
-                  'p_month_end': utc(DateTime(day.year, day.month + 1)),
-                  'p_day_start': utc(day),
-                  'p_day_end': utc(DateTime(day.year, day.month, day.day + 1)),
-                },
-              )
-              as Map;
-        } on PostgrestException catch (error) {
-          if (error.code != 'PGRST202') rethrow;
-          _markUnavailable(db, rpc);
-          return null;
-        }
+        return await db.rpc(
+              rpc,
+              params: {
+                'p_share_id': id,
+                'p_limit': pageSize,
+                'p_month_start': utc(DateTime(day.year, day.month)),
+                'p_month_end': utc(DateTime(day.year, day.month + 1)),
+                'p_day_start': utc(day),
+                'p_day_end': utc(DateTime(day.year, day.month, day.day + 1)),
+              },
+            )
+            as Map;
       },
     );
     return (
-      canPropose: snapshot.then(
-        (row) => row == null ? canPropose(id) : row['can_propose'] == true,
-      ),
+      canPropose: snapshot.then((row) => row['can_propose'] == true),
       totals: snapshot.then(
-        (row) => row == null
-            ? totals(id, now: now)
-            : Map<String, dynamic>.unmodifiable(row['totals'] as Map),
+        (row) => Map<String, dynamic>.unmodifiable(row['totals'] as Map),
       ),
       entries: snapshot.then(
-        (row) => row == null
-            ? entries(id, 0)
-            : List<Map<String, dynamic>>.unmodifiable(
-                (row['entries'] as List).map(
-                  (entry) => Map<String, dynamic>.unmodifiable(entry as Map),
-                ),
-              ),
+        (row) => List<Map<String, dynamic>>.unmodifiable(
+          (row['entries'] as List).map(
+            (entry) => Map<String, dynamic>.unmodifiable(entry as Map),
+          ),
+        ),
       ),
     );
   }
@@ -397,13 +312,6 @@ class ServiceLedgerSharing {
       await readOne(requests.keys.single, requests.values.single);
       return;
     }
-    Future<void> readIndividually() => Future.wait([
-      for (final entry in requests.entries) readOne(entry.key, entry.value),
-    ]);
-    if (_isUnavailable(db, _batchRpc)) {
-      await readIndividually();
-      return;
-    }
     try {
       final rows =
           await db.rpc(
@@ -425,15 +333,6 @@ class ServiceLedgerSharing {
               code: '42501',
             ),
           );
-        }
-      }
-    } on PostgrestException catch (error, stack) {
-      if (error.code == 'PGRST202') {
-        _markUnavailable(db, _batchRpc);
-        await readIndividually();
-      } else {
-        for (final request in requests.values) {
-          request.completeError(error, stack);
         }
       }
     } catch (error, stack) {
@@ -489,6 +388,7 @@ class ServiceLedgerSharing {
     ('pending', kind, accountId),
     () async {
       const accountRpc = 'get_my_ledger_account_pending_count';
+      const countsRpc = 'get_my_ledger_pending_counts';
       final db = _db;
       if (accountId != null && !_isUnavailable(db, accountRpc)) {
         try {
@@ -504,11 +404,9 @@ class ServiceLedgerSharing {
           _markUnavailable(db, accountRpc);
         }
       }
+      if (_isUnavailable(db, countsRpc)) return const <String, int>{};
       try {
-        final query = _db.rpc(
-          'get_my_ledger_pending_counts',
-          params: {'p_kind': kind.name},
-        );
+        final query = db.rpc(countsRpc, params: {'p_kind': kind.name});
         final rows =
             await (accountId == null
                     ? query
@@ -519,8 +417,9 @@ class ServiceLedgerSharing {
             row['account_id'] as String: (row['pending_count'] as num).toInt(),
         });
       } on PostgrestException catch (error) {
-        if (error.code == 'PGRST202') return const <String, int>{};
-        rethrow;
+        if (error.code != 'PGRST202') rethrow;
+        _markUnavailable(db, countsRpc);
+        return const <String, int>{};
       }
     },
   );
@@ -572,7 +471,10 @@ class ServiceLedgerSharing {
     void invalidate() {
       reads.invalidate(_pendingGroup);
       // Pending submissions do not change ledger entries or totals.
-      if (!pendingOnly) reads.invalidate(_group);
+      if (!pendingOnly) {
+        reads.invalidate(_group);
+        reads.invalidate(_homeLinksGroup);
+      }
     }
 
     invalidate();

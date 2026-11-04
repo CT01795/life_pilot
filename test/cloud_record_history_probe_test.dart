@@ -9,16 +9,26 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 void main() {
   test('history probe reuses only a matching boundary once', () async {
     final requests = <http.Request>[];
+    var missing = false;
     String? nextDate = '2026-09-12T00:00:00Z';
     final client = SupabaseClient(
       'https://example.supabase.co',
       'test-key',
       httpClient: MockClient((request) async {
         requests.add(request);
+        if (missing) {
+          return http.Response(
+            '{"code":"PGRST202","message":"missing"}',
+            404,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        }
         return http.Response(
-          request.url.path.endsWith('/get_my_ledger_history_window_v2')
+          request.url.path.endsWith('/get_my_ledger_history_window_v2') &&
+                  jsonDecode(request.body)['p_include_latest'] == true
               ? '{"rows":[{"id":"fallback"}],"next_before":"2026-09-15T00:00:00Z","next_date":"2026-09-12T00:00:00Z"}'
-              : request.url.path.endsWith('/get_my_ledger_history_window')
+              : request.url.path.endsWith('/get_my_ledger_history_window_v2')
               ? jsonEncode({
                   'rows': [
                     {'id': 'one'},
@@ -100,5 +110,17 @@ void main() {
     expect((await window(includeLatest: true))?.single['id'], 'fallback');
     expect(await read(probe: true, before: DateTime.utc(2026, 9, 15)), date);
     expect(requests, hasLength(10));
+    missing = true;
+    await expectLater(
+      window(),
+      throwsA(
+        isA<PostgrestException>().having((e) => e.code, 'code', 'PGRST202'),
+      ),
+    );
+    expect(requests, hasLength(11));
+    expect(
+      requests.last.url.path,
+      endsWith('/get_my_ledger_history_window_v2'),
+    );
   });
 }

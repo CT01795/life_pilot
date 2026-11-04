@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/widgets/widgets_ledger_record_tile.dart';
 import 'package:life_pilot/accounting/service_ledger_sharing.dart';
+import 'package:life_pilot/accounting/repository_account_image.dart';
+import 'package:life_pilot/accounting/widgets_account_image_tile.dart';
 import 'package:life_pilot/accounting/controller_shared_ledger_overview.dart';
 import 'package:life_pilot/accounting/controller_ledger_review_refresh.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
@@ -49,11 +51,15 @@ class SharedLedgerHomePreview extends StatefulWidget {
     required this.kind,
     required this.id,
     required this.name,
+    this.snapshot,
+    this.onRefresh,
     super.key,
   });
   final LedgerKind kind;
   final String id;
   final String name;
+  final Future<SharedLedgerHomeSnapshot>? snapshot;
+  final VoidCallback? onRefresh;
 
   @override
   State<SharedLedgerHomePreview> createState() =>
@@ -67,7 +73,8 @@ class _SharedLedgerHomePreviewState extends State<SharedLedgerHomePreview>
   bool? _routeCurrent;
 
   void _load() {
-    final snapshot = ServiceLedgerSharing().homePreview(widget.id);
+    final snapshot =
+        widget.snapshot ?? ServiceLedgerSharing().homePreview(widget.id);
     _summary = snapshot.then((data) => data.totals);
     _entries = snapshot.then((data) => data.entries);
   }
@@ -80,17 +87,38 @@ class _SharedLedgerHomePreviewState extends State<SharedLedgerHomePreview>
   }
 
   @override
+  void didUpdateWidget(covariant SharedLedgerHomePreview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.snapshot != widget.snapshot || oldWidget.id != widget.id) {
+      _load();
+    }
+  }
+
+  void _refresh() {
+    final callback = widget.onRefresh;
+    if (callback == null) {
+      setState(_load);
+    } else {
+      callback();
+    }
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final current = ModalRoute.isCurrentOf(context);
-    if (current == true && _routeCurrent == false) _load();
+    if (current == true && _routeCurrent == false) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _refresh();
+      });
+    }
     _routeCurrent = current;
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && _routeCurrent != false) {
-      setState(_load);
+      _refresh();
     }
   }
 
@@ -122,7 +150,7 @@ class _SharedLedgerHomePreviewState extends State<SharedLedgerHomePreview>
               return const LinearProgressIndicator();
             }
             if (snapshot.hasError) {
-              return WidgetsLoadError(onRetry: () => setState(_load));
+              return WidgetsLoadError(onRetry: _refresh);
             }
             final rows = snapshot.data ?? [];
             return Column(
@@ -471,17 +499,15 @@ class _SharedLedgerAccountCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: compact ? 84 : 120,
-                height: compact ? 84 : 120,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(16),
+              AccountImageTile(
+                name: name,
+                loadThumbnail: () => const RepositoryAccountImage().readShared(
+                  id,
+                  thumbnail: true,
                 ),
-                alignment: Alignment.center,
-                child: Text(
-                  name.isEmpty ? '' : name.characters.first,
-                  style: Theme.of(context).textTheme.headlineMedium,
+                loadImage: () => const RepositoryAccountImage().readShared(
+                  id,
+                  thumbnail: false,
                 ),
               ),
               SizedBox(width: compact ? 8 : 16),
@@ -829,7 +855,7 @@ class _LedgerSharingPageState extends State<_LedgerSharingPage> {
             child: _LedgerPages(
               key: _listKey,
               fetch: id == null
-                  ? _service.received
+                  ? (offset) => _service.receivedKindPage(widget.kind, offset)
                   : (offset) => _service.outgoing(widget.kind, id, offset),
               include: (row) => id != null || row['kind'] == widget.kind.name,
               item: (context, row) {

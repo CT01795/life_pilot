@@ -66,46 +66,21 @@ class RepositoryPersonalExportRows {
     assertOwner(id, email);
     final result = <Map<String, dynamic>>[];
     final seen = <(String, String)>{};
-    var legacy = false;
     const pageSize = 1000;
     for (var offset = 0; ;) {
       assertOwner(id, email);
-      Future<List<Map<String, dynamic>>> readPage(
-        String function,
-      ) async => await client
-          .rpc(function)
+      final page = await client
+          .rpc('export_my_personal_excel_rows')
           .inFilter('table_name', tables)
-          .select(
-            function == 'export_my_personal_excel_rows'
-                ? 'table_name,record'
-                : 'table_name,${fields.map((field) => '$field:record->$field').join(',')}',
-          )
+          .select('table_name,record')
           .order('table_name')
           .order('record->>id')
           .range(offset, offset + pageSize - 1)
           .timeout(const Duration(seconds: 30));
-      List<Map<String, dynamic>> page;
-      try {
-        page = await readPage(
-          legacy
-              ? 'export_my_cloud_data_for_local'
-              : 'export_my_personal_excel_rows',
-        );
-      } on PostgrestException catch (error) {
-        // Retry only an undeployed projection, never authorization/server errors.
-        if (legacy || error.code != 'PGRST202') rethrow;
-        assertOwner(id, email);
-        legacy = true;
-        page = await readPage('export_my_cloud_data_for_local');
-      }
       assertOwner(id, email);
       if (page.isEmpty) break;
       for (final wire in page) {
-        final row = PersonalExportRow.fromWire(
-          wire,
-          nested: !legacy,
-          fields: fields,
-        ).values;
+        final row = PersonalExportRow.fromWire(wire, fields: fields).values;
         final table = row['table_name'], rowId = row['id'];
         if (table is! String ||
             !tables.contains(table) ||

@@ -88,7 +88,6 @@ void main() {
     ),
     'Excel pages': () => RepositoryPersonalExportRows().read('one@example.com'),
     'deletion own': () => RepositoryAccountDeletion().ownRequest(),
-    'deletion admin': () => RepositoryAccountDeletion().adminRequests(),
     'retention preview': () =>
         ServiceLocalDataTransfer().cloudAnswerRetention(),
   };

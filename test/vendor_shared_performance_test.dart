@@ -7,7 +7,6 @@ import 'package:life_pilot/event/page_content_performance.dart';
 import 'package:life_pilot/event/service_content_performance.dart';
 import 'package:life_pilot/event/widgets_content_performance_link.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/vendor/service_vendor_account.dart';
 import 'package:provider/provider.dart';
 import 'record_statistics_test.dart' show StatisticsTestAuth;
 
@@ -44,33 +43,7 @@ class _Performance extends ServiceContentPerformance {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  test(
-    'vendor workspace derives overview and interaction totals from the shared owner-scoped source',
-    () async {
-      final performance = _Performance();
-      final result = await ServiceVendorAccount(
-        preferSummaryRpc: false,
-        performance: performance,
-      ).fetchMetrics('one@example.com');
-      expect(performance.calls, [
-        ('one@example.com', false, true),
-        ('one@example.com', true, true),
-      ]);
-      expect(result.published, 1);
-      expect(result.pending, 1);
-      expect(result.activeEvents, 1);
-      expect(result.activeAttractions, 1);
-      expect(result.recentSubmissions.length, 2);
-      expect(result.performance.totals, {
-        'page_views': 30,
-        'card_clicks': 5,
-        'registration_clicks': 2,
-        'saves': 4,
-        'like_counts': 8,
-        'dislike_counts': 2,
-      });
-    },
-  );
+
   for (final language in ['zh', 'en', 'ja', 'ko']) {
     for (final attractions in [false, true]) {
       testWidgets(

@@ -64,7 +64,7 @@ void main() {
   Future<List<Map<String, dynamic>>> read(
     RecordStatisticsKind kind,
     bool history,
-  ) => ServiceRecordStatistics(preferAggregateRpc: false).read(
+  ) => ServiceRecordStatistics().read(
     owner: 'one@example.com',
     storage: DataStorageLocation.cloud,
     accountId: 'a',
@@ -81,7 +81,7 @@ void main() {
       expect(await read(kind, true), isEmpty);
       expect(requests, isEmpty);
     });
-    for (final history in [false, true]) {
+    for (final history in [false]) {
       test(
         '$kind history=$history stops after the expired in-flight response',
         () async {

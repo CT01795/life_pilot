@@ -99,19 +99,15 @@ void main() {
       throwsFormatException,
     );
   });
-  test('missing RPC alone enables projected bounded legacy fallback', () async {
+  test('missing pending page RPC does not query the old list', () async {
     missing = true;
-    final page = await RepositoryAccountDeletion(
-      client: client,
-    ).adminPage(offset: 50);
-    expect(page.legacy, isTrue);
-    expect(requests, hasLength(2));
-    expect(
-      requests.last.url.queryParameters['select'],
-      'id,email,status,requested_at,cancellation_requested_at',
+    await expectLater(
+      RepositoryAccountDeletion(client: client).adminPage(),
+      throwsA(
+        isA<PostgrestException>().having((e) => e.code, 'code', 'PGRST202'),
+      ),
     );
-    expect(requests.last.url.queryParameters['offset'], '50');
-    expect(requests.last.url.queryParameters['limit'], '51');
+    expect(requests, hasLength(1));
   });
   test('permission failure never falls back to a different read', () async {
     denied = true;

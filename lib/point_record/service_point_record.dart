@@ -4,6 +4,7 @@ import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/model_point_record_detail.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/utils/supabase.dart';
+import 'package:life_pilot/accounting/repository_account_image.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/graph.dart';
@@ -430,25 +431,27 @@ class ServicePointRecord {
     String accountId,
     Uint8List imageBytes,
   ) async {
+    final owner = _localOwner;
+    final fields = await RepositoryAccountImage.imageFields(imageBytes);
+    if (_localOwner != owner) throw StateError('Account changed');
     try {
       if (await _storesLocally) {
         await _localEditor.updateFields(
           owner: _localOwner!,
           resource: TableNames.pointRecordAccount,
           id: accountId,
-          fields: {'master_graph_url': base64Encode(imageBytes)},
+          fields: fields,
           notFoundMessage: 'point_account_not_found',
         );
         return imageBytes;
       }
       // 不管 Web / Mobile 都轉 base64
       // Mobile / Web 統一存 bytea (Uint8List)
-      final result = await supabase
-          .from(TableNames.pointRecordAccount)
-          .update({'master_graph_url': base64Encode(imageBytes)})
-          .eq(Fields.id, accountId)
-          .eq(Fields.isValid, true)
-          .select(Fields.id);
+      final result = await RepositoryAccountImage.writeCloud(
+        TableNames.pointRecordAccount,
+        accountId,
+        fields,
+      );
 
       if (result.isEmpty) {
         throw Exception("account not found or invalid");
@@ -515,9 +518,7 @@ class ServicePointRecord {
           .gte('date', dateFrom.toUtc().toIso8601String())
           .lt('date', upperBound.toUtc().toIso8601String());
     }
-    Future<List<Map<String, dynamic>>?> loadWindow({
-      bool includeLatest = false,
-    }) => _cloudHistory.window(
+    final combinedRows = await _cloudHistory.window(
       supabase,
       table: TableNames.pointRecordDetail,
       kind: 'points',
@@ -526,12 +527,8 @@ class ServicePointRecord {
       from: dateFrom,
       until: upperBound,
       includeReserved: includeReservedRecords,
-      includeLatest: includeLatest,
+      includeLatest: includeLatestFallback,
     );
-    final withFallback = includeLatestFallback
-        ? await loadWindow(includeLatest: true)
-        : null;
-    final combinedRows = withFallback ?? await loadWindow();
     final result =
         combinedRows ??
         List<Map<String, dynamic>>.from(
@@ -561,7 +558,7 @@ class ServicePointRecord {
       );
     }
     final hasRegularRecord = result.any((row) => !isReservedRecordRow(row));
-    if (includeLatestFallback && withFallback == null && !hasRegularRecord) {
+    if (includeLatestFallback && combinedRows == null && !hasRegularRecord) {
       final fallback = await supabase
           .from(TableNames.pointRecordDetail)
           .select(_pointDetailColumns)

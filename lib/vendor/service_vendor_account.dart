@@ -1,9 +1,7 @@
-import 'package:life_pilot/event/service_content_performance.dart';
 import 'package:life_pilot/vendor/repository_vendor_initialization.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
-import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
 import 'package:life_pilot/subscription/repository_pricing_catalog.dart';
 import 'package:life_pilot/subscription/model_billing_cycle.dart';
 
@@ -26,14 +24,8 @@ class ServiceVendorAccount {
   }
 
   static final _initializers = Expando<RepositoryVendorInitialization>();
-  final ServiceContentPerformance _performance;
-  final bool preferSummaryRpc;
   final bool displayPricing;
-  ServiceVendorAccount({
-    ServiceContentPerformance? performance,
-    this.preferSummaryRpc = true,
-    this.displayPricing = false,
-  }) : _performance = performance ?? ServiceContentPerformance();
+  ServiceVendorAccount({this.displayPricing = false});
   Future<void> ensureVendorAccount() async {
     final client = supabase;
     final user = client.auth.currentUser;
@@ -67,45 +59,27 @@ class ServiceVendorAccount {
 
   Future<VendorContentMetrics> fetchMetrics(String account) async {
     final normalized = normalizeText(account);
-    if (preferSummaryRpc) {
-      final client = supabase;
-      if (normalizeText(client.auth.currentUser?.email) != normalized ||
-          normalized.isEmpty) {
-        throw StateError('Account scope changed');
-      }
-      final now = DateTime.now();
-      final summary = await RepositoryOptionalJsonRpc(client).read(
-        'get_my_vendor_dashboard_metrics',
-        params: {
-          'p_day_start': DateTime(
-            now.year,
-            now.month,
-            now.day,
-          ).toUtc().toIso8601String(),
-        },
-      );
-      if (normalizeText(client.auth.currentUser?.email) != normalized) {
-        throw StateError('Account scope changed');
-      }
-      if (summary != null) return VendorContentMetrics.fromSummary(summary);
+    final client = supabase;
+    if (normalizeText(client.auth.currentUser?.email) != normalized ||
+        normalized.isEmpty) {
+      throw StateError('Account scope changed');
     }
-    final responses = await Future.wait([
-      _performance.read(
-        owner: normalized,
-        attractions: false,
-        includeSubmissionDetails: true,
-      ),
-      _performance.read(
-        owner: normalized,
-        attractions: true,
-        includeSubmissionDetails: true,
-      ),
-    ]);
-    return VendorContentMetrics.fromPerformance(
-      events: responses[0],
-      attractions: responses[1],
-      now: DateTime.now(),
+    final now = DateTime.now();
+    final summary = await client.rpc(
+      'get_my_vendor_dashboard_metrics',
+      params: {
+        'p_day_start': DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).toUtc().toIso8601String(),
+      },
     );
+    if (normalizeText(client.auth.currentUser?.email) != normalized) {
+      throw StateError('Account scope changed');
+    }
+    if (summary is! Map) throw const FormatException('Invalid vendor metrics');
+    return VendorContentMetrics.fromSummary(Map<String, dynamic>.from(summary));
   }
 
   Future<void> createPricingVersionAsAdmin({

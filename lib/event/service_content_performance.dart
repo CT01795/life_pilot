@@ -5,7 +5,6 @@ import 'package:life_pilot/event/model_content_performance_query.dart';
 import 'package:life_pilot/utils/paged_row_reader.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
 
 class ServiceContentPerformance {
   final Duration pageTimeout;
@@ -36,7 +35,8 @@ class ServiceContentPerformance {
         shouldContinue: shouldContinue,
       );
       if (shouldContinue?.call() == false) return ModelContentPerformance([]);
-      if (page != null) return page;
+      if (page == null) throw const FormatException('Missing performance page');
+      return page;
     }
     final projection = ModelContentPerformanceQuery(
       includeSubmissionDetails: includeSubmissionDetails,
@@ -112,8 +112,8 @@ class ServiceContentPerformance {
       throw StateError('Account scope changed');
     }
     final month = period.month;
-    final result = await RepositoryOptionalJsonRpc(client)
-        .read(
+    final result = await client
+        .rpc(
           'get_my_content_performance_page',
           params: {
             'p_attractions': attractions,
@@ -136,11 +136,19 @@ class ServiceContentPerformance {
     if (client.auth.currentUser?.email?.toLowerCase() != owner.toLowerCase()) {
       throw StateError('Account scope changed');
     }
-    if (offset == 0 && result != null && result['totals'] is! Map) {
+    if (result is! Map || result['items'] is! List) {
+      throw const FormatException('Invalid performance page');
+    }
+    final page = Map<String, dynamic>.from(result);
+    if (offset == 0 &&
+        (page['items'] as List).isEmpty &&
+        page['next_offset'] == null &&
+        page['totals'] == null) {
+      page['totals'] = const <String, dynamic>{};
+    }
+    if (offset == 0 && page['totals'] is! Map) {
       throw const FormatException('Performance summary is missing');
     }
-    return result == null
-        ? null
-        : ModelContentPerformance.fromPage(result, attractions: attractions);
+    return ModelContentPerformance.fromPage(page, attractions: attractions);
   }
 }

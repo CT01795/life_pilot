@@ -6,11 +6,10 @@ class PersonalExportRow {
 
   factory PersonalExportRow.fromWire(
     Map<String, dynamic> row, {
-    required bool nested,
     required Iterable<String> fields,
   }) {
     final table = row['table_name'];
-    final record = nested ? row['record'] : row;
+    final record = row['record'];
     if (table is! String || record is! Map) {
       throw const FormatException('Invalid Excel export projection');
     }

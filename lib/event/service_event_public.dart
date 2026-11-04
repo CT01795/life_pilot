@@ -74,10 +74,9 @@ class ServiceEventPublic {
   }
 
   Future<PublicEventRefreshStatus> getRefreshStatus() async {
-    final response = await _cloudGateway.rpcOrBackend(
+    final response = await _cloudGateway.rpc(
       'life_pilot_public_event_refresh',
       params: {'p_action': 'status'},
-      backend: () => apiCloud.get('event/public_events_updated_today'),
     );
     return PublicEventRefreshStatus(
       updated: response is Map && response['updated'] == true,
@@ -86,11 +85,9 @@ class ServiceEventPublic {
   }
 
   Future<(String?, PublicEventRefreshExecution)> _startRefresh() async {
-    final response = await _cloudGateway.rpcOrBackend(
+    final response = await _cloudGateway.rpc(
       'life_pilot_public_event_refresh',
       params: {'p_action': 'start'},
-      backend: () =>
-          apiCloud.post('event/start_public_event_refresh', const {}),
     );
     if (response is! Map) {
       return (null, PublicEventRefreshExecution.running);
@@ -111,15 +108,9 @@ class ServiceEventPublic {
   }
 
   Future<void> _finishRefresh(String token, {required bool completed}) async {
-    await _cloudGateway.rpcOrBackend(
+    await _cloudGateway.rpc(
       'life_pilot_public_event_refresh',
       params: {'p_action': completed ? 'complete' : 'abort', 'p_token': token},
-      backend: () => apiCloud.post(
-        completed
-            ? 'event/complete_public_event_refresh'
-            : 'event/abort_public_event_refresh',
-        {'token': token},
-      ),
     );
   }
 
@@ -158,12 +149,9 @@ class ServiceEventPublic {
 
   Future<void> _heartbeatRefresh(String token) async {
     try {
-      await _cloudGateway.rpcOrBackend(
+      await _cloudGateway.rpc(
         'life_pilot_public_event_refresh',
         params: {'p_action': 'heartbeat', 'p_token': token},
-        backend: () => apiCloud.post('event/heartbeat_public_event_refresh', {
-          'token': token,
-        }),
       );
     } catch (error, stackTrace) {
       logger.e(
@@ -322,14 +310,7 @@ class ServiceEventPublic {
             final batch = rows.sublist(offset, end);
             await RepositoryEventCloudOperations(
               gateway: _cloudGateway,
-            ).importPublicEvents(
-              sourceUrl: url,
-              events: batch,
-              backend: () => apiCloud.post('event/import_public_events', {
-                'source_url': url,
-                'events': batch,
-              }),
-            );
+            ).importPublicEvents(sourceUrl: url, events: batch);
           }
         }
       } on Exception catch (ex) {

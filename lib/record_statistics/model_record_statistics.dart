@@ -38,6 +38,7 @@ class ModelRecordStatistics {
   final num total;
   final num month;
   final num today;
+  final String? currency;
   final List<RecordMonthStatistics> months;
 
   /// Opening history counts for cumulative charts. Future months do not.
@@ -49,6 +50,7 @@ class ModelRecordStatistics {
     this.today,
     List<RecordMonthStatistics> months, {
     this.hasChartData = true,
+    this.currency,
   }) : months = List.unmodifiable(months);
   late final RecordStatisticsSeries _cumulative = RecordStatisticsSeries(
     months,
@@ -74,7 +76,11 @@ class ModelRecordStatistics {
     final totals = List<num>.filled(12, 0);
     num total = 0, month = 0, today = 0, opening = 0;
     var hasChartData = false;
+    String? currency;
     for (final row in rows) {
+      if (row['currency'] case final String unit when unit.trim().isNotEmpty) {
+        currency ??= unit.trim();
+      }
       final date = tryParseDateTimeValue(row['date'], toLocal: true);
       if (date == null) continue;
       final beforeNextMonth = date.isBefore(nextMonth);
@@ -96,13 +102,20 @@ class ModelRecordStatistics {
       if (index >= 0 && index < 12) totals[index] += value;
     }
     var cumulative = opening;
-    return ModelRecordStatistics(totalOverride ?? total, month, today, [
-      for (var i = 0; i < 12; i++)
-        RecordMonthStatistics(
-          DateTime(firstMonth.year, firstMonth.month + i),
-          totals[i],
-          cumulative += totals[i],
-        ),
-    ], hasChartData: hasChartData);
+    return ModelRecordStatistics(
+      totalOverride ?? total,
+      month,
+      today,
+      [
+        for (var i = 0; i < 12; i++)
+          RecordMonthStatistics(
+            DateTime(firstMonth.year, firstMonth.month + i),
+            totals[i],
+            cumulative += totals[i],
+          ),
+      ],
+      hasChartData: hasChartData,
+      currency: currency,
+    );
   }
 }

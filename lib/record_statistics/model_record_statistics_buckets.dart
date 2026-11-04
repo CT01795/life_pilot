@@ -39,6 +39,10 @@ class ModelRecordStatisticsBuckets {
       result.add({'date': first.toIso8601String(), 'value': 0});
     }
     add(next, parseNumValue(json['future']));
+    final currency = json['currency'];
+    if (result.isNotEmpty && currency is String) {
+      result.first['currency'] = currency;
+    }
     return result;
   }
 }

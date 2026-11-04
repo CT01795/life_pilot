@@ -130,11 +130,7 @@ class ServiceEvent {
 
     final request = () async {
       try {
-        await RepositoryCloudGateway().rpcOrBackend(
-          'life_pilot_run_daily_cleanup',
-          backend: () =>
-              apiCloud.post('event/cleanup_recommended_events', const {}),
-        );
+        await RepositoryCloudGateway().rpc('life_pilot_run_daily_cleanup');
         _lastCleanupRequestDate = today;
       } catch (error, stackTrace) {
         logger.e(

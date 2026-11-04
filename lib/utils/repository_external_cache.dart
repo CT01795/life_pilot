@@ -14,10 +14,9 @@ class RepositoryExternalCache {
     required double lng,
     required Future<dynamic> Function() backend,
   }) async {
-    final cached = await gateway.rpcOrBackend(
+    final cached = await gateway.rpc(
       'life_pilot_cached_weather',
       params: {'p_lat': lat, 'p_lng': lng},
-      backend: () async => null,
     );
     return cached ?? await backend();
   }
@@ -28,12 +27,15 @@ class RepositoryExternalCache {
     required Future<dynamic> Function() backend,
     void Function(dynamic data)? onRefreshed,
   }) async {
-    final cached = await gateway.rpcOrBackend(
+    final cached = await gateway.rpc(
       'life_pilot_cached_holidays',
       params: {'p_year': year, 'p_language': language},
-      backend: () async => null,
     );
-    if (cached is! Map || cached['cached'] != true) return backend();
+    if (cached == null) return backend();
+    if (cached is! Map || cached['cached'] is! bool) {
+      throw const FormatException('Invalid holiday cache response');
+    }
+    if (cached['cached'] == false) return backend();
     if (cached['fresh'] != true) {
       // Show existing holidays while the Edge refresh is pending/unavailable.
       unawaited(() async {
