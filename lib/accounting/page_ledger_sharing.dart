@@ -5,6 +5,7 @@ import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/widgets/widgets_ledger_record_tile.dart';
 import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/accounting/controller_shared_ledger_overview.dart';
+import 'package:life_pilot/accounting/controller_ledger_review_refresh.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/accounting/widgets_accounting_record_dialog.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
@@ -59,8 +60,45 @@ class SharedLedgerHomePreview extends StatefulWidget {
       _SharedLedgerHomePreviewState();
 }
 
-class _SharedLedgerHomePreviewState extends State<SharedLedgerHomePreview> {
-  late var _entries = ServiceLedgerSharing().previewEntries(widget.id);
+class _SharedLedgerHomePreviewState extends State<SharedLedgerHomePreview>
+    with WidgetsBindingObserver {
+  late Future<Map<String, dynamic>> _summary;
+  late Future<List<Map<String, dynamic>>> _entries;
+  bool? _routeCurrent;
+
+  void _load() {
+    final snapshot = ServiceLedgerSharing().homePreview(widget.id);
+    _summary = snapshot.then((data) => data.totals);
+    _entries = snapshot.then((data) => data.entries);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final current = ModalRoute.isCurrentOf(context);
+    if (current == true && _routeCurrent == false) _load();
+    _routeCurrent = current;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _routeCurrent != false) {
+      setState(_load);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +113,7 @@ class _SharedLedgerHomePreviewState extends State<SharedLedgerHomePreview> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 16),
-        _SharedLedgerTotals(id: widget.id, kind: widget.kind),
+        _SharedLedgerTotals(id: widget.id, kind: widget.kind, source: _summary),
         const Divider(),
         FutureBuilder<List<Map<String, dynamic>>>(
           future: _entries,
@@ -84,11 +122,7 @@ class _SharedLedgerHomePreviewState extends State<SharedLedgerHomePreview> {
               return const LinearProgressIndicator();
             }
             if (snapshot.hasError) {
-              return WidgetsLoadError(
-                onRetry: () => setState(() {
-                  _entries = ServiceLedgerSharing().previewEntries(widget.id);
-                }),
-              );
+              return WidgetsLoadError(onRetry: () => setState(_load));
             }
             final rows = snapshot.data ?? [];
             return Column(
@@ -148,8 +182,14 @@ class _SharedLedgerTotals extends StatefulWidget {
     required this.kind,
     this.revision = 0,
     this.overviewTotals,
+    this.refreshOnRouteReturn = true,
+    this.source,
+    this.refreshSourceIndependently = false,
   });
+  final bool refreshSourceIndependently;
+  final Future<Map<String, dynamic>>? source;
   final Map<String, dynamic>? overviewTotals;
+  final bool refreshOnRouteReturn;
   final int revision;
   final String id;
   final LedgerKind kind;
@@ -162,6 +202,7 @@ class _SharedLedgerTotalsState extends State<_SharedLedgerTotals>
     with WidgetsBindingObserver {
   late var _totals = _initialTotals();
   Future<Map<String, dynamic>> _initialTotals() {
+    if (widget.source case final source?) return source;
     final totals = widget.overviewTotals;
     return totals == null
         ? ServiceLedgerSharing().totals(widget.id)
@@ -181,7 +222,10 @@ class _SharedLedgerTotalsState extends State<_SharedLedgerTotals>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final current = ModalRoute.isCurrentOf(context);
-    if (current == true && _routeCurrent == false) {
+    if (widget.source == null &&
+        widget.refreshOnRouteReturn &&
+        current == true &&
+        _routeCurrent == false) {
       _totals = ServiceLedgerSharing().totals(widget.id);
     }
     _routeCurrent = current;
@@ -192,6 +236,7 @@ class _SharedLedgerTotalsState extends State<_SharedLedgerTotals>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.id != widget.id) _lastTotals = null;
     if (oldWidget.id != widget.id ||
+        oldWidget.source != widget.source ||
         !identical(oldWidget.overviewTotals, widget.overviewTotals) ||
         (widget.overviewTotals == null &&
             oldWidget.revision != widget.revision)) {
@@ -201,7 +246,9 @@ class _SharedLedgerTotalsState extends State<_SharedLedgerTotals>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _routeCurrent != false) {
+    if ((widget.source == null || widget.refreshSourceIndependently) &&
+        state == AppLifecycleState.resumed &&
+        _routeCurrent != false) {
       setState(() => _totals = ServiceLedgerSharing().totals(widget.id));
     }
   }
@@ -246,7 +293,8 @@ class _SharedLedgerTotalsState extends State<_SharedLedgerTotals>
             if (snapshot.connectionState != ConnectionState.done &&
                 data == null)
               const LinearProgressIndicator()
-            else if (snapshot.hasError)
+            else if (snapshot.hasError &&
+                (widget.source == null || widget.refreshSourceIndependently))
               TextButton.icon(
                 onPressed: () => setState(
                   () => _totals = ServiceLedgerSharing().totals(widget.id),
@@ -556,7 +604,8 @@ class LedgerSharingButton extends StatelessWidget {
   }
 }
 
-final _ledgerPendingRevision = ValueNotifier<int>(0);
+final _ledgerPendingChanges =
+    ValueNotifier<({LedgerKind kind, String id, Object revision})?>(null);
 
 class LedgerReviewButton extends StatefulWidget {
   const LedgerReviewButton({
@@ -584,7 +633,7 @@ class _LedgerReviewButtonState extends State<LedgerReviewButton>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _ledgerPendingRevision.addListener(_refresh);
+    _ledgerPendingChanges.addListener(_onPendingChanged);
     _refresh();
   }
 
@@ -606,15 +655,25 @@ class _LedgerReviewButtonState extends State<LedgerReviewButton>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _ledgerPendingRevision.removeListener(_refresh);
+    _ledgerPendingChanges.removeListener(_onPendingChanged);
     super.dispose();
   }
 
-  Future<void> _refresh() async {
+  void _onPendingChanged() {
+    final change = _ledgerPendingChanges.value;
+    if (change?.kind == widget.kind && change?.id == widget.accountId) {
+      _refresh(accountOnly: true);
+    }
+  }
+
+  Future<void> _refresh({bool accountOnly = false}) async {
     final request = ++_request;
     final accountId = widget.accountId;
     try {
-      final counts = await _service.pendingCounts(widget.kind);
+      final counts = await _service.pendingCounts(
+        widget.kind,
+        accountId: accountOnly ? accountId : null,
+      );
       if (!mounted || request != _request) return;
       final count = counts[accountId] ?? 0;
       if (_count != count) setState(() => _count = count);
@@ -631,19 +690,38 @@ class _LedgerReviewButtonState extends State<LedgerReviewButton>
     return TextButton.icon(
       icon: const Badge(child: Icon(Icons.fact_check_outlined)),
       label: Text('${loc.ledgerPendingProposals} ($count)'),
-      onPressed: () => Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (_) => _LedgerReviewPage(
-            service: _service,
-            fetch: (offset) => _service.accountProposals(
-              widget.kind,
-              widget.accountId,
-              offset,
+      onPressed: () async {
+        final kind = widget.kind;
+        final accountId = widget.accountId;
+        bool current() =>
+            mounted && widget.kind == kind && widget.accountId == accountId;
+        var returned = false;
+        final onApproved = widget.onApproved;
+        final refresh = ControllerLedgerReviewRefresh(() => onApproved?.call());
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) => _LedgerReviewPage(
+              service: _service,
+              fetch: (offset) =>
+                  _service.accountProposals(kind, accountId, offset),
+              onApproved: refresh.approved,
+              onReviewed: () {
+                if (!current()) return;
+                if (returned) {
+                  // A review may finish after the user has left the route.
+                  _refresh(accountOnly: true);
+                  return;
+                }
+                ++_request;
+                if (_count > 0) setState(() => _count--);
+              },
             ),
-            onApproved: widget.onApproved,
           ),
-        ),
-      ),
+        );
+        returned = true;
+        refresh.close();
+        if (current()) await _refresh(accountOnly: true);
+      },
     );
   }
 }
@@ -669,13 +747,24 @@ class _LedgerSharingPageState extends State<_LedgerSharingPage> {
     super.dispose();
   }
 
-  Future<void> _mutate(Future<void> Function() action) async {
+  Future<void> _mutate(
+    Future<void> Function() action, {
+    bool refreshList = true,
+    bool pendingChanged = false,
+  }) async {
     if (_saving) return;
     setState(() => _saving = true);
     try {
       await action();
-      _ledgerPendingRevision.value++;
-      if (mounted) {
+      final id = widget.accountId;
+      if (pendingChanged && id != null) {
+        _ledgerPendingChanges.value = (
+          kind: widget.kind,
+          id: id,
+          revision: Object(),
+        );
+      }
+      if (mounted && refreshList) {
         await _listKey.currentState?.load(reset: true);
       }
     } catch (error) {
@@ -773,6 +862,8 @@ class _LedgerSharingPageState extends State<_LedgerSharingPage> {
                                   shareId,
                                   action == 'allow',
                                 ),
+                          refreshList: action == 'revoke',
+                          pendingChanged: action != 'allow',
                         );
                       },
                       itemBuilder: (_) => [
@@ -839,14 +930,16 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
   late final _formatter = NumberFormat(
     widget.kind == LedgerKind.accounting ? '#,##0.####' : '#,###',
   );
-  late Future<bool> _capability = _loadCapability();
+  late Future<bool> _capability;
+  late Future<Map<String, dynamic>> _summary;
+  Future<List<Map<String, dynamic>>>? _firstEntries;
   final _entriesKey = GlobalKey<_LedgerPagesState>();
-  int _totalsRevision = 0;
   bool _sending = false;
 
   @override
   void initState() {
     super.initState();
+    _loadFirstPage();
     if (widget.proposeOnOpen) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
@@ -860,6 +953,22 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
   }
 
   Future<bool> _loadCapability() => widget.service.canPropose(widget.shareId);
+
+  void _loadFirstPage() {
+    final reads = widget.service.detailFirstPage(widget.shareId);
+    _capability = reads.canPropose;
+    _summary = reads.totals;
+    _firstEntries = reads.entries;
+  }
+
+  Future<List<Map<String, dynamic>>> _loadEntries(int offset) {
+    final first = _firstEntries;
+    if (offset == 0 && first != null) {
+      _firstEntries = null;
+      return first;
+    }
+    return widget.service.entries(widget.shareId, offset);
+  }
 
   Future<Map<String, Object?>?> _editProposal(bool isNew, Map? entry) async {
     final date = DateTime.tryParse(entry?['date']?.toString() ?? '')?.toLocal();
@@ -991,10 +1100,7 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
                 onPressed: _sending
                     ? null
                     : () {
-                        setState(() {
-                          _capability = _loadCapability();
-                          _totalsRevision++;
-                        });
+                        setState(_loadFirstPage);
                         _entriesKey.currentState?.load(reset: true);
                       },
                 icon: const Icon(Icons.refresh),
@@ -1015,9 +1121,12 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _SharedLedgerTotals(
-                    revision: _totalsRevision,
+                    source: _summary,
+                    refreshSourceIndependently: true,
                     id: widget.shareId,
                     kind: widget.kind,
+                    // Returning from a proposal dialog does not change totals.
+                    refreshOnRouteReturn: false,
                   ),
                   _SharedLedgerStatisticsButton(
                     id: widget.shareId,
@@ -1027,7 +1136,7 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
                 ],
               ),
             ),
-            fetch: (offset) => widget.service.entries(widget.shareId, offset),
+            fetch: _loadEntries,
             item: (context, row) {
               final entry = row['entry'] as Map;
               final date = DateTime.tryParse(
@@ -1090,11 +1199,13 @@ class _LedgerReviewPage extends StatefulWidget {
   const _LedgerReviewPage({
     required this.service,
     required this.fetch,
+    required this.onReviewed,
     this.onApproved,
   });
   final ServiceLedgerSharing service;
   final Future<List<Map<String, dynamic>>> Function(int) fetch;
   final VoidCallback? onApproved;
+  final VoidCallback onReviewed;
 
   @override
   State<_LedgerReviewPage> createState() => _LedgerReviewPageState();
@@ -1118,7 +1229,7 @@ class _LedgerReviewPageState extends State<_LedgerReviewPage> {
       }
       await widget.service.review(id, approve);
       if (approve) widget.onApproved?.call();
-      _ledgerPendingRevision.value++;
+      widget.onReviewed();
       if (mounted) _listKey.currentState?.removeReviewedProposal(id);
     } catch (error) {
       if (mounted) {

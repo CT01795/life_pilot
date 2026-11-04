@@ -7,6 +7,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum LedgerKind { accounting, points }
 
+typedef SharedLedgerHomeSnapshot = ({
+  Map<String, dynamic> totals,
+  List<Map<String, dynamic>> entries,
+});
+
+typedef SharedLedgerDetailReads = ({
+  Future<bool> canPropose,
+  Future<Map<String, dynamic>> totals,
+  Future<List<Map<String, dynamic>>> entries,
+});
+
 class ServiceLedgerSharing {
   ServiceLedgerSharing({SupabaseClient? client}) : _client = client;
   final SupabaseClient? _client;
@@ -163,8 +174,29 @@ class ServiceLedgerSharing {
   Future<List<Map<String, dynamic>>> entries(String id, int offset) =>
       _read('read_my_shared_ledger_entries', {'p_share_id': id}, offset);
 
-  Future<List<Map<String, dynamic>>> previewEntries(String id) =>
-      _read('read_my_shared_ledger_entries', {'p_share_id': id}, 0, limit: 5);
+  Future<List<Map<String, dynamic>>> previewEntries(String id) {
+    const rpc = 'read_my_shared_ledger_preview';
+    final db = _db;
+    return RepositorySessionReads(db).read(_group, ('preview', id), () async {
+      if (!_isUnavailable(db, rpc)) {
+        try {
+          final rows = await db.rpc(rpc, params: {'p_share_id': id}) as List;
+          return List<Map<String, dynamic>>.unmodifiable(
+            rows.map((row) => Map<String, dynamic>.unmodifiable(row as Map)),
+          );
+        } on PostgrestException catch (error) {
+          if (error.code != 'PGRST202') rethrow;
+          _markUnavailable(db, rpc);
+        }
+      }
+      return _read(
+        'read_my_shared_ledger_entries',
+        {'p_share_id': id},
+        0,
+        limit: 5,
+      );
+    });
+  }
 
   Future<List<Map<String, dynamic>>> statistics(String id, DateTime now) =>
       RepositorySessionReads(_db).read(
@@ -190,6 +222,107 @@ class ServiceLedgerSharing {
           );
         },
       );
+
+  Future<SharedLedgerHomeSnapshot> homePreview(String id) {
+    const rpc = 'get_my_shared_ledger_home_preview';
+    final db = _db;
+    final now = DateTime.now();
+    final day = DateTime(now.year, now.month, now.day);
+    String utc(DateTime date) => date.toUtc().toIso8601String();
+    return RepositorySessionReads(
+      db,
+    ).read(_group, ('home-preview', id, day), () async {
+      if (!_isUnavailable(db, rpc)) {
+        try {
+          final result =
+              await db.rpc(
+                    rpc,
+                    params: {
+                      'p_share_id': id,
+                      'p_month_start': utc(DateTime(day.year, day.month)),
+                      'p_month_end': utc(DateTime(day.year, day.month + 1)),
+                      'p_day_start': utc(day),
+                      'p_day_end': utc(
+                        DateTime(day.year, day.month, day.day + 1),
+                      ),
+                    },
+                  )
+                  as Map;
+          return (
+            totals: Map<String, dynamic>.unmodifiable(result['totals'] as Map),
+            entries: List<Map<String, dynamic>>.unmodifiable(
+              (result['entries'] as List).map(
+                (row) => Map<String, dynamic>.unmodifiable(row as Map),
+              ),
+            ),
+          );
+        } on PostgrestException catch (error) {
+          if (error.code != 'PGRST202') rethrow;
+          _markUnavailable(db, rpc);
+        }
+      }
+      final result = await Future.wait<Object>([
+        totals(id, now: now),
+        previewEntries(id),
+      ]);
+      return (
+        totals: result[0] as Map<String, dynamic>,
+        entries: result[1] as List<Map<String, dynamic>>,
+      );
+    });
+  }
+
+  SharedLedgerDetailReads detailFirstPage(String id) {
+    const rpc = 'get_my_shared_ledger_detail_first_page';
+    final db = _db;
+    final now = DateTime.now();
+    final day = DateTime(now.year, now.month, now.day);
+    String utc(DateTime date) => date.toUtc().toIso8601String();
+    final snapshot = RepositorySessionReads(db).read<Map?>(
+      _group,
+      ('detail-first', id, day),
+      () async {
+        if (_isUnavailable(db, rpc)) return null;
+        try {
+          return await db.rpc(
+                rpc,
+                params: {
+                  'p_share_id': id,
+                  'p_limit': pageSize,
+                  'p_month_start': utc(DateTime(day.year, day.month)),
+                  'p_month_end': utc(DateTime(day.year, day.month + 1)),
+                  'p_day_start': utc(day),
+                  'p_day_end': utc(DateTime(day.year, day.month, day.day + 1)),
+                },
+              )
+              as Map;
+        } on PostgrestException catch (error) {
+          if (error.code != 'PGRST202') rethrow;
+          _markUnavailable(db, rpc);
+          return null;
+        }
+      },
+    );
+    return (
+      canPropose: snapshot.then(
+        (row) => row == null ? canPropose(id) : row['can_propose'] == true,
+      ),
+      totals: snapshot.then(
+        (row) => row == null
+            ? totals(id, now: now)
+            : Map<String, dynamic>.unmodifiable(row['totals'] as Map),
+      ),
+      entries: snapshot.then(
+        (row) => row == null
+            ? entries(id, 0)
+            : List<Map<String, dynamic>>.unmodifiable(
+                (row['entries'] as List).map(
+                  (entry) => Map<String, dynamic>.unmodifiable(entry as Map),
+                ),
+              ),
+      ),
+    );
+  }
 
   Future<Map<String, dynamic>> totals(String id, {DateTime? now}) {
     final date = now ?? DateTime.now();
@@ -348,29 +481,49 @@ class ServiceLedgerSharing {
     'p_account_id': id,
   }, offset);
 
-  Future<Map<String, int>> pendingCounts(LedgerKind kind) =>
-      RepositorySessionReads(_db).read(
-        _pendingGroup,
-        ('pending', kind),
-        () async {
-          try {
-            final rows =
-                await _db.rpc(
-                      'get_my_ledger_pending_counts',
-                      params: {'p_kind': kind.name},
-                    )
-                    as List;
-            return Map<String, int>.unmodifiable({
-              for (final row in rows)
-                row['account_id'] as String: (row['pending_count'] as num)
-                    .toInt(),
-            });
-          } on PostgrestException catch (error) {
-            if (error.code == 'PGRST202') return const <String, int>{};
-            rethrow;
-          }
-        },
-      );
+  Future<Map<String, int>> pendingCounts(
+    LedgerKind kind, {
+    String? accountId,
+  }) => RepositorySessionReads(_db).read(
+    _pendingGroup,
+    ('pending', kind, accountId),
+    () async {
+      const accountRpc = 'get_my_ledger_account_pending_count';
+      final db = _db;
+      if (accountId != null && !_isUnavailable(db, accountRpc)) {
+        try {
+          final count =
+              await db.rpc(
+                    accountRpc,
+                    params: {'p_kind': kind.name, 'p_account_id': accountId},
+                  )
+                  as num;
+          return Map<String, int>.unmodifiable({accountId: count.toInt()});
+        } on PostgrestException catch (error) {
+          if (error.code != 'PGRST202') rethrow;
+          _markUnavailable(db, accountRpc);
+        }
+      }
+      try {
+        final query = _db.rpc(
+          'get_my_ledger_pending_counts',
+          params: {'p_kind': kind.name},
+        );
+        final rows =
+            await (accountId == null
+                    ? query
+                    : query.eq('account_id', accountId))
+                as List;
+        return Map<String, int>.unmodifiable({
+          for (final row in rows)
+            row['account_id'] as String: (row['pending_count'] as num).toInt(),
+        });
+      } on PostgrestException catch (error) {
+        if (error.code == 'PGRST202') return const <String, int>{};
+        rethrow;
+      }
+    },
+  );
 
   Future<void> allowProposals(String id, bool allowed) async {
     await _write('set_my_ledger_share_change_permission', {

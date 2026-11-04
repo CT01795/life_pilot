@@ -15,9 +15,22 @@ class _Store extends LocalDataStore {
   Future<List<Map<String, dynamic>>> readOnlyRows({
     required String owner,
     required String resource,
+  }) => throw StateError('History must not read the complete resource');
+
+  @override
+  Future<List<Map<String, dynamic>>> readOnlyMatchingRows({
+    required String owner,
+    required String resource,
+    required bool Function(Map data) matches,
+    Object? cacheScope,
   }) {
     if (fail) throw StateError('read unavailable');
-    return super.readOnlyRows(owner: owner, resource: resource);
+    return super.readOnlyMatchingRows(
+      owner: owner,
+      resource: resource,
+      matches: matches,
+      cacheScope: cacheScope,
+    );
   }
 }
 
@@ -38,6 +51,7 @@ void main() {
         String account = 'a',
         String? rowType,
         String category = 'uncategorized',
+        int value = 1,
       }) => store.put(
         owner: user,
         resource: resource,
@@ -48,6 +62,7 @@ void main() {
           'date': date,
           'type': rowType ?? type,
           'primary_category': category,
+          'value': value,
         },
       );
       Future<bool> has() => repository.hasRecordsBefore(
@@ -76,6 +91,29 @@ void main() {
         repository = RepositoryLocalRecordHistory(store: store);
       });
       tearDown(() => db.close());
+      test(
+        'page totals include older rows and refresh after a write',
+        () async {
+          Future<num> total(DateTime from) async => (await repository.page(
+            owner: owner,
+            resource: resource,
+            accountId: 'a',
+            type: type,
+            points: resource == 'point_record_detail',
+            from: from,
+            to: before,
+            includeLatestFallback: false,
+            includeReservedRecords: false,
+          )).total;
+          await put('old', '2026-01-01', value: 10);
+          await put('new', '2026-09-01', value: 5);
+          await put('other', '2026-09-01', account: 'b', value: 100);
+          expect(await total(DateTime(2026, 9)), 15);
+          expect(await total(DateTime(2026, 1)), 15);
+          await put('new', '2026-09-01', value: 8);
+          expect(await total(DateTime(2026, 9)), 18);
+        },
+      );
       test('empty resource returns no history', () async {
         expect(await has(), false);
         expect(await latest(), isNull);

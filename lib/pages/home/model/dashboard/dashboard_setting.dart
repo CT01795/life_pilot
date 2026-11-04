@@ -5,6 +5,10 @@ import 'package:life_pilot/utils/value_parser.dart';
 const _notProvided = Object();
 
 class DashboardSetting {
+  static const persistedColumns =
+      'recommend_event_city,recommend_place_city,language,'
+      'accounting_account_id,accounting_account_name,point_account_id,point_account_name';
+
   final String recommendEventCity;
   final String recommendPlaceCity;
   String language;

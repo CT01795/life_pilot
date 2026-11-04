@@ -18,6 +18,7 @@ class LocalDataStore {
   static final _settings = stringMapStoreFactory.store('settings');
   Future<Database>? _databaseFuture;
   final Map<String, Future<List<Map<String, dynamic>>>> _listCache = {};
+  final _scopedLists = <String, (Object, Future<List<Map<String, dynamic>>>)>{};
   final Map<String, bool> _createAllowed = {};
   final Map<String, bool> _deleteAllowed = {};
   final Map<String, bool Function()> _writeChecks = {};
@@ -99,11 +100,13 @@ class LocalDataStore {
 
   void _invalidateResource(String owner, String resource) {
     _listCache.remove(_resourceCacheKey(owner, resource));
+    _scopedLists.remove(_resourceCacheKey(owner, resource));
   }
 
   void _invalidateOwner(String owner) {
     final prefix = '${owner.toLowerCase()}::';
     _listCache.removeWhere((key, _) => key.startsWith(prefix));
+    _scopedLists.removeWhere((key, _) => key.startsWith(prefix));
   }
 
   Future<DataStorageLocation?> preferredLocation(String owner) async {
@@ -202,8 +205,9 @@ class LocalDataStore {
 
   Future<List<Map<String, dynamic>>> _loadList(
     String owner,
-    String resource,
-  ) async {
+    String resource, {
+    bool Function(Map data)? matches,
+  }) async {
     final snapshots = await _records
         .find(
           await _db,
@@ -211,6 +215,12 @@ class LocalDataStore {
             filter: Filter.and([
               Filter.equals('owner', owner.toLowerCase()),
               Filter.equals('resource', resource),
+              if (matches != null)
+                Filter.custom((snapshot) {
+                  final value = snapshot.value;
+                  final data = value is Map ? value['data'] : null;
+                  return data is Map && matches(data);
+                }),
             ]),
           ),
         )
@@ -221,6 +231,28 @@ class LocalDataStore {
             Map<String, dynamic>.unmodifiable(snapshot.value['data']! as Map),
       ),
     );
+  }
+
+  /// Filter before projecting rows, without populating the whole-resource cache.
+  Future<List<Map<String, dynamic>>> readOnlyMatchingRows({
+    required String owner,
+    required String resource,
+    required bool Function(Map data) matches,
+    Object? cacheScope,
+  }) async {
+    if (cacheScope == null) return _loadList(owner, resource, matches: matches);
+    final key = _resourceCacheKey(owner, resource);
+    final previous = _scopedLists[key];
+    final request = previous != null && previous.$1 == cacheScope
+        ? previous.$2
+        : _loadList(owner, resource, matches: matches);
+    _scopedLists[key] = (cacheScope, request);
+    try {
+      return await request;
+    } catch (_) {
+      if (identical(_scopedLists[key]?.$2, request)) _scopedLists.remove(key);
+      rethrow;
+    }
   }
 
   Future<void> delete({

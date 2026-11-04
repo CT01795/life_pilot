@@ -21,9 +21,11 @@ import 'package:life_pilot/game/speaking/model_game_speaking.dart';
 import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
 import 'package:life_pilot/utils/supabase.dart';
+import 'package:life_pilot/utils/repository_session_reads.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:life_pilot/game/repository_versioned_game_catalog.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:uuid/uuid.dart';
 
@@ -137,15 +139,44 @@ class ServiceGame {
   }
 
   Future<List<ModelGameItem>> fetchGames() async {
-    if (await _storesLocally) {
+    final client = supabase;
+    final session = client.auth.currentSession;
+    final owner = _ownerEmail;
+    final local =
+        await LocalDataStore.instance.preferredLocation(owner) ==
+        DataStorageLocation.local;
+    if (session == null ||
+        client.auth.currentSession?.accessToken != session.accessToken) {
+      throw StateError('Game catalog account changed');
+    }
+    return RepositorySessionReads(client).read('game-catalog', (
+      owner,
+      local,
+    ), () => _readGameCatalog(client, owner, local, session.accessToken));
+  }
+
+  Future<List<ModelGameItem>> _readGameCatalog(
+    SupabaseClient client,
+    String owner,
+    bool local,
+    String token,
+  ) async {
+    if (local) {
+      final snapshot = await RepositoryVersionedGameCatalog(
+        LocalDataStore.instance,
+      ).read(owner);
+      if (snapshot != null) return _mapAndSortGames(snapshot.rows);
       final cached = await LocalDataStore.instance.list(
-        owner: _ownerEmail,
+        owner: owner,
         resource: localGameListCache,
       );
       if (cached.isNotEmpty) return _mapAndSortGames(cached);
     }
 
-    final data = await supabase
+    if (client.auth.currentSession?.accessToken != token) {
+      throw StateError('Game catalog account changed');
+    }
+    final data = await client
         .from(TableNames.gameList)
         .select('id,game_type,game_name,level')
         .order('game_type', ascending: true)
@@ -159,17 +190,29 @@ class ServiceGame {
     // Do not block the first game screen on hundreds of IndexedDB writes.
     // The cloud response is already usable; the cache is warmed in the
     // background for the next visit.
-    unawaited(cacheGameList(rows));
+    if (client.auth.currentSession?.accessToken == token) {
+      unawaited(
+        _cacheGameListFor(owner, rows).catchError((Object _) {
+          // The cloud list remains usable if the optional local cache fails.
+        }),
+      );
+    }
     return _mapAndSortGames(rows);
   }
 
-  Future<void> cacheGameList(Iterable<Map<String, dynamic>> rows) async {
+  Future<void> cacheGameList(Iterable<Map<String, dynamic>> rows) =>
+      _cacheGameListFor(_ownerEmail, rows);
+
+  Future<void> _cacheGameListFor(
+    String owner,
+    Iterable<Map<String, dynamic>> rows,
+  ) async {
     await Future.wait(
       rows.map((row) {
         final id = parseStringValue(row[Fields.id]);
         if (id.isEmpty) return Future<void>.value();
         return LocalDataStore.instance.put(
-          owner: _ownerEmail,
+          owner: owner,
           resource: localGameListCache,
           id: id,
           data: Map<String, Object?>.from(row),
@@ -381,17 +424,26 @@ class ServiceGame {
     String gameType,
     String gameName,
   ) async {
-    final games = {for (final game in await fetchGames()) game.id: game};
-    final rows = await _localQuestions(TableNames.gameUser);
+    final owner = _ownerEmail;
+    // Keep the same ID mapping semantics before selecting one game.
+    final catalog = {for (final game in await fetchGames()) game.id: game};
+    final games = {
+      for (final game in catalog.values)
+        if (game.gameType == gameType && game.gameName == gameName)
+          game.id: game,
+    };
+    if (games.isEmpty) return [];
+    final normalizedName = normalizeStringValue(userName);
+    final rows = await LocalDataStore.instance.readOnlyMatchingRows(
+      owner: owner,
+      resource: TableNames.gameUser,
+      matches: (row) =>
+          games.containsKey(parseOptionalStringValue(row['game_id'])) &&
+          normalizeStringValue(row['name']) == normalizedName,
+    );
     final result = <ModelGameUser>[];
     for (final row in rows) {
-      final game = games[parseOptionalStringValue(row['game_id'])];
-      if (game == null ||
-          normalizeStringValue(row['name']) != normalizeStringValue(userName) ||
-          game.gameType != gameType ||
-          game.gameName != gameName) {
-        continue;
-      }
+      final game = games[parseOptionalStringValue(row['game_id'])]!;
       result.add(
         ModelGameUser.fromMap({
           ...row,

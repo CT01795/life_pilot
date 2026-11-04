@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:life_pilot/game/repository_versioned_game_catalog.dart';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -58,6 +59,7 @@ void main() {
       deleteMismatch = false,
       switchSecond = false;
   List<dynamic>? deletedPayload;
+  String? catalogVersion;
   setUp(() async {
     requests = [];
     rows = [record(1), record(2), record(3)];
@@ -67,6 +69,7 @@ void main() {
     deleteMismatch = false;
     switchSecond = false;
     deletedPayload = null;
+    catalogVersion = null;
     games = _Games();
     db = await databaseFactoryMemory.openDatabase('transfer-$sequence');
     sequence++;
@@ -78,7 +81,31 @@ void main() {
         requests.add(request);
         Object? body;
         final path = request.url.path;
-        if (path.endsWith('/game_list')) {
+        if (path.endsWith('/get_my_cloud_transfer_setup')) {
+          if (catalogVersion == null) {
+            return http.Response(
+              '{"code":"PGRST202","message":"missing"}',
+              404,
+              request: request,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          final sent = (jsonDecode(request.body) as Map)['p_catalog_version'];
+          body = {
+            'catalog_version': catalogVersion,
+            'game_rows': sent == catalogVersion
+                ? null
+                : [
+                    {
+                      'id': 'game-$catalogVersion',
+                      'game_type': 'test',
+                      'game_name': 'test',
+                      'level': 1,
+                    },
+                  ],
+            'dashboard_setting': null,
+          };
+        } else if (path.endsWith('/game_list')) {
           body = [
             {
               'id': 'game',
@@ -202,10 +229,54 @@ void main() {
         23.4,
       );
       expect(
-        requests.first.url.queryParameters['select'],
+        requests
+            .singleWhere((r) => r.url.path.endsWith('/game_list'))
+            .url
+            .queryParameters['select'],
         'id,game_type,game_name,level',
       );
       expect(deleteCalls(), 1);
+      final settingsRequest = requests.singleWhere(
+        (request) => request.url.path.endsWith('/dashboard_setting'),
+      );
+      expect(
+        settingsRequest.url.queryParameters['select'],
+        'account,recommend_event_city,recommend_place_city,language,'
+        'accounting_account_id,accounting_account_name,point_account_id,point_account_name',
+      );
+    },
+  );
+  test(
+    'transfer sends cached revision and replaces the catalog only when it changes',
+    () async {
+      rows = [];
+      catalogVersion = '1';
+      final catalog = RepositoryVersionedGameCatalog(store);
+      final sent = <Object?>[];
+      for (final revision in ['1', '1', '2']) {
+        catalogVersion = revision;
+        requests.clear();
+        expect(
+          (await service().moveCloudToLocal('one@example.com')).succeeded,
+          isTrue,
+        );
+        final setup = requests.singleWhere(
+          (r) => r.url.path.endsWith('/get_my_cloud_transfer_setup'),
+        );
+        sent.add((jsonDecode(setup.body) as Map)['p_catalog_version']);
+        expect(
+          requests.any(
+            (r) =>
+                r.url.path.endsWith('/game_list') ||
+                r.url.path.endsWith('/dashboard_setting'),
+          ),
+          isFalse,
+        );
+        final snapshot = (await catalog.read('one@example.com'))!;
+        expect(snapshot.version, revision);
+        expect(snapshot.rows.single['id'], 'game-$revision');
+      }
+      expect(sent, [null, '1', '1']);
     },
   );
   test(
@@ -217,6 +288,37 @@ void main() {
       expect(result.succeeded, isFalse);
       expect(await local(), isEmpty);
       expect(deleteCalls(), 0);
+    },
+  );
+  test(
+    'filtered local reads isolate owner, resource and matching rows',
+    () async {
+      for (final (owner, resource, id, game) in [
+        ('one@example.com', 'game_user', '1', 'wanted'),
+        ('one@example.com', 'game_user', '2', 'other'),
+        ('two@example.com', 'game_user', '3', 'wanted'),
+        ('one@example.com', 'other_resource', '4', 'wanted'),
+      ]) {
+        await store.put(
+          owner: owner,
+          resource: resource,
+          id: id,
+          data: {'id': id, 'game_id': game},
+        );
+      }
+      final result = await store.readOnlyMatchingRows(
+        owner: 'one@example.com',
+        resource: 'game_user',
+        matches: (row) => row['game_id'] == 'wanted',
+      );
+      expect(result.map((row) => row['id']), ['1']);
+      expect(
+        await store.readOnlyRows(
+          owner: 'one@example.com',
+          resource: 'game_user',
+        ),
+        hasLength(2),
+      );
     },
   );
   test(

@@ -29,6 +29,55 @@ class _LightRow extends MapBase<String, dynamic> {
 }
 
 void main() {
+  test('date index preserves window, reserved, fallback and total rules', () {
+    final rows = [
+      for (final (id, date, category) in [
+        ('before', '2026-01-01T00:00:00Z', 'regular'),
+        ('inside', '2026-10-01T10:00:00+08:00', 'regular'),
+        ('reserve', '2026-10-01T11:00:00+08:00', 'reserved'),
+        ('bad-reserve', 'invalid', 'reserved'),
+        ('later', '2026-10-02T00:00:00Z', 'regular'),
+      ])
+        <String, dynamic>{
+          'id': id,
+          'date': date,
+          'primary_category': category,
+          'account_id': 'a',
+          'type': 'BALANCE',
+          'value': 2,
+        },
+    ];
+    final index = ModelLocalRecordDateIndex(
+      rows,
+      accountId: 'a',
+      type: 'balance',
+      points: false,
+    );
+    for (final day in [1, 3]) {
+      for (final reserved in [false, true]) {
+        for (final fallback in [false, true]) {
+          final date = DateTime(2026, 10, day);
+          final expected = ModelLocalRecordPage.accounting(
+            rows,
+            accountId: 'a',
+            type: 'balance',
+            from: date,
+            to: date,
+            includeLatestFallback: fallback,
+            includeReservedRecords: reserved,
+          );
+          final actual = index.page(
+            from: date,
+            to: date,
+            includeLatestFallback: fallback,
+            includeReservedRecords: reserved,
+          );
+          expect(actual.rows, expected.rows);
+          expect(actual.total, expected.total);
+        }
+      }
+    }
+  });
   final from = DateTime(2026, 10, 1), to = DateTime(2026, 10, 30);
   ModelLocalRecordPage select(
     Iterable<RecordRow> rows, {

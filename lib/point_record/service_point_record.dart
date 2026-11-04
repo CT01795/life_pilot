@@ -9,8 +9,8 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
+import 'package:life_pilot/record_statistics/repository_cloud_record_history.dart';
 import 'package:life_pilot/utils/model_record_entry_defaults.dart';
-import 'package:life_pilot/utils/model_local_record_page.dart';
 import 'package:life_pilot/utils/model_local_account_list.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
@@ -28,6 +28,7 @@ class ServicePointRecord {
   final _localAccountSummary = RepositoryLocalAccountSummary();
   final _localEventAccounts = RepositoryLocalEventAccount();
   final _localHistory = RepositoryLocalRecordHistory();
+  final _cloudHistory = RepositoryCloudRecordHistory();
   final _localEditor = RepositoryLocalRecordEditor();
   String? get _localOwner => supabase.auth.currentUser?.email?.toLowerCase();
 
@@ -469,14 +470,12 @@ class ServicePointRecord {
     bool includeReservedRecords = true,
   }) async {
     if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.readOnlyRows(
+      final page = await _localHistory.page(
         owner: _localOwner!,
         resource: TableNames.pointRecordDetail,
-      );
-      final page = ModelLocalRecordPage.points(
-        rows,
         accountId: accountId,
         type: type,
+        points: true,
         from: dateFrom,
         to: dateTo,
         includeLatestFallback: includeLatestFallback,
@@ -516,8 +515,28 @@ class ServicePointRecord {
           .gte('date', dateFrom.toUtc().toIso8601String())
           .lt('date', upperBound.toUtc().toIso8601String());
     }
-    final rows = await query.order('date', ascending: false);
-    final result = List<Map<String, dynamic>>.from(rows);
+    Future<List<Map<String, dynamic>>?> loadWindow({
+      bool includeLatest = false,
+    }) => _cloudHistory.window(
+      supabase,
+      table: TableNames.pointRecordDetail,
+      kind: 'points',
+      accountId: accountId,
+      type: type,
+      from: dateFrom,
+      until: upperBound,
+      includeReserved: includeReservedRecords,
+      includeLatest: includeLatest,
+    );
+    final withFallback = includeLatestFallback
+        ? await loadWindow(includeLatest: true)
+        : null;
+    final combinedRows = withFallback ?? await loadWindow();
+    final result =
+        combinedRows ??
+        List<Map<String, dynamic>>.from(
+          await query.order('date', ascending: false),
+        );
     final owner = _localOwner;
     if (owner != null && await _storesLocally) {
       final localRows = await LocalDataStore.instance.list(
@@ -542,7 +561,7 @@ class ServicePointRecord {
       );
     }
     final hasRegularRecord = result.any((row) => !isReservedRecordRow(row));
-    if (includeLatestFallback && !hasRegularRecord) {
+    if (includeLatestFallback && withFallback == null && !hasRegularRecord) {
       final fallback = await supabase
           .from(TableNames.pointRecordDetail)
           .select(_pointDetailColumns)
@@ -612,15 +631,15 @@ class ServicePointRecord {
         before: before,
       );
     }
-    final rows = await supabase
-        .from(TableNames.pointRecordDetail)
-        .select(Fields.id)
-        .eq('account_id', accountId)
-        .ilike('type', type)
-        .lt('date', before.toUtc().toIso8601String())
-        .neq('primary_category', reservedRecordCategory)
-        .limit(1);
-    return rows.isNotEmpty;
+    return await _cloudHistory.latestBefore(
+          supabase,
+          table: TableNames.pointRecordDetail,
+          accountId: accountId,
+          type: type,
+          before: before,
+          rememberForNextPage: true,
+        ) !=
+        null;
   }
 
   Future<DateTime?> latestRecordDateBefore({
@@ -637,17 +656,13 @@ class ServicePointRecord {
         before: before,
       );
     }
-    final rows = await supabase
-        .from(TableNames.pointRecordDetail)
-        .select('date')
-        .eq('account_id', accountId)
-        .ilike('type', type)
-        .lt('date', before.toUtc().toIso8601String())
-        .neq('primary_category', reservedRecordCategory)
-        .order('date', ascending: false)
-        .limit(1);
-    if (rows.isEmpty) return null;
-    return tryParseDateTimeValue(rows.first['date'], toLocal: true);
+    return _cloudHistory.latestBefore(
+      supabase,
+      table: TableNames.pointRecordDetail,
+      accountId: accountId,
+      type: type,
+      before: before,
+    );
   }
 
   Future<void> insertRecordsBatch({
@@ -655,6 +670,7 @@ class ServicePointRecord {
     required String type,
     required List<PointRecordPreview> records,
   }) async {
+    _cloudHistory.invalidate();
     final now = DateTime.now();
     try {
       if (await _storesLocally) {
@@ -714,6 +730,7 @@ class ServicePointRecord {
     required String newPrimaryCategory,
     String? newSecondaryCategory,
   }) async {
+    _cloudHistory.invalidate();
     try {
       final owner = _localOwner;
       if (await _storesLocally) {
@@ -756,6 +773,7 @@ class ServicePointRecord {
   }
 
   Future<void> deletePointRecordDetail({required String detailId}) async {
+    _cloudHistory.invalidate();
     final owner = _localOwner;
     if (await _storesLocally) {
       if (owner == null) {

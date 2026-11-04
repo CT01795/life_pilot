@@ -105,10 +105,7 @@ class DashboardRepository {
     }
     final result = await supabase
         .from(TableNames.dashboardSetting)
-        .select(
-          'recommend_event_city,recommend_place_city,language,'
-          'accounting_account_id,accounting_account_name,point_account_id,point_account_name',
-        )
+        .select(DashboardSetting.persistedColumns)
         .eq(Fields.account, account)
         .maybeSingle();
 
