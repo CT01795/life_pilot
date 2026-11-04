@@ -56,7 +56,7 @@ class DashboardAccountSelector extends StatefulWidget {
   final VoidCallback onOpenAccountPage;
   final String accountPageLabel;
   final LedgerKind? sharedKind;
-  final ValueChanged<DashboardAccountOption>? onSharedChanged;
+  final Future<void> Function(DashboardAccountOption)? onSharedChanged;
 
   @override
   State<DashboardAccountSelector> createState() =>
@@ -115,7 +115,11 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
       final option = selection.account;
       final kind = option?.sharedKind;
       if (option != null && kind != null) {
-        widget.onSharedChanged?.call(option);
+        try {
+          await widget.onSharedChanged?.call(option);
+        } catch (_) {
+          if (mounted) _showMessage(loc.dashboardSettingSaveFailed);
+        }
         return;
       }
 

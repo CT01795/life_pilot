@@ -191,7 +191,15 @@ class ServiceEvent {
           .timeout(const Duration(seconds: 15));
       if (shouldContinue?.call() == false) return [];
       final selected = ModelLocalEventQuery.iterate(
-        localRows,
+        tableName == TableNames.calendarEvents
+            ? localRows
+                  .where((row) {
+                    final owner = normalizeStringValue(row[Fields.account]);
+                    return owner.isEmpty ||
+                        owner == normalizeStringValue(inputUser);
+                  })
+                  .toList(growable: false)
+            : localRows,
         start:
             dateS ??
             (tableName == TableNames.memoryTrace

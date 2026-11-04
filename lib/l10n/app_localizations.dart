@@ -5394,7 +5394,7 @@ abstract class AppLocalizations {
   /// Label for todayIncomeExpense
   ///
   /// In en, this message translates to:
-  /// **'Today\'s Income and Expenses'**
+  /// **'Today\'s Net'**
   String get todayIncomeExpense;
 
   /// Deduct points when completing an event

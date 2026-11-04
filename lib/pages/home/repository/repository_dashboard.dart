@@ -38,16 +38,20 @@ class DashboardRepository {
         owner: localOwner,
         resource: TableNames.calendarEvents,
       );
-      return query.selectLocal(rows);
+      return query.selectLocal(
+        rows.where((row) {
+          final owner = normalizeStringValue(row[Fields.account]);
+          return owner.isEmpty || owner == normalizeStringValue(localOwner);
+        }),
+      );
     }
 
     final result = await supabase
         .from(TableNames.calendarEvents)
         .select(
           'id,name,start_date,start_time,end_date,end_time,country,city,location,'
-          'type,is_free,description,master_url,sub_events,is_completed',
+          'type,is_free,description,master_url,sub_events,is_completed,account',
         )
-        .eq(Fields.account, account)
         .eq('is_completed', false)
         .lt('start_date', query.rangeEnd.toUtc().toIso8601String())
         .or(
@@ -55,7 +59,16 @@ class DashboardRepository {
           'and(end_date.is.null,start_date.gte.${query.today.toUtc().toIso8601String()})',
         );
 
-    return query.decodeRows((result as List).cast<Map<String, dynamic>>());
+    // Calendar SELECT policies expose only the owner and accepted shares.
+    return query.decodeRows([
+      for (final row in result)
+        {
+          ...row,
+          'is_shared':
+              normalizeStringValue(row[Fields.account]) !=
+              normalizeStringValue(account),
+        },
+    ]);
   }
 
   Future<void> completeEvent({

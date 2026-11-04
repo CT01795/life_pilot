@@ -25,6 +25,7 @@ class CalendarEvent {
   final List<Map<String, dynamic>> subEvents;
 
   final bool isCompleted;
+  final bool isShared;
 
   DateTime? get explicitEndAt {
     final date = endDate ?? startDate;
@@ -49,6 +50,7 @@ class CalendarEvent {
     this.masterUrl,
     this.subEvents = const [],
     this.isCompleted = false,
+    this.isShared = false,
   });
 
   factory CalendarEvent.fromJson(Map<String, dynamic> json) {
@@ -71,6 +73,7 @@ class CalendarEvent {
       masterUrl: parseOptionalStringValue(json['master_url']),
       subEvents: parseJsonObjectList(json[EventFields.subEvents]),
       isCompleted: json['is_completed'] == true,
+      isShared: json['is_shared'] == true,
     );
   }
 

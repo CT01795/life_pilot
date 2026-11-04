@@ -1773,7 +1773,7 @@
   "@recordValue": {"description": "Label for recordValue"},
   "selectAccount": "Select account",
   "@selectAccount": {"description": "Label for selectAccount"},
-  "todayIncomeExpense": "Today's Income and Expenses",
+  "todayIncomeExpense": "Today's Net",
   "@todayIncomeExpense": {"description": "Label for todayIncomeExpense"},
 
   "eventPointDecrease": "Deduct points",

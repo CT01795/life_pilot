@@ -2866,7 +2866,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectAccount => 'Select account';
 
   @override
-  String get todayIncomeExpense => 'Today\'s Income and Expenses';
+  String get todayIncomeExpense => 'Today\'s Net';
 
   @override
   String get eventPointDecrease => 'Deduct points';

@@ -25,10 +25,12 @@ class AccountSelectorButton extends StatelessWidget {
       (dashboard) => dashboard.setting.accountingAccountId,
     );
     final dashboard = context.read<ControllerDashboard>();
-    final auth = context.read<ModelAuthView>();
+    final auth = context.watch<ModelAuthView>();
 
     return DashboardAccountSelector(
-      sharedKind: LedgerKind.accounting,
+      sharedKind: auth.dataScope.storage.name == 'cloud'
+          ? LedgerKind.accounting
+          : null,
       onSharedChanged: (option) => dashboard.selectSharedLedger(
         points: false,
         selection: (id: option.id, name: option.name),
@@ -58,7 +60,7 @@ class AccountSelectorButton extends StatelessWidget {
       onChanged: (selected) async {
         final user = auth.account;
         if (user == null) return;
-        dashboard.selectSharedLedger(points: false, selection: null);
+        await dashboard.selectSharedLedger(points: false, selection: null);
         await dashboard.changeAccountingAccount(
           account: user,
           accountId: selected?.id,

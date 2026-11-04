@@ -43,19 +43,42 @@ class TodayLifeOverviewCard extends StatelessWidget {
     final eventCount = scheduleOverview.todayCount;
     final nextEvent = scheduleOverview.nextEvent;
     final accountingTotal = context.select<ControllerDashboard, num>(
-      (model) => model.state.todayAccountingTotal,
+      (model) => model.sharedLedger(points: false) == null
+          ? model.state.todayAccountingTotal
+          : num.tryParse('${model.sharedToday(points: false)?['today']}') ?? 0,
     );
     final currency = context.select<ControllerDashboard, String>(
-      (model) => model.state.accountingCurrency,
+      (model) => model.sharedLedger(points: false) == null
+          ? model.state.accountingCurrency
+          : model.sharedToday(points: false)?['currency']?.toString() ?? '',
     );
     final pointsTotal = context.select<ControllerDashboard, int>(
-      (model) => model.state.todayPointsTotal,
+      (model) => model.sharedLedger(points: true) == null
+          ? model.state.todayPointsTotal
+          : num.tryParse(
+                  '${model.sharedToday(points: true)?['today']}',
+                )?.toInt() ??
+                0,
     );
     final hasAccountingAccount = context.select<ControllerDashboard, bool>(
-      (model) => model.setting.accountingAccountId != null,
+      (model) =>
+          model.sharedLedger(points: false) != null ||
+          model.setting.accountingAccountId != null,
     );
     final hasPointAccount = context.select<ControllerDashboard, bool>(
-      (model) => model.setting.pointAccountId != null,
+      (model) =>
+          model.sharedLedger(points: true) != null ||
+          model.setting.pointAccountId != null,
+    );
+    final accountingUnavailable = context.select<ControllerDashboard, bool>(
+      (model) =>
+          model.sharedLedger(points: false) != null &&
+          model.sharedToday(points: false) == null,
+    );
+    final pointsUnavailable = context.select<ControllerDashboard, bool>(
+      (model) =>
+          model.sharedLedger(points: true) != null &&
+          model.sharedToday(points: true) == null,
     );
     final scheduleLoading = context.select<ControllerDashboard, bool>(
       (model) => model.isLoading(DashboardSection.todaySchedule),
@@ -294,7 +317,10 @@ class TodayLifeOverviewCard extends StatelessWidget {
                         icon: Icons.account_balance_wallet_outlined,
                         label: loc.todayIncomeExpense,
                         value: hasAccountingAccount
-                            ? '${numberFormats.decimal.format(accountingTotal)} $currency'
+                            ? (accountingUnavailable
+                                  ? '—'
+                                  : '${numberFormats.decimal.format(accountingTotal)} $currency'
+                                        .trim())
                             : loc.selectAccount,
                         statusIcon: !hasAccountingAccount
                             ? Icons.info_outline
@@ -318,7 +344,9 @@ class TodayLifeOverviewCard extends StatelessWidget {
                           icon: Icons.stars_outlined,
                           label: loc.todayPoints,
                           value: hasPointAccount
-                              ? numberFormats.integer.format(pointsTotal)
+                              ? (pointsUnavailable
+                                    ? '—'
+                                    : numberFormats.integer.format(pointsTotal))
                               : loc.selectAccount,
                           statusIcon: !hasPointAccount
                               ? Icons.info_outline

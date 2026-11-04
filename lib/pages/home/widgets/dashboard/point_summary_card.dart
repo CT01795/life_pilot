@@ -121,6 +121,12 @@ class PointSummaryCard extends StatelessWidget {
                   kind: LedgerKind.points,
                   id: shared.id,
                   name: shared.name,
+                  snapshot: context.select(
+                    (ControllerDashboard c) => c.sharedSummary(points: true),
+                  ),
+                  onRefresh: () => context
+                      .read<ControllerDashboard>()
+                      .refreshSharedSummary(points: true),
                 )
               else if (!hasSelectedAccount)
                 ListTile(

@@ -99,6 +99,13 @@ class ServiceLocalDataTransfer {
           }
           final rawRow = exportItem['record'];
           final row = Map<String, Object?>.from(rawRow as Map);
+          // Received calendar shares are references to another owner's data.
+          // Never stage them locally or include them in the cloud-delete list.
+          if (resource == TableNames.calendarEvents &&
+              normalizeStringValue(row[Fields.account]) !=
+                  normalizeStringValue(account)) {
+            continue;
+          }
           final id = parseOptionalStringValue(row[Fields.id]);
           if (id == null || id.isEmpty) {
             throw const FormatException('Missing transfer record ID');

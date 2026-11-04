@@ -11,6 +11,7 @@ import 'package:life_pilot/utils/model_weather_forecast_window.dart';
 import 'package:life_pilot/utils/weather_cache_store.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/repository_external_cache.dart';
+import 'package:life_pilot/utils/repository_session_reads.dart';
 
 class _WeatherResult {
   final List<EventWeather> data;
@@ -83,19 +84,26 @@ class ServiceWeather {
         return null;
       }
 
-      final accessToken = supabase.auth.currentSession?.accessToken;
+      final client = supabase;
+      final accessToken = client.auth.currentSession?.accessToken;
       if (accessToken == null || accessToken.isEmpty) {
         logger.w('Skip weather because the user session is unavailable');
         return null;
       }
 
-      final response = await RepositoryExternalCache().weather(
-        lat: event.lat!,
-        lng: event.lng!,
-        backend: () => apiCloud.post('/external/weather', {
-          'lat': event.lat,
-          'lng': event.lng,
-        }, bearerToken: accessToken),
+      final lat = event.lat!;
+      final lng = event.lng!;
+      final response = await RepositorySessionReads(client).read(
+        'weather',
+        (lat, lng),
+        () => RepositoryExternalCache().weather(
+          lat: lat,
+          lng: lng,
+          backend: () => apiCloud.post('/external/weather', {
+            'lat': lat,
+            'lng': lng,
+          }, bearerToken: accessToken),
+        ),
       );
       final items =
           response is Map<String, dynamic> && response['items'] is List

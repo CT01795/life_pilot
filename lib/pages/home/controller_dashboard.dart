@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
@@ -83,21 +84,106 @@ class ControllerDashboard extends SafeChangeNotifier {
   DashboardSetting get setting => _setting;
 
   final _sharedLedgers = <bool, ({String id, String name})>{};
+  final _sharedSummaries = <bool, Future<SharedLedgerHomeSnapshot>>{};
+  final _sharedToday = <bool, Map<String, dynamic>>{};
+  Map<String, dynamic>? sharedToday({required bool points}) =>
+      _sharedToday[points];
+  final _sharing = ServiceLedgerSharing();
+  bool _sharedRestored = false;
+  bool _includeCloudShares = true;
+  Future<void>? _sharedRestore;
+  int _sharedSelectionRevision = 0;
+
+  Future<SharedLedgerHomeSnapshot>? sharedSummary({required bool points}) =>
+      _sharedSummaries[points];
+
+  void refreshSharedSummary({required bool points}) {
+    final id = _sharedLedgers[points]?.id;
+    if (id == null || notifierDisposed) return;
+    final future = _sharing.homePreview(id);
+    _sharedSummaries[points] = future;
+    // The panel may be collapsed; observe errors until a view subscribes.
+    unawaited(
+      future.then<void>(
+        (data) {
+          if (notifierDisposed ||
+              !identical(_sharedSummaries[points], future)) {
+            return;
+          }
+          _sharedToday[points] = data.totals;
+          notifyListeners();
+        },
+        onError: (Object _, StackTrace _) {
+          if (notifierDisposed ||
+              !identical(_sharedSummaries[points], future)) {
+            return;
+          }
+          _sharedToday.remove(points);
+          notifyListeners();
+        },
+      ),
+    );
+    notifyListeners();
+  }
 
   ({String id, String name})? sharedLedger({required bool points}) =>
       _sharedLedgers[points];
 
-  void selectSharedLedger({
+  Future<void> selectSharedLedger({
     required bool points,
     required ({String id, String name})? selection,
-  }) {
-    if (_sharedLedgers[points] == selection) return;
+  }) async {
+    if (!_includeCloudShares) return;
+    final account = _activeAccount;
+    if (account == null) return;
+    final generation = _accountGeneration;
+    await _sharedRestore;
+    if (!_isCurrentRequest(account, generation) ||
+        _sharedLedgers[points] == selection) {
+      return;
+    }
+    final previous = _sharedLedgers[points];
+    ++_sharedSelectionRevision;
+    final id = selection?.id ?? previous?.id;
+    if (id != null) await _sharing.setHomeLink(id, selection != null);
+    if (!_isCurrentRequest(account, generation)) return;
+    _sharedToday.remove(points);
     if (selection == null) {
       _sharedLedgers.remove(points);
+      _sharedSummaries.remove(points);
+      notifyListeners();
     } else {
       _sharedLedgers[points] = selection;
+      refreshSharedSummary(points: points);
     }
-    notifyListeners();
+  }
+
+  Future<void> _restoreSharedLedgers(String account, int generation) async {
+    if (!_includeCloudShares || _sharedRestored) return;
+    _sharedRestored = true;
+    final revision = _sharedSelectionRevision;
+    try {
+      final links = await _sharing.homeLinks();
+      if (!_isCurrentRequest(account, generation) ||
+          revision != _sharedSelectionRevision) {
+        return;
+      }
+      for (final row in links) {
+        final id = row['share_id'];
+        final kind = row['kind'];
+        if (id is! String || (kind != 'accounting' && kind != 'points')) {
+          continue;
+        }
+        final points = kind == 'points';
+        _sharedLedgers[points] = (
+          id: id,
+          name: row['account_name']?.toString() ?? '',
+        );
+        refreshSharedSummary(points: points);
+      }
+    } catch (_) {
+      if (_isCurrentRequest(account, generation)) _sharedRestored = false;
+    }
   }
 
   List<DashboardCity> _eventCities = [];
@@ -112,8 +198,14 @@ class ControllerDashboard extends SafeChangeNotifier {
 
   List<DashboardCity> get placeCities => _placeCities;
 
-  void switchAccount(String? account) {
+  void switchAccount(String? account, {bool includeCloudShares = true}) {
+    _includeCloudShares = includeCloudShares;
     _sharedLedgers.clear();
+    _sharedSummaries.clear();
+    _sharedToday.clear();
+    _sharedRestored = false;
+    _sharedRestore = null;
+    _sharedSelectionRevision++;
     _accountGeneration++;
     _eventCompletions.clear();
     _activeAccount = account;
@@ -187,6 +279,9 @@ class ControllerDashboard extends SafeChangeNotifier {
     }
     if (_isCurrentRequest(account, generation) && request == _settingsRequest) {
       _setting = setting;
+      if (_includeCloudShares && !_sharedRestored) {
+        _sharedRestore = _restoreSharedLedgers(account, generation);
+      }
       notifyListeners();
     }
     return setting;
@@ -654,6 +749,9 @@ class ControllerDashboard extends SafeChangeNotifier {
   );
 
   Future<void> completeEvent({required String id, required String account}) {
+    if (_state.todayEvents.any((event) => event.id == id && event.isShared)) {
+      return Future.error(StateError('Shared calendar events are read-only'));
+    }
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return Future.value();
     final key = (generation, id);

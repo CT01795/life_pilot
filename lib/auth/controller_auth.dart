@@ -199,10 +199,22 @@ class ControllerAuth extends SafeChangeNotifier {
     }
     if (base.configurationMissing && !isSysAdmin) return base;
     final account = _currentAccount;
-    final presented =
-        _preferredStorage != DataStorageLocation.local || account == null
-        ? _withCloudPresentation(base)
-        : await _withLocalUsage(base);
+    var presented = base;
+    if (loadingStorage != DataStorageLocation.local || account == null) {
+      presented = _withCloudPresentation(base);
+    } else {
+      try {
+        presented = await _withLocalUsage(base);
+      } catch (error, stackTrace) {
+        // Usage counts are presentation data. A local counting failure must
+        // not discard a successfully verified subscription entitlement.
+        logger.e(
+          'Failed to calculate local subscription usage',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
     if (loadingAccount != _currentAccount ||
         loadingStorage != _preferredStorage) {
       throw StateError('Subscription request scope changed');
@@ -476,9 +488,12 @@ class ControllerAuth extends SafeChangeNotifier {
     _preferredStorage = location;
     _hasStorageChoice = true;
     _personalDataRevision++;
+    dashboardController?.switchAccount(
+      account,
+      includeCloudShares: location == DataStorageLocation.cloud,
+    );
     notifyListeners();
     await refreshSubscriptionUsage();
-    dashboardController?.switchAccount(account);
     controllerCalendar?.clearAll();
     try {
       await Future.wait<void>([
@@ -503,7 +518,10 @@ class ControllerAuth extends SafeChangeNotifier {
     final account = _currentAccount;
     await refreshSubscriptionUsage(notify: false);
     _personalDataRevision++;
-    dashboardController?.switchAccount(account);
+    dashboardController?.switchAccount(
+      account,
+      includeCloudShares: _preferredStorage == DataStorageLocation.cloud,
+    );
     controllerCalendar?.clearAll();
     notifyListeners();
     if (account == null) return;
@@ -755,7 +773,10 @@ class ControllerAuth extends SafeChangeNotifier {
         dashboardController?.switchAccount(null);
       } else if (_currentAccount != oldAccount) {
         controllerCalendar?.clearAll();
-        dashboardController?.switchAccount(_currentAccount);
+        dashboardController?.switchAccount(
+          _currentAccount,
+          includeCloudShares: _preferredStorage == DataStorageLocation.cloud,
+        );
         if (_preferredStorage == DataStorageLocation.cloud) {
           await controllerCalendar?.syncCompletedEventReminders();
         }

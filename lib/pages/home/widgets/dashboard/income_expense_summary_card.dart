@@ -125,6 +125,12 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                   kind: LedgerKind.accounting,
                   id: shared.id,
                   name: shared.name,
+                  snapshot: context.select(
+                    (ControllerDashboard c) => c.sharedSummary(points: false),
+                  ),
+                  onRefresh: () => context
+                      .read<ControllerDashboard>()
+                      .refreshSharedSummary(points: false),
                 )
               else if (!hasSelectedAccount)
                 ListTile(
