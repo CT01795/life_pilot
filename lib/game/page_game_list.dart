@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 // ignore_for_file: deprecated_member_use
 
 import 'package:flame/game.dart';
@@ -1178,23 +1179,16 @@ class _PageGameListState extends State<PageGameList> {
                       itemExtent: 72,
                       cacheExtent: 240,
                       addAutomaticKeepAlives: false,
-                      itemCount:
-                          userProgress.length +
-                          ((_hasMoreProgress || _isLoadingMoreProgress)
-                              ? 1
-                              : 0),
+                      itemCount: userProgress.length + 1,
                       itemBuilder: (context, index) {
                         if (index == userProgress.length) {
-                          return Center(
-                            child: _isLoadingMoreProgress
-                                ? const Padding(
-                                    padding: EdgeInsets.all(16),
-                                    child: CircularProgressIndicator(),
-                                  )
-                                : TextButton(
-                                    onPressed: _loadMoreProgress,
-                                    child: Text(loc.clickHereToSeeMore),
-                                  ),
+                          return WidgetsLoadMore(
+                            hasMore: _hasMoreProgress,
+                            loading: _isLoadingMoreProgress,
+                            count: userProgress.length,
+                            error: _progressController.loadError,
+                            scope: (selectedCategory, selectedGameName),
+                            onLoadMore: _loadMoreProgress,
                           );
                         }
                         final item = userProgress[index];

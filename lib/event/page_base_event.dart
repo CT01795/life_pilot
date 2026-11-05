@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/controller_appbar_actions.dart';
@@ -400,10 +401,16 @@ class _GenericEventPageState extends State<GenericEventPage> {
                                         )
                                       : KeyedSubtree(
                                           key: const ValueKey('list'),
-                                          child: widget.listBuilder(
-                                            filteredEvents: visibleEvents,
-                                            scrollController:
-                                                _controller.scrollController,
+                                          child: PaginationScope(
+                                            value: (
+                                              _selectedCity,
+                                              widget.eventPredicateKey,
+                                            ),
+                                            child: widget.listBuilder(
+                                              filteredEvents: visibleEvents,
+                                              scrollController:
+                                                  _controller.scrollController,
+                                            ),
                                           ),
                                         ),
                                 ),
@@ -484,35 +491,26 @@ class _GenericEventPageState extends State<GenericEventPage> {
                 label: Text(loc.clear),
               ),
             ],
-            if (canLoadMore) ...[
+            ...[
               Gaps.h16,
-              OutlinedButton.icon(
-                onPressed:
-                    (_controller.isLoadingMoreEvents ||
-                        _controller.isLoadingMoreMemory)
-                    ? null
-                    : () async {
-                        try {
-                          if (_controller.fromTableName ==
-                              TableNames.memoryTrace) {
-                            await _controller.loadMoreMemoryEvents();
-                          } else {
-                            await _controller.loadMoreRecommendedEvents();
-                          }
-                        } catch (_) {
-                          if (!mounted) return;
-                          AppNavigator.showSnackBar(loc.dashboardLoadFailed);
-                        }
-                      },
-                icon:
-                    (_controller.isLoadingMoreEvents ||
-                        _controller.isLoadingMoreMemory)
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.expand_more_rounded),
-                label: Text(loc.clickHereToSeeMore),
+              WidgetsLoadMore(
+                owner: _controller,
+                hasMore: canLoadMore,
+                loading:
+                    _controller.isLoadingMoreEvents ||
+                    _controller.isLoadingMoreMemory,
+                count: 0,
+                scope: (
+                  _selectedCity,
+                  widget.eventPredicateKey,
+                  _controller.modelEvent.searchFilter.keywords,
+                  _controller.modelEvent.searchFilter.startDate,
+                  _controller.modelEvent.searchFilter.endDate,
+                ),
+                onLoadMore: () =>
+                    _controller.fromTableName == TableNames.memoryTrace
+                    ? _controller.loadMoreMemoryEvents()
+                    : _controller.loadMoreRecommendedEvents(),
               ),
             ],
           ],

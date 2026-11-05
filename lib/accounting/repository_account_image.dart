@@ -6,7 +6,6 @@ import 'package:crypto/crypto.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/supabase.dart';
-import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RepositoryAccountImage {
@@ -118,35 +117,59 @@ class RepositoryAccountImage {
     try {
       final descriptor = await ui.ImageDescriptor.encoded(buffer);
       try {
-        final codec = await descriptor.instantiateCodec(
-          targetWidth: descriptor.width >= descriptor.height ? 96 : null,
-          targetHeight: descriptor.height > descriptor.width ? 96 : null,
-        );
-        try {
-          final frame = await codec.getNextFrame();
+        final landscape = descriptor.width >= descriptor.height;
+        final longestEdge = landscape ? descriptor.width : descriptor.height;
+        final edges = {
+          for (final cap in [320, 256, 192, 144, 112, 96, 64])
+            longestEdge < cap ? longestEdge : cap,
+        };
+        for (final edge in edges) {
+          final codec = await descriptor.instantiateCodec(
+            targetWidth: landscape ? edge : null,
+            targetHeight: landscape ? null : edge,
+          );
           try {
-            final png = await frame.image.toByteData(
-              format: ui.ImageByteFormat.png,
-            );
-            return png == null
-                ? null
-                : base64Encode(
-                    png.buffer.asUint8List(
-                      png.offsetInBytes,
-                      png.lengthInBytes,
-                    ),
-                  );
+            final frame = await codec.getNextFrame();
+            try {
+              final png = await frame.image.toByteData(
+                format: ui.ImageByteFormat.png,
+              );
+              if (png != null && png.lengthInBytes <= 49152) {
+                return base64Encode(
+                  png.buffer.asUint8List(png.offsetInBytes, png.lengthInBytes),
+                );
+              }
+            } finally {
+              frame.image.dispose();
+            }
           } finally {
-            frame.image.dispose();
+            codec.dispose();
           }
-        } finally {
-          codec.dispose();
         }
+        return null;
       } finally {
         descriptor.dispose();
       }
     } finally {
       buffer.dispose();
+    }
+  }
+
+  static int? _pngLongestEdge(String? thumbnail) {
+    if (thumbnail == null ||
+        thumbnail.length < 32 ||
+        !thumbnail.startsWith('iVBORw0KGgo')) {
+      return null;
+    }
+    try {
+      final header = ByteData.sublistView(
+        base64Decode(thumbnail.substring(0, 32)),
+      );
+      final width = header.getUint32(16);
+      final height = header.getUint32(20);
+      return width >= height ? width : height;
+    } on FormatException {
+      return null;
     }
   }
 
@@ -157,17 +180,25 @@ class RepositoryAccountImage {
     String id,
     String original,
     Uint8List bytes,
+    String? previous,
   ) async {
     try {
       final thumbnail = await _thumbnailBase64(bytes);
-      if (thumbnail == null || client.auth.currentUser?.id != actorId) return;
-      await RepositoryOptionalJsonRpc(client).read(
-        'backfill_my_ledger_thumbnail',
+      if (thumbnail == null ||
+          client.auth.currentUser?.id != actorId ||
+          (previous != null && (_pngLongestEdge(thumbnail) ?? 0) <= 96)) {
+        return;
+      }
+      await client.rpc(
+        'upgrade_my_ledger_thumbnail',
         params: {
           'p_resource': table,
           'p_account_id': id,
           'p_original_hash': sha256.convert(utf8.encode(original)).toString(),
           'p_thumbnail': thumbnail,
+          'p_previous_hash': previous == null
+              ? null
+              : sha256.convert(utf8.encode(previous)).toString(),
         },
       );
     } catch (_) {
@@ -186,12 +217,17 @@ class RepositoryAccountImage {
       if (client.auth.currentSession?.accessToken != token) return null;
       return decodeBase64InIsolate(encoded);
     }
-    final row = await RepositoryOptionalJsonRpc(client).read(
+    final row = await client.rpc(
       'read_my_shared_ledger_image',
       params: {'p_share_id': id, 'p_thumbnail': thumbnail},
     );
     if (client.auth.currentUser?.id != actor) return null;
-    return decodeBase64InIsolate(row?['image'] as String?);
+    if (row is! Map ||
+        !row.containsKey('image') ||
+        (row['image'] != null && row['image'] is! String)) {
+      throw const FormatException('Invalid shared ledger image');
+    }
+    return decodeBase64InIsolate(row['image'] as String?);
   }
 
   Future<Uint8List?> read({
@@ -236,13 +272,13 @@ class RepositoryAccountImage {
     final encoded = row?[column] as String?;
     final bytes = decodeBase64InIsolate(encoded);
     if (client.auth.currentUser?.id != actor?.id) return null;
+    final previous = row?['thumbnail_base64'] as String?;
     if (!storedLocally &&
         !thumbnail &&
         actor != null &&
         encoded != null &&
         bytes != null &&
-        row!.containsKey('thumbnail_base64') &&
-        row['thumbnail_base64'] == null) {
+        (previous == null || _pngLongestEdge(previous) == 96)) {
       unawaited(
         _backfillCloudThumbnail(
           client,
@@ -251,6 +287,7 @@ class RepositoryAccountImage {
           accountId,
           encoded,
           bytes,
+          previous,
         ),
       );
     }

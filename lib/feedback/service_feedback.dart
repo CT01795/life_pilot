@@ -3,19 +3,10 @@ import 'dart:typed_data';
 import 'package:life_pilot/feedback/model_feedback.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/value_parser.dart';
-import '../utils/logger.dart';
 import 'package:life_pilot/utils/repository_session_reads.dart';
 import 'package:life_pilot/feedback/model_feedback_page.dart';
 
 class ServiceFeedback {
-  ({Object scope, DateTime date, DateTime readAt})? _historyHint;
-  static final _historyRevisions = Expando<int>();
-
-  static void _invalidateHistory(Object client) {
-    _historyRevisions[client] = (_historyRevisions[client] ?? 0) + 1;
-  }
-
   Future<FeedbackPage> loadFeedbackPage({
     required Set<String> statuses,
     FeedbackCursor? before,
@@ -80,7 +71,6 @@ class ServiceFeedback {
         .toList();
     final client = supabase;
     final reads = RepositorySessionReads(client);
-    _invalidateHistory(client);
     reads.invalidate('feedback');
     try {
       await client.from(TableNames.feedback).insert({
@@ -93,53 +83,8 @@ class ServiceFeedback {
         'is_ok': false,
       });
     } finally {
-      _invalidateHistory(client);
       reads.invalidate('feedback');
     }
-  }
-
-  Future<List<dynamic>> loadFeedback({
-    required DateTime dateFrom,
-    required DateTime dateTo,
-  }) => RepositorySessionReads(supabase).read('feedback', (
-    'list',
-    dateFrom.toUtc().toIso8601String(),
-    dateTo.toUtc().toIso8601String(),
-  ), () => _loadFeedback(dateFrom: dateFrom, dateTo: dateTo));
-
-  Future<List<dynamic>> _loadFeedback({
-    required DateTime dateFrom,
-    required DateTime dateTo,
-  }) async {
-    try {
-      final response = await supabase
-          .from(TableNames.feedback)
-          .select(
-            'id,subject,content,created_by,created_at,is_ok,deal_by,deal_at,status',
-          )
-          .gte(Fields.createdAt, dateFrom.toUtc().toIso8601String())
-          .lt(Fields.createdAt, dateTo.toUtc().toIso8601String())
-          .order(Fields.createdAt, ascending: false);
-
-      return List.unmodifiable(
-        response.map((row) => Map<String, dynamic>.unmodifiable(row)),
-      );
-    } catch (e, st) {
-      logger.e('loadFeedback failed $e', stackTrace: st);
-      rethrow;
-    }
-  }
-
-  Future<bool> hasFeedbackBefore(DateTime before) async {
-    final client = supabase;
-    final scope = _historyScope(before);
-    final date = await _readLatestFeedbackDate(before);
-    if (scope == _historyScope(before) && identical(client, supabase)) {
-      _historyHint = date == null
-          ? null
-          : (scope: scope, date: date, readAt: DateTime.now());
-    }
-    return date != null;
   }
 
   Future<List<String>> loadScreenshots(int id) async {
@@ -168,50 +113,10 @@ class ServiceFeedback {
     );
   }
 
-  Future<DateTime?> latestFeedbackDateBefore(DateTime before) async {
-    final hint = _historyHint;
-    _historyHint = null;
-    if (hint != null &&
-        hint.scope == _historyScope(before) &&
-        DateTime.now().difference(hint.readAt) < const Duration(seconds: 15)) {
-      return hint.date;
-    }
-    return _readLatestFeedbackDate(before);
-  }
-
-  Object _historyScope(DateTime before) {
-    final client = supabase;
-    return (
-      client,
-      client.auth.currentSession?.accessToken,
-      _historyRevisions[client] ?? 0,
-      before.toUtc(),
-    );
-  }
-
-  Future<DateTime?> _readLatestFeedbackDate(DateTime before) {
-    return RepositorySessionReads(supabase).read('feedback', (
-      'latest',
-      before.toUtc().toIso8601String(),
-    ), () => _latestFeedbackDateBefore(before));
-  }
-
-  Future<DateTime?> _latestFeedbackDateBefore(DateTime before) async {
-    final rows = await supabase
-        .from(TableNames.feedback)
-        .select(Fields.createdAt)
-        .lt(Fields.createdAt, before.toUtc().toIso8601String())
-        .order(Fields.createdAt, ascending: false)
-        .limit(1);
-    if (rows.isEmpty) return null;
-    return tryParseDateTimeValue(rows.first[Fields.createdAt], toLocal: true);
-  }
-
   Future<void> updateFeedback({required ModelFeedback feedback}) async {
     final data = feedback.toMap();
     final client = supabase;
     final reads = RepositorySessionReads(client);
-    _invalidateHistory(client);
     reads.invalidate('feedback');
     try {
       await client
@@ -224,7 +129,6 @@ class ServiceFeedback {
           })
           .eq(Fields.id, data[Fields.id]);
     } finally {
-      _invalidateHistory(client);
       reads.invalidate('feedback');
     }
   }

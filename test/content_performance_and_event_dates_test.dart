@@ -15,23 +15,19 @@ class PerformanceTestService extends ServiceContentPerformance {
   final kinds = <bool>[];
   final periods = <ContentPerformancePeriod?>[];
   final keywords = <String>[];
-  final statisticsOnlyRequests = <bool>[];
   final activeRequests = <bool Function()?>[];
   @override
   Future<ModelContentPerformance> read({
     required String owner,
     required bool attractions,
-    bool includeSubmissionDetails = false,
-    ContentPerformancePeriod? period,
+    required ContentPerformancePeriod period,
     String keyword = '',
-    bool statisticsOnly = false,
     bool Function()? shouldContinue,
   }) {
     owners.add(owner);
     kinds.add(attractions);
     periods.add(period);
     keywords.add(keyword);
-    statisticsOnlyRequests.add(statisticsOnly);
     activeRequests.add(shouldContinue);
     final result = Completer<ModelContentPerformance>();
     pending.add(result);

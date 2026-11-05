@@ -2,42 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/event/event_copy_flow.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/utils/const.dart';
 
 void main() {
   group('event copy destinations', () {
-    test('an owned calendar event can copy to the other three pages', () {
-      final destinations = availableEventCopyDestinations(
-        sourceTableName: TableNames.calendarEvents,
-        isOwnCalendarEvent: true,
-      );
-
-      expect(destinations, isNot(contains(EventCopyDestination.calendar)));
-      expect(destinations, hasLength(3));
-    });
-
-    test('a shared calendar event can also copy into my calendar', () {
-      final destinations = availableEventCopyDestinations(
-        sourceTableName: TableNames.calendarEvents,
-        isOwnCalendarEvent: false,
-      );
-
-      expect(destinations, contains(EventCopyDestination.calendar));
-      expect(destinations, hasLength(4));
-    });
-
-    test('recommended content does not offer its current page', () {
-      final destinations = availableEventCopyDestinations(
-        sourceTableName: TableNames.recommendEvents,
-        isOwnCalendarEvent: false,
-      );
-
-      expect(
-        destinations,
-        isNot(contains(EventCopyDestination.recommendedEvent)),
-      );
-      expect(destinations, hasLength(3));
-    });
+    for (final destination in EventCopyDestination.values) {
+      test('can copy into the same page: ${destination.name}', () {
+        final destinations = availableEventCopyDestinations();
+        expect(destinations, contains(destination));
+        expect(destinations, hasLength(4));
+        expect(() => destinations.clear(), throwsUnsupportedError);
+      });
+    }
   });
 
   test('copy template is independent and resets ownership and state', () {
@@ -69,6 +44,14 @@ void main() {
     expect(copy.isLike, isNull);
     expect(copy.pageViews, 0);
     expect(copy.subEvents.single.id, isNot(source.subEvents.single.id));
+    expect(copy.subEvents.single.account, 'viewer@example.com');
+    final secondCopy = buildEventCopyTemplate(
+      source,
+      currentAccount: source.account!,
+    );
+    expect(secondCopy.id, isNot(source.id));
+    expect(secondCopy.id, isNot(copy.id));
+    expect(secondCopy.account, source.account);
     expect(source.isApproved, isTrue);
     expect(source.account, 'owner@example.com');
   });

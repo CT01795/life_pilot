@@ -32,6 +32,8 @@ class ControllerAuth extends SafeChangeNotifier {
   AccountValidationResult? _lastAccountValidationResult;
   bool get accountVerificationBlocked =>
       _lastAccountValidationResult != AccountValidationResult.valid;
+  bool get accountVerificationFailed =>
+      _lastAccountValidationResult == AccountValidationResult.unavailable;
   Future<AccountValidationResult>? _accountValidationInFlight;
   Future<void>? _invalidAccountSignOutInFlight;
   ControllerAuth({this.controllerCalendar, this.dashboardController});
@@ -482,7 +484,7 @@ class ControllerAuth extends SafeChangeNotifier {
     _preferredStorage = location;
     _hasStorageChoice = true;
     _personalDataRevision++;
-    _markSubscriptionUnverified();
+    _markSubscriptionUnverified(pending: true);
     dashboardController?.switchAccount(
       account,
       includeCloudShares: location == DataStorageLocation.cloud,
@@ -620,6 +622,8 @@ class ControllerAuth extends SafeChangeNotifier {
     _accountValidationTimer?.cancel();
     _accountValidationTimer = null;
     final userId = supabase.auth.currentUser?.id;
+    final retrying = accountVerificationFailed;
+    if (retrying) _lastAccountValidationResult = null;
     final validation = _validateCurrentAccountRemotely().then((result) {
       if (result != AccountValidationResult.signedOut &&
           userId != null &&
@@ -631,6 +635,7 @@ class ControllerAuth extends SafeChangeNotifier {
       return result;
     });
     _accountValidationInFlight = validation;
+    if (retrying) notifyListeners();
     return validation.whenComplete(() {
       if (identical(_accountValidationInFlight, validation)) {
         _accountValidationInFlight = null;
@@ -807,7 +812,9 @@ class ControllerAuth extends SafeChangeNotifier {
       }
 
       if (_isLoggedIn && !_isAnonymous) {
-        if (_currentAccount != oldAccount) _markSubscriptionUnverified();
+        if (_currentAccount != oldAccount) {
+          _markSubscriptionUnverified(pending: true);
+        }
         unawaited(_refreshSubscriptionAfterStartup());
         unawaited(validateCurrentAccount(force: true));
       }
@@ -836,11 +843,11 @@ class ControllerAuth extends SafeChangeNotifier {
 
   Future<void> _refreshSubscriptionAfterStartup() => refreshSubscriptionUsage();
 
-  void _markSubscriptionUnverified() {
+  void _markSubscriptionUnverified({bool pending = false}) {
     _subscription = SubscriptionSnapshot(
       plan: 'unverified',
       usage: const {},
-      status: 'verification_unavailable',
+      status: pending ? 'verification_pending' : 'verification_unavailable',
       storagePlan: _preferredStorage.name,
     );
     _quotaFreePeriodActive = false;

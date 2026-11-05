@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -92,19 +93,12 @@ class _AdminSubscriptionSummaryListState
                   ],
                 );
               }
-              if (c.hasMore) {
-                return TextButton(
-                  onPressed: () => c.load(more: true),
-                  child: Text(loc.clickHereToSeeMore),
-                );
-              }
-              if (c.rows.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(loc.noData),
-                );
-              }
-              return const SizedBox.shrink();
+              return WidgetsLoadMore(
+                hasMore: c.hasMore,
+                count: c.rows.length,
+                scope: context.read<ControllerAuth>().currentAccount,
+                onLoadMore: () => c.load(more: true),
+              );
             },
           ),
         );

@@ -160,7 +160,13 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
       if (locked && !canDelete) _message(loc.adminPricingDeleteInUse);
       return !locked || canDelete;
     } catch (error) {
-      if (mounted) _message(loc.adminPricingCreateFailed(error.toString()));
+      if (mounted) {
+        _message(
+          deleting
+              ? loc.adminPricingDeleteCheckFailed
+              : loc.adminPricingCreateFailed(error.toString()),
+        );
+      }
       return false;
     } finally {
       if (mounted) setState(() => _savingPricing = false);

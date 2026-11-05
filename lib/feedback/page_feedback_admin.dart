@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -16,8 +17,8 @@ import 'package:provider/provider.dart';
 class PageFeedbackAdmin extends StatelessWidget {
   const PageFeedbackAdmin({super.key, this.service, this.pageLoader});
   final ServiceFeedback? service;
-  /// Custom services may supply paging explicitly; legacy injected services
-  /// retain their existing date-window contract.
+
+  /// Optional paged loader; injected services use the same paging contract.
   final FeedbackPageLoader? pageLoader;
 
   @override
@@ -35,9 +36,7 @@ class PageFeedbackAdmin extends StatelessWidget {
       create: (_) => ControllerFeedbackAdmin(
         service,
         auth,
-        pageLoader:
-            pageLoader ??
-            (this.service == null ? service.loadFeedbackPage : null),
+        pageLoader: pageLoader ?? service.loadFeedbackPage,
       )..loadFeedback(),
       child: Consumer<ControllerFeedbackAdmin>(
         builder: (context, controller, _) {
@@ -64,10 +63,7 @@ class PageFeedbackAdmin extends StatelessWidget {
                     ),
                   )
                 : ListView.separated(
-                    itemCount:
-                        visibleFeedback.length +
-                        1 +
-                        (controller.hasHistoryAction ? 1 : 0),
+                    itemCount: visibleFeedback.length + 1 + 1,
                     separatorBuilder: (_, _) => const Divider(),
                     itemBuilder: (context, index) {
                       if (index == 0) {
@@ -102,30 +98,18 @@ class PageFeedbackAdmin extends StatelessWidget {
                       }
                       index--;
                       if (index == visibleFeedback.length) {
-                        return Center(
-                          child:
-                              controller.isLoadingMore ||
-                                  controller.isCheckingHistory
-                              ? const Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: CircularProgressIndicator(),
-                                )
-                              : controller.historyError != null
-                              ? TextButton.icon(
-                                  onPressed: controller.retryHistory,
-                                  icon: const Icon(Icons.refresh),
-                                  label: Text(loc.retry),
-                                )
-                              : controller.loadMoreError != null
-                              ? TextButton.icon(
-                                  onPressed: controller.loadMore,
-                                  icon: const Icon(Icons.refresh),
-                                  label: Text(loc.retry),
-                                )
-                              : TextButton(
-                                  onPressed: controller.loadMore,
-                                  child: Text(loc.clickHereToSeeMore),
-                                ),
+                        return WidgetsLoadMore(
+                          hasMore: controller.hasMore,
+                          loading: controller.isLoadingMore,
+                          count: visibleFeedback.length,
+                          error: controller.loadMoreError,
+                          scope: (
+                            auth.currentAccount,
+                            (controller.selectedStatuses.toList()..sort()).join(
+                              ',',
+                            ),
+                          ),
+                          onLoadMore: controller.loadMore,
                         );
                       }
                       final feedback = visibleFeedback[index];

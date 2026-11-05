@@ -9,6 +9,9 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get noMoreData => '已無資料可顯示';
+
+  @override
   String get ledgerDeclineShare => '取消查看';
 
   @override
@@ -569,6 +572,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get networkError => '無法連線，請檢查網路後再試。';
+
+  @override
+  String get verifyingAccount => '正在驗證帳號…';
+
+  @override
+  String get adminPricingDeleteCheckFailed => '無法確認是否可刪除，請重試。';
+
+  @override
+  String get accountVerificationFailed => '暫時無法驗證帳號，請重試。';
+
+  @override
+  String get subscriptionLoadFailed => '方案資料載入失敗，請重試。';
 
   @override
   String get next => '下一題';
@@ -3275,9 +3290,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountDeletionCompleted => '刪除申請已送出，等待管理者處理。';
 
   @override
-  String get accountDeletionEmailUnavailable => '無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。';
-
-  @override
   String accountDeletionFailed(Object message) {
     return '刪除帳號失敗：$message';
   }
@@ -3319,9 +3331,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String dataExportCompleted(Object path) {
     return '資料匯出完成：$path';
   }
-
-  @override
-  String get dataExportEmailUnavailable => '無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。';
 
   @override
   String dataExportFailed(Object message) {

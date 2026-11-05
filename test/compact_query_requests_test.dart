@@ -69,7 +69,7 @@ void main() {
         final result = await ServiceContentPerformance().read(
           owner: 'one@example.com',
           attractions: attractions,
-          statisticsOnly: true,
+
           period: ContentPerformancePeriod(now: DateTime(2026, 11, 4)),
         );
         expect(result.items, isEmpty);
@@ -85,7 +85,7 @@ void main() {
       ServiceContentPerformance().read(
         owner: 'one@example.com',
         attractions: true,
-        statisticsOnly: true,
+
         period: ContentPerformancePeriod(now: DateTime(2026, 11, 4)),
       ),
       throwsA(
@@ -196,7 +196,6 @@ void main() {
         attractions: false,
         period: period,
         keyword: '新北',
-        statisticsOnly: true,
       );
       expect(jsonDecode(requests[0].body)['p_include_totals'], true);
       response = {

@@ -26,6 +26,21 @@ class AppView extends StatefulWidget {
 class _AppViewState extends State<AppView> with WidgetsBindingObserver {
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _deepLinkSubscription;
+  Future<void>? _subscriptionRetry;
+
+  Future<void> _retrySubscription() {
+    final pending = _subscriptionRetry;
+    if (pending != null) return pending;
+    late Future<void> request;
+    request = context
+        .read<ControllerAuth>()
+        .refreshSubscriptionUsage()
+        .whenComplete(() {
+          if (identical(_subscriptionRetry, request)) _subscriptionRetry = null;
+        });
+    _subscriptionRetry = request;
+    return request;
+  }
 
   @override
   void initState() {
@@ -114,6 +129,7 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                       bool loggedIn,
                       bool configurationMissing,
                       bool subscriptionUnverified,
+                      bool subscriptionPending,
 
                       int? endingInDays,
                       DateTime? endsAt,
@@ -129,6 +145,8 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                           auth.subscriptionConfigurationMissing,
                       subscriptionUnverified:
                           auth.subscription.verificationUnavailable,
+                      subscriptionPending:
+                          auth.subscription.verificationPending,
 
                       endingInDays: auth.quotaFreePeriodEndingInDays,
                       endsAt: auth.quotaFreePeriodEndsAt,
@@ -142,11 +160,18 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                         return MediaQuery(
                           data: scaledMediaQuery,
                           child: SubscriptionReadOnlyNotice(
-                            message: state.subscriptionUnverified
-                                ? AppLocalizations.of(context)!.networkError
+                            message: state.subscriptionPending
+                                ? AppLocalizations.of(context)!.loading
+                                : state.subscriptionUnverified
+                                ? AppLocalizations.of(
+                                    context,
+                                  )!.subscriptionLoadFailed
                                 : AppLocalizations.of(
                                     context,
                                   )!.subscriptionConfigurationMissing,
+                            onRetry: state.subscriptionUnverified
+                                ? () => unawaited(_retrySubscription())
+                                : null,
                             child: child ?? const SizedBox.shrink(),
                           ),
                         );
@@ -251,39 +276,50 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                   child: content,
                 ),
               );
-              return Selector<ControllerAuth, bool>(
-                selector: (_, auth) =>
-                    auth.isLoggedIn &&
-                    !auth.isAnonymous &&
-                    auth.accountVerificationBlocked,
+              return Selector<ControllerAuth, (bool, bool)>(
+                selector: (_, auth) => (
+                  auth.isLoggedIn &&
+                      !auth.isAnonymous &&
+                      auth.accountVerificationBlocked,
+                  auth.accountVerificationFailed,
+                ),
                 child: interactiveContent,
-                builder: (context, blocked, child) => Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Offstage(
-                      offstage: blocked,
-                      child: ExcludeFocus(excluding: blocked, child: child!),
-                    ),
-                    if (blocked)
-                      Scaffold(
-                        body: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(AppLocalizations.of(context)!.networkError),
-                              TextButton(
-                                onPressed: () =>
-                                    _validateCurrentAccount(force: true),
-                                child: Text(
-                                  AppLocalizations.of(context)!.retry,
+                builder: (context, state, child) {
+                  final (blocked, failed) = state;
+                  final loc = AppLocalizations.of(context)!;
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Offstage(
+                        offstage: blocked,
+                        child: ExcludeFocus(excluding: blocked, child: child!),
+                      ),
+                      if (blocked)
+                        Scaffold(
+                          body: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (!failed) const CircularProgressIndicator(),
+                                if (!failed) const SizedBox(height: 16),
+                                Text(
+                                  failed
+                                      ? loc.accountVerificationFailed
+                                      : loc.verifyingAccount,
                                 ),
-                              ),
-                            ],
+                                if (failed)
+                                  TextButton(
+                                    onPressed: () =>
+                                        _validateCurrentAccount(force: true),
+                                    child: Text(loc.retry),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
+                    ],
+                  );
+                },
               );
             },
             debugShowCheckedModeBanner: false,

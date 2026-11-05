@@ -47,20 +47,34 @@ void main() {
   });
   tearDown(() => client.dispose());
   test(
-    'missing admin entitlement query is not an empty subscription list',
+    'missing admin overview fails without separate subscription reads',
     () async {
+      await client.auth.setInitialSession(
+        jsonEncode({
+          'access_token': 'test-admin-token',
+          'token_type': 'bearer',
+          'user': {
+            'id': 'admin',
+            'email': 'admin@example.com',
+            'aud': 'authenticated',
+            'created_at': '2026-01-01T00:00:00Z',
+          },
+        }),
+      );
       status = 404;
       payload = {'code': 'PGRST202', 'message': 'not deployed'};
       await expectLater(
-        ServiceSubscription().fetchUserEntitlementsAsAdmin(
-          email: 'a@example.com',
+        ServiceSubscription().fetchUserSubscriptionOverviewAsAdmin(
+          'a@example.com',
         ),
         throwsA(isA<PostgrestException>()),
       );
+      expect(requests, hasLength(1));
       expect(
         requests.single.url.path,
-        endsWith('/admin_get_user_subscription_entitlements'),
+        endsWith('/admin_get_user_subscription_overview'),
       );
+      expect(jsonDecode(requests.single.body), {'p_email': 'a@example.com'});
     },
   );
   test('missing vendor initialization fails and can be retried', () async {

@@ -11,7 +11,6 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/memory_trace/page_memory_add.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
-import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -34,16 +33,8 @@ enum EventCopyDestination {
   };
 }
 
-List<EventCopyDestination> availableEventCopyDestinations({
-  required String sourceTableName,
-  required bool isOwnCalendarEvent,
-}) => EventCopyDestination.values
-    .where(
-      (destination) =>
-          destination.tableName != sourceTableName ||
-          (destination == EventCopyDestination.calendar && !isOwnCalendarEvent),
-    )
-    .toList(growable: false);
+List<EventCopyDestination> availableEventCopyDestinations() =>
+    List.unmodifiable(EventCopyDestination.values);
 
 EventItem buildEventCopyTemplate(
   EventItem source, {
@@ -73,18 +64,14 @@ Future<EventItem?> copyEventToAnotherPage({
   required BuildContext context,
   required EventItem event,
   required String sourceTableName,
+  ControllerEvent? sourceController,
 }) async {
   final loc = AppLocalizations.of(context)!;
   final auth = context.read<ControllerAuth>();
   final currentAccount = auth.currentAccount ?? '';
   if (currentAccount.isEmpty) return null;
 
-  final destinations = availableEventCopyDestinations(
-    sourceTableName: sourceTableName,
-    isOwnCalendarEvent:
-        sourceTableName == TableNames.calendarEvents &&
-        normalizedTextEquals(event.account, currentAccount),
-  );
+  final destinations = availableEventCopyDestinations();
   final destination = await showModalBottomSheet<EventCopyDestination>(
     context: context,
     showDragHandle: true,
@@ -171,6 +158,9 @@ Future<EventItem?> copyEventToAnotherPage({
   }
 
   if (created != null) {
+    if (destination.tableName == sourceTableName && sourceController != null) {
+      await sourceController.loadEvents(isGetPublicEvents: false);
+    }
     await auth.refreshSubscriptionUsage();
   }
   return created;

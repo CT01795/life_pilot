@@ -125,7 +125,7 @@ void main() {
             service.finish(1, total: 222);
             await fresh;
             final current = c.data;
-            expect(current!.total, history ? 5 : 222);
+            expect(current!.total, 222);
             if (oldFailure) {
               service.reads[0].completeError(StateError('obsolete'));
             } else {

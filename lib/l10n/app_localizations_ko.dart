@@ -9,6 +9,9 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get noMoreData => '더 이상 표시할 데이터가 없습니다';
+
+  @override
   String get ledgerDeclineShare => '보기 취소';
 
   @override
@@ -569,6 +572,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get networkError => '연결할 수 없습니다. 네트워크를 확인한 후 다시 시도해 주세요.';
+
+  @override
+  String get verifyingAccount => '계정을 확인하는 중…';
+
+  @override
+  String get adminPricingDeleteCheckFailed => '이 요금제를 삭제할 수 있는지 확인하지 못했습니다. 다시 시도해 주세요.';
+
+  @override
+  String get accountVerificationFailed => '현재 계정을 확인할 수 없습니다. 다시 시도해 주세요.';
+
+  @override
+  String get subscriptionLoadFailed => '요금제 정보를 불러오지 못했습니다. 다시 시도해 주세요.';
 
   @override
   String get next => '다음';
@@ -3275,9 +3290,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get accountDeletionCompleted => '삭제 요청이 관리자에게 전송되었습니다.';
 
   @override
-  String get accountDeletionEmailUnavailable => '이메일 앱을 열 수 없습니다. minavi@alumni.nccu.edu.tw로 문의해 주세요.';
-
-  @override
   String accountDeletionFailed(Object message) {
     return '계정 삭제 실패: $message';
   }
@@ -3319,9 +3331,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String dataExportCompleted(Object path) {
     return '데이터 내보내기 완료: $path';
   }
-
-  @override
-  String get dataExportEmailUnavailable => '이메일 앱을 열 수 없습니다. minavi@alumni.nccu.edu.tw로 문의해 주세요.';
 
   @override
   String dataExportFailed(Object message) {

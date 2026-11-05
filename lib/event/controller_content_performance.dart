@@ -113,7 +113,6 @@ class ControllerContentPerformance extends SafeChangeNotifier {
             attractions: attractions,
             period: period,
             keyword: search,
-            statisticsOnly: true,
             shouldContinue: () => reading && _isCurrentRequest(request),
           )
           .timeout(requestTimeout);

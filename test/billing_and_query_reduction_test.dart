@@ -240,9 +240,8 @@ void main() {
     'feedback metadata excludes screenshots; explicit detail fetch reads them',
     () async {
       response = [];
-      await ServiceFeedback().loadFeedback(
-        dateFrom: DateTime(2026),
-        dateTo: DateTime(2027),
+      await ServiceFeedback().loadFeedbackPage(
+        statuses: {'pending', 'in_progress'},
       );
       expect(
         requests.single.url.queryParameters['select'],

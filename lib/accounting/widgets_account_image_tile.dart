@@ -93,7 +93,7 @@ class _AccountImageTileState extends State<AccountImageTile> {
                         : Image.memory(
                             bytes,
                             fit: BoxFit.cover,
-                            cacheWidth: 240,
+                            cacheWidth: 320,
                             errorBuilder: (_, _, _) => placeholder,
                           );
                   },

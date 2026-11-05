@@ -82,9 +82,8 @@ void main() {
         ServiceModule().loadUserModulesAsAdmin('one@example.com'),
     'module own': () =>
         ServiceModule().loadModulesFromServer('one@example.com'),
-    'feedback list': () => ServiceFeedback().loadFeedback(
-      dateFrom: DateTime(2026),
-      dateTo: DateTime(2027),
+    'feedback list': () => ServiceFeedback().loadFeedbackPage(
+      statuses: {'pending', 'in_progress'},
     ),
     'Excel pages': () => RepositoryPersonalExportRows().read('one@example.com'),
     'deletion own': () => RepositoryAccountDeletion().ownRequest(),

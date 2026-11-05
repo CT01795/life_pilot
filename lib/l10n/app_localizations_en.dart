@@ -9,6 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get noMoreData => 'No more data to display';
+
+  @override
   String get ledgerDeclineShare => 'Stop viewing';
 
   @override
@@ -569,6 +572,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get networkError => 'Unable to connect. Check your network and try again.';
+
+  @override
+  String get verifyingAccount => 'Verifying your account…';
+
+  @override
+  String get adminPricingDeleteCheckFailed => 'Unable to confirm whether this plan can be deleted. Please retry.';
+
+  @override
+  String get accountVerificationFailed => 'Unable to verify your account right now. Please retry.';
+
+  @override
+  String get subscriptionLoadFailed => 'Unable to load your plan details. Please retry.';
 
   @override
   String get next => 'Next';
@@ -3275,9 +3290,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountDeletionCompleted => 'Your deletion request was sent to an administrator.';
 
   @override
-  String get accountDeletionEmailUnavailable => 'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.';
-
-  @override
   String accountDeletionFailed(Object message) {
     return 'Account deletion failed: $message';
   }
@@ -3319,9 +3331,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String dataExportCompleted(Object path) {
     return 'Your data export is ready: $path';
   }
-
-  @override
-  String get dataExportEmailUnavailable => 'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.';
 
   @override
   String dataExportFailed(Object message) {

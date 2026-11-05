@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -90,9 +91,7 @@ class _PageContentPerformanceState extends State<PageContentPerformance> {
               return ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                 itemCount:
-                    2 +
-                    (data?.rows.length ?? 0) +
-                    (data?.hasMore == true ? 1 : 0),
+                    2 + (data?.rows.length ?? 0) + (data != null ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     return Padding(
@@ -230,24 +229,13 @@ class _PageContentPerformanceState extends State<PageContentPerformance> {
                     return WidgetsContentPerformanceOverview(data: data);
                   }
                   if (data != null && index == data.items.length + 2) {
-                    return Column(
-                      children: [
-                        if (controller.moreError != null)
-                          Text(loc.dashboardLoadFailed),
-                        TextButton.icon(
-                          onPressed: controller.loadingMore
-                              ? null
-                              : controller.loadMore,
-                          icon: const Icon(Icons.expand_more),
-                          label: Text(
-                            controller.loadingMore
-                                ? loc.loading
-                                : controller.moreError != null
-                                ? loc.retry
-                                : loc.clickHereToSeeMore,
-                          ),
-                        ),
-                      ],
+                    return WidgetsLoadMore(
+                      hasMore: data.hasMore,
+                      loading: controller.loadingMore,
+                      count: data.items.length,
+                      error: controller.moreError,
+                      scope: (controller.selectedMonth, controller.keyword),
+                      onLoadMore: controller.loadMore,
                     );
                   }
                   final item = data!.items[index - 2];

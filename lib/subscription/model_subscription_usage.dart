@@ -65,8 +65,11 @@ class SubscriptionSnapshot {
 
   bool get isPlus => plan == 'plus';
   bool get verificationUnavailable => status == 'verification_unavailable';
+  bool get verificationPending => status == 'verification_pending';
   bool get configurationMissing =>
-      status == 'configuration_missing' || verificationUnavailable;
+      status == 'configuration_missing' ||
+      verificationUnavailable ||
+      verificationPending;
   SubscriptionUsage? operator [](String resource) => usage[resource];
 
   SubscriptionSnapshot copyWithUsage(Map<String, SubscriptionUsage> newUsage) {

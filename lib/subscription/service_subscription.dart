@@ -47,19 +47,6 @@ class ServiceSubscription {
     await RepositorySubscriptionMaintenance(supabase).deletePeriod(id);
   }
 
-  Future<Map<String, dynamic>?> fetchUserSubscriptionAsAdmin({
-    required String email,
-  }) async {
-    final rows =
-        await supabase.rpc(
-              'admin_get_user_subscription',
-              params: {'p_email': email.trim()},
-            )
-            as List<dynamic>;
-    if (rows.isEmpty) return null;
-    return Map<String, dynamic>.from(rows.first as Map);
-  }
-
   Future<List<SubscriptionCleanupPreview>> fetchCleanupPreview({
     String? email,
   }) => RepositorySubscriptionMaintenance(supabase).preview(email);
@@ -232,33 +219,6 @@ class ServiceSubscription {
     );
   }
 
-  Future<void> setUserSubscriptionAsAdmin({
-    required String email,
-    required String plan,
-    required DateTime expiresAt,
-    required String note,
-    required bool unlimited,
-    Map<String, int?> quotas = const {},
-  }) async {
-    await supabase.rpc(
-      'admin_set_user_subscription',
-      params: {
-        'p_email': email.trim(),
-        'p_plan': plan,
-        'p_expires_at': expiresAt.toUtc().toIso8601String(),
-        'p_admin_note': note.trim(),
-        'p_unlimited_quota': unlimited,
-        'p_calendar_quota': quotas['calendar'],
-        'p_accounting_quota': quotas['accounting'],
-        'p_point_quota': quotas['point'],
-        'p_memory_quota': quotas['memory'],
-        'p_game_question_quota': quotas['game'],
-        'p_calendar_share_quota': quotas['share'],
-        'p_image_megabytes': quotas['image'],
-      },
-    );
-  }
-
   Future<void> extendUserSubscriptionAsAdmin({
     required String email,
     int days = 90,
@@ -274,18 +234,6 @@ class ServiceSubscription {
       'admin_delete_user_subscription',
       params: {'p_email': email.trim()},
     );
-  }
-
-  Future<List<Map<String, dynamic>>> fetchUserEntitlementsAsAdmin({
-    required String email,
-  }) async {
-    final rows = await supabase.rpc(
-      'admin_get_user_subscription_entitlements',
-      params: {'p_email': email.trim()},
-    );
-    return (rows as List<dynamic>)
-        .map((row) => Map<String, dynamic>.from(row as Map))
-        .toList(growable: false);
   }
 
   Future<void> deleteUserEntitlementAsAdmin({

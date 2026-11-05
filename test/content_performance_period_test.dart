@@ -167,34 +167,34 @@ void main() {
 
   group('database scope and pagination', () {
     late SupabaseClient client;
-    late List<Uri> requests;
-    late List<Map<String, dynamic>> rows;
-    bool duplicate = false;
-    bool active = true;
-    bool expireOnResponse = false;
+    late List<http.Request> requests;
+    var active = true, expireOnResponse = false, missing = false;
     setUp(() async {
       requests = [];
-      duplicate = false;
       active = true;
       expireOnResponse = false;
-      rows = [
-        for (var i = 0; i < 3; i++) {'id': '$i', 'name': '$i', 'page_views': i},
-      ];
+      missing = false;
       client = SupabaseClient(
         'https://example.supabase.co',
         'test-key',
         httpClient: MockClient((request) async {
-          requests.add(request.url);
+          requests.add(request);
           if (expireOnResponse) active = false;
-          final offset = int.parse(
-            request.url.queryParameters['offset'] ?? '0',
-          );
-          // Emulate a server cap smaller than the requested page size.
           return http.Response(
-            jsonEncode(rows.skip(duplicate ? 0 : offset).take(2).toList()),
-            200,
-            headers: {'content-type': 'application/json'},
+            jsonEncode(
+              missing
+                  ? {'code': 'PGRST202', 'message': 'missing'}
+                  : {
+                      'items': [
+                        {'id': 'one', 'page_views': 2},
+                      ],
+                      'totals': {'page_views': 20},
+                      'next_offset': 20,
+                    },
+            ),
+            missing ? 404 : 200,
             request: request,
+            headers: {'content-type': 'application/json'},
           );
         }),
       );
@@ -206,8 +206,6 @@ void main() {
           'user': {
             'id': 'owner',
             'email': 'one@example.com',
-            'app_metadata': {},
-            'user_metadata': {},
             'aud': 'authenticated',
             'created_at': '2026-01-01T00:00:00Z',
           },
@@ -215,182 +213,104 @@ void main() {
       );
     });
     tearDown(() => client.dispose());
-    test('inactive performance query sends no database request', () async {
+    test('inactive query sends no database request', () async {
       active = false;
-      final result = await ServiceContentPerformance(preferPageRpc: false).read(
+      final data = await ServiceContentPerformance().read(
         owner: 'one@example.com',
         attractions: false,
+        period: ContentPerformancePeriod(now: now),
         shouldContinue: () => active,
       );
+      expect(data.items, isEmpty);
       expect(requests, isEmpty);
-      expect(result.items, isEmpty);
     });
     for (final attractions in [false, true]) {
-      test(
-        '$attractions expired HTTP response does not trigger another page',
-        () async {
-          expireOnResponse = true;
-          final result = await ServiceContentPerformance(preferPageRpc: false)
-              .read(
-                owner: 'one@example.com',
-                attractions: attractions,
-                shouldContinue: () => active,
-              );
-          expect(requests.length, 1);
-          expect(result.items, isEmpty);
-          expect(result.totals.values.every((value) => value == 0), true);
-        },
-      );
-    }
-    test(
-      'statistics-only search keeps author, date, keyword and six nonzero counters as mandatory groups',
-      () async {
-        final period = ContentPerformancePeriod(now: now);
-        final result = await ServiceContentPerformance(preferPageRpc: false)
-            .read(
+      for (final month in [
+        null,
+        DateTime(2026, 7),
+        DateTime(2026, 10),
+        DateTime(2025, 12),
+      ]) {
+        test(
+          'RPC scopes month and keyword without downloading all content ($attractions, $month)',
+          () async {
+            final period = ContentPerformancePeriod(month: month, now: now);
+            final data = await ServiceContentPerformance().read(
               owner: 'one@example.com',
-              attractions: true,
+              attractions: attractions,
               period: period,
-              keyword: '新北',
-              statisticsOnly: true,
+              keyword: '  新北,(活動)%_  ',
             );
-        expect(result.items.map((item) => item.id), ['1', '2']);
-        expect(
-          requests.length,
-          3,
-        ); // Raw page offsets remain correct after zero rows are hidden.
-        for (final request in requests) {
-          final filter = request.queryParameters['or']!;
-          expect(filter, startsWith('(and('));
-          expect(filter, contains('or(${period.databaseFilter})'));
-          expect(filter, contains(contentPerformanceSearchFilter('新北')));
-          for (final column in contentPerformanceColumns) {
-            expect(filter, contains('$column.neq.0'));
-          }
-          expect(request.queryParameters['account'], 'eq.one@example.com');
-          expect(
-            request.queryParameters['order'],
-            'end_date.asc.nullslast,city.asc.nullslast,start_date.asc.nullslast,id.asc.nullslast',
-          );
-        }
-      },
-    );
-    test(
-      'keyword and month are ANDed while names and cities are ORed; author scope stays mandatory',
-      () async {
-        final period = ContentPerformancePeriod(
-          month: DateTime(2026, 7),
-          now: now,
+            expect(data.items.single.id, 'one');
+            expect(data.totals['page_views'], 20);
+            expect(data.hasMore, true);
+            expect(requests, hasLength(1));
+            expect(
+              requests.single.url.pathSegments.last,
+              'get_my_content_performance_page',
+            );
+            final params = jsonDecode(requests.single.body);
+            expect(params['p_attractions'], attractions);
+            expect(params['p_unexpired'], month == null);
+            expect(params['p_keyword'], '新北,(活動)%_');
+            expect(
+              params['p_from'],
+              (month ?? period.today).toUtc().toIso8601String(),
+            );
+            expect(
+              params['p_to'],
+              month == null
+                  ? null
+                  : DateTime(
+                      month.year,
+                      month.month + 1,
+                    ).toUtc().toIso8601String(),
+            );
+            expect(params['p_limit'], 20);
+            expect(params['p_offset'], 0);
+            expect(params['p_include_totals'], true);
+            expect(params.containsKey('p_owner'), false);
+          },
         );
-        const keyword = 'Taipei,festival';
-        await ServiceContentPerformance(preferPageRpc: false).read(
+      }
+      test('expired response publishes no content ($attractions)', () async {
+        expireOnResponse = true;
+        final data = await ServiceContentPerformance().read(
           owner: 'one@example.com',
-          attractions: false,
-          period: period,
-          keyword: keyword,
+          attractions: attractions,
+          period: ContentPerformancePeriod(now: now),
+          shouldContinue: () => active,
         );
-        for (final request in requests) {
-          expect(request.queryParameters['account'], 'eq.one@example.com');
-          expect(
-            request.queryParameters['or'],
-            '(and(or(${period.databaseFilter}),or(${contentPerformanceSearchFilter(keyword)})))',
-          );
-          expect(
-            request.queryParameters['order'],
-            contains(
-              'end_date.asc.nullslast,city.asc.nullslast,start_date.desc.nullslast,id.asc.nullslast',
-            ),
-          );
-        }
-      },
-    );
-    for (final attractions in [false, true]) {
-      test(
-        '$attractions: filters expiration month on the server and retains author isolation on every page',
-        () async {
-          final period = ContentPerformancePeriod(
-            month: DateTime(2026, 7),
-            now: now,
-          );
-          final data = await ServiceContentPerformance(preferPageRpc: false)
-              .read(
-                owner: 'one@example.com',
-                attractions: attractions,
-                period: period,
-              );
-          expect(data.rows.length, 3);
-          expect(data.totals['page_views'], 3);
-          expect(requests.length, 3);
-          for (final request in requests) {
-            expect(
-              request.path,
-              endsWith(
-                attractions ? 'recommended_attractions' : 'recommended_events',
-              ),
-            );
-            expect(request.queryParameters['account'], 'eq.one@example.com');
-            expect(request.queryParameters['or'], '(${period.databaseFilter})');
-            expect(request.queryParameters['select'], contains('end_date'));
-            expect(
-              request.queryParameters['select'],
-              isNot(contains('master_graph_url')),
-            );
-          }
-        },
-      );
+        expect(data.items, isEmpty);
+        expect(requests, hasLength(1));
+      });
     }
-    test(
-      'active period applies current date filter before downloading any rows',
-      () async {
-        final period = ContentPerformancePeriod(now: now);
-        await ServiceContentPerformance(
-          preferPageRpc: false,
-        ).read(owner: 'one@example.com', attractions: false, period: period);
-        expect(
-          requests.first.queryParameters['or'],
-          '(${period.databaseFilter})',
-        );
-      },
-    );
-    test(
-      'vendor metadata overview can still read all content without a period filter',
-      () async {
-        await ServiceContentPerformance(preferPageRpc: false).read(
+    test('different logged-in author is rejected before querying', () async {
+      await expectLater(
+        ServiceContentPerformance().read(
+          owner: 'other@example.com',
+          attractions: false,
+          period: ContentPerformancePeriod(now: now),
+        ),
+        throwsStateError,
+      );
+      expect(requests, isEmpty);
+    });
+    test('missing RPC reports failure without direct table fallback', () async {
+      missing = true;
+      await expectLater(
+        ServiceContentPerformance().read(
           owner: 'one@example.com',
           attractions: false,
-          includeSubmissionDetails: true,
-        );
-        expect(requests.first.queryParameters['or'], null);
-        expect(
-          requests.first.queryParameters['select'],
-          contains('city,start_date,end_date'),
-        );
-      },
-    );
-    test(
-      'requests for a different logged-in author fail before querying',
-      () async {
-        await expectLater(
-          ServiceContentPerformance(
-            preferPageRpc: false,
-          ).read(owner: 'other@example.com', attractions: false),
-          throwsStateError,
-        );
-        expect(requests, isEmpty);
-      },
-    );
-    test(
-      'repeated pages fail safely rather than doubling totals or looping',
-      () async {
-        duplicate = true;
-        await expectLater(
-          ServiceContentPerformance(
-            preferPageRpc: false,
-          ).read(owner: 'one@example.com', attractions: false),
-          throwsStateError,
-        );
-        expect(requests.length, 2);
-      },
-    );
+          period: ContentPerformancePeriod(now: now),
+        ),
+        throwsA(isA<PostgrestException>()),
+      );
+      expect(requests, hasLength(1));
+      expect(
+        requests.single.url.pathSegments.last,
+        'get_my_content_performance_page',
+      );
+    });
   });
 }

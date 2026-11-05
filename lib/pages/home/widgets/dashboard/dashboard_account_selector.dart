@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -203,7 +204,7 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
         builder: (dialogContext, update) {
           final hasClearOption = widget.selectedAccountId != null;
           final accountCount = accounts.length + (hasClearOption ? 1 : 0);
-          final itemCount = accountCount + (hasMore ? 1 : 0);
+          final itemCount = accountCount + 1;
           final maxContentHeight =
               MediaQuery.sizeOf(dialogContext).height * 0.6;
           final contentHeight = (itemCount * 72.0)
@@ -223,30 +224,32 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
                 separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (_, index) {
                   if (index == accountCount) {
-                    return TextButton(
-                      onPressed: loadingMore
-                          ? null
-                          : () async {
-                              update(() => loadingMore = true);
-                              try {
-                                final page = await _loadSharedAccounts(offset);
-                                if (!dialogContext.mounted) return;
-                                update(() {
-                                  accounts.addAll(page);
-                                  offset += page.length;
-                                  hasMore = page.length == _sharedPageSize;
-                                });
-                              } catch (_) {
-                                if (mounted && dialogContext.mounted) {
-                                  _showMessage(loc.accountListLoadFailed);
-                                }
-                              } finally {
-                                if (dialogContext.mounted) {
-                                  update(() => loadingMore = false);
-                                }
-                              }
-                            },
-                      child: Text(loc.clickHereToSeeMore),
+                    return WidgetsLoadMore(
+                      hasMore: hasMore,
+                      loading: loadingMore,
+                      count: accounts.length,
+                      scope: widget.selectedAccountId,
+                      onLoadMore: () async {
+                        update(() => loadingMore = true);
+                        try {
+                          final page = await _loadSharedAccounts(offset);
+                          if (!dialogContext.mounted) return;
+                          update(() {
+                            accounts.addAll(page);
+                            offset += page.length;
+                            hasMore = page.length == _sharedPageSize;
+                          });
+                        } catch (_) {
+                          if (mounted && dialogContext.mounted) {
+                            _showMessage(loc.accountListLoadFailed);
+                          }
+                          rethrow;
+                        } finally {
+                          if (dialogContext.mounted) {
+                            update(() => loadingMore = false);
+                          }
+                        }
+                      },
                     );
                   }
                   if (hasClearOption && index == 0) {

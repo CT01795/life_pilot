@@ -99,6 +99,12 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
+  /// Pagination has no further matching records
+  ///
+  /// In en, this message translates to:
+  /// **'No more data to display'**
+  String get noMoreData;
+
   /// Recipient action to decline a shared ledger
   ///
   /// In en, this message translates to:
@@ -1196,6 +1202,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to connect. Check your network and try again.'**
   String get networkError;
+
+  /// Label for verifying account
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying your account…'**
+  String get verifyingAccount;
+
+  /// Label for admin pricing delete check failed
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to confirm whether this plan can be deleted. Please retry.'**
+  String get adminPricingDeleteCheckFailed;
+
+  /// Label for account verification failed
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to verify your account right now. Please retry.'**
+  String get accountVerificationFailed;
+
+  /// Label for subscription load failed
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load your plan details. Please retry.'**
+  String get subscriptionLoadFailed;
 
   /// Label for next
   ///
@@ -6159,12 +6189,6 @@ abstract class AppLocalizations {
   /// **'Your deletion request was sent to an administrator.'**
   String get accountDeletionCompleted;
 
-  /// Account deletion email fallback message
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.'**
-  String get accountDeletionEmailUnavailable;
-
   /// Self-service account deletion error
   ///
   /// In en, this message translates to:
@@ -6242,12 +6266,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your data export is ready: {path}'**
   String dataExportCompleted(Object path);
-
-  /// Personal data export email fallback message
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.'**
-  String get dataExportEmailUnavailable;
 
   /// Data export error
   ///

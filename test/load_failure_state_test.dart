@@ -11,6 +11,7 @@ import 'package:life_pilot/business_plan/model_plan_template.dart';
 import 'package:life_pilot/business_plan/service_business_plan.dart';
 import 'package:life_pilot/feedback/controller_feedback_admin.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
+import 'package:life_pilot/feedback/model_feedback_page.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/point_record/controller_point_record_list.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
@@ -85,23 +86,20 @@ class _Plans extends ServiceBusinessPlan {
 class _Feedback extends ServiceFeedback {
   bool fail = false;
   @override
-  Future<List<dynamic>> loadFeedback({
-    required DateTime dateFrom,
-    required DateTime dateTo,
+  Future<FeedbackPage> loadFeedbackPage({
+    required Set<String> statuses,
+    FeedbackCursor? before,
   }) async {
     if (fail) throw StateError('offline');
-    return [
+    return FeedbackPage.fromRows([
       {
         'id': 1,
         'subject': 'Existing',
         'content': 'Text',
         'created_at': DateTime.now().toIso8601String(),
       },
-    ];
+    ]);
   }
-
-  @override
-  Future<bool> hasFeedbackBefore(DateTime before) async => false;
 }
 
 void main() {

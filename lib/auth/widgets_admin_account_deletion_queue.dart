@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -220,15 +221,16 @@ class _AdminAccountDeletionQueueState extends State<AdminAccountDeletionQueue> {
                     ),
                   ],
                 )
-              else if (c.hasMore)
-                TextButton(
-                  onPressed: c.working ? null : () => c.load(more: true),
-                  child: Text(loc.clickHereToSeeMore),
-                )
-              else if (c.rows.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(loc.noData),
+              else
+                WidgetsLoadMore(
+                  hasMore: c.hasMore,
+                  count: c.rows.length,
+                  enabled: !c.working,
+                  scope: (
+                    widget.disabled,
+                    context.read<ControllerAuth>().currentAccount,
+                  ),
+                  onLoadMore: () => c.load(more: true),
                 ),
             ],
           ),

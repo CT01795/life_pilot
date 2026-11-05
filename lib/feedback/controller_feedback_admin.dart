@@ -14,17 +14,15 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     ServiceFeedback service,
     this.auth, {
     this.requestTimeout = const Duration(seconds: 30),
-    this.historyTimeout = const Duration(seconds: 10),
     FeedbackPageLoader? pageLoader,
   }) : _service = service,
-       _pageLoader = pageLoader {
+       _pageLoader = pageLoader ?? service.loadFeedbackPage {
     _account = auth.currentAccount;
     auth.addListener(_onAccountChanged);
   }
   String? _account;
   final Duration requestTimeout;
-  final Duration historyTimeout;
-  final FeedbackPageLoader? _pageLoader;
+  final FeedbackPageLoader _pageLoader;
   FeedbackCursor? _cursor;
   int _revision = 0;
   final Set<int> _updating = {};
@@ -76,7 +74,6 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     _revision++;
     _feedbackList = const [];
     _visibleCache = null;
-    _loadedStartDate = null;
     _cursor = null;
     _updating.clear();
     _imageLoads.clear();
@@ -84,9 +81,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     isLoadingMore = false;
     hasMore = false;
     loadError = null;
-    historyError = null;
     loadMoreError = null;
-    isCheckingHistory = false;
     _selectedStatuses
       ..clear()
       ..addAll({'pending', 'in_progress'});
@@ -104,98 +99,21 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   List<ModelFeedback> get feedbackList => _feedbackList;
   bool isLoading = false;
   Object? loadError;
-  Object? historyError;
   Object? loadMoreError;
-  bool isCheckingHistory = false;
   bool isLoadingMore = false;
   bool hasMore = false;
-  DateTime? _loadedStartDate;
   final Set<String> _selectedStatuses = {'pending', 'in_progress'};
   Set<String>? _selectedStatusesCache;
   Set<String> get selectedStatuses =>
       _selectedStatusesCache ??= Set.unmodifiable(_selectedStatuses);
 
   Future<void> loadFeedback() async {
-    if (_pageLoader != null) {
-      if (isLoading) return;
-      return _loadPaged(replace: true);
-    }
     if (notifierDisposed || isLoading || _updating.isNotEmpty) return;
-    final revision = ++_revision;
-    _imageLoads.clear();
-    isLoadingMore = false;
-    isLoading = true;
-    loadError = null;
-    historyError = null;
-    loadMoreError = null;
-    isCheckingHistory = false;
-    notifyListeners();
-    try {
-      final now = DateTime.now();
-      final dateTo = DateTime(now.year, now.month, now.day + 1);
-      final loadedStartDate = dateTo.subtract(const Duration(days: 30));
-      if (!_active(revision)) return;
-      final res = await _service
-          .loadFeedback(dateFrom: loadedStartDate, dateTo: dateTo)
-          .timeout(requestTimeout);
-      if (!_active(revision)) return;
-      final loadedFeedback = res
-          .map((e) => ModelFeedback.fromMap(e as Map<String, dynamic>))
-          .toList();
-      _feedbackList = loadedFeedback;
-      _loadedStartDate = loadedStartDate;
-      _sortAndDeduplicate();
-      isLoading = false;
-      await _checkHistory(loadedStartDate, revision);
-    } catch (error) {
-      if (_active(revision)) loadError = error;
-    } finally {
-      if (_active(revision)) {
-        isLoading = false;
-        notifyListeners();
-      }
-    }
-  }
-
-  Future<void> _checkHistory(DateTime before, int revision) async {
-    if (!_active(revision)) return;
-    isCheckingHistory = true;
-    historyError = null;
-    notifyListeners();
-    try {
-      if (!_active(revision)) return;
-      final more = await _service
-          .hasFeedbackBefore(before)
-          .timeout(historyTimeout);
-      if (_active(revision)) hasMore = more;
-    } catch (error) {
-      if (_active(revision)) historyError = error;
-    } finally {
-      if (_active(revision)) {
-        isCheckingHistory = false;
-        notifyListeners();
-      }
-    }
-  }
-
-  Future<void> retryHistory() async {
-    final before = _loadedStartDate;
-    if (notifierDisposed ||
-        before == null ||
-        isLoading ||
-        isLoadingMore ||
-        isCheckingHistory) {
-      return;
-    }
-    await _checkHistory(before, _revision);
+    return _loadPaged(replace: true);
   }
 
   bool get hasHistoryAction =>
-      hasMore ||
-      isLoadingMore ||
-      isCheckingHistory ||
-      historyError != null ||
-      loadMoreError != null;
+      hasMore || isLoadingMore || loadMoreError != null;
 
   List<ModelFeedback> get visibleFeedback =>
       _visibleCache ??= List.unmodifiable(
@@ -206,72 +124,17 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
 
   void toggleStatus(String status) {
     if (notifierDisposed) return;
-    if (_pageLoader != null && _updating.isNotEmpty) return;
+    if (_updating.isNotEmpty) return;
     _selectedStatuses.contains(status)
         ? _selectedStatuses.remove(status)
         : _selectedStatuses.add(status);
     _selectedStatusesCache = null;
     _visibleCache = null;
     notifyListeners();
-    if (_pageLoader != null) unawaited(_loadPaged(replace: true));
+    unawaited(_loadPaged(replace: true));
   }
 
-  Future<void> loadMore() async {
-    if (_pageLoader != null) return _loadPaged(replace: false);
-    if (notifierDisposed ||
-        isLoading ||
-        isCheckingHistory ||
-        isLoadingMore ||
-        _updating.isNotEmpty ||
-        !hasMore ||
-        _loadedStartDate == null) {
-      return;
-    }
-    final revision = _revision;
-    final before = _loadedStartDate!;
-    isLoadingMore = true;
-    loadMoreError = null;
-    historyError = null;
-    notifyListeners();
-    try {
-      if (!_active(revision)) return;
-      final latestOlder = await _service
-          .latestFeedbackDateBefore(before)
-          .timeout(requestTimeout);
-      if (!_active(revision)) return;
-      if (latestOlder == null) {
-        hasMore = false;
-        return;
-      }
-      final dateTo = DateTime(
-        latestOlder.year,
-        latestOlder.month,
-        latestOlder.day + 1,
-      );
-      final dateFrom = dateTo.subtract(const Duration(days: 30));
-      final rows = await _service
-          .loadFeedback(dateFrom: dateFrom, dateTo: dateTo)
-          .timeout(requestTimeout);
-      if (!_active(revision)) return;
-      _feedbackList = [
-        ...feedbackList,
-        ...rows.map(
-          (row) => ModelFeedback.fromMap(row as Map<String, dynamic>),
-        ),
-      ];
-      _loadedStartDate = dateFrom;
-      _sortAndDeduplicate();
-      isLoadingMore = false;
-      await _checkHistory(dateFrom, revision);
-    } catch (error) {
-      if (_active(revision)) loadMoreError = error;
-    } finally {
-      if (_active(revision)) {
-        isLoadingMore = false;
-        notifyListeners();
-      }
-    }
-  }
+  Future<void> loadMore() => _loadPaged(replace: false);
 
   bool isUpdating(int id) => _updating.contains(id);
 
@@ -289,9 +152,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
       _imageLoads.clear();
       isLoadingMore = false;
       loadError = null;
-      historyError = null;
       loadMoreError = null;
-      isCheckingHistory = false;
     }
     if (statuses.isEmpty) {
       _feedbackList = const [];
@@ -309,7 +170,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     }
     notifyListeners();
     try {
-      final page = await _pageLoader!(
+      final page = await _pageLoader(
         statuses: statuses,
         before: replace ? null : _cursor,
       ).timeout(requestTimeout);

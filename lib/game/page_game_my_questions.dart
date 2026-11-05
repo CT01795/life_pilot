@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/game/controller_game_my_questions.dart';
 import 'package:life_pilot/game/service_game.dart';
@@ -420,21 +421,13 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
     );
   }
 
-  Widget _buildLoadMore(AppLocalizations loc) => Column(
-    children: [
-      Gaps.h8,
-      Center(
-        child: TextButton(
-          onPressed: _isLoadingMore ? null : () => _load(append: true),
-          child: _isLoadingMore
-              ? const SizedBox.square(
-                  dimension: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(loc.clickHereToSeeMore),
-        ),
-      ),
-    ],
+  Widget _buildLoadMore(AppLocalizations loc) => WidgetsLoadMore(
+    hasMore: _hasMore,
+    loading: _isLoadingMore,
+    count: _questions.length,
+    error: _hasError ? true : null,
+    scope: (_appliedKeyword, _selectedGroup, _statusFilter),
+    onLoadMore: () => _load(append: true),
   );
 
   @override
@@ -460,7 +453,7 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
               onRefresh: _load,
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: questions.length + 1 + (_hasMore ? 1 : 0),
+                itemCount: questions.length + 2,
                 itemBuilder: (context, index) {
                   if (index == 0) return _buildFilters(loc);
                   if (index > questions.length) return _buildLoadMore(loc);

@@ -16,16 +16,24 @@ void main() {
   late List<http.Request> requests;
   Object lockResult = true;
   var fail = false;
+  var showVersion = false;
+  var forceMissing = false;
   setUp(() {
     requests = [];
     lockResult = true;
     fail = false;
+    showVersion = false;
+    forceMissing = false;
     client = SupabaseClient(
       'https://example.supabase.co',
       'key',
       httpClient: MockClient((request) async {
         requests.add(request);
-        if (fail) {
+        if (fail ||
+            (forceMissing &&
+                request.url.path.endsWith(
+                  'admin_can_force_delete_pricing_version',
+                ))) {
           return http.Response(
             '{"code":"PGRST202","message":"missing"}',
             404,
@@ -39,7 +47,17 @@ void main() {
             path.endsWith('admin_pricing_version_is_locked')
                 ? lockResult
                 : path.endsWith('get_pricing_catalog')
-                ? {'versions': []}
+                ? {
+                    'versions': showVersion
+                        ? [
+                            {
+                              'id': 'used-version',
+                              'version_name': 'Used plan',
+                              'storage_plan': 'cloud',
+                            },
+                          ]
+                        : [],
+                  }
                 : path.endsWith('get_subscription_pricing_versions')
                 ? []
                 : null,
@@ -110,6 +128,20 @@ void main() {
     );
     expect(requests, hasLength(1));
   });
+  test(
+    'missing force-delete check propagates rather than hiding its failure',
+    () async {
+      fail = true;
+      await expectLater(
+        RepositoryPricingVersionGuard().canForceDelete('id'),
+        throwsA(isA<PostgrestException>()),
+      );
+      expect(
+        requests.single.url.path,
+        endsWith('admin_can_force_delete_pricing_version'),
+      );
+    },
+  );
   test('invalid lock response fails closed', () async {
     lockResult = {};
     await expectLater(
@@ -118,6 +150,57 @@ void main() {
     );
   });
 
+  testWidgets(
+    'delete preflight failure explains uncertainty and sends no delete',
+    (tester) async {
+      showVersion = true;
+      forceMissing = true;
+      tester.view.physicalSize = const Size(1000, 2200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      late AppLocalizations loc;
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('zh'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                loc = AppLocalizations.of(context)!;
+                return const SingleChildScrollView(
+                  child: AdminPricingVersionEditor(),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(loc.adminPricingTitle));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(loc.delete).last);
+      await tester.pumpAndSettle();
+      expect(find.text(loc.adminPricingDeleteCheckFailed), findsOneWidget);
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(
+        requests.any(
+          (r) =>
+              r.url.path.endsWith('admin_delete_subscription_pricing_version'),
+        ),
+        isFalse,
+      );
+      expect(
+        requests.where(
+          (r) => r.url.path.endsWith('admin_can_force_delete_pricing_version'),
+        ),
+        hasLength(1),
+      );
+    },
+  );
   testWidgets('explicit free selection submits cloud with price zero', (
     tester,
   ) async {

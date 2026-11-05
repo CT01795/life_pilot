@@ -49,12 +49,12 @@ void main() {
           service.finish(1, total: 222);
           await retry;
           expect(controller.error, isNull);
-          expect(controller.data!.total, history ? 5 : 222);
+          expect(controller.data!.total, 222);
           service.reads[0].completeError(StateError('late offline response'));
           if (service.totals.isNotEmpty) service.totals[0].complete(999);
           await Future<void>.delayed(Duration.zero);
           expect(controller.error, isNull);
-          expect(controller.data!.total, history ? 5 : 222);
+          expect(controller.data!.total, 222);
         },
       );
     }
@@ -116,7 +116,7 @@ void main() {
         expect(controller.data, isNull);
         expect(controller.loading, true);
         service.reads[1].complete([]);
-        service.totals[1].complete(0);
+        expect(service.totals, isEmpty);
         await Future<void>.delayed(Duration.zero);
         expect(controller.data!.hasChartData, false);
         expect(controller.data!.total, 0);

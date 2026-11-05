@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/utils/widgets/widgets_ledger_record_tile.dart';
 import 'package:life_pilot/record_statistics/widgets_record_totals.dart';
@@ -362,24 +363,21 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   ) {
     return SliverList.builder(
       addAutomaticKeepAlives: false,
-      itemCount:
-          visibleRecords.length +
-          ((controller.hasMore || controller.isLoadingMore) ? 1 : 0),
+      itemCount: visibleRecords.length + 1,
       itemBuilder: (context, index) {
         if (index == visibleRecords.length) {
-          return Center(
-            child: controller.isLoadingMore
-                ? const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: CircularProgressIndicator(),
-                  )
-                : TextButton(
-                    onPressed: () =>
-                        controller.loadMore(inputAccountId: widget.account.id),
-                    child: Text(
-                      AppLocalizations.of(context)!.clickHereToSeeMore,
-                    ),
-                  ),
+          return WidgetsLoadMore(
+            owner: controller,
+            hasMore: controller.hasMore,
+            loading: controller.isLoadingMore,
+            count: visibleRecords.length,
+            scope: (
+              widget.account.id,
+              _recordSearchController.text,
+              _selectedRecordCategory,
+            ),
+            onLoadMore: () =>
+                controller.loadMore(inputAccountId: widget.account.id),
           );
         }
         final record = visibleRecords[index];

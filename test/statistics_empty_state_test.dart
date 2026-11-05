@@ -38,10 +38,8 @@ class _Performance extends ServiceContentPerformance {
   Future<ModelContentPerformance> read({
     required String owner,
     required bool attractions,
-    bool includeSubmissionDetails = false,
-    ContentPerformancePeriod? period,
+    required ContentPerformancePeriod period,
     String keyword = '',
-    bool statisticsOnly = false,
     bool Function()? shouldContinue,
   }) async => ModelContentPerformance([]);
 }

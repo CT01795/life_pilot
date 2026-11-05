@@ -93,7 +93,7 @@ void main() {
       );
       await controller.search('新北');
       expect(service.keywords.single, '新北');
-      expect(service.statisticsOnlyRequests.single, true);
+      expect(service.periods.single, isNotNull);
       expect(controller.loading, false);
       expect(controller.error, isA<TimeoutException>());
       final retry = controller.load();

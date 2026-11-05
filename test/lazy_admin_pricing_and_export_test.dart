@@ -110,11 +110,31 @@ void main() {
   });
   tearDown(() => client.dispose());
 
-  for (final legacy in [false, true]) {
+  for (final missingRpc in [false, true]) {
     test(
-      'Excel includes all rows with project cap 2 (legacy=$legacy)',
+      'Excel paginates on success and reports missing RPC without fallback (missing=$missingRpc)',
       () async {
-        missing = legacy;
+        missing = missingRpc;
+        if (missingRpc) {
+          await expectLater(
+            RepositoryPersonalExportRows(
+              client: client,
+            ).read('one@example.com'),
+            throwsA(
+              isA<PostgrestException>().having(
+                (e) => e.code,
+                'code',
+                'PGRST202',
+              ),
+            ),
+          );
+          expect(requests, hasLength(1));
+          expect(
+            requests.single.url.path,
+            endsWith('/export_my_personal_excel_rows'),
+          );
+          return;
+        }
         final rows = await RepositoryPersonalExportRows(
           client: client,
         ).read('one@example.com');
@@ -124,10 +144,7 @@ void main() {
         expect(rows.first['currency'], 'JPY');
         expect(rows.first['date'], '2030-01-01');
         expect(rows.first['secondary_category'], 'salary');
-        final success = requests.where(
-          (r) =>
-              !legacy || !r.url.path.endsWith('export_my_personal_excel_rows'),
-        );
+        final success = requests;
         expect(success.map((r) => r.url.queryParameters['offset']).toList(), [
           '0',
           '2',

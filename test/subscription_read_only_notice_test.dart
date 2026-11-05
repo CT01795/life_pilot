@@ -10,6 +10,7 @@ void main() {
         testWidgets(
           '$language read-only notice fits 320 x $height at scale $scale',
           (tester) async {
+            var retries = 0;
             await tester.pumpWidget(
               MaterialApp(
                 locale: Locale(language),
@@ -26,6 +27,7 @@ void main() {
                             context,
                           ).copyWith(textScaler: TextScaler.linear(scale)),
                           child: SubscriptionReadOnlyNotice(
+                            onRetry: () => retries++,
                             message: AppLocalizations.of(
                               context,
                             )!.subscriptionConfigurationMissing,
@@ -43,6 +45,12 @@ void main() {
             );
             await tester.pumpAndSettle();
             expect(tester.takeException(), isNull);
+            if (height == 600 && scale == 1) {
+              await tester.ensureVisible(find.byType(TextButton));
+              await tester.pumpAndSettle();
+              await tester.tap(find.byType(TextButton));
+              expect(retries, 1);
+            }
             expect(
               tester.getSize(find.byKey(const ValueKey('data-page'))).height,
               greaterThanOrEqualTo(height * .7),

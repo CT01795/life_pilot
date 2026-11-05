@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/accounting/accounting_account_navigation.dart';
 import 'package:life_pilot/point_record/point_record_account_navigation.dart';
@@ -48,39 +49,26 @@ class WidgetsMemoryList extends StatelessWidget {
       controller: scrollController,
       scrollCacheExtent: const ScrollCacheExtent.pixels(180),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      itemCount:
-          filteredEvents.length + (controllerEvent.hasMoreMemory ? 1 : 0),
+      itemCount: filteredEvents.length + 1,
       addAutomaticKeepAlives: false,
       addRepaintBoundaries: true,
       addSemanticIndexes: false,
       itemBuilder: (context, index) {
         if (index == filteredEvents.length) {
-          return Selector<ControllerEvent, bool>(
-            selector: (_, controller) => controller.isLoadingMoreMemory,
-            builder: (context, isLoading, _) => Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
-              child: OutlinedButton.icon(
-                onPressed: isLoading
-                    ? null
-                    : () async {
-                        try {
-                          await controllerEvent.loadMoreMemoryEvents();
-                        } catch (_) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(loc.dashboardLoadFailed)),
-                          );
-                        }
-                      },
-                icon: isLoading
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.history_rounded),
-                label: Text(loc.clickHereToSeeMore),
-              ),
+          return WidgetsLoadMore(
+            owner: controllerEvent,
+            hasMore: controllerEvent.hasMoreMemory,
+            loading: controllerEvent.isLoadingMoreMemory,
+            count: filteredEvents.length,
+            scope: (
+              auth.currentAccount,
+              auth.preferredStorage,
+              controllerEvent.fromTableName,
+              controllerEvent.modelEvent.searchFilter.keywords,
+              controllerEvent.modelEvent.searchFilter.startDate,
+              controllerEvent.modelEvent.searchFilter.endDate,
             ),
+            onLoadMore: controllerEvent.loadMoreMemoryEvents,
           );
         }
         final event = filteredEvents[index];
@@ -243,6 +231,7 @@ class WidgetsMemoryList extends StatelessWidget {
                         context: context,
                         event: eventViewModel.event,
                         sourceTableName: controllerEvent.fromTableName,
+                        sourceController: controllerEvent,
                       ),
                       onOpenLink: () =>
                           controllerEvent.onOpenLink(eventViewModel),

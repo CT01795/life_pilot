@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/game/social/controller_game_social_questions.dart';
 import 'package:life_pilot/game/service_game.dart';
@@ -368,24 +369,20 @@ class _PageState extends State<PageGameSocialQuestions> {
                       itemBuilder: (_, index) => _card(_questions[index], loc),
                     ),
                   ),
-                  if (_hasMore)
-                    SliverToBoxAdapter(
-                      child: Center(
-                        child: TextButton(
-                          onPressed: _loadingMore
-                              ? null
-                              : () => _load(append: true),
-                          child: _loadingMore
-                              ? const SizedBox.square(
-                                  dimension: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(loc.clickHereToSeeMore),
-                        ),
+                  SliverToBoxAdapter(
+                    child: WidgetsLoadMore(
+                      hasMore: _hasMore,
+                      loading: _loadingMore,
+                      count: _questions.length,
+                      error: _controller.hasError ? true : null,
+                      scope: (
+                        _appliedKeyword,
+                        _controller.selectedCategory,
+                        _controller.status,
                       ),
+                      onLoadMore: () => _load(append: true),
                     ),
+                  ),
                 ],
               ),
             ),

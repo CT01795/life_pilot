@@ -6,6 +6,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/feedback/controller_feedback_admin.dart';
 import 'package:life_pilot/feedback/model_feedback.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
+import 'package:life_pilot/feedback/model_feedback_page.dart';
 import 'package:life_pilot/feedback/page_feedback_admin.dart';
 import 'package:life_pilot/feedback/widgets_feedback_image_loader.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -27,12 +28,12 @@ class _Service extends ServiceFeedback {
   bool fail = false;
   Completer<List<String>>? gate;
   @override
-  Future<List<dynamic>> loadFeedback({
-    required DateTime dateFrom,
-    required DateTime dateTo,
+  Future<FeedbackPage> loadFeedbackPage({
+    required Set<String> statuses,
+    FeedbackCursor? before,
   }) async {
     metadata++;
-    return [
+    return FeedbackPage.fromRows([
       {
         'id': id,
         'subject': 'Feedback $id',
@@ -40,11 +41,9 @@ class _Service extends ServiceFeedback {
         'created_at': '2026-11-01T00:00:00Z',
         'status': 'pending',
       },
-    ];
+    ]);
   }
 
-  @override
-  Future<bool> hasFeedbackBefore(DateTime before) async => false;
   @override
   Future<List<String>> loadScreenshots(int id) async {
     images++;

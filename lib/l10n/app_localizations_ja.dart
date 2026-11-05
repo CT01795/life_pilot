@@ -9,6 +9,9 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get noMoreData => 'これ以上表示するデータはありません';
+
+  @override
   String get ledgerDeclineShare => '閲覧をやめる';
 
   @override
@@ -569,6 +572,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get networkError => '接続できません。ネットワークを確認してもう一度お試しください。';
+
+  @override
+  String get verifyingAccount => 'アカウントを確認しています…';
+
+  @override
+  String get adminPricingDeleteCheckFailed => 'このプランを削除できるか確認できませんでした。再試行してください。';
+
+  @override
+  String get accountVerificationFailed => 'アカウントを確認できませんでした。再試行してください。';
+
+  @override
+  String get subscriptionLoadFailed => 'プラン情報を読み込めませんでした。再試行してください。';
 
   @override
   String get next => '次へ';
@@ -3275,9 +3290,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get accountDeletionCompleted => '削除申請を管理者に送信しました。';
 
   @override
-  String get accountDeletionEmailUnavailable => 'メールアプリを開けません。minavi@alumni.nccu.edu.tw までご連絡ください。';
-
-  @override
   String accountDeletionFailed(Object message) {
     return 'アカウントの削除に失敗しました: $message';
   }
@@ -3319,9 +3331,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String dataExportCompleted(Object path) {
     return 'データを出力しました: $path';
   }
-
-  @override
-  String get dataExportEmailUnavailable => 'メールアプリを開けません。minavi@alumni.nccu.edu.tw までご連絡ください。';
 
   @override
   String dataExportFailed(Object message) {

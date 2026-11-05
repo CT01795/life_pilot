@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
@@ -98,16 +99,12 @@ class _PageBusinessPlanState extends State<_PageBusinessPlanBody> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(loc.noData),
-                        if (c.hasPlanHistoryAction) ...[
-                          Gaps.h8,
-                          _buildPlanHistoryAction(context, c),
-                        ],
+                        ...[Gaps.h8, _buildPlanHistoryAction(context, c)],
                       ],
                     ),
                   )
                 : ListView.builder(
-                    itemCount:
-                        visiblePlans.length + (c.hasPlanHistoryAction ? 1 : 0),
+                    itemCount: visiblePlans.length + 1,
                     itemBuilder: (_, i) {
                       if (i == visiblePlans.length) {
                         return Center(
@@ -210,9 +207,11 @@ Widget _buildPlanHistoryAction(BuildContext context, ControllerBusinessPlan c) {
       label: Text(loc.retry),
     );
   }
-  return TextButton(
-    onPressed: c.loadMorePlans,
-    child: Text(loc.clickHereToSeeMore),
+  return WidgetsLoadMore(
+    hasMore: c.hasMorePlans,
+    count: c.visiblePlans.length,
+    scope: (c.selectedStatuses.toList()..sort()).join(','),
+    onLoadMore: c.loadMorePlans,
   );
 }
 

@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -33,39 +34,26 @@ class WidgetsEventList extends StatelessWidget {
       controller: scrollController,
       scrollCacheExtent: const ScrollCacheExtent.pixels(180),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      itemCount:
-          filteredEvents.length +
-          (controllerEvent.usesCloudPagination && controllerEvent.hasMoreEvents
-              ? 1
-              : 0),
+      itemCount: filteredEvents.length + 1,
       addAutomaticKeepAlives: false,
       addRepaintBoundaries: true,
       addSemanticIndexes: false,
       itemBuilder: (context, index) {
         if (index == filteredEvents.length) {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
-            child: OutlinedButton.icon(
-              onPressed: controllerEvent.isLoadingMoreEvents
-                  ? null
-                  : () async {
-                      try {
-                        await controllerEvent.loadMoreRecommendedEvents();
-                      } catch (_) {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(loc.dashboardLoadFailed)),
-                        );
-                      }
-                    },
-              icon: controllerEvent.isLoadingMoreEvents
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.expand_more_rounded),
-              label: Text(loc.clickHereToSeeMore),
+          return WidgetsLoadMore(
+            owner: controllerEvent,
+            hasMore: controllerEvent.hasMoreEvents,
+            loading: controllerEvent.isLoadingMoreEvents,
+            count: filteredEvents.length,
+            scope: (
+              auth.currentAccount,
+              auth.preferredStorage,
+              controllerEvent.fromTableName,
+              controllerEvent.modelEvent.searchFilter.keywords,
+              controllerEvent.modelEvent.searchFilter.startDate,
+              controllerEvent.modelEvent.searchFilter.endDate,
             ),
+            onLoadMore: controllerEvent.loadMoreRecommendedEvents,
           );
         }
         final eventViewModel = controllerEvent.buildViewModel(
@@ -105,6 +93,7 @@ class WidgetsEventList extends StatelessWidget {
             context: context,
             event: eventViewModel.event,
             sourceTableName: controllerEvent.fromTableName,
+            sourceController: controllerEvent,
           ),
           onOpenLink: () => controllerEvent.onOpenLink(eventViewModel),
           onOpenMap: () => controllerEvent.onOpenMap(eventViewModel),

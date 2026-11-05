@@ -1,141 +1,70 @@
 import 'dart:async';
-import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/feedback/controller_feedback_admin.dart';
 import 'package:life_pilot/feedback/model_feedback.dart';
+import 'package:life_pilot/feedback/model_feedback_page.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
-import 'package:life_pilot/feedback/page_feedback_admin.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
 
 class _Auth extends ControllerAuth {
-  String account = 'a@example.com';
+  String account = 'admin@example.com';
   @override
   String get currentAccount => account;
   @override
   bool get isSysAdmin => true;
   void switchAccount() {
-    account = 'b@example.com';
+    account = 'other@example.com';
     notifyListeners();
   }
 }
 
-Map<String, dynamic> _row(int id, {String status = 'pending'}) => {
+Map<String, dynamic> row(int id, {String status = 'pending'}) => {
   'id': id,
   'subject': 'Feedback $id',
   'content': 'Content',
-  'created_at': '2026-10-01T00:00:00Z',
+  'created_at': '2026-11-01T00:00:00Z',
   'status': status,
 };
 
 class _Service extends ServiceFeedback {
-  List<dynamic> rows = [_row(1)];
-  bool more = true;
-  bool failUpdate = false;
-  bool failProbe = false;
-  bool failLoad = false, failOlder = false;
-  final ranges = <({DateTime from, DateTime to})>[];
-  final olderBoundaries = <DateTime>[];
-  Completer<bool>? pendingProbe;
-  int loads = 0;
-  int probes = 0;
-  int updates = 0;
-  ModelFeedback? proposed;
-  Completer<List<dynamic>>? pendingLoad;
-  Completer<DateTime?>? pendingOlder;
-  Completer<void>? pendingUpdate;
-  int imageReads = 0;
-  bool failImages = false;
-  Completer<List<String>>? pendingImages;
+  List<Map<String, dynamic>> rows = [row(1)];
+  bool more = false, failLoad = false, failUpdate = false, failImages = false;
+  int loads = 0, updates = 0, imageReads = 0;
+  final cursors = <FeedbackCursor?>[];
+  final filters = <Set<String>>[];
+  Completer<FeedbackPage>? pending;
+  Completer<void>? updating;
+  Completer<List<String>>? images;
   @override
-  Future<List<String>> loadScreenshots(int id) async {
-    imageReads++;
-    if (failImages) throw StateError('image offline');
-    return pendingImages?.future ?? ['encoded'];
-  }
-
-  @override
-  Future<List<dynamic>> loadFeedback({
-    required DateTime dateFrom,
-    required DateTime dateTo,
+  Future<FeedbackPage> loadFeedbackPage({
+    required Set<String> statuses,
+    FeedbackCursor? before,
   }) async {
     loads++;
-    ranges.add((from: dateFrom, to: dateTo));
-    if (failLoad) throw StateError('page offline');
-    return pendingLoad == null ? rows : pendingLoad!.future;
-  }
-
-  @override
-  Future<bool> hasFeedbackBefore(DateTime before) async {
-    probes++;
-    if (failProbe) throw StateError('history offline');
-    return pendingProbe?.future ?? more;
-  }
-
-  @override
-  Future<DateTime?> latestFeedbackDateBefore(DateTime before) async {
-    olderBoundaries.add(before);
-    if (failOlder) throw StateError('older date offline');
-    return pendingOlder == null ? DateTime(2026, 1, 1) : pendingOlder!.future;
+    cursors.add(before);
+    filters.add(Set.of(statuses));
+    if (failLoad) throw StateError('offline');
+    if (pending != null) return pending!.future;
+    final page = FeedbackPage.fromRows(rows);
+    return FeedbackPage(rows: page.rows, hasMore: more, cursor: page.cursor);
   }
 
   @override
   Future<void> updateFeedback({required ModelFeedback feedback}) async {
     updates++;
-    proposed = feedback;
-    if (pendingUpdate != null) await pendingUpdate!.future;
-    if (failUpdate) throw StateError('offline');
+    if (updating != null) await updating!.future;
+    if (failUpdate) throw StateError('write failed');
+  }
+
+  @override
+  Future<List<String>> loadScreenshots(int id) async {
+    imageReads++;
+    if (failImages) throw StateError('image failed');
+    return images?.future ?? ['encoded'];
   }
 }
 
 void main() {
-  test(
-    'feedback list does not load images; opening twice shares one request',
-    () async {
-      final auth = _Auth();
-      final service = _Service();
-      final c = ControllerFeedbackAdmin(service, auth);
-      addTearDown(c.dispose);
-      addTearDown(auth.dispose);
-      await c.loadFeedback();
-      expect(service.imageReads, 0);
-      final feedback = c.feedbackList.single;
-      service.pendingImages = Completer<List<String>>();
-      final a = c.loadScreenshots(feedback);
-      final b = c.loadScreenshots(feedback);
-      service.pendingImages!.complete(['encoded']);
-      await Future.wait([a, b]);
-      await c.loadScreenshots(feedback);
-      expect(service.imageReads, 1);
-      expect(feedback.screenshot, ['encoded']);
-    },
-  );
-  test(
-    'failed screenshot load retries and account switches discard old images',
-    () async {
-      final auth = _Auth();
-      final service = _Service();
-      final c = ControllerFeedbackAdmin(service, auth);
-      addTearDown(c.dispose);
-      addTearDown(auth.dispose);
-      await c.loadFeedback();
-      final feedback = c.feedbackList.single;
-      service.failImages = true;
-      await expectLater(c.loadScreenshots(feedback), throwsStateError);
-      expect(feedback.screenshotsLoaded, isFalse);
-      service.failImages = false;
-      service.pendingImages = Completer<List<String>>();
-      final pending = c.loadScreenshots(feedback);
-      final expectation = expectLater(pending, throwsStateError);
-      auth.switchAccount();
-      service.pendingImages!.complete(['old private image']);
-      await expectation;
-      expect(feedback.screenshot, isNull);
-      expect(service.imageReads, 2);
-    },
-  );
   TestWidgetsFlutterBinding.ensureInitialized();
   late _Auth auth;
   late _Service service;
@@ -150,593 +79,248 @@ void main() {
     auth.dispose();
   });
 
-  for (final stage in ['initial', 'history', 'older date', 'older page']) {
-    for (final lateFailure in [false, true]) {
-      testWidgets(
-        '$stage timeout retains a retry action (late failure=$lateFailure)',
-        (tester) async {
-          controller.dispose();
-          controller = ControllerFeedbackAdmin(
-            service,
-            auth,
-            requestTimeout: const Duration(milliseconds: 20),
-            historyTimeout: const Duration(milliseconds: 10),
-          );
-          final older = stage.startsWith('older');
-          if (older) {
-            final seed = controller.loadFeedback();
-            await tester.pump();
-            await seed;
-          }
-          final page = Completer<List<dynamic>>();
-          final probe = Completer<bool>();
-          final date = Completer<DateTime?>();
-          if (stage == 'initial' || stage == 'older page') {
-            service.pendingLoad = page;
-          } else if (stage == 'history') {
-            service.pendingProbe = probe;
-          } else {
-            service.pendingOlder = date;
-          }
-          final pending = older
-              ? controller.loadMore()
-              : controller.loadFeedback();
-          await tester.pump();
-          final snapshot = controller.feedbackList;
-          final loads = service.loads, probes = service.probes;
-          await tester.pump(const Duration(milliseconds: 21));
-          await pending;
-          final error = stage == 'initial'
-              ? controller.loadError
-              : stage == 'history'
-              ? controller.historyError
-              : controller.loadMoreError;
-          expect(error, isA<TimeoutException>());
-          expect(controller.isLoading, isFalse);
-          expect(controller.isLoadingMore, isFalse);
-          expect(controller.isCheckingHistory, isFalse);
-          expect(controller.feedbackList, same(snapshot));
-          if (stage != 'initial') expect(controller.hasHistoryAction, isTrue);
-
-          if (stage == 'initial' || stage == 'older page') {
-            lateFailure
-                ? page.completeError(StateError('late page'))
-                : page.complete([_row(99)]);
-          } else if (stage == 'history') {
-            lateFailure
-                ? probe.completeError(StateError('late history'))
-                : probe.complete(true);
-          } else {
-            lateFailure
-                ? date.completeError(StateError('late date'))
-                : date.complete(DateTime(2026, 1));
-          }
-          await tester.pump();
-          expect(controller.feedbackList, same(snapshot));
-          expect(service.loads, loads);
-          expect(service.probes, probes);
-          service.pendingLoad = null;
-          service.pendingProbe = null;
-          service.pendingOlder = null;
-          service.more = false;
-          service.rows = [_row(2)];
-          final retry = stage == 'history'
-              ? controller.retryHistory()
-              : older
-              ? controller.loadMore()
-              : controller.loadFeedback();
-          await tester.pump();
-          await retry;
-          expect(controller.loadError, isNull);
-          expect(controller.historyError, isNull);
-          expect(controller.loadMoreError, isNull);
-          expect(controller.hasHistoryAction, isFalse);
-          if (stage == 'history') {
-            expect(service.loads, loads);
-            expect(controller.feedbackList, same(snapshot));
-          } else {
-            expect(controller.feedbackList.map((f) => f.id), contains(2));
-          }
-          if (older) {
-            expect(service.olderBoundaries.first, service.olderBoundaries.last);
-          }
-        },
-      );
-    }
-  }
-
-  testWidgets('late timeout after account switch cannot publish an error', (
-    tester,
-  ) async {
-    controller.dispose();
-    controller = ControllerFeedbackAdmin(
-      service,
-      auth,
-      requestTimeout: const Duration(milliseconds: 20),
-    );
-    final page = Completer<List<dynamic>>();
-    service.pendingLoad = page;
-    final pending = controller.loadFeedback();
-    auth.switchAccount();
-    await tester.pump(const Duration(milliseconds: 21));
-    await pending;
-    expect(controller.loadError, isNull);
+  test(
+    'initial load uses paged service and never fetches screenshots',
+    () async {
+      await controller.loadFeedback();
+      expect(controller.feedbackList.single.id, 1);
+      expect(service.cursors.single, isNull);
+      expect(service.filters.single, {'pending', 'in_progress'});
+      expect(service.imageReads, 0);
+    },
+  );
+  test('empty result has no continuation action', () async {
+    service.rows = [];
+    await controller.loadFeedback();
     expect(controller.feedbackList, isEmpty);
-    expect(controller.isLoading, isFalse);
-    page.completeError(StateError('old account'));
-    await tester.pump();
-    expect(service.probes, 0);
-    expect(controller.loadError, isNull);
+    expect(controller.hasHistoryAction, isFalse);
   });
-
   test(
-    'status snapshots are stable, read-only and replaced only when changed',
+    'initial failure is retryable and refresh failure retains records',
     () async {
-      final first = controller.selectedStatuses;
-      expect(controller.selectedStatuses, same(first));
+      service.failLoad = true;
       await controller.loadFeedback();
-      expect(controller.selectedStatuses, same(first));
-      controller.toggleStatus('completed');
-      final next = controller.selectedStatuses;
-      expect(next, isNot(same(first)));
-      expect(next, contains('completed'));
-      expect(first, isNot(contains('completed')));
-      expect(() => next.clear(), throwsUnsupportedError);
-      auth.switchAccount();
-      expect(controller.selectedStatuses, {'pending', 'in_progress'});
-      expect(controller.selectedStatuses, isNot(same(next)));
-      expect(next, contains('completed'));
+      expect(controller.loadError, isStateError);
+      service.failLoad = false;
+      await controller.loadFeedback();
+      final saved = controller.feedbackList;
+      service.failLoad = true;
+      await controller.loadFeedback();
+      expect(controller.feedbackList, same(saved));
+      expect(controller.isLoading, isFalse);
     },
   );
-
   test(
-    'selecting the current feedback status does not write or invalidate cache',
+    'append failure retries the same cursor and preserves loaded models',
     () async {
-      await controller.loadFeedback();
-      final feedback = controller.feedbackList.single;
-      final visible = controller.visibleFeedback;
-      expect(
-        await controller.updateStatus(feedback, feedback.status, auth.account),
-        isTrue,
-      );
-      expect(service.updates, 0);
-      expect(controller.visibleFeedback, same(visible));
-    },
-  );
-
-  test('a replaced feedback row cannot submit a stale status update', () async {
-    await controller.loadFeedback();
-    final old = controller.feedbackList.single;
-    await controller.loadFeedback();
-    expect(
-      await controller.updateStatus(old, 'completed', auth.account),
-      isNull,
-    );
-    expect(service.updates, 0);
-  });
-
-  test(
-    'account change during busy notification prevents an obsolete status write',
-    () async {
-      await controller.loadFeedback();
-      final feedback = controller.feedbackList.single;
-      var changed = false;
-      controller.addListener(() {
-        if (changed || !controller.isUpdating(feedback.id)) return;
-        changed = true;
-        auth.switchAccount();
-      });
-      expect(
-        await controller.updateStatus(feedback, 'completed', auth.account),
-        isNull,
-      );
-      expect(service.updates, 0);
-      expect(controller.feedbackList, isEmpty);
-    },
-  );
-
-  test(
-    'older page failure keeps data and retries exactly the same 30-day range',
-    () async {
+      service.more = true;
       await controller.loadFeedback();
       final first = controller.feedbackList.single;
       service.failLoad = true;
       await controller.loadMore();
+      expect(controller.loadMoreError, isStateError);
       expect(controller.feedbackList.single, same(first));
-      expect(controller.loadError, isNull);
-      expect(controller.loadMoreError, isStateError);
-      expect(controller.isLoadingMore, isFalse);
-      final failedRange = service.ranges.last;
+      final failedCursor = service.cursors.last;
       service.failLoad = false;
-      service.rows = [_row(2)];
       service.more = false;
+      service.rows = [row(2)];
       await controller.loadMore();
-      expect(service.ranges.last, failedRange);
-      expect(
-        failedRange.to.difference(failedRange.from),
-        const Duration(days: 30),
-      );
-      expect(service.olderBoundaries[0], service.olderBoundaries[1]);
-      expect(controller.feedbackList.map((row) => row.id), containsAll([1, 2]));
+      expect(service.cursors.last, same(failedCursor));
+      expect(controller.feedbackList.map((r) => r.id), containsAll([1, 2]));
       expect(controller.loadMoreError, isNull);
-      expect(controller.hasHistoryAction, isFalse);
+      expect(controller.hasMore, isFalse);
     },
   );
-
   test(
-    'older date lookup failure is separate from initial loading failure',
+    'filter change queries server from first page with immutable filters',
     () async {
       await controller.loadFeedback();
-      service.failOlder = true;
-      await controller.loadMore();
-      expect(service.loads, 1);
-      expect(controller.loadMoreError, isStateError);
-      expect(controller.loadError, isNull);
-      service.failOlder = false;
-      service.more = false;
-      service.rows = [_row(2)];
-      await controller.loadMore();
-      expect(controller.loadMoreError, isNull);
-      expect(controller.feedbackList, hasLength(2));
-    },
-  );
-
-  test(
-    'older feedback appears before its history check and retry retains models',
-    () async {
-      await controller.loadFeedback();
-      service.rows = [_row(2)];
-      service.pendingProbe = Completer<bool>();
-      final more = controller.loadMore();
+      final previous = controller.selectedStatuses;
+      controller.toggleStatus('completed');
       await Future<void>.delayed(Duration.zero);
-      expect(controller.feedbackList, hasLength(2));
-      expect(controller.isLoadingMore, isFalse);
-      expect(controller.isCheckingHistory, isTrue);
-      final rows = controller.feedbackList;
-      service.pendingProbe!.completeError(StateError('metadata offline'));
-      await more;
-      expect(controller.loadMoreError, isNull);
-      expect(controller.historyError, isStateError);
-      service.pendingProbe = null;
-      service.more = false;
-      await controller.retryHistory();
-      expect(controller.feedbackList, same(rows));
-      expect(service.loads, 2);
-      expect(controller.hasHistoryAction, isFalse);
+      expect(service.cursors.last, isNull);
+      expect(service.filters.last, contains('completed'));
+      expect(previous, isNot(contains('completed')));
+      expect(() => controller.selectedStatuses.clear(), throwsUnsupportedError);
+      expect(() => controller.visibleFeedback.clear(), throwsUnsupportedError);
     },
   );
-
+  test('empty filter performs no request and cancels existing page', () async {
+    service.pending = Completer<FeedbackPage>();
+    final load = controller.loadFeedback();
+    controller.toggleStatus('pending');
+    controller.toggleStatus('in_progress');
+    service.pending!.complete(FeedbackPage.fromRows([row(1)]));
+    await load;
+    expect(controller.feedbackList, isEmpty);
+    expect(controller.isLoading, isFalse);
+  });
+  for (final dispose in [false, true]) {
+    test(
+      'late page cannot publish after scope change (dispose=$dispose)',
+      () async {
+        service.pending = Completer<FeedbackPage>();
+        final load = controller.loadFeedback();
+        if (dispose) {
+          controller.dispose();
+        } else {
+          auth.switchAccount();
+        }
+        service.pending!.complete(FeedbackPage.fromRows([row(9)]));
+        await load;
+        expect(controller.feedbackList, isEmpty);
+      },
+    );
+  }
+  for (final lateFailure in [false, true]) {
+    test(
+      'timeout releases request and ignores late page (error=$lateFailure)',
+      () async {
+        controller.dispose();
+        controller = ControllerFeedbackAdmin(
+          service,
+          auth,
+          requestTimeout: const Duration(milliseconds: 20),
+        );
+        final delayed = service.pending = Completer<FeedbackPage>();
+        await controller.loadFeedback();
+        expect(controller.loadError, isA<TimeoutException>());
+        service.pending = null;
+        service.rows = [row(2)];
+        await controller.loadFeedback();
+        if (lateFailure) {
+          delayed.completeError(StateError('late'));
+        } else {
+          delayed.complete(FeedbackPage.fromRows([row(99)]));
+        }
+        await Future<void>.delayed(Duration.zero);
+        expect(controller.feedbackList.single.id, 2);
+        expect(controller.loadError, isNull);
+      },
+    );
+  }
   test(
-    'refresh cancels a late page failure without setting errors on new data',
+    'refresh supersedes an old append and ignores its late failure',
     () async {
+      service.more = true;
       await controller.loadFeedback();
-      final old = Completer<List<dynamic>>();
-      service.pendingLoad = old;
-      final more = controller.loadMore();
-      await Future<void>.delayed(Duration.zero);
-      service.pendingLoad = null;
-      service.rows = [_row(3)];
+      final old = service.pending = Completer<FeedbackPage>();
+      final append = controller.loadMore();
+      service.pending = null;
+      service.rows = [row(3)];
+      service.more = false;
       await controller.loadFeedback();
       old.completeError(StateError('obsolete'));
-      await more;
+      await append;
       expect(controller.feedbackList.single.id, 3);
       expect(controller.loadMoreError, isNull);
-      expect(controller.loadError, isNull);
     },
   );
-
-  test('late page response cannot mutate a disposed feedback list', () async {
+  test('append deduplicates and retains status ordering', () async {
+    service.rows = [row(1), row(2, status: 'in_progress')];
+    service.more = true;
     await controller.loadFeedback();
-    final rows = controller.feedbackList;
-    service.pendingLoad = Completer<List<dynamic>>();
-    final more = controller.loadMore();
-    await Future<void>.delayed(Duration.zero);
-    controller.dispose();
-    service.pendingLoad!.complete([_row(2)]);
-    await more;
-    expect(controller.feedbackList, same(rows));
-    expect(service.probes, 1);
-  });
-
-  testWidgets('load-more failure retries the older page from its footer', (
-    tester,
-  ) async {
-    service.failOlder = true;
-    await tester.pumpWidget(
-      ChangeNotifierProvider<ControllerAuth>.value(
-        value: auth,
-        child: MaterialApp(
-          locale: const Locale('en'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: PageFeedbackAdmin(service: service),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    final loc = await AppLocalizations.delegate.load(const Locale('en'));
-    await tester.ensureVisible(find.text(loc.clickHereToSeeMore));
-    await tester.tap(find.text(loc.clickHereToSeeMore));
-    await tester.pumpAndSettle();
-    expect(find.text('Feedback 1'), findsOneWidget);
-    expect(find.byIcon(Icons.refresh), findsOneWidget);
-    expect(service.loads, 1);
-    service.failOlder = false;
-    service.rows = [_row(2)];
+    service.rows = [row(1), row(3)];
     service.more = false;
-    await tester.ensureVisible(find.byIcon(Icons.refresh));
-    await tester.tap(find.byIcon(Icons.refresh));
-    await tester.pumpAndSettle();
-    expect(find.text('Feedback 2'), findsOneWidget);
-    expect(find.byIcon(Icons.refresh), findsNothing);
-    expect(service.loads, 2);
-    expect(tester.takeException(), isNull);
+    await controller.loadMore();
+    expect(controller.feedbackList.map((r) => r.id), [2, 1, 3]);
   });
-
-  test('feedback becomes visible before history metadata completes', () async {
-    service.pendingProbe = Completer<bool>();
-    final load = controller.loadFeedback();
-    await Future<void>.delayed(Duration.zero);
-    expect(controller.feedbackList.single.subject, 'Feedback 1');
-    expect(controller.isLoading, isFalse);
-    expect(controller.isCheckingHistory, isTrue);
-    service.pendingProbe!.complete(true);
-    await load;
-    expect(controller.hasMore, isTrue);
-    expect(controller.isCheckingHistory, isFalse);
+  test('failed status update preserves fields; retry succeeds', () async {
+    await controller.loadFeedback();
+    final item = controller.feedbackList.single;
+    service.failUpdate = true;
+    expect(
+      await controller.updateStatus(item, 'completed', auth.account),
+      isFalse,
+    );
+    expect(item.status, 'pending');
+    expect(item.dealAt, isNull);
+    service.failUpdate = false;
+    expect(
+      await controller.updateStatus(item, 'completed', auth.account),
+      isTrue,
+    );
+    expect(item.status, 'completed');
+    expect(item.dealAt!.isUtc, isTrue);
   });
-
   test(
-    'history failure retains model and decoded cache; retry skips list download',
+    'duplicate writes, filtering and refresh blocked during a status write',
     () async {
-      service.failProbe = true;
       await controller.loadFeedback();
-      final model = controller.feedbackList.single;
-      final decoded = [
-        Uint8List.fromList([1, 2, 3]),
-      ];
-      model.screenshotDecodeRawData = decoded;
-      final visible = controller.visibleFeedback;
-      expect(controller.loadError, isNull);
-      expect(controller.historyError, isStateError);
-      expect(controller.hasHistoryAction, isTrue);
-      service.failProbe = false;
-      service.more = false;
-      await controller.retryHistory();
-      expect(service.loads, 1);
-      expect(service.probes, 2);
-      expect(controller.feedbackList.single, same(model));
+      final item = controller.feedbackList.single;
+      service.updating = Completer<void>();
+      final write = controller.updateStatus(item, 'in_progress', auth.account);
       expect(
-        controller.feedbackList.single.screenshotDecodeRawData,
-        same(decoded),
+        await controller.updateStatus(item, 'completed', auth.account),
+        isNull,
       );
-      expect(controller.visibleFeedback, same(visible));
-      expect(controller.historyError, isNull);
-      expect(controller.hasHistoryAction, isFalse);
-    },
-  );
-
-  test(
-    'duplicate history retries and load-more do not start extra reads',
-    () async {
-      service.pendingProbe = Completer<bool>();
-      final load = controller.loadFeedback();
-      await Future<void>.delayed(Duration.zero);
-      await controller.retryHistory();
+      controller.toggleStatus('completed');
+      await controller.loadFeedback();
       await controller.loadMore();
       expect(service.loads, 1);
-      expect(service.probes, 1);
-      service.pendingProbe!.complete(false);
-      await load;
+      expect(service.updates, 1);
+      expect(controller.selectedStatuses, isNot(contains('completed')));
+      service.updating!.complete();
+      expect(await write, isTrue);
     },
   );
-
-  test('old-account metadata cannot overwrite a new account result', () async {
-    final oldProbe = Completer<bool>();
-    service.pendingProbe = oldProbe;
-    final old = controller.loadFeedback();
-    await Future<void>.delayed(Duration.zero);
-    auth.switchAccount();
-    service.rows = [_row(2)];
-    service.pendingProbe = null;
-    await controller.loadFeedback();
-    oldProbe.complete(false);
-    await old;
-    expect(controller.feedbackList.single.id, 2);
-    expect(controller.hasMore, isTrue);
-    expect(controller.historyError, isNull);
-  });
-
-  test('late metadata failure does not publish after disposal', () async {
-    service.pendingProbe = Completer<bool>();
-    final load = controller.loadFeedback();
-    await Future<void>.delayed(Duration.zero);
-    var notices = 0;
-    controller.addListener(() => notices++);
-    controller.dispose();
-    service.pendingProbe!.completeError(StateError('late'));
-    await load;
-    expect(controller.historyError, isNull);
-    expect(notices, 0);
-  });
-
-  testWidgets(
-    'admin page retains content during metadata loading and retries only history',
-    (tester) async {
-      service.pendingProbe = Completer<bool>();
-      await tester.pumpWidget(
-        ChangeNotifierProvider<ControllerAuth>.value(
-          value: auth,
-          child: MaterialApp(
-            locale: const Locale('en'),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: PageFeedbackAdmin(service: service),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-      expect(find.text('Feedback 1'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      service.pendingProbe!.completeError(StateError('offline'));
-      await tester.pumpAndSettle();
-      expect(find.text('Feedback 1'), findsOneWidget);
-      service.pendingProbe = null;
-      service.more = false;
-      await tester.ensureVisible(find.byIcon(Icons.refresh));
-      await tester.tap(find.byIcon(Icons.refresh));
-      await tester.pumpAndSettle();
-      expect(service.loads, 1);
-      expect(service.probes, 2);
-      expect(find.byIcon(Icons.refresh), findsNothing);
-      expect(tester.takeException(), isNull);
-    },
-  );
-
-  test('filter cache is read-only and invalidated on filter changes', () async {
-    await controller.loadFeedback();
-    final cached = controller.visibleFeedback;
-    expect(identical(cached, controller.visibleFeedback), isTrue);
-    expect(() => cached.clear(), throwsUnsupportedError);
-    expect(() => controller.feedbackList.clear(), throwsUnsupportedError);
-    expect(() => controller.selectedStatuses.clear(), throwsUnsupportedError);
-    controller.toggleStatus('pending');
-    expect(controller.visibleFeedback, isEmpty);
-  });
-
   test(
-    'failed persistence leaves displayed fields and cache unchanged; retry succeeds',
-    () async {
-      await controller.loadFeedback();
-      final feedback = controller.feedbackList.single;
-      final cached = controller.visibleFeedback;
-      service.failUpdate = true;
-      expect(
-        await controller.updateStatus(feedback, 'completed', auth.account),
-        isFalse,
-      );
-      expect(feedback.status, 'pending');
-      expect(feedback.dealAt, isNull);
-      expect(identical(cached, controller.visibleFeedback), isTrue);
-      expect(controller.isUpdating(1), isFalse);
-      service.failUpdate = false;
-      expect(
-        await controller.updateStatus(feedback, 'completed', auth.account),
-        isTrue,
-      );
-      expect(feedback.isOk, isTrue);
-      expect(feedback.dealBy, auth.account);
-      expect(feedback.dealAt!.isUtc, isTrue);
-      expect(controller.visibleFeedback, isEmpty);
-    },
-  );
-
-  test('duplicate update and refresh are blocked during persistence', () async {
-    await controller.loadFeedback();
-    service.pendingUpdate = Completer<void>();
-    final feedback = controller.feedbackList.single;
-    final pending = controller.updateStatus(
-      feedback,
-      'in_progress',
-      auth.account,
-    );
-    expect(feedback.status, 'pending');
-    expect(service.proposed!.status, 'in_progress');
-    expect(controller.isUpdating(1), isTrue);
-    expect(
-      await controller.updateStatus(feedback, 'completed', auth.account),
-      isNull,
-    );
-    await controller.loadFeedback();
-    await controller.loadMore();
-    expect(service.loads, 1);
-    expect(service.updates, 1);
-    service.pendingUpdate!.complete();
-    expect(await pending, isTrue);
-    expect(feedback.status, 'in_progress');
-  });
-
-  test(
-    'switching accounts clears data and ignores a late initial load',
-    () async {
-      service.pendingLoad = Completer<List<dynamic>>();
-      final pending = controller.loadFeedback();
-      auth.switchAccount();
-      service.pendingLoad!.complete([_row(9)]);
-      await pending;
-      expect(controller.feedbackList, isEmpty);
-      expect(controller.isLoading, isFalse);
-      expect(service.probes, 0);
-    },
-  );
-
-  test(
-    'account switch ignores late persistence and releases busy state',
+    'same status is a no-op; replaced models cannot submit writes',
     () async {
       await controller.loadFeedback();
       final old = controller.feedbackList.single;
-      service.pendingUpdate = Completer<void>();
-      final pending = controller.updateStatus(old, 'completed', auth.account);
+      expect(
+        await controller.updateStatus(old, 'pending', auth.account),
+        isTrue,
+      );
+      await controller.loadFeedback();
+      expect(
+        await controller.updateStatus(old, 'completed', auth.account),
+        isNull,
+      );
+      expect(service.updates, 0);
+    },
+  );
+  test(
+    'late successful write cannot mutate a model from an old account',
+    () async {
+      await controller.loadFeedback();
+      final item = controller.feedbackList.single;
+      service.updating = Completer<void>();
+      final write = controller.updateStatus(item, 'completed', auth.account);
       auth.switchAccount();
-      service.pendingUpdate!.complete();
-      expect(await pending, isNull);
-      expect(old.status, 'pending');
+      service.updating!.complete();
+      expect(await write, isNull);
+      expect(item.status, 'pending');
       expect(controller.feedbackList, isEmpty);
-      expect(controller.isUpdating(1), isFalse);
     },
   );
-
-  test(
-    'refresh supersedes older pagination without merging stale rows',
-    () async {
-      await controller.loadFeedback();
-      service.pendingOlder = Completer<DateTime?>();
-      final pagination = controller.loadMore();
-      service.rows = [_row(2)];
-      await controller.loadFeedback();
-      service.pendingOlder!.complete(DateTime(2026, 1, 1));
-      await pagination;
-      expect(controller.feedbackList.single.id, 2);
-      expect(service.loads, 2);
-      expect(controller.isLoadingMore, isFalse);
-    },
-  );
-
-  test('pagination deduplicates and retains status/date order', () async {
-    service.rows = [_row(1), _row(2, status: 'in_progress')];
+  test('screenshots remain lazy, coalesced and retryable', () async {
     await controller.loadFeedback();
-    service.rows = [_row(1), _row(3, status: 'completed')];
-    service.more = false;
-    await controller.loadMore();
-    expect(controller.feedbackList.map((row) => row.id), [2, 1, 3]);
-    expect(controller.hasMore, isFalse);
+    final item = controller.feedbackList.single;
+    service.failImages = true;
+    await expectLater(controller.loadScreenshots(item), throwsStateError);
+    service.failImages = false;
+    service.images = Completer<List<String>>();
+    final a = controller.loadScreenshots(item),
+        b = controller.loadScreenshots(item);
+    service.images!.complete(['encoded']);
+    await Future.wait([a, b]);
+    await controller.loadScreenshots(item);
+    expect(service.imageReads, 2);
+    expect(item.screenshot, ['encoded']);
   });
-
-  test(
-    'markAsDone uses guarded persistence; pending clears admin metadata',
-    () async {
-      await controller.loadFeedback();
-      final feedback = controller.feedbackList.single;
-      await controller.markAsDone(feedback, auth.account);
-      expect(feedback.status, 'completed');
-      await controller.updateStatus(feedback, 'pending', auth.account);
-      expect(feedback.dealBy, isNull);
-      expect(feedback.dealAt, isNull);
-      expect(feedback.isOk, isFalse);
-    },
-  );
-
-  test(
-    'disposed controller ignores load completion without another query',
-    () async {
-      service.pendingLoad = Completer<List<dynamic>>();
-      final pending = controller.loadFeedback();
-      controller.dispose();
-      service.pendingLoad!.complete([_row(1)]);
-      await pending;
-      expect(controller.feedbackList, isEmpty);
-      expect(service.probes, 0);
-    },
-  );
+  test('late private screenshots are discarded after account change', () async {
+    await controller.loadFeedback();
+    final item = controller.feedbackList.single;
+    service.images = Completer<List<String>>();
+    final checked = expectLater(
+      controller.loadScreenshots(item),
+      throwsStateError,
+    );
+    auth.switchAccount();
+    service.images!.complete(['private']);
+    await checked;
+    expect(item.screenshot, isNull);
+  });
 }

@@ -66,14 +66,10 @@ void main() {
       final repository = RepositoryVendorInitialization(client);
       status = 403;
       errorCode = code;
-      if (code == '42501') {
-        await expectLater(
-          repository.ensure('a'),
-          throwsA(isA<PostgrestException>()),
-        );
-      } else {
-        await repository.ensure('a');
-      }
+      await expectLater(
+        repository.ensure('a'),
+        throwsA(isA<PostgrestException>().having((e) => e.code, 'code', code)),
+      );
       status = 200;
       errorCode = null;
       await repository.ensure('a');

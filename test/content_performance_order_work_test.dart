@@ -1,8 +1,6 @@
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/event/model_content_performance.dart';
-import 'package:life_pilot/event/model_content_performance_period.dart';
-import 'package:life_pilot/event/model_content_performance_query.dart';
 
 class _Comparisons {
   int count = 0;
@@ -135,32 +133,5 @@ void main() {
     );
     expect(comparisons.count, 1);
     expect(model.items.map((item) => item.id), ['first', 'last']);
-  });
-
-  test('shared query fragments do not retain month, keyword or user data', () {
-    final july = ContentPerformancePeriod(
-      month: DateTime(2026, 7),
-      now: DateTime(2026, 10, 28),
-    );
-    final query = ModelContentPerformanceQuery(
-      period: july,
-      keyword: '台北',
-      statisticsOnly: true,
-    );
-    final plain = ModelContentPerformanceQuery();
-    expect(query.filter, contains(july.databaseFilter));
-    expect(query.filter, contains('台北'));
-    expect(plain.filter, isNull);
-    expect(plain.columns, isNot(contains('city')));
-    expect(query.columns, endsWith(',city,start_date,end_date'));
-    final next = ModelContentPerformanceQuery(
-      keyword: '高雄',
-      statisticsOnly: true,
-    );
-    expect(next.filter, isNot(contains('台北')));
-    expect(next.filter, isNot(contains(july.databaseFilter)));
-    for (final column in contentPerformanceColumns) {
-      expect(next.filter, contains('$column.neq.0'));
-    }
   });
 }

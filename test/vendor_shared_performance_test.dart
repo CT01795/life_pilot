@@ -11,18 +11,16 @@ import 'package:provider/provider.dart';
 import 'record_statistics_test.dart' show StatisticsTestAuth;
 
 class _Performance extends ServiceContentPerformance {
-  final calls = <(String, bool, bool)>[];
+  final calls = <(String, bool)>[];
   @override
   Future<ModelContentPerformance> read({
     required String owner,
     required bool attractions,
-    bool includeSubmissionDetails = false,
-    ContentPerformancePeriod? period,
+    required ContentPerformancePeriod period,
     String keyword = '',
-    bool statisticsOnly = false,
     bool Function()? shouldContinue,
   }) async {
-    calls.add((owner, attractions, includeSubmissionDetails));
+    calls.add((owner, attractions));
     return ModelContentPerformance([
       {
         'id': attractions ? 'place' : 'event',
@@ -163,11 +161,7 @@ void main() {
             find.text(attractions ? 'My attraction' : 'My activity'),
             findsOneWidget,
           );
-          expect(performance.calls.single, (
-            'one@example.com',
-            attractions,
-            false,
-          ));
+          expect(performance.calls.single, ('one@example.com', attractions));
           expect(tester.takeException(), null);
           await tester.pumpWidget(const SizedBox());
         },

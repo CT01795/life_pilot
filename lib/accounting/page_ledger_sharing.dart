@@ -1,3 +1,4 @@
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
@@ -365,6 +366,7 @@ class _SharedLedgerOverviewState extends State<SharedLedgerOverview> {
           context,
         ).showSnackBar(SnackBar(content: Text(loc.retry)));
       }
+      rethrow;
     } finally {
       if (mounted) setState(() => _loadingMore = false);
     }
@@ -445,16 +447,18 @@ class _SharedLedgerOverviewState extends State<SharedLedgerOverview> {
                     ? null
                     : () => _decline(row['share_id'] as String),
               ),
-            if (rows.length > _limit || snapshot.data!.last['share_id'] == null)
-              TextButton(
-                onPressed:
-                    _loadingMore ||
-                        _declining.isNotEmpty ||
-                        snapshot.connectionState != ConnectionState.done
-                    ? null
-                    : () => _loadMore(snapshot.data!),
-                child: Text(AppLocalizations.of(context)!.clickHereToSeeMore),
-              ),
+            WidgetsLoadMore(
+              hasMore:
+                  rows.length > _limit ||
+                  snapshot.data!.last['share_id'] == null,
+              count: rows.take(_limit).length,
+              scope: (widget.kind, _revision),
+              loading: _loadingMore,
+              enabled:
+                  _declining.isEmpty &&
+                  snapshot.connectionState == ConnectionState.done,
+              onLoadMore: () => _loadMore(snapshot.data!),
+            ),
           ],
         );
       },
@@ -1475,7 +1479,6 @@ class _LedgerPagesState extends State<_LedgerPages> {
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
     final header = widget.header;
     return ListView.builder(
       itemCount: _rows.length + 1 + (header == null ? 0 : 1),
@@ -1485,14 +1488,12 @@ class _LedgerPagesState extends State<_LedgerPages> {
         if (i < _rows.length) return widget.item(context, _rows[i]);
         if (_busy) return const LinearProgressIndicator();
         if (_failed) return WidgetsLoadError(onRetry: load);
-        if (_more) {
-          return TextButton(
-            onPressed: load,
-            child: Text(loc.clickHereToSeeMore),
-          );
-        }
-        if (_rows.isEmpty) return Center(child: Text(loc.noData));
-        return const SizedBox.shrink();
+        return WidgetsLoadMore(
+          hasMore: _more,
+          count: _rows.length,
+          scope: (widget.key, widget.runtimeType),
+          onLoadMore: load,
+        );
       },
     );
   }

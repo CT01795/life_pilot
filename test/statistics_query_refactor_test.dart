@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/event/model_content_performance.dart';
-import 'package:life_pilot/event/model_content_performance_period.dart';
-import 'package:life_pilot/event/model_content_performance_query.dart';
 import 'package:life_pilot/utils/paged_row_reader.dart';
 
 void main() {
@@ -190,53 +188,6 @@ void main() {
       expect(calls, [(0, 2), (1, 2), (2, 2), (3, 2)]);
     },
   );
-  for (final details in [false, true]) {
-    for (final dated in [false, true]) {
-      for (final searched in [false, true]) {
-        for (final stats in [false, true]) {
-          test(
-            'query projection details=$details dated=$dated searched=$searched stats=$stats',
-            () {
-              final period = dated
-                  ? ContentPerformancePeriod(
-                      month: DateTime(2026, 7),
-                      now: DateTime(2026, 10, 20),
-                    )
-                  : null;
-              final query = ModelContentPerformanceQuery(
-                includeSubmissionDetails: details,
-                period: period,
-                keyword: searched ? '新北,("festival")%_' : '  ',
-                statisticsOnly: stats,
-              );
-              final groups = [
-                if (period != null) period.databaseFilter,
-                if (searched)
-                  contentPerformanceSearchFilter('新北,("festival")%_'),
-                if (stats)
-                  contentPerformanceColumns
-                      .map((column) => '$column.neq.0')
-                      .join(','),
-              ];
-              expect(
-                query.filter,
-                groups.isEmpty
-                    ? null
-                    : groups.length == 1
-                    ? groups.single
-                    : 'and(${groups.map((group) => 'or($group)').join(',')})',
-              );
-              expect(
-                query.columns.contains('city,start_date,end_date'),
-                details || dated || stats,
-              );
-              expect(query.columns, isNot(contains('master_graph_url')));
-            },
-          );
-        }
-      }
-    }
-  }
   test('prepared dates keep the same missing-end expiration fallback', () {
     final item = ContentPerformanceItem({'start_date': '2026-10-20'});
     expect(identical(item.expires, item.starts), true);

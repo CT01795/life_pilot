@@ -33,11 +33,6 @@ class ModelEvent {
     return _parsedQuery!;
   }
 
-  // Keep these aliases for existing callers; parsing belongs to the query.
-  static final RegExp ageSingle = ModelEventSearchQuery.ageSingle;
-  static final RegExp ageRange = ModelEventSearchQuery.ageRange;
-  static final RegExp priceReg = ModelEventSearchQuery.price;
-
   List<EventItem> getFilteredEvents(AppLocalizations loc) {
     // The compatibility entry point extracts plain values; filtering and its
     // cache need neither a retained locale object nor its identity.
