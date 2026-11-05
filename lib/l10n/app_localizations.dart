@@ -102,7 +102,7 @@ abstract class AppLocalizations {
   /// Pagination has no further matching records
   ///
   /// In en, this message translates to:
-  /// **'No more data to display'**
+  /// **'There’s no more data'**
   String get noMoreData;
 
   /// Recipient action to decline a shared ledger

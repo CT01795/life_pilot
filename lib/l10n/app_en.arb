@@ -1,5 +1,5 @@
 {
-  "noMoreData": "No more data to display",
+  "noMoreData": "There’s no more data",
   "@noMoreData": {"description": "Pagination has no further matching records"},
   "ledgerDeclineShare": "Stop viewing",
   "@ledgerDeclineShare": {"description": "Recipient action to decline a shared ledger"},

@@ -9,7 +9,7 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
-  String get noMoreData => 'これ以上表示するデータはありません';
+  String get noMoreData => 'これ以上のデータはありません';
 
   @override
   String get ledgerDeclineShare => '閲覧をやめる';

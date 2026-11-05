@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get noMoreData => '已無資料可顯示';
+  String get noMoreData => '沒有更多資料了';
 
   @override
   String get ledgerDeclineShare => '取消查看';

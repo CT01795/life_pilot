@@ -147,6 +147,7 @@ void main() {
             tester.element(find.byType(PageContentPerformance)),
           )!;
           expect(find.text(loc.statisticsNoData), findsOneWidget);
+          expect(find.text(loc.noMoreData), findsNothing);
           expect(find.byType(LinearProgressIndicator), findsNothing);
           expect(find.byType(CircularProgressIndicator), findsNothing);
           expect(find.byType(ExpansionTile), findsNothing);

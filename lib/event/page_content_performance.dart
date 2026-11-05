@@ -91,7 +91,11 @@ class _PageContentPerformanceState extends State<PageContentPerformance> {
               return ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                 itemCount:
-                    2 + (data?.rows.length ?? 0) + (data != null ? 1 : 0),
+                    2 +
+                    (data?.rows.length ?? 0) +
+                    (data != null && (data.items.isNotEmpty || data.hasMore)
+                        ? 1
+                        : 0),
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     return Padding(

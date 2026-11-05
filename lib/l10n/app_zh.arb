@@ -1,5 +1,5 @@
 {
-  "noMoreData": "已無資料可顯示",
+  "noMoreData": "沒有更多資料了",
   "@noMoreData": {"description": "分頁沒有更多符合條件的資料"},
   "ledgerDeclineShare": "取消查看",
   "@ledgerDeclineShare": {"description": "Recipient action to decline a shared ledger"},

@@ -1,5 +1,5 @@
 {
-  "noMoreData": "더 이상 표시할 데이터가 없습니다",
+  "noMoreData": "더 이상 데이터가 없습니다",
   "@noMoreData": {"description": "Pagination has no further matching records"},
   "ledgerDeclineShare": "보기 취소",
   "@ledgerDeclineShare": {"description": "Recipient action to decline a shared ledger"},

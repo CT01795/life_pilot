@@ -1,5 +1,5 @@
 {
-  "noMoreData": "これ以上表示するデータはありません",
+  "noMoreData": "これ以上のデータはありません",
   "@noMoreData": {"description": "Pagination has no further matching records"},
   "ledgerDeclineShare": "閲覧をやめる",
   "@ledgerDeclineShare": {"description": "Recipient action to decline a shared ledger"},

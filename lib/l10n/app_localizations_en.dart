@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get noMoreData => 'No more data to display';
+  String get noMoreData => 'There’s no more data';
 
   @override
   String get ledgerDeclineShare => 'Stop viewing';

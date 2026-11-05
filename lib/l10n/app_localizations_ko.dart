@@ -9,7 +9,7 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
-  String get noMoreData => '더 이상 표시할 데이터가 없습니다';
+  String get noMoreData => '더 이상 데이터가 없습니다';
 
   @override
   String get ledgerDeclineShare => '보기 취소';
