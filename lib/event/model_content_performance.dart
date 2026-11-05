@@ -58,6 +58,7 @@ String contentPerformanceSearchFilter(String keyword) {
 class ModelContentPerformance {
   final int? nextOffset;
   final bool hasAggregateTotals;
+  final String? snapshotVersion;
   bool get hasMore => nextOffset != null;
   final List<Map<String, dynamic>> rows;
   final List<ContentPerformanceItem> items;
@@ -81,6 +82,7 @@ class ModelContentPerformance {
     this.totals, {
     this.nextOffset,
     this.hasAggregateTotals = true,
+    this.snapshotVersion,
   });
 
   factory ModelContentPerformance.fromPage(
@@ -103,10 +105,14 @@ class ModelContentPerformance {
       totals.totals,
       nextOffset: tryParseIntValue(json['next_offset']),
       hasAggregateTotals: json['totals'] is Map,
+      snapshotVersion: json['snapshot_version'] as String?,
     );
   }
 
   ModelContentPerformance appendPage(ModelContentPerformance page) {
+    if (snapshotVersion != page.snapshotVersion) {
+      throw StateError('Performance data changed; refresh from the first page');
+    }
     final ids = items.map((item) => item.id).toSet();
     final combined = [
       ...items,
@@ -117,6 +123,7 @@ class ModelContentPerformance {
       List.unmodifiable(combined),
       page.hasAggregateTotals ? page.totals : totals,
       nextOffset: page.nextOffset,
+      snapshotVersion: snapshotVersion,
     );
   }
 

@@ -44,11 +44,7 @@ class ControllerAdminSubscriptionPage extends SafeChangeNotifier {
     retryMore = more;
     notifyListeners();
     try {
-      final page = await _load(
-        after: more ? _cursor : null,
-        offset: more ? rows.length : 0,
-        legacy: false,
-      );
+      final page = await _load(after: more ? _cursor : null);
       if (!_current(revision)) return;
       if (page.hasMore && page.cursor == null) {
         throw const FormatException('Missing subscription cursor');

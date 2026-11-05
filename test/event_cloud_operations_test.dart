@@ -6,6 +6,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/repository_cloud_gateway.dart';
 import 'package:life_pilot/utils/repository_event_cloud_operations.dart';
+import 'package:life_pilot/utils/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
@@ -37,6 +38,30 @@ void main() {
   });
   tearDown(() => client.dispose());
   Future<dynamic> noBackend() async => throw StateError('Render must not run');
+
+  for (final table in ['recommended_events', 'recommended_attractions']) {
+    test(
+      '$table cannot be deleted if approval history is unavailable',
+      () async {
+        supabase = client;
+        status = 400;
+        response = {'code': '42703', 'message': 'was_approved does not exist'};
+        await expectLater(
+          ServiceEvent().deleteEvent(
+            currentAccount: 'owner@example.com',
+            event: EventItem(id: 'event', name: 'Draft'),
+            tableName: table,
+          ),
+          throwsA(isA<PostgrestException>()),
+        );
+        expect(requests.single.method, 'GET');
+        expect(
+          requests.single.url.queryParameters['select'],
+          'is_approved,was_approved',
+        );
+      },
+    );
+  }
 
   for (final cached in [
     <String, dynamic>{'lat': 25, 'lng': 121},

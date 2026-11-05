@@ -92,11 +92,7 @@ class RepositoryAccountImage {
       }
     } catch (error, stack) {
       for (final request in requests.values.where((r) => !r.isCompleted)) {
-        if (error is PostgrestException && error.code == '42703') {
-          request.complete(null);
-        } else {
-          request.completeError(error, stack);
-        }
+        request.completeError(error, stack);
       }
     }
   }
@@ -105,25 +101,12 @@ class RepositoryAccountImage {
     String table,
     String id,
     Map<String, Object?> fields,
-  ) async {
-    final client = supabase;
-    final actor = client.auth.currentUser?.id;
-    Future<List<Map<String, dynamic>>> save(Map<String, Object?> data) => client
-        .from(table)
-        .update(data)
-        .eq('id', id)
-        .eq('is_valid', true)
-        .select('id');
-    try {
-      return await save(fields);
-    } on PostgrestException catch (error) {
-      if ((error.code != '42703' && error.code != 'PGRST204') ||
-          client.auth.currentUser?.id != actor) {
-        rethrow;
-      }
-      return save({'master_graph_url': fields['master_graph_url']});
-    }
-  }
+  ) async => supabase
+      .from(table)
+      .update(fields)
+      .eq('id', id)
+      .eq('is_valid', true)
+      .select('id');
 
   static Future<Map<String, Object?>> imageFields(Uint8List bytes) async => {
     'master_graph_url': base64Encode(bytes),
@@ -246,25 +229,9 @@ class RepositoryAccountImage {
         .eq('created_by', owner)
         .eq('is_valid', true)
         .maybeSingle();
-    Map<String, dynamic>? row;
-    try {
-      row = storedLocally
-          ? await local.readOnlyRow(
-              owner: owner,
-              resource: table,
-              id: accountId,
-            )
-          : await readCloud(thumbnail ? column : '$column,thumbnail_base64');
-    } on PostgrestException catch (error) {
-      if (thumbnail && error.code == '42703') return null;
-      if (storedLocally ||
-          thumbnail ||
-          error.code != '42703' ||
-          client.auth.currentUser?.id != actor?.id) {
-        rethrow;
-      }
-      row = await readCloud(column);
-    }
+    final row = storedLocally
+        ? await local.readOnlyRow(owner: owner, resource: table, id: accountId)
+        : await readCloud(thumbnail ? column : '$column,thumbnail_base64');
     if (client.auth.currentUser?.id != actor?.id) return null;
     final encoded = row?[column] as String?;
     final bytes = decodeBase64InIsolate(encoded);

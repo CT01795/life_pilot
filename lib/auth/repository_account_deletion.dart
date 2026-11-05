@@ -12,22 +12,10 @@ class RepositoryAccountDeletion {
   final SupabaseClient client;
   static const _group = 'account-deletion';
 
-  Future<AccountDeletionPage> adminPage({
-    AccountDeletionCursor? after,
-    int offset = 0,
-    bool legacy = false,
-  }) {
-    if (offset < 0) return Future.error(ArgumentError.value(offset, 'offset'));
+  Future<AccountDeletionPage> adminPage({AccountDeletionCursor? after}) {
     return RepositorySessionReads(client).read(
       _group,
-      (
-        'page',
-        after?.status,
-        after?.at?.toUtc().toIso8601String(),
-        after?.id,
-        offset,
-        legacy,
-      ),
+      ('page', after?.status, after?.at?.toUtc().toIso8601String(), after?.id),
       () async {
         final result = await client.rpc(
           'admin_list_account_deletion_requests_page',
@@ -79,11 +67,7 @@ class RepositoryAccountDeletion {
     }
   }
 
-  Future<AccountDeletionPage> disabledPage({
-    AccountDeletionCursor? after,
-    required int offset,
-    required bool legacy,
-  }) async {
+  Future<AccountDeletionPage> disabledPage({required int offset}) async {
     final rows =
         await client.rpc(
               'admin_list_disabled_accounts',
@@ -98,7 +82,7 @@ class RepositoryAccountDeletion {
           'status': 'pending',
           'requested_at': row['disabled_at'],
         },
-    ], legacy: true);
+    ], offsetBased: true);
   }
 
   Future<void> confirmCancellation(String id) => _mutate(

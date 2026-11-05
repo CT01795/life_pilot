@@ -64,7 +64,9 @@ class SubscriptionSnapshot {
   final List<QuotaFreePeriod>? promotionPeriods;
 
   bool get isPlus => plan == 'plus';
-  bool get configurationMissing => status == 'configuration_missing';
+  bool get verificationUnavailable => status == 'verification_unavailable';
+  bool get configurationMissing =>
+      status == 'configuration_missing' || verificationUnavailable;
   SubscriptionUsage? operator [](String resource) => usage[resource];
 
   SubscriptionSnapshot copyWithUsage(Map<String, SubscriptionUsage> newUsage) {

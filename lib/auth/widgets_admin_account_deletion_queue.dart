@@ -29,7 +29,9 @@ class _AdminAccountDeletionQueueState extends State<AdminAccountDeletionQueue> {
     final repo = _repository = widget.repository ?? RepositoryAccountDeletion();
     _controller = ControllerAccountDeletionQueue(
       auth: context.read<ControllerAuth>(),
-      load: widget.disabled ? repo.disabledPage : repo.adminPage,
+      load: ({after, required offset}) => widget.disabled
+          ? repo.disabledPage(offset: offset)
+          : repo.adminPage(after: after),
       approve: widget.disabled ? repo.deleteDisabled : repo.approve,
       confirmCancellation: repo.confirmCancellation,
     );

@@ -109,7 +109,7 @@ void main() {
               same(formats),
             );
             final points = kind == RecordStatisticsKind.points;
-            final number = monthOnly ? 12.3456 : -1234.5678;
+            final number = monthOnly ? 12.3456 : -87.6544;
             final expected =
                 '${NumberFormat('#,##0.####', loc.localeName).format(number)} ${points ? loc.pointsUnit : 'TWD'}';
             expect(find.text(expected), findsOneWidget);
@@ -138,7 +138,7 @@ void main() {
 
   for (final kind in RecordStatisticsKind.values) {
     testWidgets(
-      '$kind account card uses supplied total and refreshes after changes',
+      '$kind account card uses aggregate total and refreshes after changes',
       (tester) async {
         final auth = StatisticsTestAuth();
         addTearDown(auth.dispose);
@@ -164,12 +164,14 @@ void main() {
         await tester.pumpAndSettle();
         expect(records.calls, 1);
         expect(records.totalCalls, 0);
-        expect(find.textContaining('4,321'), findsOneWidget);
+        expect(find.textContaining('-87.6544'), findsOneWidget);
+        expect(find.textContaining('4,321'), findsNothing);
         await tester.pumpWidget(page(5432));
         await tester.pumpAndSettle();
         expect(records.calls, 2);
         expect(records.totalCalls, 0);
-        expect(find.textContaining('5,432'), findsOneWidget);
+        expect(find.textContaining('-87.6544'), findsOneWidget);
+        expect(find.textContaining('5,432'), findsNothing);
         expect(tester.takeException(), null);
       },
     );
@@ -221,7 +223,7 @@ void main() {
       expect(find.text(loc.totalIncomeExpense), findsOneWidget);
       expect(find.text(loc.monthlyIncomeExpense), findsOneWidget);
       expect(find.text(loc.todayIncomeExpense), findsOneWidget);
-      expect(find.textContaining('1,234.5678'), findsOneWidget);
+      expect(find.textContaining('-87.6544'), findsOneWidget);
       expect(tester.takeException(), null);
       await tester.tap(find.text(loc.recordStatistics));
       await tester.pumpAndSettle();

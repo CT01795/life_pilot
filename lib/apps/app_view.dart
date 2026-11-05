@@ -113,6 +113,8 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                       bool visible,
                       bool loggedIn,
                       bool configurationMissing,
+                      bool subscriptionUnverified,
+
                       int? endingInDays,
                       DateTime? endsAt,
                     })
@@ -125,6 +127,9 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                       loggedIn: auth.isLoggedIn && !auth.isAnonymous,
                       configurationMissing:
                           auth.subscriptionConfigurationMissing,
+                      subscriptionUnverified:
+                          auth.subscription.verificationUnavailable,
+
                       endingInDays: auth.quotaFreePeriodEndingInDays,
                       endsAt: auth.quotaFreePeriodEndsAt,
                     ),
@@ -137,9 +142,11 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                         return MediaQuery(
                           data: scaledMediaQuery,
                           child: SubscriptionReadOnlyNotice(
-                            message: AppLocalizations.of(
-                              context,
-                            )!.subscriptionConfigurationMissing,
+                            message: state.subscriptionUnverified
+                                ? AppLocalizations.of(context)!.networkError
+                                : AppLocalizations.of(
+                                    context,
+                                  )!.subscriptionConfigurationMissing,
                             child: child ?? const SizedBox.shrink(),
                           ),
                         );
@@ -230,7 +237,7 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                       );
                     },
                   );
-              return Focus(
+              final interactiveContent = Focus(
                 canRequestFocus: false,
                 onKeyEvent: (_, _) {
                   unawaited(_validateCurrentAccount(messageContext: context));
@@ -242,6 +249,40 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                     _validateCurrentAccount(messageContext: context),
                   ),
                   child: content,
+                ),
+              );
+              return Selector<ControllerAuth, bool>(
+                selector: (_, auth) =>
+                    auth.isLoggedIn &&
+                    !auth.isAnonymous &&
+                    auth.accountVerificationBlocked,
+                child: interactiveContent,
+                builder: (context, blocked, child) => Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Offstage(
+                      offstage: blocked,
+                      child: ExcludeFocus(excluding: blocked, child: child!),
+                    ),
+                    if (blocked)
+                      Scaffold(
+                        body: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(AppLocalizations.of(context)!.networkError),
+                              TextButton(
+                                onPressed: () =>
+                                    _validateCurrentAccount(force: true),
+                                child: Text(
+                                  AppLocalizations.of(context)!.retry,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               );
             },

@@ -1,13 +1,10 @@
 import 'dart:async';
 
 import 'package:life_pilot/local_storage/local_data_store.dart';
-import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
-import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/repository_versioned_game_catalog.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
-import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
 import 'package:life_pilot/local_storage/model_cloud_restore_receipt.dart';
 import 'package:life_pilot/utils/repository_session_reads.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -28,26 +25,25 @@ class LocalDataTransferResult {
 }
 
 class ServiceLocalDataTransfer {
-  ServiceLocalDataTransfer({
-    SupabaseClient? client,
-    LocalDataStore? store,
-    ServiceGame? gameService,
-  }) : _clientOverride = client,
-       _storeOverride = store,
-       _gameService = gameService ?? ServiceGame();
+  ServiceLocalDataTransfer({SupabaseClient? client, LocalDataStore? store})
+    : _clientOverride = client,
+      _storeOverride = store;
   final SupabaseClient? _clientOverride;
   final LocalDataStore? _storeOverride;
-  final ServiceGame _gameService;
   SupabaseClient get _client => _clientOverride ?? supabase;
   LocalDataStore get _store => _storeOverride ?? LocalDataStore.instance;
-  Future<Map<String, dynamic>?> cloudAnswerRetention() =>
-      RepositorySessionReads(_client).read(
-        'cloud-retention-preview',
-        'own',
-        () => RepositoryOptionalJsonRpc(
-          _client,
-        ).read('get_my_cloud_answer_retention', rememberMissing: false),
-      );
+  Future<Map<String, dynamic>> cloudAnswerRetention() =>
+      RepositorySessionReads(
+        _client,
+      ).read('cloud-retention-preview', 'own', () async {
+        final result = await _client.rpc('get_my_cloud_answer_retention');
+        if (result is! Map ||
+            result['days'] is! int ||
+            (result['days'] as int) < 0) {
+          throw const FormatException('Invalid cloud answer retention policy');
+        }
+        return Map<String, dynamic>.unmodifiable(result);
+      });
   static const _resources = [
     TableNames.calendarEvents,
     TableNames.memoryTrace,
@@ -191,50 +187,36 @@ class ServiceLocalDataTransfer {
     final catalog = RepositoryVersionedGameCatalog(_store);
     final cached = await catalog.read(account);
     current();
-    final setup = await RepositoryOptionalJsonRpc(_client).read(
+    final setup = await _client.rpc(
       'get_my_cloud_transfer_setup',
       params: {'p_catalog_version': cached?.version},
     );
     current();
-    if (setup != null) {
-      final version = setup['catalog_version'];
-      final rows = setup['game_rows'];
-      if (version is! String ||
-          version.isEmpty ||
-          (rows == null && cached?.version != version) ||
-          (rows != null && rows is! List)) {
-        throw const FormatException('Invalid game catalog version response');
-      }
-      final setting = setup['dashboard_setting'];
-      if (setting != null && setting is! Map) {
-        throw const FormatException('Invalid transfer dashboard settings');
-      }
-      if (rows is List) {
-        final gameRows = List<Map<String, dynamic>>.from(rows);
-        if (gameRows.any((row) => parseStringValue(row['id']).isEmpty)) {
-          throw const FormatException('Invalid game catalog row');
-        }
-        await catalog.write(account, (version: version, rows: gameRows));
-      }
-      return setting == null ? null : Map<String, dynamic>.from(setting as Map);
+    if (setup is! Map) throw const FormatException('Invalid transfer setup');
+    final version = setup['catalog_version'];
+    final rows = setup['game_rows'];
+    if (version is! String ||
+        version.isEmpty ||
+        (rows == null && cached?.version != version) ||
+        (rows != null && rows is! List)) {
+      throw const FormatException('Invalid game catalog version response');
     }
-
-    final (gameRows, dashboardSetting) = await (
-      _client.from(TableNames.gameList).select('id,game_type,game_name,level'),
-      _client
-          .from(TableNames.dashboardSetting)
-          .select('account,${DashboardSetting.persistedColumns}')
-          .eq(Fields.account, account)
-          .maybeSingle(),
-    ).wait;
-    current();
-    await _gameService.cacheGameList(List<Map<String, dynamic>>.from(gameRows));
-    return dashboardSetting;
+    final setting = setup['dashboard_setting'];
+    if (setting != null && setting is! Map) {
+      throw const FormatException('Invalid transfer dashboard settings');
+    }
+    if (rows is List) {
+      final gameRows = List<Map<String, dynamic>>.from(rows);
+      if (gameRows.any((row) => parseStringValue(row['id']).isEmpty)) {
+        throw const FormatException('Invalid game catalog row');
+      }
+      await catalog.write(account, (version: version, rows: gameRows));
+    }
+    return setting == null ? null : Map<String, dynamic>.from(setting as Map);
   }
 
   Future<LocalDataTransferResult> uploadLocalToCloud(
     String account, {
-    bool retentionAware = false,
     bool allowOmittingAnswers = false,
   }) async {
     final payload = <Map<String, Object?>>[];
@@ -263,43 +245,30 @@ class ServiceLocalDataTransfer {
     }
     try {
       final restored = await _client.rpc(
-        retentionAware
-            ? 'restore_local_personal_records_with_retention'
-            : 'restore_local_personal_records_with_setting',
+        'restore_local_personal_records_with_retention',
         params: {
-          if (retentionAware) 'p_allow_history_omission': allowOmittingAnswers,
+          'p_allow_history_omission': allowOmittingAnswers,
           'p_records': payload,
           'p_dashboard_setting': dashboardSettings.isEmpty
               ? null
               : dashboardSettings.first,
         },
       );
-      final receipt = retentionAware
-          ? CloudRestoreReceipt.parse(
-              restored,
-              expected: payload.length,
-              allowOmission: allowOmittingAnswers,
-            )
-          : null;
-      final restoredCount =
-          receipt?.restored ?? tryParseIntValue(restored) ?? 0;
-      if (restoredCount + (receipt?.omitted ?? 0) != payload.length) {
-        return const LocalDataTransferResult(
-          moved: 0,
-          failed: 1,
-          failureReason: 'local_upload_incomplete',
-        );
-      }
+      final receipt = CloudRestoreReceipt.parse(
+        restored,
+        expected: payload.length,
+        allowOmission: allowOmittingAnswers,
+      );
       await _store.deleteAllRecords(owner: account);
       return LocalDataTransferResult(
-        moved: restoredCount,
+        moved: receipt.restored,
         failed: 0,
-        omittedAnswers: receipt?.omitted ?? 0,
+        omittedAnswers: receipt.omitted,
       );
     } catch (error) {
       return LocalDataTransferResult(
         moved: 0,
-        failed: payload.length,
+        failed: payload.isEmpty ? 1 : payload.length,
         failureReason: error.toString(),
       );
     }

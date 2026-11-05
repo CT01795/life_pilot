@@ -6,8 +6,8 @@ enum BillingCycle {
   final int months;
 
   static BillingCycle from(Object? value) => switch (value) {
-    'month' => month,
-    null || 'quarter' => quarter,
+    null || 'month' => month,
+    'quarter' => quarter,
     _ => throw FormatException('Unknown billing cycle: $value'),
   };
 

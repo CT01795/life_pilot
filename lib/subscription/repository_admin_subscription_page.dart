@@ -4,12 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class RepositoryAdminSubscriptionPage {
   const RepositoryAdminSubscriptionPage(this.client);
   final SupabaseClient client;
-  Future<AdminSubscriptionPage> read({
-    AdminSubscriptionCursor? after,
-    int offset = 0,
-    bool legacy = false,
-  }) async {
-    if (offset < 0) throw ArgumentError.value(offset, 'offset');
+  Future<AdminSubscriptionPage> read({AdminSubscriptionCursor? after}) async {
     final token = client.auth.currentSession?.accessToken,
         owner = client.auth.currentUser?.id;
     if (token == null || owner == null) {

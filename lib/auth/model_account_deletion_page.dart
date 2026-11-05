@@ -50,14 +50,14 @@ class AccountDeletionPage {
   const AccountDeletionPage({
     required this.rows,
     required this.hasMore,
-    this.legacy = false,
+    this.offsetBased = false,
   });
   static const size = 50;
   final List<AccountDeletionRequest> rows;
-  final bool hasMore, legacy;
+  final bool hasMore, offsetBased;
   factory AccountDeletionPage.fromRows(
     List<dynamic> values, {
-    bool legacy = false,
+    bool offsetBased = false,
   }) => AccountDeletionPage(
     rows: List.unmodifiable(
       values
@@ -65,7 +65,7 @@ class AccountDeletionPage {
           .map((row) => AccountDeletionRequest.fromJson(row as Map)),
     ),
     hasMore: values.length > size,
-    legacy: legacy,
+    offsetBased: offsetBased,
   );
 }
 
@@ -73,5 +73,4 @@ typedef AccountDeletionPageLoader =
     Future<AccountDeletionPage> Function({
       AccountDeletionCursor? after,
       required int offset,
-      required bool legacy,
     });

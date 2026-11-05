@@ -63,6 +63,8 @@ class StatisticsTestService extends ServiceRecordStatistics {
 
   void finish(int index, {num total = 100}) {
     reads[index].complete([
+      if (scopes[index].$2 == DataStorageLocation.cloud)
+        {'date': DateTime(2000).toIso8601String(), 'value': total - 5},
       {'date': DateTime.now().toIso8601String(), 'value': 5},
     ]);
     if (index < totals.length && !totals[index].isCompleted) {
@@ -200,6 +202,7 @@ void main() {
               kind: kind,
               service: service,
             );
+            auth.storage = DataStorageLocation.local;
             final error = StateError('synchronous failure');
             if (readFails) {
               service.syncReadError = error;
@@ -270,7 +273,7 @@ void main() {
         expect(service.reads.length, 1);
         service.reads.single.complete([]);
         await Future.wait([first, second]);
-        expect(controller.data!.total, -12.5);
+        expect(controller.data!.total, 0);
       },
     );
     for (final local in [false, true]) {
@@ -300,24 +303,21 @@ void main() {
       );
     }
 
-    test(
-      'summary fetches current month and independent authoritative total',
-      () async {
-        final pending = controller.load();
-        expect(controller.loading, true);
-        expect(service.scopes.single, (
-          'one@example.com',
-          DataStorageLocation.cloud,
-          'a',
-          false,
-        ));
-        service.finish(0, total: 1000);
-        await pending;
-        expect(controller.data!.total, 1000);
-        expect(controller.data!.month, 5);
-        expect(controller.loading, false);
-      },
-    );
+    test('cloud summary uses a single source for total and month', () async {
+      final pending = controller.load();
+      expect(controller.loading, true);
+      expect(service.scopes.single, (
+        'one@example.com',
+        DataStorageLocation.cloud,
+        'a',
+        true,
+      ));
+      service.finish(0, total: 1000);
+      await pending;
+      expect(controller.data!.total, 1000);
+      expect(controller.data!.month, 5);
+      expect(controller.loading, false);
+    });
     test('out-of-order requests cannot overwrite a newer result', () async {
       final first = controller.load();
       final second = controller.load(force: true);
@@ -335,32 +335,28 @@ void main() {
     });
 
     for (final total in <num>[0, -1234.5678, 9876]) {
-      test(
-        'cloud summary reuses supplied account total $total without rereading it',
-        () async {
-          final pending = controller.load(knownTotal: total);
-          expect(service.reads.length, 1);
-          expect(service.totals, isEmpty);
-          service.reads.single.complete([row(DateTime.now(), 5)]);
-          await pending;
-          expect(controller.data!.total, total);
-          expect(controller.data!.month, 5);
-          expect(controller.loading, false);
-        },
-      );
+      test('cloud summary ignores stale account total $total', () async {
+        final pending = controller.load(knownTotal: total);
+        expect(service.reads.length, 1);
+        expect(service.totals, isEmpty);
+        service.reads.single.complete([row(DateTime.now(), 5)]);
+        await pending;
+        expect(controller.data!.total, 5);
+        expect(controller.data!.month, 5);
+        expect(controller.loading, false);
+      });
     }
 
     test(
-      'retry without supplied total still obtains a fresh authoritative total',
+      'retry fetches a fresh aggregate without a second total query',
       () async {
         final pending = controller.load(knownTotal: 123);
         service.reads.single.completeError(StateError('month failed'));
         await pending;
         expect(controller.error, isNotNull);
         final retry = controller.load();
-        expect(service.totals.length, 1);
-        service.reads.last.complete([]);
-        service.totals.single.complete(456);
+        expect(service.totals, isEmpty);
+        service.reads.last.complete([row(DateTime.now(), 456)]);
         await retry;
         expect(controller.data!.total, 456);
         expect(controller.error, null);
@@ -396,25 +392,22 @@ void main() {
         expect(controller.data!.total, 8);
       },
     );
-    test(
-      'ordinary concurrent loads share one month query and one total query',
-      () async {
-        final first = controller.load();
-        final others = List.generate(8, (_) => controller.load());
-        expect(others.every((future) => identical(future, first)), true);
-        expect(service.reads.length, 1);
-        expect(service.totals.length, 1);
-        service.finish(0);
-        await Future.wait([first, ...others]);
-        final fresh = controller.load();
-        expect(
-          service.reads.length,
-          2,
-        ); // No long-lived stale cache after completion.
-        service.finish(1);
-        await fresh;
-      },
-    );
+    test('ordinary concurrent loads share one aggregate query', () async {
+      final first = controller.load();
+      final others = List.generate(8, (_) => controller.load());
+      expect(others.every((future) => identical(future, first)), true);
+      expect(service.reads.length, 1);
+      expect(service.totals, isEmpty);
+      service.finish(0);
+      await Future.wait([first, ...others]);
+      final fresh = controller.load();
+      expect(
+        service.reads.length,
+        2,
+      ); // No long-lived stale cache after completion.
+      service.finish(1);
+      await fresh;
+    });
     test('multiple forced refreshes queue just one fresh read', () async {
       final first = controller.load();
       final forced = List.generate(6, (_) => controller.load(force: true));
@@ -444,7 +437,8 @@ void main() {
         final old = controller.load();
         auth.change(location: DataStorageLocation.local);
         expect(service.scopes.last.$2, DataStorageLocation.local);
-        service.finish(1, total: 20);
+        service.reads.last.complete([]);
+        service.totals.single.complete(20);
         await Future<void>.delayed(Duration.zero);
         service.finish(0, total: 999);
         await old;
@@ -503,7 +497,7 @@ void main() {
     test('failed reads expose retry state and retry can recover', () async {
       final pending = controller.load();
       service.reads[0].completeError(StateError('offline'));
-      service.totals[0].complete(0);
+      expect(service.totals, isEmpty);
       await pending;
       expect(controller.error, isA<StateError>());
       expect(controller.loading, false);
@@ -526,6 +520,7 @@ void main() {
               kind: kind,
               service: service,
             );
+            auth.storage = DataStorageLocation.local;
             final first = controller.load();
             final failure = StateError('first failure');
             if (totalFailsFirst) {

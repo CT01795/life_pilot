@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:life_pilot/subscription/repository_subscription_bootstrap.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/supabase.dart';
+import 'package:life_pilot/vendor/repository_vendor_initialization.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
@@ -17,12 +17,17 @@ void main() {
     requests = [];
     status = 200;
     payload = {
+      'quota_free_periods': [],
       'status': {'plan': 'free', 'status': 'active', 'storage_plan': 'cloud'},
       'usage': [
         {'resource': 'calendar_events', 'used': 2, 'quota': 7},
       ],
       'entitlements': [],
-      'cumulative_quotas': {'calendar_events': 7},
+      'cumulative_quotas': {
+        'calendar_events': 7,
+        'recommended_events': 5,
+        'recommended_attractions': 2,
+      },
       'recommendation_counts': [3, 1],
     };
     client = SupabaseClient(
@@ -41,6 +46,37 @@ void main() {
     supabase = client;
   });
   tearDown(() => client.dispose());
+  test(
+    'missing admin entitlement query is not an empty subscription list',
+    () async {
+      status = 404;
+      payload = {'code': 'PGRST202', 'message': 'not deployed'};
+      await expectLater(
+        ServiceSubscription().fetchUserEntitlementsAsAdmin(
+          email: 'a@example.com',
+        ),
+        throwsA(isA<PostgrestException>()),
+      );
+      expect(
+        requests.single.url.path,
+        endsWith('/admin_get_user_subscription_entitlements'),
+      );
+    },
+  );
+  test('missing vendor initialization fails and can be retried', () async {
+    status = 404;
+    payload = {'code': 'PGRST202', 'message': 'not deployed'};
+    final repository = RepositoryVendorInitialization(client);
+    await expectLater(
+      repository.ensure('session'),
+      throwsA(isA<PostgrestException>()),
+    );
+    status = 200;
+    payload = null;
+    await repository.ensure('session');
+    await repository.ensure('session');
+    expect(requests, hasLength(2));
+  });
   test(
     'bundled empty promotion list is authoritative and survives usage copies',
     () async {
@@ -129,7 +165,10 @@ void main() {
     },
   );
   test('missing cloud plan retains independent local authorization', () async {
-    payload['status'] = {'status': 'configuration_missing'};
+    payload['status'] = {
+      'plan': 'unconfigured',
+      'status': 'configuration_missing',
+    };
     payload['entitlements'] = [
       {
         'storage_plan': 'local',
@@ -170,17 +209,18 @@ void main() {
       expect(requests, hasLength(2));
     },
   );
-  test(
-    'only an undeployed RPC enables legacy reads; capability is client-scoped',
-    () async {
-      status = 404;
-      payload = {'code': 'PGRST202', 'message': 'not deployed'};
-      final repository = RepositorySubscriptionBootstrap(client);
-      expect(await repository.read('cloud'), null);
-      expect(await repository.read('local'), null);
-      expect(requests, hasLength(1));
-    },
-  );
+  test('undeployed bootstrap never queries legacy quotas', () async {
+    status = 404;
+    payload = {'code': 'PGRST202', 'message': 'not deployed'};
+    await expectLater(
+      ServiceSubscription().fetchMyUsage(),
+      throwsA(isA<PostgrestException>()),
+    );
+    expect(
+      requests.single.url.path,
+      endsWith('/get_my_subscription_bootstrap'),
+    );
+  });
   for (final code in ['42501', 'P0001', '42P01']) {
     test('$code cannot bypass a failed bootstrap via legacy queries', () async {
       status = 403;

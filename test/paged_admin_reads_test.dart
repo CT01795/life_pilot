@@ -342,15 +342,15 @@ void main() {
       addTearDown(auth.dispose);
       var calls = 0;
       var fail = true;
-      final offsets = <int>[];
+      final offsets = <bool>[];
       final c = ControllerAdminSubscriptionPage(
         auth: auth,
-        load: ({after, required offset, required legacy}) async {
+        load: ({after}) async {
           calls++;
-          offsets.add(offset);
-          if (offset > 0 && fail) throw StateError('offline');
+          offsets.add(after != null);
+          if (after != null && fail) throw StateError('offline');
           return AdminSubscriptionPage.fromRows(
-            offset == 0
+            after == null
                 ? List.generate(51, (i) => summary(i + 1))
                 : [summary(51)],
           );
@@ -365,7 +365,7 @@ void main() {
       expect(c.retryMore, isTrue);
       fail = false;
       await c.load(more: c.retryMore);
-      expect(offsets, [0, 50, 50]);
+      expect(offsets, [false, true, true]);
       expect(c.rows, hasLength(51));
     },
   );
@@ -377,7 +377,7 @@ void main() {
       final pending = Completer<AdminSubscriptionPage>();
       final c = ControllerAdminSubscriptionPage(
         auth: auth,
-        load: ({after, required offset, required legacy}) => pending.future,
+        load: ({after}) => pending.future,
       );
       addTearDown(c.dispose);
       final old = c.load();
@@ -443,7 +443,7 @@ void main() {
             home: Scaffold(
               body: AdminSubscriptionSummaryList(
                 onSelected: (email) => selected = email,
-                load: ({after, required offset, required legacy}) async {
+                load: ({after}) async {
                   if (calls++ == 0) throw StateError('offline');
                   return AdminSubscriptionPage.fromRows([summary(1)]);
                 },

@@ -83,7 +83,6 @@ class _PageSettingsState extends State<PageSettings> {
       final result = upload
           ? await service.uploadLocalToCloud(
               account,
-              retentionAware: policy != null,
               allowOmittingAnswers: omitAnswers,
             )
           : await service.moveCloudToLocal(account);

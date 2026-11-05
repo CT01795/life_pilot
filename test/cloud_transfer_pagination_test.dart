@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:sembast/sembast_memory.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/local_storage/repository_cloud_transfer_export.dart';
 import 'package:life_pilot/local_storage/service_local_data_transfer.dart';
@@ -37,20 +36,11 @@ Map<String, dynamic> record(int i, {String table = 'memory_trace'}) => {
   },
 };
 
-class _Games extends ServiceGame {
-  List<Map<String, dynamic>> cached = [];
-  @override
-  Future<void> cacheGameList(Iterable<Map<String, dynamic>> rows) async {
-    cached = rows.toList();
-  }
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late SupabaseClient client;
   late Database db;
   late LocalDataStore store;
-  late _Games games;
   late List<http.Request> requests;
   late List<Map<String, dynamic>> rows;
   var cap = 1000, sequence = 0;
@@ -69,8 +59,7 @@ void main() {
     deleteMismatch = false;
     switchSecond = false;
     deletedPayload = null;
-    catalogVersion = null;
-    games = _Games();
+    catalogVersion = '1';
     db = await databaseFactoryMemory.openDatabase('transfer-$sequence');
     sequence++;
     store = LocalDataStore.withDatabase(db);
@@ -103,21 +92,19 @@ void main() {
                       'level': 1,
                     },
                   ],
-            'dashboard_setting': null,
-          };
-        } else if (path.endsWith('/game_list')) {
-          body = [
-            {
-              'id': 'game',
-              'game_type': 'test',
-              'game_name': 'test',
-              'level': 1,
+            'dashboard_setting': {
+              'account': 'one@example.com',
+              'language': 'en',
             },
-          ];
-        } else if (path.endsWith('/dashboard_setting')) {
-          body = [
-            {'account': 'one@example.com', 'language': 'en'},
-          ];
+          };
+        } else if (path.endsWith('/get_my_cloud_answer_retention') ||
+            path.endsWith('/restore_local_personal_records_with_retention')) {
+          return http.Response(
+            '{"code":"PGRST202","message":"missing"}',
+            404,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
         } else if (path.endsWith('/export_my_cloud_data_for_local')) {
           final offset = int.parse(
             request.url.queryParameters['offset'] ?? '0',
@@ -150,14 +137,35 @@ void main() {
     await client.dispose();
     await db.close();
   });
-  ServiceLocalDataTransfer service() => ServiceLocalDataTransfer(
-    client: client,
-    store: store,
-    gameService: games,
-  );
+  ServiceLocalDataTransfer service() =>
+      ServiceLocalDataTransfer(client: client, store: store);
   Future<List<Map<String, dynamic>>> local([
     String owner = 'one@example.com',
   ]) => store.list(owner: owner, resource: 'memory_trace');
+  test(
+    'missing retention RPCs never use the legacy restore or erase local data',
+    () async {
+      await store.put(
+        owner: 'one@example.com',
+        resource: 'memory_trace',
+        id: 'kept',
+        data: {'id': 'kept'},
+      );
+      await expectLater(
+        service().cloudAnswerRetention(),
+        throwsA(isA<PostgrestException>()),
+      );
+      expect(
+        (await service().uploadLocalToCloud('one@example.com')).succeeded,
+        isFalse,
+      );
+      expect((await local()).single['id'], 'kept');
+      expect(requests.map((r) => r.url.pathSegments.last), [
+        'get_my_cloud_answer_retention',
+        'restore_local_personal_records_with_retention',
+      ]);
+    },
+  );
   int deleteCalls() => requests
       .where(
         (r) => r.url.path.endsWith(
@@ -228,21 +236,38 @@ void main() {
         )).single['score'],
         23.4,
       );
-      expect(
-        requests
-            .singleWhere((r) => r.url.path.endsWith('/game_list'))
-            .url
-            .queryParameters['select'],
-        'id,game_type,game_name,level',
-      );
       expect(deleteCalls(), 1);
-      final settingsRequest = requests.singleWhere(
-        (request) => request.url.path.endsWith('/dashboard_setting'),
+      expect(
+        requests.where(
+          (r) => r.url.path.endsWith('/get_my_cloud_transfer_setup'),
+        ),
+        hasLength(1),
       );
       expect(
-        settingsRequest.url.queryParameters['select'],
-        'account,recommend_event_city,recommend_place_city,language,'
-        'accounting_account_id,accounting_account_name,point_account_id,point_account_name',
+        requests.any(
+          (r) =>
+              r.url.path.endsWith('/game_list') ||
+              r.url.path.endsWith('/dashboard_setting'),
+        ),
+        isFalse,
+      );
+    },
+  );
+  test(
+    'missing transfer setup never reads old tables or deletes cloud data',
+    () async {
+      catalogVersion = null;
+      final result = await service().moveCloudToLocal('one@example.com');
+      expect(result.succeeded, isFalse);
+      expect(deleteCalls(), 0);
+      expect(await local(), isEmpty);
+      expect(
+        requests.any(
+          (r) =>
+              r.url.path.endsWith('/game_list') ||
+              r.url.path.endsWith('/dashboard_setting'),
+        ),
+        isFalse,
       );
     },
   );
@@ -288,6 +313,34 @@ void main() {
       expect(result.succeeded, isFalse);
       expect(await local(), isEmpty);
       expect(deleteCalls(), 0);
+    },
+  );
+  test(
+    'received calendar events never enter the move or delete list',
+    () async {
+      rows = [
+        for (final (id, owner) in [
+          (1, 'one@example.com'),
+          (2, 'other@example.com'),
+        ])
+          {
+            'table_name': 'calendar_events',
+            'record': {'id': 'id$id', 'account': owner},
+          },
+      ];
+      final result = await service().moveCloudToLocal('one@example.com');
+      expect(result.moved, 1);
+      expect(deletedPayload, [
+        {'table_name': 'calendar_events', 'id': 'id1'},
+      ]);
+      expect(
+        await store.contains(
+          owner: 'one@example.com',
+          resource: 'calendar_events',
+          id: 'id2',
+        ),
+        isFalse,
+      );
     },
   );
   test(

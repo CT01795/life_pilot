@@ -13,6 +13,7 @@ void main() {
   test('visible cards share one cloud thumbnail projection', () async {
     final requests = <http.Request>[];
     var batchInstalled = true;
+    var missingColumn = false;
     final started = Completer<void>();
     final release = Completer<void>();
     final client = SupabaseClient(
@@ -20,6 +21,14 @@ void main() {
       'test-key',
       httpClient: MockClient((request) async {
         requests.add(request);
+        if (missingColumn) {
+          return http.Response(
+            '{"code":"42703","message":"missing thumbnail column"}',
+            400,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        }
         if (request.url.queryParameters['id']?.contains('held') == true &&
             !started.isCompleted) {
           started.complete();
@@ -71,6 +80,20 @@ void main() {
     expect(query['select'], 'id,thumbnail_base64');
     expect(query['id'], allOf(contains('a'), contains('b')));
     expect(query['created_by'], 'eq.a@example.com');
+    missingColumn = true;
+    requests.clear();
+    await expectLater(load('missing'), throwsA(isA<PostgrestException>()));
+    expect(requests, hasLength(1));
+    requests.clear();
+    await expectLater(
+      RepositoryAccountImage.writeCloud('accounting_account', 'a', {
+        'master_graph_url': 'original',
+        'thumbnail_base64': 'thumbnail',
+      }),
+      throwsA(isA<PostgrestException>()),
+    );
+    expect(jsonDecode(requests.single.body)['thumbnail_base64'], 'thumbnail');
+    missingColumn = false;
     requests.clear();
     final first = load('held');
     await started.future;

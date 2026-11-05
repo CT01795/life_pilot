@@ -9,7 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
-    'missing proposal count endpoints are not probed on every refresh',
+    'missing overview and proposal RPCs fail without cross-query fallback',
     () async {
       final calls = <String>[];
       final client = SupabaseClient(
@@ -38,17 +38,27 @@ void main() {
         }),
       );
       final sharing = ServiceLedgerSharing(client: client);
-      expect(
-        await sharing.pendingCounts(LedgerKind.accounting, accountId: 'a'),
-        isEmpty,
+      final missing = throwsA(
+        isA<PostgrestException>().having((e) => e.code, 'code', 'PGRST202'),
       );
-      expect(
-        await sharing.pendingCounts(LedgerKind.accounting, accountId: 'b'),
-        isEmpty,
+      await expectLater(
+        sharing.pendingCounts(LedgerKind.accounting, accountId: 'a'),
+        missing,
+      );
+      await expectLater(sharing.pendingCounts(LedgerKind.points), missing);
+      await expectLater(
+        sharing.overviewPage(
+          LedgerKind.accounting,
+          0,
+          limit: 11,
+          visibleLimit: 10,
+        ),
+        missing,
       );
       expect(calls, [
         'get_my_ledger_account_pending_count',
         'get_my_ledger_pending_counts',
+        'list_my_shared_ledger_overview_window',
       ]);
     },
   );

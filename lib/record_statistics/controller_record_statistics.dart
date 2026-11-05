@@ -111,10 +111,9 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
     }
     var reading = true;
     try {
-      final totalFuture = history
+      final useLedgerBuckets = history || storage == DataStorageLocation.cloud;
+      final totalFuture = useLedgerBuckets
           ? Future<num?>.value(null)
-          : knownTotal != null && storage == DataStorageLocation.cloud
-          ? Future<num?>.value(knownTotal)
           : Future<num>.sync(
               () => service.readTotal(
                 owner: _owner,
@@ -136,7 +135,7 @@ class ControllerRecordStatistics extends SafeChangeNotifier {
             kind: kind,
             currency: currency,
             now: now,
-            history: history,
+            history: useLedgerBuckets,
             shouldContinue: () =>
                 reading && _isCurrentRequest(request, storage),
           ),

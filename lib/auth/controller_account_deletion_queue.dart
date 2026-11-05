@@ -21,7 +21,7 @@ class ControllerAccountDeletionQueue extends SafeChangeNotifier {
   String? _owner;
   bool _admin = false;
   int _revision = 0, _offset = 0;
-  bool _legacy = false;
+  bool _offsetBased = false;
   AccountDeletionCursor? _cursor;
   List<AccountDeletionRequest> rows = const [];
   bool loading = false, working = false, hasMore = false, retryMore = false;
@@ -40,7 +40,7 @@ class ControllerAccountDeletionQueue extends SafeChangeNotifier {
     rows = const [];
     _cursor = null;
     _offset = 0;
-    _legacy = false;
+    _offsetBased = false;
     loading = false;
     working = false;
     hasMore = false;
@@ -62,7 +62,6 @@ class ControllerAccountDeletionQueue extends SafeChangeNotifier {
       final page = await _load(
         after: more ? _cursor : null,
         offset: more ? _offset : 0,
-        legacy: more && _legacy,
       );
       if (!_current(revision)) return;
       if (page.hasMore && page.rows.isEmpty) {
@@ -76,7 +75,7 @@ class ControllerAccountDeletionQueue extends SafeChangeNotifier {
       rows = List.unmodifiable(unique.values);
       _cursor = page.rows.isEmpty ? null : page.rows.last.cursor;
       _offset = (more ? _offset : 0) + page.rows.length;
-      _legacy = page.legacy;
+      _offsetBased = page.offsetBased;
       hasMore = page.hasMore;
     } catch (error) {
       if (_current(revision)) loadError = error;
@@ -109,7 +108,7 @@ class ControllerAccountDeletionQueue extends SafeChangeNotifier {
           : (insteadOfApprove ?? _approve))(request.id);
       if (!_current(revision)) return null;
       rows = List.unmodifiable(rows.where((row) => row.id != request.id));
-      if (_legacy && _offset > 0) _offset--;
+      if (_offsetBased && _offset > 0) _offset--;
       return true;
     } catch (error) {
       if (!_current(revision)) return null;

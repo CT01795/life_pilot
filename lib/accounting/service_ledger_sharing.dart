@@ -29,20 +29,7 @@ class ServiceLedgerSharing {
   static const _totalsBatchSize = 12;
   static const _kindRpc = 'list_my_shared_ledgers_by_kind';
   static const _batchRpc = 'get_my_shared_ledger_totals_batch';
-  static const _overviewRpc = 'list_my_shared_ledger_overview';
   static const _overviewWindowRpc = 'list_my_shared_ledger_overview_window';
-  static final _unavailableUntil = Expando<Map<String, DateTime>>();
-
-  // Cache deployment capability only, never data or permissions.
-  static bool _isUnavailable(SupabaseClient client, String rpc) =>
-      _unavailableUntil[client]?[rpc]?.isAfter(DateTime.now()) ?? false;
-
-  static void _markUnavailable(SupabaseClient client, String rpc) {
-    (_unavailableUntil[client] ??= {})[rpc] = DateTime.now().add(
-      const Duration(minutes: 5),
-    );
-  }
-
   static final _totalsQueues =
       Expando<
         Map<(String, DateTime), Map<String, Completer<Map<String, dynamic>>>>
@@ -74,7 +61,6 @@ class ServiceLedgerSharing {
     required int limit,
     required int visibleLimit,
   }) async {
-    final db = _db;
     final now = DateTime.now();
     final day = DateTime(now.year, now.month, now.day);
     String utc(DateTime date) => date.toUtc().toIso8601String();
@@ -85,24 +71,12 @@ class ServiceLedgerSharing {
       'p_day_start': utc(day),
       'p_day_end': utc(DateTime(day.year, day.month, day.day + 1)),
     };
-    for (final rpc in [_overviewWindowRpc, _overviewRpc]) {
-      if (_isUnavailable(db, rpc)) continue;
-      try {
-        return await _read(
-          rpc,
-          {
-            ...params,
-            if (rpc == _overviewWindowRpc) 'p_visible_limit': visibleLimit,
-          },
-          offset,
-          limit: limit,
-        );
-      } on PostgrestException catch (error) {
-        if (error.code != 'PGRST202') rethrow;
-        _markUnavailable(db, rpc);
-      }
-    }
-    return receivedKindPage(kind, offset, limit: limit);
+    return _read(
+      _overviewWindowRpc,
+      {...params, 'p_visible_limit': visibleLimit},
+      offset,
+      limit: limit,
+    );
   }
 
   Future<List<Map<String, dynamic>>> receivedKindPage(
@@ -390,37 +364,21 @@ class ServiceLedgerSharing {
       const accountRpc = 'get_my_ledger_account_pending_count';
       const countsRpc = 'get_my_ledger_pending_counts';
       final db = _db;
-      if (accountId != null && !_isUnavailable(db, accountRpc)) {
-        try {
-          final count =
-              await db.rpc(
-                    accountRpc,
-                    params: {'p_kind': kind.name, 'p_account_id': accountId},
-                  )
-                  as num;
-          return Map<String, int>.unmodifiable({accountId: count.toInt()});
-        } on PostgrestException catch (error) {
-          if (error.code != 'PGRST202') rethrow;
-          _markUnavailable(db, accountRpc);
-        }
+      if (accountId != null) {
+        final count =
+            await db.rpc(
+                  accountRpc,
+                  params: {'p_kind': kind.name, 'p_account_id': accountId},
+                )
+                as num;
+        return Map<String, int>.unmodifiable({accountId: count.toInt()});
       }
-      if (_isUnavailable(db, countsRpc)) return const <String, int>{};
-      try {
-        final query = db.rpc(countsRpc, params: {'p_kind': kind.name});
-        final rows =
-            await (accountId == null
-                    ? query
-                    : query.eq('account_id', accountId))
-                as List;
-        return Map<String, int>.unmodifiable({
-          for (final row in rows)
-            row['account_id'] as String: (row['pending_count'] as num).toInt(),
-        });
-      } on PostgrestException catch (error) {
-        if (error.code != 'PGRST202') rethrow;
-        _markUnavailable(db, countsRpc);
-        return const <String, int>{};
-      }
+      final rows =
+          await db.rpc(countsRpc, params: {'p_kind': kind.name}) as List;
+      return Map<String, int>.unmodifiable({
+        for (final row in rows)
+          row['account_id'] as String: (row['pending_count'] as num).toInt(),
+      });
     },
   );
 

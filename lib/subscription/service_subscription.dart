@@ -4,24 +4,21 @@ export 'package:life_pilot/subscription/model_subscription_cleanup_preview.dart'
 import 'package:life_pilot/subscription/repository_subscription_maintenance.dart';
 import 'package:life_pilot/subscription/model_quota_free_period.dart';
 export 'package:life_pilot/subscription/model_quota_free_period.dart';
-import 'package:life_pilot/subscription/repository_subscription_counts.dart';
 import 'package:life_pilot/subscription/repository_subscription_bootstrap.dart';
+import 'package:life_pilot/subscription/subscription_entitlement_quota.dart'
+    show subscriptionQuotaResources;
 import 'package:life_pilot/subscription/repository_pricing_catalog.dart';
 import 'package:life_pilot/subscription/model_billing_cycle.dart';
 import 'package:life_pilot/subscription/model_admin_subscription_overview.dart';
 import 'package:life_pilot/subscription/repository_admin_subscription_overview.dart';
-import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/value_parser.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceSubscription {
   Future<AdminSubscriptionOverview> fetchUserSubscriptionOverviewAsAdmin(
     String email,
   ) => RepositoryAdminSubscriptionOverview(supabase).read(email);
-  static bool _supportsCumulativeQuotaRpc = true;
 
   Future<List<QuotaFreePeriod>> fetchQuotaFreePeriods() =>
       RepositorySubscriptionMaintenance(supabase).periods();
@@ -78,32 +75,27 @@ class ServiceSubscription {
     final bootstrap = await RepositorySubscriptionBootstrap(
       supabase,
     ).read(storagePlan);
-    final promotionPeriods = bootstrap?['quota_free_periods'] is List
-        ? List<QuotaFreePeriod>.unmodifiable(
-            (bootstrap!['quota_free_periods'] as List).map(
-              (row) => QuotaFreePeriod.fromJson(
-                Map<String, dynamic>.from(row as Map),
-              ),
-            ),
-          )
-        : null;
-    final responses = bootstrap == null
-        ? await Future.wait<dynamic>([
-            supabase.rpc('get_my_subscription_usage'),
-            supabase.rpc('get_my_subscription_status'),
-            supabase.rpc('get_my_subscription_entitlements'),
-          ])
-        : <dynamic>[
-            bootstrap['usage'],
-            [bootstrap['status']],
-            bootstrap['entitlements'],
-          ];
-    final rows = responses.first;
-    final statusRows = responses[1] as List<dynamic>;
-    final entitlementRows = responses[2] as List<dynamic>;
-    final status = statusRows.isEmpty
-        ? <String, dynamic>{}
-        : Map<String, dynamic>.from(statusRows.first as Map);
+    final periods = bootstrap['quota_free_periods'];
+    final usage = bootstrap['usage'];
+    final rawStatus = bootstrap['status'];
+    final entitlements = bootstrap['entitlements'];
+    if (periods is! List ||
+        usage is! List ||
+        rawStatus is! Map ||
+        rawStatus['status'] is! String ||
+        rawStatus['plan'] is! String ||
+        entitlements is! List) {
+      throw const FormatException('Incomplete subscription bootstrap');
+    }
+    final promotionPeriods = List<QuotaFreePeriod>.unmodifiable(
+      periods.map(
+        (row) =>
+            QuotaFreePeriod.fromJson(Map<String, dynamic>.from(row as Map)),
+      ),
+    );
+    final rows = usage;
+    final entitlementRows = entitlements;
+    final status = Map<String, dynamic>.from(rawStatus);
     if (status['status'] == 'configuration_missing') {
       return SubscriptionSnapshot(
         plan: 'unconfigured',
@@ -120,28 +112,43 @@ class ServiceSubscription {
         promotionPeriods: promotionPeriods,
       );
     }
-    final bundledQuotas = bootstrap == null
-        ? null
-        : (bootstrap['cumulative_quotas'] as Map).map(
-            (key, value) => MapEntry(key.toString(), parseIntValue(value)),
-          );
-    final cloudRecommendationQuotas = bootstrap?['cloud_recommendation_quotas'];
-    final recommendationUsage = bootstrap?['vendor'] == true
-        ? <SubscriptionUsage>[]
-        : await _fetchRecommendationUsage(
-            entitlementRows,
-            status,
-            storagePlan: 'cloud',
-            counts: (bootstrap?['recommendation_counts'] as List?)?.cast<int>(),
-            resolvedQuotas: storagePlan == 'cloud'
-                ? bundledQuotas
-                : (cloudRecommendationQuotas as Map?)?.map(
-                    (key, value) =>
-                        MapEntry(key.toString(), parseIntValue(value)),
-                  ),
-          );
+    final rawQuotas = bootstrap['cumulative_quotas'];
+    if (rawQuotas is! Map) {
+      throw const FormatException('Missing cumulative quotas');
+    }
+    final cumulativeQuotas = <String, int>{
+      for (final entry in rawQuotas.entries)
+        entry.key as String: entry.value as int,
+    };
+    final recommendationUsage = <SubscriptionUsage>[];
+    if (bootstrap['vendor'] != true) {
+      final counts = bootstrap['recommendation_counts'];
+      final quotas = storagePlan == 'cloud'
+          ? cumulativeQuotas
+          : bootstrap['cloud_recommendation_quotas'];
+      if (counts is! List ||
+          counts.length != 2 ||
+          quotas is! Map ||
+          counts.any((value) => value is! int) ||
+          quotas['recommended_events'] is! int ||
+          quotas['recommended_attractions'] is! int) {
+        throw const FormatException('Missing recommendation quotas');
+      }
+      recommendationUsage.addAll([
+        SubscriptionUsage(
+          resource: 'recommended_events',
+          used: counts[0] as int,
+          quota: quotas['recommended_events'] as int,
+        ),
+        SubscriptionUsage(
+          resource: 'recommended_attractions',
+          used: counts[1] as int,
+          quota: quotas['recommended_attractions'] as int,
+        ),
+      ]);
+    }
     var items = <SubscriptionUsage>[
-      ...(rows as List<dynamic>).map(
+      ...rows.map(
         (row) =>
             SubscriptionUsage.fromJson(Map<String, dynamic>.from(row as Map)),
       ),
@@ -150,8 +157,6 @@ class ServiceSubscription {
     // The currently selected storage location decides which entitlement set is
     // presented. Never infer it from the newest subscription row because users
     // may hold valid cloud and local subscriptions at the same time.
-    final cumulativeQuotas =
-        bundledQuotas ?? await _fetchCumulativeQuotas(storagePlan: storagePlan);
     if (storagePlan == 'cloud' && cumulativeQuotas.isNotEmpty) {
       items = items
           .map(
@@ -227,242 +232,6 @@ class ServiceSubscription {
     );
   }
 
-  Future<Map<String, int>> _fetchCumulativeQuotas({
-    required String storagePlan,
-  }) async {
-    if (!_supportsCumulativeQuotaRpc) return const {};
-    try {
-      final rows = await supabase.rpc(
-        'get_my_cumulative_subscription_quotas',
-        params: {'p_storage_plan': storagePlan},
-      );
-      return {
-        for (final raw in rows as List<dynamic>)
-          if (raw case final Map row)
-            parseStringValue(row['resource']): parseIntValue(row['quota']),
-      };
-    } on PostgrestException catch (error) {
-      // Older databases continue using get_my_subscription_usage until the
-      // cumulative-quota RPC is installed.
-      final normalizedMessage = error.message.toLowerCase();
-      final isMissingRpc =
-          error.code == '42883' ||
-          error.code == 'PGRST202' ||
-          error.code == 'PGRST205' ||
-          (normalizedMessage.contains(
-                'get_my_cumulative_subscription_quotas',
-              ) &&
-              (normalizedMessage.contains('not find') ||
-                  normalizedMessage.contains('does not exist') ||
-                  normalizedMessage.contains('schema cache')));
-      if (isMissingRpc) {
-        _supportsCumulativeQuotaRpc = false;
-        logger.w(
-          'Cumulative subscription quota RPC is unavailable; '
-          'falling back to the existing subscription usage response.',
-        );
-        return const {};
-      }
-      rethrow;
-    }
-  }
-
-  Future<List<SubscriptionUsage>> _fetchRecommendationUsage(
-    List<dynamic> entitlementRows,
-    Map<String, dynamic> status, {
-    required String storagePlan,
-    List<int>? counts,
-    Map<String, int>? resolvedQuotas,
-  }) async {
-    try {
-      if (counts != null &&
-          resolvedQuotas?.containsKey('recommended_events') == true &&
-          resolvedQuotas?.containsKey('recommended_attractions') == true) {
-        return [
-          SubscriptionUsage(
-            resource: 'recommended_events',
-            used: counts[0],
-            quota: resolvedQuotas!['recommended_events']!,
-          ),
-          SubscriptionUsage(
-            resource: 'recommended_attractions',
-            used: counts[1],
-            quota: resolvedQuotas['recommended_attractions']!,
-          ),
-        ];
-      }
-      final account = supabase.auth.currentUser?.email?.toLowerCase();
-      if (account == null || account.isEmpty) return const [];
-      final now = DateTime.now();
-      final results =
-          counts ??
-          await RepositorySubscriptionCounts(
-            supabase,
-          ).readRecommendations(account: account, now: now);
-      if (storagePlan == 'cloud' &&
-          resolvedQuotas?.containsKey('recommended_events') == true &&
-          resolvedQuotas?.containsKey('recommended_attractions') == true) {
-        return [
-          SubscriptionUsage(
-            resource: 'recommended_events',
-            used: results[0],
-            quota: resolvedQuotas!['recommended_events']!,
-          ),
-          SubscriptionUsage(
-            resource: 'recommended_attractions',
-            used: results[1],
-            quota: resolvedQuotas['recommended_attractions']!,
-          ),
-        ];
-      }
-
-      var eventQuota = 0;
-      var attractionQuota = 0;
-      final activeEntitlements = entitlementRows
-          .where((raw) {
-            final row = Map<String, dynamic>.from(raw as Map);
-            final endsAt = tryParseDateTimeValue(row['ends_at']);
-            return parseStringValue(row['storage_plan']) == storagePlan &&
-                endsAt != null &&
-                endsAt.isAfter(now);
-          })
-          .toList(growable: false);
-      for (final raw in activeEntitlements) {
-        final row = Map<String, dynamic>.from(raw as Map);
-        final snapshot = Map<String, dynamic>.from(
-          row['entitlement_snapshot'] as Map? ?? const {},
-        );
-        final multiplier = parseIntValue(
-          row['quota_multiplier'],
-          fallback: 1,
-        ).clamp(1, 1000).toInt();
-        eventQuota +=
-            entitlementSnapshotQuota(
-              snapshot,
-              'recommended_events',
-              multiplier: multiplier,
-            ) ??
-            0;
-        attractionQuota +=
-            entitlementSnapshotQuota(
-              snapshot,
-              'recommended_attractions',
-              multiplier: multiplier,
-            ) ??
-            0;
-      }
-      if (eventQuota == 0 && attractionQuota == 0) {
-        final versions = await fetchPricingVersions();
-        final currentVersionName = parseStringValue(
-          status['pricing_version_name'],
-        );
-        final currentMultiplier = parseIntValue(
-          status['quota_multiplier'],
-          fallback: 1,
-        ).clamp(1, 1000).toInt();
-        final statusPeriodEnd = tryParseDateTimeValue(
-          status['current_period_end'],
-        );
-        final hasActiveStatusPlan =
-            parseStringValue(status['plan']) == 'plus' &&
-            parseStringValue(status['storage_plan']) == storagePlan &&
-            (statusPeriodEnd == null || statusPeriodEnd.isAfter(now));
-        final hasActivePaidPlan =
-            activeEntitlements.isNotEmpty || hasActiveStatusPlan;
-        final matchingCurrent = versions.where(
-          (version) =>
-              version.storagePlan == storagePlan &&
-              version.name == currentVersionName,
-        );
-        if (hasActivePaidPlan && matchingCurrent.isNotEmpty) {
-          eventQuota =
-              (matchingCurrent.first.quotas['recommended_events'] ?? 0) *
-              currentMultiplier;
-          attractionQuota =
-              (matchingCurrent.first.quotas['recommended_attractions'] ?? 0) *
-              currentMultiplier;
-        }
-
-        // 本機資料本身不限量，但推薦活動／景點仍是公開雲端投稿，
-        // 因此有效本機訂閱沿用當期免費雲端版本的投稿上限。
-        // 本機訂閱失效後不套用此 fallback，兩項額度維持 0。
-        if (storagePlan == 'local' &&
-            hasActivePaidPlan &&
-            eventQuota == 0 &&
-            attractionQuota == 0) {
-          final publicVersions =
-              versions
-                  .where(
-                    (version) =>
-                        version.storagePlan == 'cloud' &&
-                        version.quarterlyPriceTwd == 0 &&
-                        !version.effectiveAt.isAfter(now),
-                  )
-                  .toList()
-                ..sort((a, b) => b.effectiveAt.compareTo(a.effectiveAt));
-          if (publicVersions.isNotEmpty) {
-            final entitlementMultiplier = activeEntitlements.isEmpty
-                ? currentMultiplier
-                : activeEntitlements.fold<int>(
-                    0,
-                    (total, raw) =>
-                        total +
-                        parseIntValue(
-                          Map<String, dynamic>.from(
-                            raw as Map,
-                          )['quota_multiplier'],
-                          fallback: 1,
-                        ).clamp(1, 1000).toInt(),
-                  );
-            eventQuota =
-                (publicVersions.first.quotas['recommended_events'] ?? 0) *
-                entitlementMultiplier;
-            attractionQuota =
-                (publicVersions.first.quotas['recommended_attractions'] ?? 0) *
-                entitlementMultiplier;
-          }
-        } else if (storagePlan == 'cloud' && !hasActivePaidPlan) {
-          final freeVersions =
-              versions
-                  .where(
-                    (version) =>
-                        version.storagePlan == storagePlan &&
-                        version.quarterlyPriceTwd == 0 &&
-                        !version.effectiveAt.isAfter(now),
-                  )
-                  .toList()
-                ..sort((a, b) => b.effectiveAt.compareTo(a.effectiveAt));
-          if (freeVersions.isNotEmpty) {
-            eventQuota = freeVersions.first.quotas['recommended_events'] ?? 0;
-            attractionQuota =
-                freeVersions.first.quotas['recommended_attractions'] ?? 0;
-          }
-        }
-      }
-      return [
-        SubscriptionUsage(
-          resource: 'recommended_events',
-          used: results[0],
-          quota: eventQuota,
-        ),
-        SubscriptionUsage(
-          resource: 'recommended_attractions',
-          used: results[1],
-          quota: attractionQuota,
-        ),
-      ];
-    } catch (error, stackTrace) {
-      // Recommendation counters must never prevent the rest of the account
-      // and subscription state from loading.
-      logger.e(
-        'Failed to load recommendation submission usage',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      return const [];
-    }
-  }
-
   Future<void> setUserSubscriptionAsAdmin({
     required String email,
     required String plan,
@@ -510,18 +279,13 @@ class ServiceSubscription {
   Future<List<Map<String, dynamic>>> fetchUserEntitlementsAsAdmin({
     required String email,
   }) async {
-    try {
-      final rows = await supabase.rpc(
-        'admin_get_user_subscription_entitlements',
-        params: {'p_email': email.trim()},
-      );
-      return (rows as List<dynamic>)
-          .map((row) => Map<String, dynamic>.from(row as Map))
-          .toList(growable: false);
-    } on PostgrestException catch (error) {
-      if (error.code == '42883' || error.code == 'PGRST202') return const [];
-      rethrow;
-    }
+    final rows = await supabase.rpc(
+      'admin_get_user_subscription_entitlements',
+      params: {'p_email': email.trim()},
+    );
+    return (rows as List<dynamic>)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList(growable: false);
   }
 
   Future<void> deleteUserEntitlementAsAdmin({

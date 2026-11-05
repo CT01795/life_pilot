@@ -26,8 +26,7 @@ class RepositoryVendorInitialization {
 
     unawaited(
       _initialize().then<void>(
-        (available) {
-          if (!available) forget();
+        (_) {
           completion.complete();
         },
         onError: (Object error, StackTrace stack) {
@@ -39,13 +38,7 @@ class RepositoryVendorInitialization {
     return request;
   }
 
-  Future<bool> _initialize() async {
-    try {
-      await client.rpc('ensure_my_vendor_account');
-      return true;
-    } on PostgrestException catch (error) {
-      if (error.code != '42883' && error.code != 'PGRST202') rethrow;
-      return false;
-    }
+  Future<void> _initialize() async {
+    await client.rpc('ensure_my_vendor_account');
   }
 }

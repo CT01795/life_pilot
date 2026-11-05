@@ -1,4 +1,3 @@
-import 'package:life_pilot/utils/repository_optional_json_rpc.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -52,22 +51,17 @@ class RepositoryPricingCatalog {
     late Future<List<dynamic>> request;
     request =
         Future<List<dynamic>>.sync(() async {
-          final result = await RepositoryOptionalJsonRpc(client).read(
+          final result = await client.rpc(
             'get_pricing_catalog',
             params: {'p_vendor': vendor},
-            rememberMissing: false,
           );
-          final rows = result == null
-              ? await client.rpc(
-                      vendor
-                          ? 'get_vendor_pricing_versions'
-                          : 'get_subscription_pricing_versions',
-                    )
-                    as List
-              : result['versions'] as List;
           if (_scope != scope || state.revision != revision) {
             throw StateError('Pricing request scope changed');
           }
+          if (result is! Map || result['versions'] is! List) {
+            throw const FormatException('Invalid pricing catalog');
+          }
+          final rows = result['versions'] as List;
           final frozen = List<dynamic>.unmodifiable(
             rows.map(
               (row) => Map<String, dynamic>.unmodifiable(

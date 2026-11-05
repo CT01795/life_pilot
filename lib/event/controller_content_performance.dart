@@ -180,7 +180,13 @@ class ControllerContentPerformance extends SafeChangeNotifier {
           (page.nextOffset != null && page.nextOffset! <= offset)) {
         throw StateError('Invalid performance continuation');
       }
-      data = current!.appendPage(page);
+      if (current!.snapshotVersion != page.snapshotVersion) {
+        // The filtered result changed between requests. Never display fresh
+        // detail counters with a denominator from the previous result.
+        await load(force: true);
+        return;
+      }
+      data = current.appendPage(page);
     } catch (failure) {
       if (_isCurrentRequest(request)) moreError = failure;
     } finally {

@@ -90,7 +90,7 @@ void main() {
     final first = await repo.adminPage();
     expect(first.rows, hasLength(50));
     expect(first.hasMore, isTrue);
-    await repo.adminPage(after: first.rows.last.cursor, offset: 50);
+    await repo.adminPage(after: first.rows.last.cursor);
     final body = jsonDecode(requests.last.body) as Map;
     expect(body['p_limit'], 50);
     expect(body['p_after']['id'], '49');
@@ -126,7 +126,7 @@ void main() {
       var fail = true;
       final c = ControllerAccountDeletionQueue(
         auth: auth,
-        load: ({after, required offset, required legacy}) async {
+        load: ({after, required offset}) async {
           loads++;
           return AccountDeletionPage.fromRows([
             row(1),
@@ -159,18 +159,18 @@ void main() {
     },
   );
   test(
-    'legacy removal shifts next offset and concurrent actions are blocked',
+    'disabled-account removal shifts next offset and concurrent actions are blocked',
     () async {
       final auth = _Auth();
       final gate = Completer<void>();
       final offsets = <int>[];
       final c = ControllerAccountDeletionQueue(
         auth: auth,
-        load: ({after, required offset, required legacy}) async {
+        load: ({after, required offset}) async {
           offsets.add(offset);
           return AccountDeletionPage.fromRows(
             List.generate(51, row),
-            legacy: true,
+            offsetBased: true,
           );
         },
         approve: (id) => gate.future,
@@ -193,7 +193,7 @@ void main() {
     var actions = 0;
     final c = ControllerAccountDeletionQueue(
       auth: auth,
-      load: ({after, required offset, required legacy}) => gate.future,
+      load: ({after, required offset}) => gate.future,
       approve: (id) async {
         actions++;
       },
@@ -218,7 +218,7 @@ void main() {
     final offsets = <int>[];
     final c = ControllerAccountDeletionQueue(
       auth: auth,
-      load: ({after, required offset, required legacy}) async {
+      load: ({after, required offset}) async {
         offsets.add(offset);
         if (offset > 0 && fail) throw StateError('network');
         return AccountDeletionPage.fromRows(
@@ -248,7 +248,7 @@ void main() {
       var loads = 0;
       final c = ControllerAccountDeletionQueue(
         auth: auth,
-        load: ({after, required offset, required legacy}) async {
+        load: ({after, required offset}) async {
           loads++;
           return AccountDeletionPage.fromRows([row(1)]);
         },

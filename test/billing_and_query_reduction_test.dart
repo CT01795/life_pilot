@@ -34,10 +34,12 @@ void main() {
   late SupabaseClient client;
   late List<http.Request> requests;
   Object? response;
+  var pricingMissing = false;
   Completer<void>? gate;
   var time = DateTime(2026, 11, 2);
   setUp(() async {
     requests = [];
+    pricingMissing = false;
     gate = null;
     response = {
       'versions': [
@@ -50,6 +52,15 @@ void main() {
       'key',
       httpClient: MockClient((request) async {
         requests.add(request);
+        if (pricingMissing &&
+            request.url.path.endsWith('/get_pricing_catalog')) {
+          return http.Response(
+            '{"code":"PGRST202","message":"missing pricing catalog"}',
+            404,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        }
         final offset = int.parse(request.url.queryParameters['offset'] ?? '0');
         final isExport =
             request.url.path.endsWith('export_my_cloud_data_for_local') ||
@@ -94,10 +105,29 @@ void main() {
   });
   tearDown(() => client.dispose());
 
+  test('missing pricing catalog does not query either legacy list', () async {
+    pricingMissing = true;
+    final repo = RepositoryPricingCatalog(client: client);
+    for (final vendor in [false, true]) {
+      await expectLater(
+        repo.read(vendor: vendor),
+        throwsA(
+          isA<PostgrestException>().having((e) => e.code, 'code', 'PGRST202'),
+        ),
+      );
+    }
+    expect(requests.map((r) => r.url.pathSegments.last), [
+      'get_pricing_catalog',
+      'get_pricing_catalog',
+    ]);
+  });
+
   test(
-    'month/quarter use calendar arithmetic and preserve legacy defaults',
+    'missing billing cycle defaults to monthly; explicit cycles are preserved',
     () {
-      expect(BillingCycle.from(null), BillingCycle.quarter);
+      expect(BillingCycle.from(null), BillingCycle.month);
+      expect(BillingCycle.from('month'), BillingCycle.month);
+      expect(BillingCycle.from('quarter'), BillingCycle.quarter);
       expect(
         BillingCycle.month.endFrom(DateTime(2027, 1, 31, 12)),
         DateTime(2027, 2, 28, 12),

@@ -77,7 +77,9 @@ class ModelRecordStatistics {
     num total = 0, month = 0, today = 0, opening = 0;
     var hasChartData = false;
     String? currency;
+    num? aggregateTotal;
     for (final row in rows) {
+      if (row['aggregate_total'] case final num value) aggregateTotal ??= value;
       if (row['currency'] case final String unit when unit.trim().isNotEmpty) {
         currency ??= unit.trim();
       }
@@ -103,7 +105,7 @@ class ModelRecordStatistics {
     }
     var cumulative = opening;
     return ModelRecordStatistics(
-      totalOverride ?? total,
+      totalOverride ?? aggregateTotal ?? total,
       month,
       today,
       [

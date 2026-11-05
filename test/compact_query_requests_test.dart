@@ -51,6 +51,16 @@ void main() {
     );
   });
   tearDown(() => client.dispose());
+  test('changed performance snapshot cannot be appended to old totals', () {
+    ModelContentPerformance page(String version) =>
+        ModelContentPerformance.fromPage({
+          'items': [],
+          'totals': {'page_views': 12},
+          'snapshot_version': version,
+        }, attractions: false);
+    expect(page('a').appendPage(page('a')).snapshotVersion, 'a');
+    expect(() => page('a').appendPage(page('b')), throwsStateError);
+  });
   for (final attractions in [false, true]) {
     test(
       'empty performance page without totals is not an error ($attractions)',

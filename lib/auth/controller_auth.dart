@@ -29,6 +29,9 @@ class ControllerAuth extends SafeChangeNotifier {
   Timer? _quotaFreePeriodTimer;
   Timer? _accountValidationTimer;
   DateTime? _lastAccountValidationAt;
+  AccountValidationResult? _lastAccountValidationResult;
+  bool get accountVerificationBlocked =>
+      _lastAccountValidationResult != AccountValidationResult.valid;
   Future<AccountValidationResult>? _accountValidationInFlight;
   Future<void>? _invalidAccountSignOutInFlight;
   ControllerAuth({this.controllerCalendar, this.dashboardController});
@@ -163,12 +166,27 @@ class ControllerAuth extends SafeChangeNotifier {
   AuthPage get currentPage => _currentPage;
 
   Future<void> refreshSubscriptionUsage({bool notify = true}) async {
-    if (!_isLoggedIn || _isAnonymous) return;
+    if (!_isLoggedIn || _isAnonymous || notifierDisposed) return;
+    final owner = _currentAccount;
+    final storage = _preferredStorage;
+    final userId = supabase.auth.currentUser?.id;
+    bool current() =>
+        !notifierDisposed &&
+        _isLoggedIn &&
+        !_isAnonymous &&
+        owner == _currentAccount &&
+        storage == _preferredStorage &&
+        userId == supabase.auth.currentUser?.id;
     try {
-      _subscription = await _loadSubscriptionUsage();
+      final loaded = await _loadSubscriptionUsage();
+      if (!current()) return;
+      _subscription = loaded;
       _syncLocalCreatePermission();
       if (notify) notifyListeners();
     } catch (error, stackTrace) {
+      if (!current()) return;
+      _markSubscriptionUnverified();
+      if (notify) notifyListeners();
       logger.e(
         'Failed to refresh subscription usage',
         error: error,
@@ -190,13 +208,7 @@ class ControllerAuth extends SafeChangeNotifier {
         loadingStorage != _preferredStorage) {
       throw StateError('Subscription request scope changed');
     }
-    _quotaFreePeriodActive = base.promotionPeriods == null
-        ? await _loadQuotaFreePeriodActive()
-        : _applyQuotaFreePeriods(base.promotionPeriods!);
-    if (loadingAccount != _currentAccount ||
-        loadingStorage != _preferredStorage) {
-      throw StateError('Subscription request scope changed');
-    }
+    _quotaFreePeriodActive = _applyQuotaFreePeriods(base.promotionPeriods!);
     if (base.configurationMissing && !isSysAdmin) return base;
     final account = _currentAccount;
     var presented = base;
@@ -222,24 +234,6 @@ class ControllerAuth extends SafeChangeNotifier {
     return isSysAdmin || _quotaFreePeriodActive
         ? _withUnlimitedUsage(presented)
         : presented;
-  }
-
-  Future<bool> _loadQuotaFreePeriodActive() async {
-    try {
-      final owner = _currentAccount;
-      final periods = await ServiceSubscription().fetchQuotaFreePeriods();
-      if (owner != _currentAccount) return false;
-      return _applyQuotaFreePeriods(periods);
-    } catch (error, stackTrace) {
-      logger.e(
-        'Failed to load no-limit promotion status',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      _quotaFreePeriodEndingInDays = null;
-      _quotaFreePeriodEndsAt = null;
-      return false;
-    }
   }
 
   bool _applyQuotaFreePeriods(List<QuotaFreePeriod> periods) {
@@ -488,6 +482,7 @@ class ControllerAuth extends SafeChangeNotifier {
     _preferredStorage = location;
     _hasStorageChoice = true;
     _personalDataRevision++;
+    _markSubscriptionUnverified();
     dashboardController?.switchAccount(
       account,
       includeCloudShares: location == DataStorageLocation.cloud,
@@ -576,6 +571,8 @@ class ControllerAuth extends SafeChangeNotifier {
       _hasStorageChoice = false;
       _currentPage = AuthPage.login;
       _lastAccountValidationAt = null;
+      _lastAccountValidationResult = null;
+      _accountValidationInFlight = null;
     }, notify: false);
 
     dashboardController?.switchAccount(null);
@@ -593,8 +590,8 @@ class ControllerAuth extends SafeChangeNotifier {
   ///
   /// Deleting a user in Supabase does not immediately remove the cached JWT
   /// from another open device or browser tab. A remote `getUser` request is
-  /// therefore required before that stale screen can be dismissed. Temporary
-  /// network failures deliberately keep the current screen and session.
+  /// therefore required before access is allowed. Temporary failures retain
+  /// the session, but do not count as successful validation.
   Future<AccountValidationResult> validateCurrentAccount({bool force = false}) {
     if (!_isLoggedIn || _isAnonymous) {
       return Future.value(AccountValidationResult.valid);
@@ -615,12 +612,24 @@ class ControllerAuth extends SafeChangeNotifier {
           unawaited(validateCurrentAccount(force: true));
         },
       );
-      return Future.value(AccountValidationResult.valid);
+      return Future.value(
+        _lastAccountValidationResult ?? AccountValidationResult.unavailable,
+      );
     }
 
     _accountValidationTimer?.cancel();
     _accountValidationTimer = null;
-    final validation = _validateCurrentAccountRemotely();
+    final userId = supabase.auth.currentUser?.id;
+    final validation = _validateCurrentAccountRemotely().then((result) {
+      if (result != AccountValidationResult.signedOut &&
+          userId != null &&
+          supabase.auth.currentUser?.id == userId) {
+        final changed = _lastAccountValidationResult != result;
+        _lastAccountValidationResult = result;
+        if (changed) notifyListeners();
+      }
+      return result;
+    });
     _accountValidationInFlight = validation;
     return validation.whenComplete(() {
       if (identical(_accountValidationInFlight, validation)) {
@@ -639,6 +648,9 @@ class ControllerAuth extends SafeChangeNotifier {
 
     try {
       final response = await supabase.auth.getUser();
+      if (supabase.auth.currentUser?.id != localUser.id) {
+        return AccountValidationResult.unavailable;
+      }
       final remoteUser = response.user;
       if (remoteUser == null || remoteUser.id != localUser.id) {
         await _signOutInvalidAccount();
@@ -655,6 +667,9 @@ class ControllerAuth extends SafeChangeNotifier {
           await _signOutInvalidAccount();
           return AccountValidationResult.signedOut;
         }
+        if (disabled != false) {
+          throw const FormatException('Invalid account verification response');
+        }
       } on PostgrestException catch (error) {
         if (error.code == 'PT401' && error.message == 'user_banned') {
           if (supabase.auth.currentUser?.id != localUser.id) {
@@ -663,10 +678,13 @@ class ControllerAuth extends SafeChangeNotifier {
           await _signOutInvalidAccount();
           return AccountValidationResult.signedOut;
         }
-        if (error.code != 'PGRST202') rethrow;
+        rethrow;
       }
       return AccountValidationResult.valid;
     } on AuthException catch (error, stackTrace) {
+      if (supabase.auth.currentUser?.id != localUser.id) {
+        return AccountValidationResult.unavailable;
+      }
       if (_isInvalidRemoteAccount(error)) {
         logger.w(
           'The signed-in account no longer exists or its session is invalid.',
@@ -748,6 +766,11 @@ class ControllerAuth extends SafeChangeNotifier {
         _isLoggedIn = user != null;
         _isAnonymous = user?.isAnonymous ?? false;
         _currentAccount = _isAnonymous ? AuthConstants.guest : user?.email;
+        if (oldAccount != _currentAccount) {
+          _lastAccountValidationAt = null;
+          _lastAccountValidationResult = null;
+          _accountValidationInFlight = null;
+        }
         _accountType = user?.userMetadata?['account_type'] == 'vendor'
             ? 'vendor'
             : 'personal';
@@ -784,6 +807,7 @@ class ControllerAuth extends SafeChangeNotifier {
       }
 
       if (_isLoggedIn && !_isAnonymous) {
+        if (_currentAccount != oldAccount) _markSubscriptionUnverified();
         unawaited(_refreshSubscriptionAfterStartup());
         unawaited(validateCurrentAccount(force: true));
       }
@@ -810,21 +834,19 @@ class ControllerAuth extends SafeChangeNotifier {
     }
   }
 
-  Future<void> _refreshSubscriptionAfterStartup() async {
-    try {
-      if (notifierDisposed || !_isLoggedIn || _isAnonymous) return;
-      final loaded = await _loadSubscriptionUsage();
-      if (notifierDisposed || !_isLoggedIn || _isAnonymous) return;
-      _subscription = loaded;
-      _syncLocalCreatePermission();
-      notifyListeners();
-    } catch (error, stackTrace) {
-      logger.e(
-        'Failed to load subscription usage after startup',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
+  Future<void> _refreshSubscriptionAfterStartup() => refreshSubscriptionUsage();
+
+  void _markSubscriptionUnverified() {
+    _subscription = SubscriptionSnapshot(
+      plan: 'unverified',
+      usage: const {},
+      status: 'verification_unavailable',
+      storagePlan: _preferredStorage.name,
+    );
+    _quotaFreePeriodActive = false;
+    _quotaFreePeriodEndingInDays = null;
+    _quotaFreePeriodEndsAt = null;
+    _syncLocalCreatePermission();
   }
 
   // =========================================================

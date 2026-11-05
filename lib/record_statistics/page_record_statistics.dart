@@ -137,6 +137,15 @@ class _PageRecordStatisticsState extends State<PageRecordStatistics> {
               ),
               if (!points && currency != null && currency.trim().isNotEmpty)
                 Text('${loc.currencyLabel}：${currency.trim()}'),
+              Text(
+                '${points ? loc.totalPoints : loc.totalIncomeExpense}：'
+                '${formats.value(data.total)}'
+                '${points
+                    ? ' ${loc.pointsUnit}'
+                    : currency == null
+                    ? ''
+                    : ' $currency'}',
+              ),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,

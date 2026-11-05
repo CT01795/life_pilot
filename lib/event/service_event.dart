@@ -553,28 +553,26 @@ class ServiceEvent {
           tableName == TableNames.recommendEvents ||
           tableName == TableNames.recommendPlaces;
       if (isRecommendedContent && !_isCurrentUserAdmin) {
-        try {
-          final reviewState = await supabase
-              .from(tableName)
-              .select('is_approved,was_approved')
-              .eq(Fields.id, event.id)
-              .eq(Fields.account, currentAccount)
-              .maybeSingle();
-          if (reviewState?[EventFields.isApproved] == true) {
-            throw const EventDeleteException(EventDeleteError.published);
-          }
-          if (reviewState?['was_approved'] == true) {
-            throw const EventDeleteException(
-              EventDeleteError.previouslyPublished,
-            );
-          }
-        } on PostgrestException catch (error) {
-          // Before the review-history migration is installed, the currently
-          // published flag still prevents accidental deletion.
-          if (event.isApproved) {
-            throw const EventDeleteException(EventDeleteError.published);
-          }
-          if (error.code != '42703' && error.code != 'PGRST204') rethrow;
+        final reviewState = await supabase
+            .from(tableName)
+            .select('is_approved,was_approved')
+            .eq(Fields.id, event.id)
+            .eq(Fields.account, currentAccount)
+            .maybeSingle();
+        if (reviewState?[EventFields.isApproved] == true) {
+          throw const EventDeleteException(EventDeleteError.published);
+        }
+        if (reviewState?['was_approved'] == true) {
+          throw const EventDeleteException(
+            EventDeleteError.previouslyPublished,
+          );
+        }
+        if (reviewState == null ||
+            reviewState['was_approved'] != false ||
+            !reviewState.containsKey(EventFields.isApproved) ||
+            (reviewState[EventFields.isApproved] != null &&
+                reviewState[EventFields.isApproved] != false)) {
+          throw StateError('Unable to verify submission review history');
         }
       }
       if (tableName == TableNames.recommendEvents) {

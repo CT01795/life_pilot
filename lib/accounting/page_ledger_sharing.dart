@@ -653,6 +653,7 @@ class _LedgerReviewButtonState extends State<LedgerReviewButton>
     with WidgetsBindingObserver {
   final _service = ServiceLedgerSharing();
   int _count = 0;
+  bool _countUnavailable = false;
   int _request = 0;
 
   @override
@@ -669,6 +670,7 @@ class _LedgerReviewButtonState extends State<LedgerReviewButton>
     if (oldWidget.kind != widget.kind ||
         oldWidget.accountId != widget.accountId) {
       _count = 0;
+      _countUnavailable = false;
       _refresh();
     }
   }
@@ -702,20 +704,33 @@ class _LedgerReviewButtonState extends State<LedgerReviewButton>
       );
       if (!mounted || request != _request) return;
       final count = counts[accountId] ?? 0;
-      if (_count != count) setState(() => _count = count);
+      if (_count != count || _countUnavailable) {
+        setState(() {
+          _count = count;
+          _countUnavailable = false;
+        });
+      }
     } catch (_) {
-      // A badge failure must not disable access to the review screen.
+      if (mounted && request == _request && !_countUnavailable) {
+        setState(() => _countUnavailable = true);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_count <= 0) return const SizedBox.shrink();
+    if (_count <= 0 && !_countUnavailable) return const SizedBox.shrink();
     final loc = AppLocalizations.of(context)!;
     final count = NumberFormat.decimalPattern(loc.localeName).format(_count);
     return TextButton.icon(
-      icon: const Badge(child: Icon(Icons.fact_check_outlined)),
-      label: Text('${loc.ledgerPendingProposals} ($count)'),
+      icon: _countUnavailable
+          ? const Icon(Icons.fact_check_outlined)
+          : const Badge(child: Icon(Icons.fact_check_outlined)),
+      label: Text(
+        _countUnavailable
+            ? loc.ledgerPendingProposals
+            : '${loc.ledgerPendingProposals} ($count)',
+      ),
       onPressed: () async {
         final kind = widget.kind;
         final accountId = widget.accountId;
