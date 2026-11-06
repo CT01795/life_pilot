@@ -1,0 +1,85 @@
+{
+  "project_ref": "ccktdpycnferbrjrdtkp",
+  "removed_functions": [
+    {
+      "removed": true,
+      "signature": "public.admin_set_user_subscription(text,text,timestamp with time zone,text,boolean,integer,integer,integer,integer,integer,integer,integer)"
+    },
+    {
+      "removed": true,
+      "signature": "public.delete_my_account_and_data()"
+    },
+    {
+      "removed": true,
+      "signature": "public.get_my_ledger_history_window(text,uuid,text,timestamp with time zone,timestamp with time zone,boolean)"
+    },
+    {
+      "removed": true,
+      "signature": "public.get_my_question_group_counts(text,bigint)"
+    },
+    {
+      "removed": true,
+      "signature": "public.get_my_recommendation_submission_usage()"
+    },
+    {
+      "removed": true,
+      "signature": "public.get_my_vendor_content_analytics()"
+    },
+    {
+      "removed": true,
+      "signature": "public.get_subscription_pricing_versions()"
+    },
+    {
+      "removed": true,
+      "signature": "public.get_vendor_pricing_versions()"
+    },
+    {
+      "removed": true,
+      "signature": "public.life_pilot_cached_map_coordinates(text,text)"
+    },
+    {
+      "removed": true,
+      "signature": "public.list_my_ledger_change_proposals(uuid,integer,integer)"
+    },
+    {
+      "removed": true,
+      "signature": "public.list_my_shared_ledger_overview(text,integer,integer,timestamp with time zone,timestamp with time zone,timestamp with time zone,timestamp with time zone)"
+    },
+    {
+      "removed": true,
+      "signature": "public.list_my_shared_ledgers(integer,integer)"
+    },
+    {
+      "removed": true,
+      "signature": "public.update_accounting_detail(uuid,bigint,text,text)"
+    },
+    {
+      "removed": true,
+      "signature": "public.update_accounting_detail_with_date(uuid,numeric,text,text,timestamp with time zone,text,text)"
+    },
+    {
+      "removed": true,
+      "signature": "public.update_point_record_detail(uuid,bigint,text,timestamp with time zone,text,text)"
+    }
+  ],
+  "before": {
+    "policies": "0ade076610a61f3420db63ffed378a26",
+    "remaining_functions": {
+      "count": 209,
+      "hash": "c12ce6abedfb3dcf6a77a3cd8ff667f6"
+    },
+    "role_settings": "d34b775d669cb277edb6068a3b6aea42",
+    "triggers": "9fd9062336510eb325f67909c445b08c"
+  },
+  "after": {
+    "policies": "0ade076610a61f3420db63ffed378a26",
+    "remaining_functions": {
+      "count": 209,
+      "hash": "c12ce6abedfb3dcf6a77a3cd8ff667f6"
+    },
+    "role_settings": "d34b775d669cb277edb6068a3b6aea42",
+    "triggers": "9fd9062336510eb325f67909c445b08c"
+  },
+  "other_objects_unchanged": true,
+  "scope": "Catalog definition/owner/ACL hashes for the other 209 public functions; trigger, policy and role-setting hashes. Does not constitute an authenticated UI smoke test."
+}
