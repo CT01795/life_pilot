@@ -10,7 +10,6 @@ const calendars = {
   ja: ['JP', 'ja.japanese#holiday@group.v.calendar.google.com'],
   ko: ['KR', 'ko.south_korea#holiday@group.v.calendar.google.com'],
 };
-const mapTables = ['calendar_events', 'memory_trace', 'recommended_events', 'recommended_attractions'];
 const finite = (n) => typeof n === 'number' && Number.isFinite(n);
 const integer = (n, min, max) => Number.isInteger(n) && n >= min && n <= max;
 const object = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -169,28 +168,7 @@ export function createHandler({ env, fetchImpl = fetch, now = Date.now }) {
           return { payload, expires: new Date(now() + (row ? 180 : 7) * 86400000).toISOString() };
         });
       }
-      async function mapCoordinate(table, id) {
-        if (!mapTables.includes(table) || typeof id !== 'string' || !id || id.length > 200) fail(400, 'invalid_map_target');
-        const target = await rpc('life_pilot_edge_map_target', { p_table_name: table, p_event_id: id });
-        if (finite(target.map_lat) && finite(target.map_lng)) return { lat: target.map_lat, lng: target.map_lng };
-        if (!target.city?.trim() && !target.location?.trim()) return {};
-        await geocode([target.location?.trim(), target.city?.trim(), target.country?.trim() || 'TW'].filter(Boolean).join(', '));
-        // The RPC rechecks the current address under a row lock before writing.
-        return await rpc('life_pilot_cached_map_coordinates', { p_table_name: table, p_event_id: id }) ?? {};
-      }
-      if (route === 'event/public_events_updated_today' && method === 'GET') {
-        return respond(await rpc('life_pilot_public_event_refresh', { p_action: 'status' }));
-      }
       if (method !== 'POST') fail(405, 'method_not_allowed');
-      const refreshActions = {
-        'event/start_public_event_refresh': 'start', 'event/complete_public_event_refresh': 'complete',
-        'event/abort_public_event_refresh': 'abort', 'event/heartbeat_public_event_refresh': 'heartbeat',
-      };
-      if (refreshActions[route]) return respond(await rpc('life_pilot_public_event_refresh', {
-        p_action: refreshActions[route], ...(body.token ? { p_token: body.token } : {}),
-      }));
-      if (route === 'event/cleanup_recommended_events') return respond(await rpc('life_pilot_run_daily_cleanup'));
-      if (route === 'event/import_public_events') return respond(await rpc('life_pilot_import_public_events', { p_source_url: body.source_url, p_events: body.events }));
       if (route === 'event/get_public_event_url_data') {
         if ((body.method ?? 'GET') !== 'GET' || body.data_type === 'audio') fail(400, 'public_event_method_not_allowed');
         const url = publicEventTarget(body.url);
@@ -201,7 +179,6 @@ export function createHandler({ env, fetchImpl = fetch, now = Date.now }) {
         }, 60, 32));
       }
       if (route === 'external/geocode') return respond(await geocode(body.query));
-      if (route === 'external/map-geocode') return respond(await mapCoordinate(body.table_name, body.event_id));
       if (route === 'external/map-geocode/backfill') {
         await requireAdmin();
         const offset = body.offset ?? 0, count = body.limit ?? 25;

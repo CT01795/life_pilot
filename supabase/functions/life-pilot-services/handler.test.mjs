@@ -151,22 +151,9 @@ test('concurrent refresh lease and rate budgets stop upstream calls', async () =
   assert.equal((await limited.run('external/geocode', { query: 'Taipei' })).response.status, 429);
   assert.equal(limited.calls.some((c) => c.url.hostname.includes('openweather')), false);
 });
-test('private map visibility is checked using caller JWT before provider access', async () => {
-  const s = setup({ fetch: (url, options) => {
-    if (url.pathname.endsWith('life_pilot_edge_map_target')) { assert.equal(options.headers.Authorization, 'Bearer caller'); return json({ message: 'not visible' }, 403); }
-  } });
-  assert.equal((await s.run('external/map-geocode', { table_name: 'memory_trace', event_id: 'private' })).response.status, 403);
-  assert.equal(s.calls.some((c) => c.url.hostname.includes('openweather')), false);
-});
 test('map backfill remains administrator-only', async () => {
   const s = setup({ admin: false });
   assert.equal((await s.run('external/map-geocode/backfill', { table_name: 'recommended_events' })).response.status, 403);
-});
-test('database actions retain user JWT, not the service-role bypass', async () => {
-  const s = setup(); const r = await s.run('event/cleanup_recommended_events');
-  assert.equal(r.response.status, 200);
-  const call = s.calls.find((c) => c.url.pathname.endsWith('life_pilot_run_daily_cleanup'));
-  assert.equal(call.options.headers.Authorization, 'Bearer caller');
 });
 test('public proxy rejects SSRF, credentials, nonstandard ports and stock endpoints', () => {
   for (const url of ['http://www.taiwan.net.tw/m1.aspx', 'https://evil.example/m1.aspx', 'https://user:pass@www.taiwan.net.tw/m1.aspx',
@@ -238,4 +225,53 @@ test('target deleted during Auth admin update is not a caller-session failure',a
   const r=await s.run('account/admin/reset-password',{email:'a@example.com'});
   assert.equal(r.response.status,502); assert.equal(r.data.code,'upstream_request_rejected');
   assert.equal(r.data.temporary_password,undefined);
+});
+
+for (const route of [
+  'event/public_events_updated_today',
+  'event/start_public_event_refresh',
+  'event/complete_public_event_refresh',
+  'event/abort_public_event_refresh',
+  'event/heartbeat_public_event_refresh',
+  'event/cleanup_recommended_events',
+  'event/import_public_events',
+  'external/map-geocode',
+]) {
+  test(`retired route cannot call a legacy RPC or provider: ${route}`, async () => {
+    const s = setup();
+    const result = await s.run(route, { table_name: 'memory_trace', event_id: 'private' });
+    assert.equal(result.response.status, 404);
+    assert.equal(result.data.code, 'route_not_found');
+    assert.deepEqual(s.calls.map(c => c.url.pathname), [
+      '/auth/v1/user', '/rest/v1/rpc/is_my_life_pilot_account_disabled',
+    ]);
+  });
+}
+
+test('retired GET status cannot invoke the old database wrapper', async () => {
+  const s = setup();
+  const result = await s.run('event/public_events_updated_today', {}, undefined, 'GET');
+  assert.equal(result.response.status, 405);
+  assert.equal(s.calls.length, 2);
+});
+
+test('admin batch backfill retains caller targets and cache writeback without the retired helper', async () => {
+  const s = setup({ fetch: (url, options, body) => {
+    if (url.pathname.endsWith('life_pilot_edge_missing_map_targets')) {
+      assert.equal(options.headers.Authorization, 'Bearer caller');
+      assert.deepEqual(body, { p_table_name: 'recommended_events', p_offset: 0, p_limit: 5 });
+      return json([{ id: 'event', city: 'Taipei', location: 'Station', country: 'TW' }]);
+    }
+    if (url.hostname === 'api.openweathermap.org') return json([{ lat: 25, lon: 121 }]);
+    if (url.pathname.endsWith('life_pilot_backfill_cached_map_coordinates')) {
+      assert.equal(options.headers.Authorization, 'Bearer caller');
+      return json({ saved: 1, remaining: 0, next_offset: 0 });
+    }
+  } });
+  const result = await s.run('external/map-geocode/backfill', { table_name: 'recommended_events', limit: 5 });
+  assert.equal(result.response.status, 200);
+  assert.equal(result.data.saved, 1);
+  assert.equal(s.calls.some(c => c.url.hostname === 'api.openweathermap.org'), true);
+  assert.equal(s.calls.some(c => c.url.pathname.endsWith('life_pilot_edge_map_target')), false);
+  assert.equal(s.calls.some(c => c.url.pathname.endsWith('life_pilot_cached_map_coordinates')), false);
 });

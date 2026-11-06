@@ -1,0 +1,30 @@
+{
+  "project_ref": "ccktdpycnferbrjrdtkp",
+  "purpose": "Pre-deletion function definitions and original owner/ACL metadata; no business data.",
+  "functions": [
+    {
+      "definition": "CREATE OR REPLACE FUNCTION public.admin_list_account_deletion_requests()\n RETURNS SETOF account_deletion_requests\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\n  select *\r\n  from public.account_deletion_requests\r\n  where public.life_pilot_is_admin()\r\n    and status in ('pending', 'cancel_pending')\r\n  order by\r\n    case status when 'cancel_pending' then 0 else 1 end,\r\n    coalesce(cancellation_requested_at, requested_at) desc;\r\n$function$\n",
+      "original_acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "signature": "admin_list_account_deletion_requests()"
+    },
+    {
+      "definition": "CREATE OR REPLACE FUNCTION public.admin_list_user_subscription_summaries()\n RETURNS TABLE(account text, active_entitlements bigint)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\n  with account_ids as (\r\n    select s.user_id from public.user_subscriptions s\r\n    union\r\n    select e.user_id from public.user_subscription_entitlements e\r\n  )\r\n  select\r\n    lower(u.email)::text as account,\r\n    count(e.id) filter (\r\n      where e.starts_at <= now() and e.ends_at > now()\r\n    )::bigint as active_entitlements\r\n  from account_ids accounts\r\n  join auth.users u on u.id = accounts.user_id\r\n  left join public.user_subscription_entitlements e\r\n    on e.user_id = accounts.user_id\r\n  where public.life_pilot_is_admin()\r\n    and nullif(trim(u.email), '') is not null\r\n  group by u.id, u.email\r\n  order by lower(u.email);\r\n$function$\n",
+      "original_acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "signature": "admin_list_user_subscription_summaries()"
+    },
+    {
+      "definition": "CREATE OR REPLACE FUNCTION public.fetch_user_progress(p_name text, p_game_type text, p_game_name text)\n RETURNS TABLE(id uuid, name text, game_id uuid, score numeric, created_at timestamp with time zone, game_type text, game_name text, level integer, is_pass boolean)\n LANGUAGE sql\n STABLE\n SET search_path TO ''\nAS $function$\r\n  with ranked as (\r\n    select\r\n      gu.id,\r\n      gu.name,\r\n      gu.game_id,\r\n      gu.score,\r\n      gu.created_at,\r\n      gl.game_type,\r\n      gl.game_name,\r\n      gl.level,\r\n      gu.is_pass,\r\n      row_number() over (\r\n        partition by gl.level\r\n        order by gu.created_at desc\r\n      ) as rn\r\n    from public.game_user gu\r\n    join public.game_list gl\r\n      on gl.id = gu.game_id\r\n    where gu.owner_id = auth.uid()\r\n      and lower(trim(gu.name)) =\r\n          lower(coalesce(auth.jwt() ->> 'email', ''))\r\n      and lower(trim(p_name)) =\r\n          lower(coalesce(auth.jwt() ->> 'email', ''))\r\n      and gl.game_type = p_game_type\r\n      and gl.game_name = p_game_name\r\n  )\r\n  select\r\n    id,\r\n    name,\r\n    game_id,\r\n    score,\r\n    created_at,\r\n    game_type,\r\n    game_name,\r\n    level,\r\n    is_pass\r\n  from ranked\r\n  where rn <= 3\r\n  order by created_at desc;\r\n$function$\n",
+      "original_acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "signature": "fetch_user_progress(text,text,text)"
+    },
+    {
+      "definition": "CREATE OR REPLACE FUNCTION public.life_pilot_edge_map_target(p_table_name text, p_event_id text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare v_result jsonb; v_visible text;\r\nbegin\r\n  if auth.uid() is null then raise exception 'Authentication required' using errcode='42501'; end if;\r\n  if p_table_name not in ('calendar_events','memory_trace','recommended_events','recommended_attractions') or nullif(p_event_id,'') is null then raise exception 'Invalid target'; end if;\r\n  v_visible:='lower(trim(account))=public.life_pilot_user_email()';\r\n  if p_table_name in ('recommended_events','recommended_attractions') then v_visible:='('||v_visible||' or coalesce(is_approved,false) or public.life_pilot_is_admin())'; end if;\r\n  execute format('select jsonb_build_object(''id'',id,''country'',country,''city'',city,''location'',location,''map_lat'',map_lat,''map_lng'',map_lng) from public.%I where id::text=$1 and (%s)',p_table_name,v_visible) into v_result using p_event_id;\r\n  if v_result is null then raise exception 'Event not found or not visible' using errcode='42501'; end if;\r\n  return v_result;\r\nend $function$\n",
+      "original_acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "signature": "life_pilot_edge_map_target(text,text)"
+    }
+  ]
+}

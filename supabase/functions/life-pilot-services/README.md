@@ -26,6 +26,32 @@
 
 SQL 檔依使用者既有要求被 `/tool/*.sql` 排除 Git，換電腦部署前需另行安全保留該本機安裝腳本。SQL 本身不含金鑰。
 
+## 退役路由清理（2026-11-06）
+
+已確認沒有舊版 App 或其他程式使用後，移除下列 Edge 包裝：
+
+- `event/public_events_updated_today`
+- `event/start_public_event_refresh`、`event/complete_public_event_refresh`
+- `event/abort_public_event_refresh`、`event/heartbeat_public_event_refresh`
+- `event/cleanup_recommended_events`、`event/import_public_events`
+- `external/map-geocode`（單筆；`external/map-geocode/backfill` 仍保留）
+
+公開活動狀態、更新鎖、匯入與清理仍由 App 直接呼叫既有受控 RPC，不刪除這些 RPC。
+地址、天氣、假日、公開 HTML、批次補齊及管理帳號服務保留。
+
+執行順序：
+
+1. 執行 Node 測試，部署新版 `life-pilot-services`。
+2. 實測仍使用的服務，確認舊路由不再觸發資料庫動作。
+3. 在 SQL Editor 手動執行 `supabase/manual/20261106_retire_legacy_rpc_paths.sql`。
+   此檔刻意不放在 migrations，避免在 Edge 更新之前被自動執行。
+4. 確認四列 `removed` 都是 `true`。
+
+SQL 只移除舊全量刪除申請／訂閱清單、舊遊戲歷史及單筆座標 metadata 函式；
+使用交易、文字引用檢查與 `DROP ... RESTRICT`，遇到依賴則停止，不連帶刪除。
+不修改 `pgrst.db_pre_request`、停用帳號防護、RLS 或業務資料。
+重新執行舊安裝腳本可能重建舊函式，之後須再次核對。
+
 ## Secrets
 
 | 名稱 | 用途 |
@@ -56,7 +82,7 @@ SQL 檔依使用者既有要求被 `/tool/*.sql` 排除 Git，換電腦部署前
 
 - 供應商單次等待上限 12 秒，回應大小上限 4 MiB；App 等待 Edge 上限 45 秒。操作逾時不代表已撤銷遠端寫入，管理員應先查詢帳號是否已建立再重試。
 - 預報到供應商當地午夜到期；假日每天同步；成功座標快取 180 天、查無座標 7 天；公開 HTML 15 分鐘。資料庫有索引，過期 Edge 快取／預算紀錄集中在各類每日首筆允許請求時清理。
-- 私人行程／回憶座標補齊先檢查擁有權；公開投稿遵循公開／作者／管理員規則。座標寫回由 RPC 鎖定並重新檢查現址，避免編輯地址期間寫入舊座標。
+- 批次座標補齊僅限管理員，既有快取寫回仍由 RPC 檢查資料並鎖定現址，避免編輯地址期間寫入舊座標。單筆私人行程／回憶補齊 Edge 入口已退役。
 - 全域登入錯誤處理仍保留；外部供應商的 401 不當成使用者被登出。帳號 A 的延遲失敗不會登出新登入的 B，A 的私人回應也不交給 B。
 - 暫時密碼只回傳給已驗證的管理員，不寫 log、快取或資料表；回覆使用者仍由管理員的既有寄信流程完成，Function 不自動寄密碼信。
 
@@ -76,7 +102,7 @@ flutter test test/cloud_api_routing_test.dart test/auth_session_guard_test.dart
 1. 一般使用者查看天氣、假日、地址：網路紀錄只有 Supabase RPC／Functions，不應出現 Render；第二次相同查詢使用快取。
 2. 一般使用者偽呼叫管理帳號路由：403，不能列出使用者或修改密碼。
 3. 管理員新建一般／廠商帳號、重設測試帳號密碼；已確認帳號不可被「建立帳號」覆寫。不要拿主要管理帳號測試。
-4. 試著指定別人的私人行程 ID：不能讀地址或補寫座標。
+4. 單筆 `external/map-geocode` 回報不存在；一般使用者呼叫批次補齊應回報 403。
 5. 公開活動匯入／完成更新／失敗重試及地圖補齊沿用資料庫權限，只有明確錯誤，不顯示假成功。
 6. 切換帳號時延遲回應不能顯示前一帳號內容。
 7. 股票讀取與更新仍走原路徑；本次不調整股票外部資料來源或寫入策略。
