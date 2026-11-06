@@ -112,9 +112,6 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     return _loadPaged(replace: true);
   }
 
-  bool get hasHistoryAction =>
-      hasMore || isLoadingMore || loadMoreError != null;
-
   List<ModelFeedback> get visibleFeedback =>
       _visibleCache ??= List.unmodifiable(
         feedbackList.where(

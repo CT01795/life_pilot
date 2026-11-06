@@ -64,9 +64,17 @@ void main() {
     expect(model.getFilteredEvents(loc).length, 2);
     model.updateStartDate(DateTime(2026, 10, 1));
     expect(model.getFilteredEvents(loc).single.id, 'new');
-    model.appendEvents([
-      EventItem(id: 'append', name: 'music', startDate: DateTime(2026, 10, 20)),
-    ]);
+    model.appendRecommendedEvents(
+      [
+        EventItem(
+          id: 'append',
+          name: 'music',
+          startDate: DateTime(2026, 10, 20),
+        ),
+      ],
+      isEvent: true,
+      now: DateTime(2026, 10, 19),
+    );
     expect(model.getFilteredEvents(loc).map((e) => e.id), ['new', 'append']);
     expect(model.searchFilter.tags, ['MUSIC']);
   });

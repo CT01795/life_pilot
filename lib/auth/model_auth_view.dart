@@ -44,10 +44,6 @@ class ModelAuthView extends SafeChangeNotifier {
   Future<String?> logout() => _auth.logout();
   Future<String?> login({required String email, required String password}) =>
       _auth.login(email: email, password: password);
-  Future<String?> resetPassword({required String email}) =>
-      _auth.resetPassword(email: email);
-  Future<String?> register({required String email, required String password}) =>
-      _auth.register(email: email, password: password);
 
   void goToRegister(String? email, {String accountType = 'personal'}) =>
       _auth.goToRegister(email: email, accountType: accountType);

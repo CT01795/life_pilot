@@ -147,11 +147,8 @@ void main() {
       expect(result.items, hasLength(1));
       expect(result.totalFor(ContentPerformanceMetric.pageViews), 100);
       expect(
-        result.shareFor(
-          result.items.single,
-          ContentPerformanceMetric.pageViews,
-        ),
-        .02,
+        result.items.single.countFor(ContentPerformanceMetric.pageViews),
+        2,
       );
     },
   );

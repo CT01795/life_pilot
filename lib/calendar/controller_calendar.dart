@@ -703,21 +703,6 @@ class ControllerCalendar extends SafeChangeNotifier {
     return _modelCalendar.getWeeks(month);
   }
 
-  // 拿到該月每週對應的事件層級（含排版 rowIndex）
-  Map<int, List<EventWithRow>> getWeekEventRows({required DateTime month}) {
-    final calendarWeeks = _modelCalendar.getWeeks(month);
-    final weekEventRows = <int, List<EventWithRow>>{};
-
-    for (int weekIndex = 0; weekIndex < calendarWeeks.length; weekIndex++) {
-      weekEventRows[weekIndex] = getEventRowsForWeek(
-        month: month,
-        weekIndex: weekIndex,
-      );
-    }
-
-    return weekEventRows;
-  }
-
   List<EventWithRow> getEventRowsForWeek({
     required DateTime month,
     required int weekIndex,

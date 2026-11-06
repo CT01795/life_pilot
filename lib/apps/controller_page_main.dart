@@ -61,7 +61,6 @@ class ControllerPageMain extends SafeChangeNotifier {
   bool _wasAdmin;
   bool _wasVendor;
   Set<String> _moduleKeys = const {};
-  bool _modulesLoading = false;
   Object? modulesError;
   int _moduleRequest = 0;
   PageType _selectedPage;
@@ -72,7 +71,6 @@ class ControllerPageMain extends SafeChangeNotifier {
   AppLocalizations get loc => _loc;
   Locale get locale => _locale;
   PageType get selectedPage => _selectedPage;
-  bool get modulesLoading => _modulesLoading;
   Set<String> get moduleKeys => Set.unmodifiable(_moduleKeys);
 
   List<PageType> get availablePages {
@@ -112,12 +110,10 @@ class ControllerPageMain extends SafeChangeNotifier {
     if (account == null || account.isEmpty || auth.isSysAdmin) {
       _moduleKeys = const {};
       modulesError = null;
-      _modulesLoading = false;
       _validateSelectedPage();
       _notifyDebounced();
       return;
     }
-    _modulesLoading = true;
     modulesError = null;
     if (force) _notifyDebounced();
     try {
@@ -131,7 +127,6 @@ class ControllerPageMain extends SafeChangeNotifier {
       }
     } finally {
       if (request == _moduleRequest && account == _accountKey) {
-        _modulesLoading = false;
         _notifyDebounced();
       }
     }

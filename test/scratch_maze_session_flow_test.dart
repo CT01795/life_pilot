@@ -81,13 +81,6 @@ void main() {
       expect(model.step(1, 1), null);
       expect((model.state.x, model.state.y), (0, 0));
     });
-    test('junction checks use the perpendicular axis', () {
-      final model = ModelScratchMazeSession(level(walls: [wall(1, 1)]));
-      model.state.x = 1;
-      expect(model.hasJunction(1, 0), false);
-      expect(model.hasJunction(0, 1), true);
-      expect(model.hasJunction(1, 1), false);
-    });
     test('fruits at a cell score once each and reset restores collection', () {
       final fruits = [
         ModelGameSteamScratchMazeFruit(x: 1, y: 0),

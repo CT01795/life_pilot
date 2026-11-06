@@ -96,32 +96,6 @@ void main() {
     expect(result['lat'], 25);
     expect(calls, 1);
   });
-  test('map coordinate lookup passes only table and event ID', () async {
-    response = {'lat': 25, 'lng': 121};
-    expect(
-      await repository.mapCoordinates(
-        tableName: 'calendar_events',
-        eventId: 'event',
-        backend: noBackend,
-      ),
-      response,
-    );
-    expect(jsonDecode(requests.single.body), {
-      'p_table_name': 'calendar_events',
-      'p_event_id': 'event',
-    });
-  });
-  test('cached map negative result does not request provider again', () async {
-    response = {};
-    expect(
-      await repository.mapCoordinates(
-        tableName: 'calendar_events',
-        eventId: 'event',
-        backend: noBackend,
-      ),
-      isEmpty,
-    );
-  });
   test('fully cached bulk backfill does not call Render', () async {
     response = {
       'saved': 2,
@@ -202,14 +176,6 @@ void main() {
           throwsA(isA<PostgrestException>()),
         );
         await expectLater(
-          repository.mapCoordinates(
-            tableName: 'memory_trace',
-            eventId: 'x',
-            backend: noBackend,
-          ),
-          throwsA(isA<PostgrestException>()),
-        );
-        await expectLater(
           repository.backfillCoordinates(
             tableName: 'recommended_events',
             offset: 0,
@@ -227,24 +193,4 @@ void main() {
       },
     );
   }
-  test(
-    'ServiceEvent uses cached map coordinates without backend or client-supplied values',
-    () async {
-      response = {'lat': 25, 'lng': 121};
-      final service = ServiceEvent(cloudOperations: repository);
-      final event = EventItem(
-        id: 'event',
-        name: 'Event',
-        city: 'Taipei',
-        location: 'Station',
-      );
-      final updated = await service.ensureMapCoordinates(
-        tableName: 'calendar_events',
-        event: event,
-      );
-      expect(identical(updated, event), isTrue);
-      expect(event.mapLat, 25);
-      expect(event.mapLng, 121);
-    },
-  );
 }

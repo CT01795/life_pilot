@@ -81,17 +81,13 @@ void main() {
     ]);
     expect(all.visibleMetrics.single.count, 10);
     expect(filtered.visibleMetrics.single.count, 3);
+    expect(all.items.first.countFor(ContentPerformanceMetric.pageViews), 3);
+    expect(all.totalFor(ContentPerformanceMetric.pageViews), 10);
     expect(
-      all.shareFor(all.items.first, ContentPerformanceMetric.pageViews),
-      0.3,
+      filtered.items.single.countFor(ContentPerformanceMetric.pageViews),
+      3,
     );
-    expect(
-      filtered.shareFor(
-        filtered.items.first,
-        ContentPerformanceMetric.pageViews,
-      ),
-      1,
-    );
+    expect(filtered.totalFor(ContentPerformanceMetric.pageViews), 3);
   });
 
   test(
@@ -167,7 +163,6 @@ void main() {
       expect(item.name, 'Original');
       expect(item.source['name'], 'Original');
       expect(item.counts, [1234, 0, 0, 5, 2, 0]);
-      expect(item.maximum, 1234);
       expect(item.approved, true);
       expect(item.expires, DateTime(2026, 7, 31));
       expect(model.totals['page_views'], 1234);

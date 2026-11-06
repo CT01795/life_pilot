@@ -112,18 +112,28 @@ void main() {
   });
 
   test(
-    'ordering preserves screenshot and decoded-cache identities without decoding',
-    () {
-      final row = _row(1, 'pending', 1)
-        ..screenshot = ['invalid base64 that must not be decoded here'];
-      final decoded = [
-        Uint8List.fromList([1, 2, 3]),
-      ];
-      row.screenshotDecodeRawData = decoded;
+    'ordering preserves screenshot identity and lazy cache without decoding',
+    () async {
+      var calls = 0;
+      final row = ModelFeedback(
+        id: 1,
+        subject: '',
+        content: '',
+        createdAt: DateTime(2026),
+        screenshot: ['image', 'untouched'],
+        screenshotDecoder: (_) async {
+          calls++;
+          return Uint8List.fromList([1, 2, 3]);
+        },
+      );
+      final cached = row.decodeScreenshotAsync(0);
+      await cached;
+      expect(calls, 1);
       final result = ModelFeedbackList.ordered([row]);
       expect(result.single, same(row));
       expect(result.single.screenshot, same(row.screenshot));
-      expect(result.single.screenshotDecodeRawData, same(decoded));
+      expect(result.single.decodeScreenshotAsync(0), same(cached));
+      expect(calls, 1);
     },
   );
 

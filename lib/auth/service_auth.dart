@@ -49,8 +49,6 @@ class ServiceAuth {
     return pending;
   }
 
-  static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-
   static String? currentAccount() => supabase.auth.currentUser?.email;
 
   // 🔑 Login with email/password
@@ -76,27 +74,6 @@ class ServiceAuth {
       }
     }
     return result;
-  }
-
-  static Future<String?> register({
-    required String email,
-    required String password,
-    String accountType = 'personal',
-  }) async {
-    if (email.trim().isEmpty) return ErrorFields.noEmailError;
-    if (!_emailPattern.hasMatch(email.trim())) {
-      return ErrorFields.invalidEmailError;
-    }
-    // Registration now requires administrator approval; never trigger Auth mail.
-    return ErrorFields.adminRegistrationRequired;
-  }
-
-  static Future<String?> resetPassword({required String email}) async {
-    if (email.trim().isEmpty) return ErrorFields.noEmailError;
-    if (!_emailPattern.hasMatch(email.trim())) {
-      return ErrorFields.invalidEmailError;
-    }
-    return ErrorFields.adminPasswordRequestRequired;
   }
 
   // 🚪 Sign out

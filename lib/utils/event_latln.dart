@@ -15,7 +15,6 @@ class ClusterItem {
 
   ClusterItem({required this.id, required this.position, required this.events});
 
-  bool get isCluster => events.length > 1;
   EventItem get single => events.first;
 
   static String detectCountryHint(String location) {

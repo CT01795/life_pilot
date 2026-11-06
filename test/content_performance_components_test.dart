@@ -7,37 +7,25 @@ import 'package:life_pilot/event/widgets_content_performance_overview.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 
 void main() {
-  test(
-    'shares use the same metric total, not item count or another metric',
-    () {
-      final model = ModelContentPerformance([
-        {'card_clicks': 25, 'like_counts': 2},
-        {'card_clicks': 75, 'like_counts': 8},
-      ]);
-      expect(
-        model.shareFor(
-          model.items.first,
-          ContentPerformanceMetric.navigationClicks,
-        ),
-        0.25,
-      );
-      expect(
-        model.shareFor(model.items.first, ContentPerformanceMetric.likes),
-        0.2,
-      );
-      expect(
-        model.shareFor(model.items.first, ContentPerformanceMetric.dislikes),
-        0,
-      );
-      expect(
-        ModelContentPerformance([]).shareFor(
-          model.items.first,
-          ContentPerformanceMetric.navigationClicks,
-        ),
-        0,
-      );
-    },
-  );
+  test('display numerators use their own filtered metric denominator', () {
+    final model = ModelContentPerformance([
+      {'card_clicks': 25, 'like_counts': 2},
+      {'card_clicks': 75, 'like_counts': 8},
+    ]);
+    expect(
+      model.items.first.countFor(ContentPerformanceMetric.navigationClicks),
+      25,
+    );
+    expect(model.totalFor(ContentPerformanceMetric.navigationClicks), 100);
+    expect(model.items.first.countFor(ContentPerformanceMetric.likes), 2);
+    expect(model.totalFor(ContentPerformanceMetric.likes), 10);
+    expect(model.totalFor(ContentPerformanceMetric.dislikes), 0);
+    expect(
+      model.visibleMetrics.map((value) => value.metric),
+      isNot(contains(ContentPerformanceMetric.dislikes)),
+    );
+    expect(ModelContentPerformance([]).visibleMetrics, isEmpty);
+  });
   test(
     'typed metrics preserve the database order and immutable column contract',
     () {

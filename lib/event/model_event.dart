@@ -227,11 +227,6 @@ class ModelEvent {
     sortMemoryEvents();
   }
 
-  void appendEvents(List<EventItem> list) {
-    if (!_appendUniqueEvents(list)) return;
-    _invalidateFilteredEvents();
-  }
-
   /// Appending does not replace or mutate existing rows. Preserve their search
   /// indexes, including deferred child text; newly accepted objects are indexed
   /// on demand. Edits and full reloads retain their explicit invalidation paths.

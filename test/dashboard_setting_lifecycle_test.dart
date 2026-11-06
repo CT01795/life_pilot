@@ -94,8 +94,6 @@ final changes = <String, Future<void> Function(ControllerDashboard, String)>{
     accountId: 'points',
     accountName: 'Points',
   ),
-  'language': (model, account) =>
-      model.changeLanguage(account: account, language: 'en'),
 };
 
 void main() {
@@ -241,21 +239,15 @@ void main() {
     },
   );
 
-  test(
-    'failed optimistic language edit rolls back before the next patch',
-    () async {
-      final language = model.changeLanguage(account: 'old', language: 'en');
-      final checked = expectLater(language, throwsStateError);
-      final city = model.changeEventCity(account: 'old', city: '台中');
-      repository.saves.first.done.completeError(StateError('offline'));
-      await checked;
-      await Future<void>.delayed(Duration.zero);
-      expect(repository.saves.last.setting.language, 'zh');
-      repository.saves.last.done.complete();
-      await city;
-      expect(model.setting.language, 'zh');
-    },
-  );
+  test('pending setting publishes only after persistence succeeds', () async {
+    final before = model.setting;
+    final city = model.changeEventCity(account: 'old', city: '台中');
+    expect(identical(model.setting, before), isTrue);
+    expect(repository.saves.single.setting.recommendEventCity, '台中');
+    repository.saves.last.done.complete();
+    await city;
+    expect(model.setting.recommendEventCity, '台中');
+  });
 
   test(
     'finishing an old account queue cannot release the new account queue',
@@ -332,10 +324,7 @@ void main() {
         final saved = repository.saves.single.setting;
         repository.saves.single.done.complete();
         await pending;
-        // Language refresh retains the active UI locale as before.
-        if (change.key != 'language') {
-          expect(model.setting.toJson(), saved.toJson());
-        }
+        expect(model.setting.toJson(), saved.toJson());
         expect(repository.reads, greaterThan(0));
         expect(model.loading, isFalse);
       },

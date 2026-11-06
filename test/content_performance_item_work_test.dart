@@ -74,16 +74,16 @@ void main() {
     {'page_views': 1, 'saves': 1},
   ]) {
     test(
-      'lazy maximum and retained nonzero flag match original semantics: $row',
+      'counter snapshot and retained nonzero flag match original semantics: $row',
       () {
-      final source = Map<String, dynamic>.from(row);
-      final item = ContentPerformanceItem(source);
-        final expected = item.counts.fold<int>(1, (a, b) => a > b ? a : b);
+        final source = Map<String, dynamic>.from(row);
+        final item = ContentPerformanceItem(source);
+        final expectedCounts = List<int>.of(item.counts);
         final hasStatistics = item.counts.any((n) => n != 0);
         expect(item.hasStatistics, hasStatistics);
-      source['page_views'] = 999;
-        expect(item.maximum, expected);
-        expect(item.maximum, expected);
+        source['page_views'] = 999;
+        expect(item.counts, expectedCounts);
+        expect(() => item.counts.add(1), throwsUnsupportedError);
         expect(item.hasStatistics, hasStatistics);
       },
     );

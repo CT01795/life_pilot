@@ -818,7 +818,6 @@ class ControllerDashboard extends SafeChangeNotifier {
   Future<bool> _saveSetting({
     required String account,
     required DashboardSetting Function(DashboardSetting current) update,
-    bool publishBeforeSave = false,
   }) async {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return false;
@@ -827,28 +826,20 @@ class ControllerDashboard extends SafeChangeNotifier {
     final tail = completion.future;
     // Register before invoking persistence, whose callbacks may re-enter.
     _settingsSaveTail = tail;
-    DashboardSetting? before, submitted;
     try {
       if (previous != null) await previous;
       if (!_isCurrentRequest(account, generation)) return false;
-      before = _setting;
-      final setting = submitted = update(before);
+      final setting = update(_setting);
       _settingsRequest++;
-      if (publishBeforeSave) _setting = setting;
       await repository.saveDashboardSetting(account: account, setting: setting);
       if (!_isCurrentRequest(account, generation)) return false;
       // Reads started before this write completed cannot restore old settings.
       _settingsRequest++;
       _setting = setting;
-      if (!publishBeforeSave) notifyListeners();
+      notifyListeners();
       return _isCurrentRequest(account, generation);
     } catch (_) {
       if (!_isCurrentRequest(account, generation)) return false;
-      if (publishBeforeSave &&
-          identical(_setting, submitted) &&
-          before != null) {
-        _setting = before;
-      }
       rethrow;
     } finally {
       // Release queued changes even on failure; each caller receives its own
@@ -884,21 +875,6 @@ class ControllerDashboard extends SafeChangeNotifier {
     }
 
     await refreshRecommendPlace(account: account);
-  }
-
-  Future<void> changeLanguage({
-    required String account,
-    required String language,
-  }) async {
-    if (!await _saveSetting(
-      account: account,
-      update: (current) => current.copyWith(language: language),
-      publishBeforeSave: true,
-    )) {
-      return;
-    }
-
-    await refreshAll(account: account);
   }
 
   Future<void> changeAccountingAccount({

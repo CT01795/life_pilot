@@ -63,10 +63,6 @@ void main() {
     );
     expect(period.matches(dates(end: DateTime(2025, 12, 31, 23, 59))), true);
     expect(period.matches(dates(end: DateTime(2026))), false);
-    expect(
-      period.databaseFilter,
-      contains(DateTime(2026).toUtc().toIso8601String()),
-    );
   });
   test('changing selected month invalidates older pending responses', () async {
     final auth = StatisticsTestAuth();
@@ -115,7 +111,6 @@ void main() {
       expect(period.matches(dates(end: DateTime(2026, 10, 18))), true);
       expect(period.matches(dates(end: DateTime(2026, 10, 31, 23, 59))), true);
       expect(period.matches(dates(end: DateTime(2026, 11))), false);
-      expect(period.databaseFilter, contains('.lt.'));
     },
   );
   test(

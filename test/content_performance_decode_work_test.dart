@@ -49,7 +49,6 @@ void main() {
       ], statisticsOnly: statisticsOnly);
       final item = model.items.single;
       expect(value.parses, 1);
-      expect(item.maximum, 4);
       expect(item.countFor(ContentPerformanceMetric.pageViews), 4);
       expect(model.totalFor(ContentPerformanceMetric.pageViews), 4);
       expect(() => item.counts.clear(), throwsUnsupportedError);
@@ -61,7 +60,6 @@ void main() {
       {'id': 'zero', 'like_counts': 0},
     ], statisticsOnly: true);
     expect(model.items.single.id, 'negative');
-    expect(model.items.single.maximum, 1);
     expect(model.items.single.hasStatistics, isTrue);
     expect(model.totalFor(ContentPerformanceMetric.likes), -2);
   });

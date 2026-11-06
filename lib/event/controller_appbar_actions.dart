@@ -31,20 +31,18 @@ class ControllerAppBarActions extends SafeChangeNotifier {
     required ServiceExportPlatform exportService,
     required ServiceExportExcel excelService,
     required String tableName,
-  })  : _tableName = tableName,
-        _serviceEvent = serviceEvent,
-        _modelEvent = modelEvent,
-        _excelService = excelService,
-        _exportService = exportService;
+  }) : _tableName = tableName,
+       _serviceEvent = serviceEvent,
+       _modelEvent = modelEvent,
+       _excelService = excelService,
+       _exportService = exportService;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
   bool _isExporting = false;
-  bool get isExporting => _isExporting;
 
   bool _isUploading = false;
-  bool get isUploading => _isUploading;
 
   Timer? _debounce;
 
@@ -136,21 +134,25 @@ class ControllerAppBarActions extends SafeChangeNotifier {
         if (!event.name.startsWith("  └")) {
           tmpMaster = event;
           eventList = await _serviceEvent.getEvents(
-              tableName: _tableName, id: event.id.isNotEmpty ? event.id : null);
+            tableName: _tableName,
+            id: event.id.isNotEmpty ? event.id : null,
+          );
           await _serviceEvent.saveEvent(
-              currentAccount: auth.currentAccount ?? '',
-              event: event,
-              isNew: eventList == null || eventList.isEmpty,
-              tableName: _tableName);
+            currentAccount: auth.currentAccount ?? '',
+            event: event,
+            isNew: eventList == null || eventList.isEmpty,
+            tableName: _tableName,
+          );
         } else {
           event.name = event.name.replaceAll("  └ ", "");
           event.id = event.id.isNotEmpty ? event.id : Uuid().v4();
           tmpMaster!.subEvents.add(event);
           await _serviceEvent.saveEvent(
-              currentAccount: auth.currentAccount ?? '',
-              event: tmpMaster,
-              isNew: false,
-              tableName: _tableName);
+            currentAccount: auth.currentAccount ?? '',
+            event: tmpMaster,
+            isNew: false,
+            tableName: _tableName,
+          );
         }
       }
       await refreshEvents();
@@ -169,7 +171,9 @@ class ControllerAppBarActions extends SafeChangeNotifier {
     _setState(exporting: true);
     try {
       final events = await _serviceEvent.getEvents(
-          tableName: _tableName, inputUser: auth.currentAccount);
+        tableName: _tableName,
+        inputUser: auth.currentAccount,
+      );
       if (events == null || events.isEmpty) {
         return loc.noEventsToExport;
       }

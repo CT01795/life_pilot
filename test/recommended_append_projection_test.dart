@@ -106,18 +106,15 @@ void main() {
           ]);
         },
       );
-      test(
-        'generic append cannot leave a supposedly current recommendation order',
-        () {
-          append([_event('neutral', date: today)]);
-          model.appendEvents([_event('liked', date: today, liked: true)]);
-          append([]);
-          expect(model.getFilteredEvents(loc).map((e) => e.id), [
-            'liked',
-            'neutral',
-          ]);
-        },
-      );
+      test('memory append invalidates the previous recommendation order', () {
+        append([_event('neutral', date: today)]);
+        model.appendMemoryEvents([_event('liked', date: today, liked: true)]);
+        append([]);
+        expect(model.getFilteredEvents(loc).map((e) => e.id), [
+          'liked',
+          'neutral',
+        ]);
+      });
     });
   }
   test('empty page after midnight still updates ongoing activity order', () {

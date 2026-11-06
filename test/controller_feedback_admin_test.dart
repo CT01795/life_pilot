@@ -93,7 +93,9 @@ void main() {
     service.rows = [];
     await controller.loadFeedback();
     expect(controller.feedbackList, isEmpty);
-    expect(controller.hasHistoryAction, isFalse);
+    expect(controller.hasMore, isFalse);
+    expect(controller.isLoadingMore, isFalse);
+    expect(controller.loadMoreError, isNull);
   });
   test(
     'initial failure is retryable and refresh failure retains records',

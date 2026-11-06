@@ -97,7 +97,6 @@ void main() {
       await controller.loadMorePlans();
       expect(controller.loadMorePlansError, isStateError);
       expect(controller.plans, same(initial));
-      expect(controller.hasPlanHistoryAction, isTrue);
       expect(controller.isLoadingMorePlans, isFalse);
       final failedRange = service.ranges.last;
       service.failList = false;
@@ -122,7 +121,11 @@ void main() {
         containsAll(['a@example.com', 'older']),
       );
       expect(controller.loadMorePlansError, isNull);
-      expect(controller.hasPlanHistoryAction, isFalse);
+      expect(controller.hasMorePlans, isFalse);
+      expect(controller.isLoadingMorePlans, isFalse);
+      expect(controller.isCheckingPlanHistory, isFalse);
+      expect(controller.planHistoryError, isNull);
+      expect(controller.loadMorePlansError, isNull);
     },
   );
 
@@ -172,7 +175,11 @@ void main() {
       expect(service.listCalls, 2);
       expect(service.latestCalls, 1);
       expect(controller.plans, hasLength(2));
-      expect(controller.hasPlanHistoryAction, isFalse);
+      expect(controller.hasMorePlans, isFalse);
+      expect(controller.isLoadingMorePlans, isFalse);
+      expect(controller.isCheckingPlanHistory, isFalse);
+      expect(controller.planHistoryError, isNull);
+      expect(controller.loadMorePlansError, isNull);
     },
   );
 

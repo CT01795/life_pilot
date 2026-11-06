@@ -97,32 +97,6 @@ class ServiceEvent {
     );
   }
 
-  Future<EventItem> ensureMapCoordinates({
-    required String tableName,
-    required EventItem event,
-  }) async {
-    if (event.mapLat != null && event.mapLng != null) {
-      return event;
-    }
-    if (event.city.trim().isEmpty && event.location.trim().isEmpty) {
-      return event;
-    }
-
-    final response = await _cloudOperations.mapCoordinates(
-      tableName: tableName,
-      eventId: event.id,
-      backend: () => apiCloud.post('/external/map-geocode', {
-        'table_name': tableName,
-        'event_id': event.id,
-      }),
-    );
-    if (response is Map<String, dynamic>) {
-      event.mapLat = tryParseDoubleValue(response['lat']);
-      event.mapLng = tryParseDoubleValue(response['lng']);
-    }
-    return event;
-  }
-
   Future<void> _cleanupRecommendedEventsOncePerDay(DateTime today) async {
     if (_lastCleanupRequestDate == today) return;
     final activeRequest = _cleanupRequest;

@@ -109,7 +109,6 @@ class ControllerAuth extends SafeChangeNotifier {
   int? _quotaFreePeriodEndingInDays;
   DateTime? _quotaFreePeriodEndsAt;
   DataStorageLocation _preferredStorage = DataStorageLocation.cloud;
-  bool _hasStorageChoice = false;
   int _personalDataRevision = 0;
   AuthPage _currentPage = AuthPage.login;
 
@@ -160,7 +159,6 @@ class ControllerAuth extends SafeChangeNotifier {
   DataStorageLocation get preferredStorage => _preferredStorage;
   bool get storesNewDataLocally =>
       _preferredStorage == DataStorageLocation.local;
-  bool get hasStorageChoice => _hasStorageChoice;
   int get personalDataRevision => _personalDataRevision;
   bool get hasServerAdminRole =>
       supabase.auth.currentUser?.appMetadata['role'] == AuthConstants.adminRole;
@@ -482,7 +480,6 @@ class ControllerAuth extends SafeChangeNotifier {
     if (account == null || _isAnonymous) return;
     await LocalDataStore.instance.setPreferredLocation(account, location);
     _preferredStorage = location;
-    _hasStorageChoice = true;
     _personalDataRevision++;
     _markSubscriptionUnverified(pending: true);
     dashboardController?.switchAccount(
@@ -570,7 +567,6 @@ class ControllerAuth extends SafeChangeNotifier {
       _quotaFreePeriodEndingInDays = null;
       _quotaFreePeriodEndsAt = null;
       _preferredStorage = DataStorageLocation.cloud;
-      _hasStorageChoice = false;
       _currentPage = AuthPage.login;
       _lastAccountValidationAt = null;
       _lastAccountValidationResult = null;
@@ -788,7 +784,6 @@ class ControllerAuth extends SafeChangeNotifier {
         final storedLocation = await LocalDataStore.instance.preferredLocation(
           _currentAccount!,
         );
-        _hasStorageChoice = storedLocation != null;
         _preferredStorage = storedLocation ?? DataStorageLocation.cloud;
         if (_preferredStorage == DataStorageLocation.local) {
           LocalDataStore.instance.setCreateAllowed(_currentAccount!, false);
@@ -877,16 +872,6 @@ class ControllerAuth extends SafeChangeNotifier {
   Future<String?> login({required String email, required String password}) =>
       _authenticate(() => ServiceAuth.login(email: email, password: password));
 
-  // -------------------- 註冊 --------------------
-  Future<String?> register({required String email, required String password}) =>
-      _authenticate(
-        () => ServiceAuth.register(
-          email: email,
-          password: password,
-          accountType: _registrationAccountType,
-        ),
-      );
-
   // -------------------- 登出 --------------------
   Future<String?> logout() async {
     _update(() => _isLoading = true, notify: false);
@@ -906,10 +891,6 @@ class ControllerAuth extends SafeChangeNotifier {
     }
     return null;
   }
-
-  // -------------------- 忘記密碼 --------------------
-  Future<String?> resetPassword({required String email}) =>
-      ServiceAuth.resetPassword(email: email);
 
   // -------------------- 頁面切換 --------------------
   void goToPage(AuthPage page, {String? email}) {

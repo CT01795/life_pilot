@@ -148,7 +148,6 @@ void main() {
           expect(c.isPlansLoading, isFalse);
           expect(c.isCheckingPlanHistory, isFalse);
           expect(c.isLoadingMorePlans, isFalse);
-          if (stage != 'list') expect(c.hasPlanHistoryAction, isTrue);
           if (stage == 'history') {
             fails
                 ? service.histories.last.completeError(
@@ -182,7 +181,9 @@ void main() {
           expect(c.plansLoadError, isNull);
           expect(c.planHistoryError, isNull);
           expect(c.loadMorePlansError, isNull);
-          expect(c.hasPlanHistoryAction, isFalse);
+          expect(c.hasMorePlans, isFalse);
+          expect(c.isLoadingMorePlans, isFalse);
+          expect(c.isCheckingPlanHistory, isFalse);
           if (stage == 'history') {
             expect(c.plans, same(snapshot));
           } else {

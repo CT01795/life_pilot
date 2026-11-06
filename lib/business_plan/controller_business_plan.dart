@@ -333,13 +333,6 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   List<ModelBusinessPlan> get visiblePlans => _visiblePlans ??=
       ModelBusinessPlanList.visible(_plans, _selectedStatuses);
 
-  bool get hasPlanHistoryAction =>
-      hasMorePlans ||
-      isLoadingMorePlans ||
-      isCheckingPlanHistory ||
-      planHistoryError != null ||
-      loadMorePlansError != null;
-
   void toggleStatus(String status) {
     if (notifierDisposed) return;
     _selectedStatuses.contains(status)

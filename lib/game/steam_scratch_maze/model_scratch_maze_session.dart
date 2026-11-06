@@ -46,13 +46,6 @@ class ModelScratchMazeSession {
       y <= level.treasure.y &&
       !_walls.contains((x, y));
 
-  bool hasJunction(int dx, int dy) =>
-      dx.abs() + dy.abs() == 1 &&
-      (dx != 0
-          ? isWalkable(state.x, state.y - 1) || isWalkable(state.x, state.y + 1)
-          : isWalkable(state.x - 1, state.y) ||
-                isWalkable(state.x + 1, state.y));
-
   MazeStepResult? step(int dx, int dy) {
     if (dx.abs() + dy.abs() != 1 || !isWalkable(state.x + dx, state.y + dy)) {
       return null;

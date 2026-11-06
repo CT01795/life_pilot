@@ -19,18 +19,6 @@ class RepositoryEventCloudOperations {
     return cached ?? await backend();
   }
 
-  Future<dynamic> mapCoordinates({
-    required String tableName,
-    required String eventId,
-    required Future<dynamic> Function() backend,
-  }) async {
-    final cached = await gateway.rpc(
-      'life_pilot_cached_map_coordinates',
-      params: {'p_table_name': tableName, 'p_event_id': eventId},
-    );
-    return cached ?? await backend();
-  }
-
   Future<dynamic> backfillCoordinates({
     required String tableName,
     required int offset,

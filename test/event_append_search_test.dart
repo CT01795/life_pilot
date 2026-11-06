@@ -34,7 +34,11 @@ void main() {
         if (memory) {
           model.appendMemoryEvents(rows);
         } else {
-          model.appendEvents(rows);
+          model.appendRecommendedEvents(
+            rows,
+            isEvent: true,
+            now: DateTime(2026, 10, 19),
+          );
         }
       }
 
@@ -89,6 +93,12 @@ void main() {
         model
           ..setEvents([existing])
           ..updateSearchKeywords('needle');
+        if (!memory) {
+          model.sortRecommendedContent(
+            isEvent: true,
+            now: DateTime(2026, 10, 19),
+          );
+        }
         final filtered = model.getFilteredEvents(loc);
         append([duplicate, duplicate]);
         append([]);

@@ -14,11 +14,6 @@ class ModelFeedback {
   bool screenshotsLoaded;
   final String? createdBy;
   final DateTime createdAt;
-  List<Uint8List>? _decodedScreenshots;
-  List<String>? _decodedSource;
-  Future<List<Uint8List>>? _screenshotDecodeFuture;
-  List<String>? _screenshotDecodeSource;
-  Object? _screenshotDecodeToken;
   final _screenshotDecodeFutures =
       <int, ({String source, Future<Uint8List?> value})>{};
   final Future<Uint8List> Function(String) _screenshotDecoder;
@@ -94,58 +89,6 @@ class ModelFeedback {
         dealAt: nextStatus == 'completed' ? now.toUtc() : null,
       );
 
-  /// A decoded batch belongs to an exact source snapshot, including when the
-  /// public screenshot list is edited in place by an existing caller.
-  List<Uint8List>? get screenshotDecodeRawData =>
-      listEquals(screenshot, _decodedSource) ? _decodedScreenshots : null;
-
-  set screenshotDecodeRawData(List<Uint8List>? value) {
-    _decodedScreenshots = value;
-    _decodedSource = screenshot == null ? null : List.of(screenshot!);
-    _screenshotDecodeFutures.clear();
-    _screenshotDecodeToken = null;
-    _screenshotDecodeFuture = null;
-    _screenshotDecodeSource = null;
-  }
-
-  List<Uint8List>? get screenshotDecodeData {
-    final cached = screenshotDecodeRawData;
-    if (cached != null) return cached;
-    final images = screenshot;
-    if (images == null) return null;
-    final decoded = images.map(base64Decode).toList();
-    screenshotDecodeRawData = decoded;
-    return decoded;
-  }
-
-  Future<List<Uint8List>> decodeScreenshotsAsync() {
-    final decoded = screenshotDecodeRawData;
-    if (decoded != null) return Future.value(decoded);
-    final images = screenshot;
-    if (images == null) return Future.value([]);
-    if (_screenshotDecodeFuture != null &&
-        listEquals(images, _screenshotDecodeSource)) {
-      return _screenshotDecodeFuture!;
-    }
-    final source = List<String>.of(images, growable: false);
-    final token = Object();
-    _screenshotDecodeSource = source;
-    _screenshotDecodeToken = token;
-    final completion = Completer<List<Uint8List>>();
-    final future = completion.future;
-    // Publish before calling a decoder, which may synchronously request this
-    // same snapshot again. All callers must observe the same in-flight work.
-    _screenshotDecodeFuture = future;
-    unawaited(
-      _decodeScreenshots(source, token).then<void>(
-        completion.complete,
-        onError: (Object error, StackTrace stack) =>
-            completion.completeError(error, stack),
-      ),
-    );
-    return future;
-  }
-
   Future<Uint8List?> decodeScreenshotAsync(int index) {
     final screenshots = screenshot;
     if (screenshots == null || index < 0 || index >= screenshots.length) {
@@ -154,18 +97,6 @@ class ModelFeedback {
     final source = screenshots[index];
     final cached = _screenshotDecodeFutures[index];
     if (cached != null && cached.source == source) return cached.value;
-    // Validate this index only: lazy thumbnails must not scan every image.
-    final decoded = _decodedScreenshots;
-    final decodedSource = _decodedSource;
-    if (decoded != null &&
-        decodedSource != null &&
-        index < decoded.length &&
-        index < decodedSource.length &&
-        decodedSource[index] == source) {
-      final future = Future<Uint8List?>.value(decoded[index]);
-      _screenshotDecodeFutures[index] = (source: source, value: future);
-      return future;
-    }
     final completion = Completer<Uint8List?>();
     final future = completion.future;
     _screenshotDecodeFutures[index] = (source: source, value: future);
@@ -180,32 +111,6 @@ class ModelFeedback {
       return await _screenshotDecoder(source);
     } catch (_) {
       return null;
-    }
-  }
-
-  Future<List<Uint8List>> _decodeScreenshots(
-    List<String> source,
-    Object token,
-  ) async {
-    try {
-      final decoded = await Future.wait(
-        source.map(
-          (image) => Future<Uint8List>.sync(() => _screenshotDecoder(image)),
-        ),
-        eagerError: true,
-      );
-      if (identical(token, _screenshotDecodeToken) &&
-          listEquals(screenshot, source)) {
-        _decodedScreenshots = decoded;
-        _decodedSource = source;
-      }
-      return decoded;
-    } catch (_) {
-      if (identical(token, _screenshotDecodeToken)) {
-        _screenshotDecodeFuture = null;
-        _screenshotDecodeSource = null;
-      }
-      rethrow;
     }
   }
 

@@ -70,7 +70,11 @@ void main() {
     model.updateEvent(EventItem(id: 'a', name: 'Changed'));
     model.updateSearchKeywords('Music');
     expect(model.getFilteredEvents(loc), isEmpty);
-    model.appendEvents([EventItem(id: 'c', name: 'Music')]);
+    model.appendRecommendedEvents(
+      [EventItem(id: 'c', name: 'Music')],
+      isEvent: true,
+      now: day,
+    );
     model.updateSearchKeywords('Music');
     expect(model.getFilteredEvents(loc).single.id, 'c');
     model.resetForDataScope();

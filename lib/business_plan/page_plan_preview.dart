@@ -268,7 +268,6 @@ class EditablePlanTitle extends StatefulWidget {
 
 class _EditablePlanTitleState extends State<EditablePlanTitle> {
   late TextEditingController controller;
-  String get currentText => controller.text;
 
   @override
   void initState() {

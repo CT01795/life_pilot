@@ -67,15 +67,6 @@ class ModelContentPerformance {
   late final List<ContentPerformanceMetricValue> visibleMetrics =
       _nonZeroMetricValues(totalFor);
 
-  /// Share of the same metric across this query's filtered result, not people.
-  double shareFor(
-    ContentPerformanceItem item,
-    ContentPerformanceMetric metric,
-  ) {
-    final total = totalFor(metric);
-    return total > 0 ? (item.countFor(metric) / total).clamp(0.0, 1.0) : 0.0;
-  }
-
   ModelContentPerformance._(
     this.rows,
     this.items,
@@ -213,12 +204,6 @@ class ContentPerformanceItem implements Comparable<ContentPerformanceItem> {
   int countFor(ContentPerformanceMetric metric) => counts[metric.index];
   late final List<ContentPerformanceMetricValue> visibleMetrics =
       _nonZeroMetricValues(countFor);
-  // Legacy chart API remains available, without computing an unused scale for
-  // every row on entry to the current icon-only performance page.
-  late final int maximum = counts.fold<int>(
-    1,
-    (maximum, count) => count > maximum ? count : maximum,
-  );
   final bool hasStatistics;
   ContentPerformanceItem._(
     this.source,
