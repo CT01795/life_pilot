@@ -325,29 +325,6 @@ class LocalDataStore {
     _invalidateOwner(owner);
   }
 
-  /// Returns a portable snapshot of every record stored for [owner].
-  /// The wrapper keeps the resource name so an export can be restored later.
-  Future<List<Map<String, dynamic>>> exportAllRecords({
-    required String owner,
-  }) async {
-    final snapshots = await _records.find(
-      await _db,
-      finder: Finder(filter: Filter.equals('owner', owner.toLowerCase())),
-    );
-    return snapshots
-        .map(
-          (snapshot) => <String, dynamic>{
-            'table_name': parseStringValue(snapshot.value['resource']),
-            'record': Map<String, dynamic>.from(
-              (snapshot.value['data'] as Map?)?.cast<String, dynamic>() ??
-                  const <String, dynamic>{},
-            ),
-          },
-        )
-        .where((row) => (row['table_name'] as String).isNotEmpty)
-        .toList(growable: false);
-  }
-
   Future<bool> contains({
     required String owner,
     required String resource,

@@ -12,7 +12,6 @@ import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/pages/home/controller_dashboard.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_setting.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/pages/home/service/calendar_service.dart';
 import 'package:life_pilot/event/service_event_tracking.dart';
@@ -66,7 +65,6 @@ void main() async {
             localeProvider: context.read<ProviderLocale>(),
           ),
         ),
-        ChangeNotifierProvider(create: (_) => ModelDashboardSetting()),
         Provider<EventTrackingService>(create: (_) => EventTrackingService()),
         Provider<CalendarService>(create: (_) => CalendarService()),
         ChangeNotifierProvider(

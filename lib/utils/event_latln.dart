@@ -246,37 +246,4 @@ class ClusterItem {
     event.lng = tmpMap["lng"];
     return event;
   }
-
-  static List<ClusterItem> buildClusters(List<EventItem> events, double zoom) {
-    // zoom 越大 grid 越細
-    final double gridSize = (360 / (1 << zoom.toInt())).clamp(0.01, 5);
-
-    final Map<String, List<EventItem>> buckets = {};
-
-    for (final e in events) {
-      if (e.lat == null || e.lng == null) continue;
-
-      final gx = (e.lat! / gridSize).floor();
-      final gy = (e.lng! / gridSize).floor();
-      final key = '$gx-$gy';
-
-      buckets.putIfAbsent(key, () => []);
-      buckets[key]!.add(e);
-    }
-
-    final clusters = <ClusterItem>[];
-
-    buckets.forEach((key, items) {
-      final avgLat =
-          items.map((e) => e.lat!).reduce((a, b) => a + b) / items.length;
-      final avgLng =
-          items.map((e) => e.lng!).reduce((a, b) => a + b) / items.length;
-
-      clusters.add(
-        ClusterItem(id: key, position: LatLng(avgLat, avgLng), events: items),
-      );
-    });
-
-    return clusters;
-  }
 }

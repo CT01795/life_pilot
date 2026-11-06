@@ -51,9 +51,6 @@ class ServiceAuth {
 
   static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
-  // 🔐 Check if user is logged in
-  static bool isLoggedIn() => supabase.auth.currentUser != null;
-
   static String? currentAccount() => supabase.auth.currentUser?.email;
 
   // 🔑 Login with email/password

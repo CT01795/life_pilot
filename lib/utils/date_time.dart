@@ -30,11 +30,6 @@ class DateTimeCompare {
     return a.year == b.year;
   }
 
-  static int compareTimeOfDay(TimeOfDay? a, TimeOfDay? b) {
-    if (a == null || b == null) return 0;
-    return (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute);
-  }
-
   static bool isCurrentMonth(DateTime currentMonth) {
     final now = DateTime.now();
     return currentMonth.year == now.year && currentMonth.month == now.month;

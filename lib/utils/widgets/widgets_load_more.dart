@@ -130,6 +130,7 @@ class _WidgetsLoadMoreState extends State<WidgetsLoadMore> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final failed = _error != null || widget.error != null;
+    final exhausted = !failed && (_empty || (!widget.hasMore && !_probe));
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       child: Center(
@@ -138,7 +139,7 @@ class _WidgetsLoadMoreState extends State<WidgetsLoadMore> {
                 dimension: 20,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : !failed && (_empty || (!widget.hasMore && !_probe))
+            : exhausted
             ? Text(loc.noMoreData, textAlign: TextAlign.center)
             : TextButton(
                 onPressed: widget.enabled ? _load : null,

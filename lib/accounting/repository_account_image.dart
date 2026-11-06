@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show compute;
+import 'package:life_pilot/accounting/model_account_thumbnail.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/supabase.dart';
@@ -118,58 +120,49 @@ class RepositoryAccountImage {
       final descriptor = await ui.ImageDescriptor.encoded(buffer);
       try {
         final landscape = descriptor.width >= descriptor.height;
-        final longestEdge = landscape ? descriptor.width : descriptor.height;
-        final edges = {
-          for (final cap in [320, 256, 192, 144, 112, 96, 64])
-            longestEdge < cap ? longestEdge : cap,
-        };
-        for (final edge in edges) {
-          final codec = await descriptor.instantiateCodec(
-            targetWidth: landscape ? edge : null,
-            targetHeight: landscape ? null : edge,
-          );
+        final longest = landscape ? descriptor.width : descriptor.height;
+        final edge = longest < ModelAccountThumbnail.edge
+            ? longest
+            : ModelAccountThumbnail.edge;
+        final codec = await descriptor.instantiateCodec(
+          targetWidth: landscape ? edge : null,
+          targetHeight: landscape ? null : edge,
+        );
+        try {
+          final frame = await codec.getNextFrame();
           try {
-            final frame = await codec.getNextFrame();
-            try {
-              final png = await frame.image.toByteData(
-                format: ui.ImageByteFormat.png,
+            final png = await frame.image.toByteData(
+              format: ui.ImageByteFormat.png,
+            );
+            if (png != null &&
+                png.lengthInBytes <= ModelAccountThumbnail.maxBytes) {
+              return base64Encode(
+                png.buffer.asUint8List(png.offsetInBytes, png.lengthInBytes),
               );
-              if (png != null && png.lengthInBytes <= 49152) {
-                return base64Encode(
-                  png.buffer.asUint8List(png.offsetInBytes, png.lengthInBytes),
-                );
-              }
-            } finally {
-              frame.image.dispose();
             }
+            final raw = await frame.image.toByteData(
+              format: ui.ImageByteFormat.rawStraightRgba,
+            );
+            if (raw == null) return null;
+            return await compute(ModelAccountThumbnail.encode, (
+              rgba: raw.buffer.asUint8List(
+                raw.offsetInBytes,
+                raw.lengthInBytes,
+              ),
+              width: frame.image.width,
+              height: frame.image.height,
+            ));
           } finally {
-            codec.dispose();
+            frame.image.dispose();
           }
+        } finally {
+          codec.dispose();
         }
-        return null;
       } finally {
         descriptor.dispose();
       }
     } finally {
       buffer.dispose();
-    }
-  }
-
-  static int? _pngLongestEdge(String? thumbnail) {
-    if (thumbnail == null ||
-        thumbnail.length < 32 ||
-        !thumbnail.startsWith('iVBORw0KGgo')) {
-      return null;
-    }
-    try {
-      final header = ByteData.sublistView(
-        base64Decode(thumbnail.substring(0, 32)),
-      );
-      final width = header.getUint32(16);
-      final height = header.getUint32(20);
-      return width >= height ? width : height;
-    } on FormatException {
-      return null;
     }
   }
 
@@ -186,7 +179,9 @@ class RepositoryAccountImage {
       final thumbnail = await _thumbnailBase64(bytes);
       if (thumbnail == null ||
           client.auth.currentUser?.id != actorId ||
-          (previous != null && (_pngLongestEdge(thumbnail) ?? 0) <= 96)) {
+          (previous != null &&
+              (ModelAccountThumbnail.longestEdge(thumbnail) ?? 0) <=
+                  (ModelAccountThumbnail.longestEdge(previous) ?? 0))) {
         return;
       }
       await client.rpc(
@@ -278,7 +273,9 @@ class RepositoryAccountImage {
         actor != null &&
         encoded != null &&
         bytes != null &&
-        (previous == null || _pngLongestEdge(previous) == 96)) {
+        (previous == null ||
+            (ModelAccountThumbnail.longestEdge(previous) ?? 0) <
+                ModelAccountThumbnail.edge)) {
       unawaited(
         _backfillCloudThumbnail(
           client,

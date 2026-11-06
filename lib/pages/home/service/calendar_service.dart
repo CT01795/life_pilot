@@ -165,26 +165,6 @@ class CalendarService {
     return CalendarEvent.fromJson(data);
   }
 
-  Future<bool> existsCalendarEventToMemory({
-    required String account,
-    required CalendarEvent event,
-  }) async {
-    if (await _storesLocally(account)) {
-      return LocalDataStore.instance.contains(
-        owner: account,
-        resource: TableNames.memoryTrace,
-        id: event.id,
-      );
-    }
-    final result = await supabase
-        .from(TableNames.memoryTrace)
-        .select(Fields.id)
-        .eq(Fields.id, event.id)
-        .eq(Fields.account, account)
-        .maybeSingle();
-    return result != null;
-  }
-
   /// 加入回憶
   Future<void> addCalendarEventToMemory({
     required String account,

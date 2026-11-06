@@ -39,8 +39,6 @@ class ControllerGameSteamMonomino extends SafeChangeNotifier {
     _session = ModelMonominoSession(this.level);
   }
 
-  void startLevel() => resetLevel();
-
   void resetLevel() {
     if (notifierDisposed) return;
     _session.reset();

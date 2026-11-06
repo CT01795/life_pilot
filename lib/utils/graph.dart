@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/services.dart';
+import 'dart:typed_data';
 
 Uint8List? decodeBase64InIsolate(String? data) {
   if (data == null) return null;
@@ -7,14 +7,5 @@ Uint8List? decodeBase64InIsolate(String? data) {
     return base64Decode(data);
   } catch (_) {
     return null;
-  }
-}
-
-Future<bool> assetExists(String assetPath) async {
-  try {
-    await rootBundle.load(assetPath);
-    return true;
-  } catch (e) {
-    return false;
   }
 }

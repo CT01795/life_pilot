@@ -200,9 +200,6 @@ class ServiceGame {
     return _mapAndSortGames(rows);
   }
 
-  Future<void> cacheGameList(Iterable<Map<String, dynamic>> rows) =>
-      _cacheGameListFor(_ownerEmail, rows);
-
   Future<void> _cacheGameListFor(
     String owner,
     Iterable<Map<String, dynamic>> rows,
@@ -231,32 +228,6 @@ class ServiceGame {
       return a.level.compareTo(b.level);
     });
     return games;
-  }
-
-  // 查詢目前使用者的分數紀錄
-  Future<List<ModelGameUser>> fetchUserProgress(
-    String userName,
-    String gameType,
-    String gameName,
-  ) async {
-    if (await _storesLocally) {
-      return _localProgress(userName, gameType, gameName);
-    }
-    final response = await supabase.rpc(
-      'fetch_user_progress',
-      params: {
-        'p_name': userName,
-        'p_game_type': gameType,
-        'p_game_name': gameName,
-      },
-    );
-
-    if (response == null || response is! List) {
-      return [];
-    }
-
-    final data = response;
-    return data.map((e) => ModelGameUser.fromMap(e)).toList();
   }
 
   /// Returns only the progress summary needed to decide which level is

@@ -389,15 +389,6 @@ class ControllerCalendar extends SafeChangeNotifier {
   Future<void> goToToday() async =>
       await goToMonth(month: DateTimeFormatter.dateOnly(DateTime.now()));
 
-  // 點擊某個日期
-  Future<void> tapDate(DateTime date) async {
-    final dateOnly = DateTimeFormatter.dateOnly(date);
-    // 處理跨月
-    if (date.month != currentMonth.month || date.year != currentMonth.year) {
-      await goToMonth(month: dateOnly);
-    }
-  }
-
   DateTime pageIndexToMonth({required int index}) {
     final year = baseDate.year + (index ~/ 12);
     final month = (index % 12) + baseDate.month;
@@ -731,16 +722,6 @@ class ControllerCalendar extends SafeChangeNotifier {
     required DateTime month,
     required int weekIndex,
   }) => _modelCalendar.eventRowsForWeek(month, weekIndex);
-
-  // 工具方法：檢查兩個事件是否跨日重疊
-  bool isOverlapping({required EventItem a, required EventItem b}) {
-    final aStart = DateTimeFormatter.dateOnly(a.startDate!);
-    final aEnd = DateTimeFormatter.dateOnly(a.endDate ?? a.startDate!);
-    final bStart = DateTimeFormatter.dateOnly(b.startDate!);
-    final bEnd = DateTimeFormatter.dateOnly(b.endDate ?? b.startDate!);
-
-    return !(aEnd.isBefore(bStart) || aStart.isAfter(bEnd));
-  }
 
   // ------------------------
   // 搜尋 / 篩選 / 選擇

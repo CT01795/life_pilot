@@ -242,8 +242,4 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     _visibleCache = null;
     _feedbackList = ModelFeedbackList.ordered(feedbackList);
   }
-
-  Future<void> markAsDone(ModelFeedback feedback, String adminAccount) async {
-    await updateStatus(feedback, 'completed', adminAccount);
-  }
 }

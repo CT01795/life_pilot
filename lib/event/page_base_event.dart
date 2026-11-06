@@ -11,6 +11,7 @@ import 'package:life_pilot/event/model_event_projection.dart';
 import 'package:life_pilot/event/model_event_regions.dart';
 import 'package:life_pilot/event/page_event_add.dart';
 import 'package:life_pilot/event/widgets_event_map.dart' show WidgetsEventMap;
+import 'package:life_pilot/event/widgets_event_empty_state.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -380,16 +381,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
                                   child: visibleEvents.isEmpty
                                       ? KeyedSubtree(
                                           key: const ValueKey('empty'),
-                                          child: _buildEmptyState(
-                                            loc,
-                                            canLoadMore:
-                                                _controller.fromTableName ==
-                                                    TableNames.memoryTrace
-                                                ? _controller.hasMoreMemory
-                                                : _controller
-                                                          .usesCloudPagination &&
-                                                      _controller.hasMoreEvents,
-                                          ),
+                                          child: _buildEmptyState(),
                                         )
                                       : _showMap
                                       ? KeyedSubtree(
@@ -469,55 +461,12 @@ class _GenericEventPageState extends State<GenericEventPage> {
     );
   }
 
-  Widget _buildEmptyState(AppLocalizations loc, {bool canLoadMore = false}) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.search_off_rounded,
-              size: 48,
-              color: Color(0xFF829097),
-            ),
-            Gaps.h16,
-            Text(widget.emptyText, textAlign: TextAlign.center),
-            if (_controller.hasActiveSearchFilters) ...[
-              Gaps.h16,
-              OutlinedButton.icon(
-                onPressed: _controller.clearSearchFilters,
-                icon: const Icon(Icons.filter_alt_off_rounded),
-                label: Text(loc.clear),
-              ),
-            ],
-            ...[
-              Gaps.h16,
-              WidgetsLoadMore(
-                owner: _controller,
-                hasMore: canLoadMore,
-                loading:
-                    _controller.isLoadingMoreEvents ||
-                    _controller.isLoadingMoreMemory,
-                count: 0,
-                scope: (
-                  _selectedCity,
-                  widget.eventPredicateKey,
-                  _controller.modelEvent.searchFilter.keywords,
-                  _controller.modelEvent.searchFilter.startDate,
-                  _controller.modelEvent.searchFilter.endDate,
-                ),
-                onLoadMore: () =>
-                    _controller.fromTableName == TableNames.memoryTrace
-                    ? _controller.loadMoreMemoryEvents()
-                    : _controller.loadMoreRecommendedEvents(),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildEmptyState() => WidgetsEventEmptyState(
+    message: widget.emptyText,
+    onClear: _controller.hasActiveSearchFilters
+        ? _controller.clearSearchFilters
+        : null,
+  );
 
   Widget _buildBackgroundLoadError(AppLocalizations loc) {
     return Material(

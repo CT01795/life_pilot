@@ -65,14 +65,6 @@ class ServiceEventPublic {
   String safeAddress(String location) =>
       location.length > 3 ? location.substring(3) : '';
 
-  String safeAddress2(String location) => location.length > 3
-      ? location.substring(location.substring(2, 3) == "縣" ? 3 : 2)
-      : '';
-
-  Future<bool> hasUpdatedToday() async {
-    return (await getRefreshStatus()).updated;
-  }
-
   Future<PublicEventRefreshStatus> getRefreshStatus() async {
     final response = await _cloudGateway.rpc(
       'life_pilot_public_event_refresh',

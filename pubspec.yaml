@@ -61,6 +61,7 @@ dependencies:
   webview_flutter: ^4.13.0
   xml: ^6.6.1
   image_picker: ^1.2.1
+  image: ^4.3.0
   html_editor_enhanced: ^2.7.1
   flutter_widget_from_html_core: ^0.17.0
   flutter_html: ^3.0.0

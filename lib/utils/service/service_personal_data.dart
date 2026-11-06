@@ -322,12 +322,6 @@ class ServicePersonalData {
 
   Future<void> requestAccountDeletionCancellation() =>
       RepositoryAccountDeletion().cancel();
-
-  Future<void> approveAccountDeletion(String requestId) =>
-      RepositoryAccountDeletion().approve(requestId);
-
-  Future<void> confirmAccountDeletionCancellation(String requestId) =>
-      RepositoryAccountDeletion().confirmCancellation(requestId);
 }
 
 class _ExportField {

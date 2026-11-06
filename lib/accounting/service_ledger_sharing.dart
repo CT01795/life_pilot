@@ -85,35 +85,6 @@ class ServiceLedgerSharing {
     int limit = pageSize,
   }) => _read(_kindRpc, {'p_kind': kind.name}, offset, limit: limit);
 
-  Future<List<Map<String, dynamic>>> receivedFor(
-    LedgerKind kind, {
-    int? maxResults,
-  }) => RepositorySessionReads(_db).read(_group, (
-    'received',
-    kind,
-    maxResults,
-  ), () => _receivedFor(kind, maxResults));
-
-  Future<List<Map<String, dynamic>>> _receivedFor(
-    LedgerKind kind,
-    int? maxResults,
-  ) async {
-    final result = <Map<String, dynamic>>[];
-    var offset = 0;
-    while (maxResults == null || result.length < maxResults) {
-      final limit = maxResults == null
-          ? pageSize
-          : (maxResults - result.length).clamp(1, pageSize).toInt();
-      final page = await receivedKindPage(kind, offset, limit: limit);
-      result.addAll(page.where((row) => row['kind'] == kind.name));
-      if (page.length < limit) break;
-      offset += page.length;
-    }
-    return List.unmodifiable(
-      maxResults == null ? result : result.take(maxResults),
-    );
-  }
-
   Future<List<Map<String, dynamic>>> entries(String id, int offset) =>
       _read('read_my_shared_ledger_entries', {'p_share_id': id}, offset);
 
@@ -341,9 +312,6 @@ class ServiceLedgerSharing {
 
   Future<void> decline(String id) =>
       _write('decline_my_ledger_share', {'p_share_id': id});
-
-  Future<List<Map<String, dynamic>>> proposals(String id, int offset) =>
-      _read('list_my_ledger_change_proposals', {'p_share_id': id}, offset);
 
   Future<List<Map<String, dynamic>>> accountProposals(
     LedgerKind kind,
