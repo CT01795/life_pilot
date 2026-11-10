@@ -55,7 +55,7 @@ class ServiceStock {
       'table_name': TableNames.stockDate,
       'date': cutoffDate.toUtc().toIso8601String(),
     });
-    int checkDates = 3;
+    int checkDates = 10;
     int minDayValue = 1;
     if (DateTime.now().hour >= 17) {
       minDayValue = 0;
