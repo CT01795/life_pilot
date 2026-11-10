@@ -2,6 +2,7 @@ import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/widgets/widgets_ledger_record_tile.dart';
 import 'package:life_pilot/accounting/service_ledger_sharing.dart';
@@ -434,6 +435,8 @@ class _SharedLedgerOverviewState extends State<SharedLedgerOverview> {
                 name: row['account_name'] as String? ?? '',
                 revision: _revision,
                 overviewTotals: row['totals'] as Map<String, dynamic>?,
+                canChangeImage:
+                    (row['totals'] as Map?)?['allow_image_changes'] == true,
                 showRefresh: identical(row, rows.first),
                 onRefresh:
                     _loadingMore ||
@@ -473,6 +476,7 @@ class _SharedLedgerAccountCard extends StatelessWidget {
     required this.name,
     required this.revision,
     required this.overviewTotals,
+    required this.canChangeImage,
     required this.onDecline,
     required this.showRefresh,
     required this.onRefresh,
@@ -483,6 +487,7 @@ class _SharedLedgerAccountCard extends StatelessWidget {
   final String name;
   final int revision;
   final Map<String, dynamic>? overviewTotals;
+  final bool canChangeImage;
   final VoidCallback? onDecline;
   final bool showRefresh;
   final VoidCallback? onRefresh;
@@ -504,6 +509,7 @@ class _SharedLedgerAccountCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AccountImageTile(
+                key: ValueKey((id, revision)),
                 name: name,
                 loadThumbnail: () => const RepositoryAccountImage().readShared(
                   id,
@@ -513,6 +519,15 @@ class _SharedLedgerAccountCard extends StatelessWidget {
                   id,
                   thumbnail: false,
                 ),
+                changeImage: canChangeImage
+                    ? () async {
+                        final changed = await _replaceSharedLedgerImage(
+                          context,
+                          id,
+                        );
+                        if (changed) onRefresh?.call();
+                      }
+                    : null,
               ),
               SizedBox(width: compact ? 8 : 16),
               Expanded(
@@ -890,6 +905,8 @@ class _LedgerSharingPageState extends State<_LedgerSharingPage> {
                         final question = switch (action) {
                           'allow' => loc.ledgerAllowProposalsConfirm,
                           'stop' => loc.ledgerStopProposalsConfirm,
+                          'allowImage' => loc.ledgerAllowImageChangesConfirm,
+                          'stopImage' => loc.ledgerStopImageChangesConfirm,
                           _ => loc.ledgerStopSharingConfirm,
                         };
                         if (!await _confirmLedgerAction(
@@ -901,14 +918,24 @@ class _LedgerSharingPageState extends State<_LedgerSharingPage> {
                           return;
                         }
                         await _mutate(
-                          () => action == 'revoke'
-                              ? _service.revoke(shareId)
-                              : _service.allowProposals(
-                                  shareId,
-                                  action == 'allow',
-                                ),
+                          () => switch (action) {
+                            'revoke' => _service.revoke(shareId),
+                            'allowImage' => _service.allowImageChanges(
+                              shareId,
+                              true,
+                            ),
+                            'stopImage' => _service.allowImageChanges(
+                              shareId,
+                              false,
+                            ),
+                            _ => _service.allowProposals(
+                              shareId,
+                              action == 'allow',
+                            ),
+                          },
                           refreshList: action == 'revoke',
-                          pendingChanged: action != 'allow',
+                          pendingChanged:
+                              action == 'stop' || action == 'revoke',
                         );
                       },
                       itemBuilder: (_) => [
@@ -923,6 +950,14 @@ class _LedgerSharingPageState extends State<_LedgerSharingPage> {
                         PopupMenuItem(
                           value: 'revoke',
                           child: Text(loc.ledgerStopSharing),
+                        ),
+                        PopupMenuItem(
+                          value: 'allowImage',
+                          child: Text(loc.ledgerAllowImageChanges),
+                        ),
+                        PopupMenuItem(
+                          value: 'stopImage',
+                          child: Text(loc.ledgerStopImageChanges),
                         ),
                       ],
                     ),
@@ -976,10 +1011,12 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
     widget.kind == LedgerKind.accounting ? '#,##0.####' : '#,###',
   );
   late Future<bool> _capability;
+  late Future<bool> _imageCapability;
   late Future<Map<String, dynamic>> _summary;
   Future<List<Map<String, dynamic>>>? _firstEntries;
   final _entriesKey = GlobalKey<_LedgerPagesState>();
   bool _sending = false;
+  int _imageRevision = 0;
 
   @override
   void initState() {
@@ -1002,6 +1039,7 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
   void _loadFirstPage() {
     final reads = widget.service.detailFirstPage(widget.shareId);
     _capability = reads.canPropose;
+    _imageCapability = reads.canChangeImage;
     _summary = reads.totals;
     _firstEntries = reads.entries;
   }
@@ -1126,12 +1164,18 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    return FutureBuilder<bool>(
-      future: _capability,
+    return FutureBuilder<(bool, bool)>(
+      future: Future.wait([
+        _capability,
+        _imageCapability,
+      ]).then((values) => (values[0], values[1])),
       builder: (context, snapshot) {
         final canPropose =
             snapshot.connectionState == ConnectionState.done &&
-            snapshot.data == true;
+            snapshot.data?.$1 == true;
+        final canChangeImage =
+            snapshot.connectionState == ConnectionState.done &&
+            snapshot.data?.$2 == true;
         return Scaffold(
           appBar: AppBar(
             title: Text(
@@ -1165,6 +1209,36 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: AccountImageTile(
+                      key: ValueKey((
+                        widget.shareId,
+                        canChangeImage,
+                        _imageRevision,
+                      )),
+                      name: widget.name,
+                      loadThumbnail: () => const RepositoryAccountImage()
+                          .readShared(widget.shareId, thumbnail: true),
+                      loadImage: () => const RepositoryAccountImage()
+                          .readShared(widget.shareId, thumbnail: false),
+                      changeImage: canChangeImage
+                          ? () async {
+                              if (await _replaceSharedLedgerImage(
+                                    context,
+                                    widget.shareId,
+                                  ) &&
+                                  mounted) {
+                                setState(() {
+                                  _imageRevision++;
+                                  _loadFirstPage();
+                                });
+                              }
+                            }
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   _SharedLedgerTotals(
                     source: _summary,
                     refreshSourceIndependently: true,
@@ -1210,6 +1284,36 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
         );
       },
     );
+  }
+}
+
+Future<bool> _replaceSharedLedgerImage(
+  BuildContext context,
+  String shareId,
+) async {
+  final picked = await ImagePicker().pickImage(
+    source: ImageSource.gallery,
+    maxWidth: 512,
+    maxHeight: 512,
+    imageQuality: 75,
+  );
+  if (picked == null || !context.mounted) return false;
+  try {
+    await ServiceLedgerSharing().updateSharedImage(
+      shareId,
+      await picked.readAsBytes(),
+    );
+    return context.mounted;
+  } catch (error) {
+    if (context.mounted) {
+      final loc = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(loc.adminSubscriptionSaveFailed(error.toString())),
+        ),
+      );
+    }
+    return false;
   }
 }
 

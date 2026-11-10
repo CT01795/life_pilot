@@ -6,6 +6,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/widgets_game_help_button.dart';
+import 'package:life_pilot/game/game_text_sizing.dart';
 import 'package:provider/provider.dart';
 
 // ignore: must_be_immutable
@@ -27,7 +28,6 @@ class PageGameWordSearch extends StatefulWidget {
 class _PageGameWordSearchState extends State<PageGameWordSearch> {
   late final ControllerGameWordSearch controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
-  double size = 20.0;
 
   @override
   void initState() {
@@ -154,7 +154,10 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                             child: Text(
                               controller.currentQuestion.question,
                               style: TextStyle(
-                                fontSize: isCompact ? 26 : 36,
+                                fontSize: GameTextSizing.question(
+                                  context,
+                                  controller.currentQuestion.question,
+                                ),
                                 color: const Color(0xFF212121),
                               ),
                               textAlign: TextAlign.start,

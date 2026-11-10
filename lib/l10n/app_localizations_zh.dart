@@ -33,6 +33,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ledgerStopProposalsConfirm => '確定要停止接受變更提案嗎？尚未審核的提案將被拒絕。';
 
   @override
+  String get ledgerAllowImageChanges => '允許變更圖片';
+
+  @override
+  String get ledgerStopImageChanges => '停止圖片異動權限';
+
+  @override
+  String get ledgerAllowImageChangesConfirm => '確定要允許對方直接變更帳戶圖片嗎？圖片變更不需審核。';
+
+  @override
+  String get ledgerStopImageChangesConfirm => '確定要停止對方的圖片異動權限嗎？';
+
+  @override
   String get sharedLedgerStatisticsUnavailable => '共享帳戶統計尚未啟用，請聯絡管理者。';
 
   @override

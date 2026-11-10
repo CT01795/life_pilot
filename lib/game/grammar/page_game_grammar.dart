@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'package:life_pilot/game/game_text_sizing.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/grammar/controller_game_grammar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -234,7 +235,10 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                           child: Text(
                             controller.currentQuestion!.question,
                             style: TextStyle(
-                              fontSize: 26,
+                              fontSize: GameTextSizing.question(
+                                context,
+                                controller.currentQuestion!.question,
+                              ),
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF263238),
                             ),
@@ -273,7 +277,10 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                           child: Text(
                             controller.currentQuestion!.correctAnswer,
                             style: TextStyle(
-                              fontSize: 24,
+                              fontSize: GameTextSizing.answer(
+                                context,
+                                controller.currentQuestion!.correctAnswer,
+                              ),
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
@@ -308,7 +315,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                       child: Text(
                         opt,
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: GameTextSizing.answer(context, opt),
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),

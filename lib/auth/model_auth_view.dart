@@ -22,6 +22,8 @@ class ModelAuthView extends SafeChangeNotifier {
   // -------------------- getters --------------------
   bool get isLoading => _auth.isLoading;
   bool get isLoggedIn => _auth.isLoggedIn;
+  bool get isAnonymous => _auth.isAnonymous;
+  bool get accountVerificationBlocked => _auth.accountVerificationBlocked;
   String? get account => _auth.currentAccount;
 
   /// Snapshot for view-owned asynchronous navigation, not a storage query.

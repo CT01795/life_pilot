@@ -3,6 +3,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/translation/controller_game_translation.dart';
 import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/game/game_question_authoring_rules.dart';
+import 'package:life_pilot/game/game_text_sizing.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/service_game.dart';
@@ -30,20 +31,10 @@ class PageGameTranslation extends StatefulWidget {
 class _PageGameTranslationState extends State<PageGameTranslation> {
   late final ControllerGameTranslation controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
-  double questionSize = 32.0;
-  double answerSize = 32.0;
 
   @override
   void initState() {
     super.initState();
-    questionSize =
-        GameQuestionAuthoringRules.isNumberedLanguageGame(widget.gameName)
-        ? 24.0
-        : questionSize;
-    answerSize =
-        GameQuestionAuthoringRules.isNumberedLanguageGame(widget.gameName)
-        ? 24.0
-        : answerSize;
     final auth = context.read<ControllerAuth>();
     controller = ControllerGameTranslation(
       gameId: widget.gameId,
@@ -171,7 +162,14 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                                 child: Text(
                                   q.question,
                                   style: TextStyle(
-                                    fontSize: isCompact ? 24 : questionSize,
+                                    fontSize: GameTextSizing.question(
+                                      context,
+                                      q.question,
+                                      dense:
+                                          GameQuestionAuthoringRules.isNumberedLanguageGame(
+                                            widget.gameName,
+                                          ),
+                                    ),
                                     color: Color(0xFF212121),
                                   ),
                                   textAlign: TextAlign.start,
@@ -267,7 +265,10 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                                   child: Text(
                                     opt,
                                     style: TextStyle(
-                                      fontSize: answerSize,
+                                      fontSize: GameTextSizing.answer(
+                                        context,
+                                        opt,
+                                      ),
                                       color: Color(0xFF212121),
                                     ),
                                     softWrap: true, // 允許自動換行

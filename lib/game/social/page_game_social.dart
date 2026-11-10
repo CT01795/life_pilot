@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/game/game_text_sizing.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/social/controller_game_social.dart';
 import 'package:life_pilot/game/social/widgets_social_option.dart';
@@ -27,7 +28,6 @@ class PageGameSocial extends StatefulWidget {
 class _PageGameSocialState extends State<PageGameSocial> {
   late final ControllerGameSocial controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
-  double size = 32.0;
 
   @override
   void initState() {
@@ -153,7 +153,10 @@ class _PageGameSocialState extends State<PageGameSocial> {
                                 child: Text(
                                   q.scene,
                                   style: TextStyle(
-                                    fontSize: isCompact ? 24 : size,
+                                    fontSize: GameTextSizing.question(
+                                      context,
+                                      q.scene,
+                                    ),
                                     color: const Color(0xFF212121),
                                   ),
                                   textAlign: TextAlign.start,
@@ -176,7 +179,7 @@ class _PageGameSocialState extends State<PageGameSocial> {
                       canAnswer: controller.canAnswer,
                       onAnswer: () => onAnswer(option),
                       onSpeak: () => controller.speak(option),
-                      fontSize: size,
+                      fontSize: GameTextSizing.answer(context, option),
                     ),
                 ],
               ),

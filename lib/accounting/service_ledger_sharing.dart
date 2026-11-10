@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:typed_data';
 
+import 'package:life_pilot/accounting/repository_account_image.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics_buckets.dart';
 import 'package:life_pilot/utils/repository_session_reads.dart';
 import 'package:life_pilot/utils/supabase.dart';
@@ -14,6 +16,7 @@ typedef SharedLedgerHomeSnapshot = ({
 
 typedef SharedLedgerDetailReads = ({
   Future<bool> canPropose,
+  Future<bool> canChangeImage,
   Future<Map<String, dynamic>> totals,
   Future<List<Map<String, dynamic>>> entries,
 });
@@ -171,6 +174,7 @@ class ServiceLedgerSharing {
     );
     return (
       canPropose: snapshot.then((row) => row['can_propose'] == true),
+      canChangeImage: snapshot.then((row) => row['can_change_image'] == true),
       totals: snapshot.then(
         (row) => Map<String, dynamic>.unmodifiable(row['totals'] as Map),
       ),
@@ -354,6 +358,34 @@ class ServiceLedgerSharing {
     await _write('set_my_ledger_share_change_permission', {
       'p_share_id': id,
       'p_allowed': allowed,
+    });
+  }
+
+  Future<void> allowImageChanges(String id, bool allowed) async {
+    await _write('set_my_ledger_share_image_permission', {
+      'p_share_id': id,
+      'p_allowed': allowed,
+    });
+  }
+
+  Future<bool> canChangeImage(String id) => RepositorySessionReads(_db).read(
+    _group,
+    ('can-change-image', id),
+    () async {
+      return await _db.rpc(
+            'can_change_shared_ledger_image',
+            params: {'p_share_id': id},
+          ) ==
+          true;
+    },
+  );
+
+  Future<void> updateSharedImage(String id, Uint8List bytes) async {
+    final fields = await RepositoryAccountImage.imageFields(bytes);
+    await _write('update_my_shared_ledger_image', {
+      'p_share_id': id,
+      'p_master_graph_url': fields['master_graph_url'],
+      'p_thumbnail_base64': fields['thumbnail_base64'],
     });
   }
 

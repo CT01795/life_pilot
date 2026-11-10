@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/game/game_text_sizing.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/speaking/controller_game_speaking.dart';
 import 'package:life_pilot/game/speaking/model_game_speaking.dart';
@@ -298,7 +299,10 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                             child: Text(
                               controller.currentQuestion!.question,
                               style: TextStyle(
-                                fontSize: 28,
+                                fontSize: GameTextSizing.question(
+                                  context,
+                                  controller.currentQuestion!.question,
+                                ),
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black87,
                               ),
@@ -364,7 +368,10 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                           textAlign: TextAlign.left,
                           textAlignVertical: TextAlignVertical.top,
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: GameTextSizing.answer(
+                              context,
+                              answerController.text,
+                            ),
                             color: Colors.blueAccent,
                           ),
                           decoration: InputDecoration(

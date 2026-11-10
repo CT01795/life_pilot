@@ -33,6 +33,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ledgerStopProposalsConfirm => 'Stop accepting change proposals? Pending proposals will be rejected.';
 
   @override
+  String get ledgerAllowImageChanges => 'Allow image changes';
+
+  @override
+  String get ledgerStopImageChanges => 'Stop image changes';
+
+  @override
+  String get ledgerAllowImageChangesConfirm => 'Allow this person to replace the account image directly without approval?';
+
+  @override
+  String get ledgerStopImageChangesConfirm => 'Stop allowing this person to change the account image?';
+
+  @override
   String get sharedLedgerStatisticsUnavailable => 'Shared account statistics are not set up yet. Contact an administrator.';
 
   @override

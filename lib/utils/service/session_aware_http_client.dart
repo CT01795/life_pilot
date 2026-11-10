@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:life_pilot/auth/auth_session_guard.dart';
 
@@ -21,6 +22,10 @@ class SessionAwareHttpClient extends http.BaseClient {
 
     final bytes = await response.stream.toBytes();
     final body = utf8.decode(bytes, allowMalformed: true);
+    if (kDebugMode) {
+      final safeUrl = request.url.replace(query: null, fragment: null);
+      debugPrint('HTTP ${response.statusCode} from $safeUrl');
+    }
     AuthSessionGuard.reportHttpFailure(
       source: request.url.toString(),
       statusCode: response.statusCode,

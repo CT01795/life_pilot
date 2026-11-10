@@ -29,14 +29,23 @@ class _PageAuthCheckState extends State<PageAuthCheck> {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<ModelAuthView, bool>(
-      selector: (_, auth) => auth.isLoading,
-      builder: (_, loading, _) {
+    return Selector<ModelAuthView, (bool, bool)>(
+      selector: (_, auth) => (
+        auth.isLoading,
+        auth.isLoggedIn && !auth.isAnonymous && auth.accountVerificationBlocked,
+      ),
+      builder: (_, state, _) {
+        final (loading, waitingForVerification) = state;
         if (loading) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
+
+        // AppView owns the verification overlay. Avoid mounting feature pages
+        // underneath it, because their initState methods would otherwise start
+        // protected requests before account validation succeeds.
+        if (waitingForVerification) return const SizedBox.shrink();
 
         return const AuthGate();
       },

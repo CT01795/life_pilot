@@ -2,6 +2,7 @@
 
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:life_pilot/game/game_text_sizing.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/sentence/controller_game_sentence.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -35,7 +36,6 @@ class PageGameSentence extends StatefulWidget {
 class _PageGameSentenceState extends State<PageGameSentence> {
   late final ControllerGameSentence controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
-  double size = 32.0;
 
   @override
   void initState() {
@@ -199,7 +199,10 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                         child: Text(
                           controller.currentQuestion!.correctAnswer,
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: GameTextSizing.answer(
+                              context,
+                              controller.currentQuestion!.correctAnswer,
+                            ),
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
@@ -230,7 +233,10 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                         index,
                       ) {
                         final word = controller.answerSlots[index];
-                        final fontSize = 28.0;
+                        final fontSize = GameTextSizing.answer(
+                          context,
+                          word?.text ?? '',
+                        );
                         final width = word == null
                             ? 80.0
                             : max(80.0, word.text.length * 40.0);
@@ -349,7 +355,12 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                                     color: Color(0xFFB2DFDB),
                                     child: Text(
                                       word.text,
-                                      style: TextStyle(fontSize: 24),
+                                      style: TextStyle(
+                                        fontSize: GameTextSizing.answer(
+                                          context,
+                                          word.text,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -362,7 +373,12 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                                   color: Color(0xFF80CBC4),
                                   child: Text(
                                     word.text,
-                                    style: TextStyle(fontSize: 24),
+                                    style: TextStyle(
+                                      fontSize: GameTextSizing.answer(
+                                        context,
+                                        word.text,
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 child: Tooltip(
@@ -379,7 +395,12 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                                     ),
                                     child: Text(
                                       word.text,
-                                      style: TextStyle(fontSize: 24),
+                                      style: TextStyle(
+                                        fontSize: GameTextSizing.answer(
+                                          context,
+                                          word.text,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),

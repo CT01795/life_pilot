@@ -133,12 +133,59 @@ void main() {
     );
     final detail = sharing.detailFirstPage('a');
     await expectLater(
-      Future.wait<Object>([detail.canPropose, detail.totals, detail.entries]),
+      Future.wait<Object>([
+        detail.canPropose,
+        detail.canChangeImage,
+        detail.totals,
+        detail.entries,
+      ]),
       notDeployed,
     );
     expect(requests.map((r) => r.url.pathSegments.last), [
       'list_my_shared_ledgers_by_kind',
       'get_my_shared_ledger_detail_first_page',
+    ]);
+  });
+  test('shared image permission uses dedicated RPCs', () async {
+    final requests = <http.Request>[];
+    final client = SupabaseClient(
+      'https://example.supabase.co',
+      'key',
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        final rpc = request.url.pathSegments.last;
+        return http.Response(
+          rpc == 'can_change_shared_ledger_image' ? 'true' : '',
+          200,
+          request: request,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+    addTearDown(client.dispose);
+    await client.auth.setInitialSession(
+      jsonEncode({
+        'access_token': 'token-test',
+        'token_type': 'bearer',
+        'user': {
+          'id': 'test',
+          'aud': 'authenticated',
+          'created_at': '2026-01-01T00:00:00Z',
+        },
+      }),
+    );
+    final sharing = ServiceLedgerSharing(client: client);
+    expect(await sharing.canChangeImage('share-a'), isTrue);
+    await sharing.allowImageChanges('share-a', true);
+    await sharing.allowImageChanges('share-a', false);
+    expect(requests.map((r) => r.url.pathSegments.last), [
+      'can_change_shared_ledger_image',
+      'set_my_ledger_share_image_permission',
+      'set_my_ledger_share_image_permission',
+    ]);
+    expect(requests.skip(1).map((r) => jsonDecode(r.body)['p_allowed']), [
+      true,
+      false,
     ]);
   });
   for (final legacy in [false, true]) {

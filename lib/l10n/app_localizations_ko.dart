@@ -33,6 +33,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get ledgerStopProposalsConfirm => '변경 제안 접수를 중지하시겠어요? 검토 대기 중인 제안은 거절됩니다.';
 
   @override
+  String get ledgerAllowImageChanges => '이미지 변경 허용';
+
+  @override
+  String get ledgerStopImageChanges => '이미지 변경 권한 중지';
+
+  @override
+  String get ledgerAllowImageChangesConfirm => '상대방이 승인 없이 계정 이미지를 직접 변경하도록 허용하시겠어요?';
+
+  @override
+  String get ledgerStopImageChangesConfirm => '상대방의 이미지 변경 권한을 중지하시겠어요?';
+
+  @override
   String get sharedLedgerStatisticsUnavailable => '공유 계정 통계가 아직 설정되지 않았습니다. 관리자에게 문의하세요.';
 
   @override

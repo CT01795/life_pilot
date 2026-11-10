@@ -33,6 +33,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get ledgerStopProposalsConfirm => '変更提案の受け付けを停止しますか？未審査の提案は却下されます。';
 
   @override
+  String get ledgerAllowImageChanges => '画像の変更を許可';
+
+  @override
+  String get ledgerStopImageChanges => '画像変更の権限を停止';
+
+  @override
+  String get ledgerAllowImageChangesConfirm => '相手が承認なしでアカウント画像を直接変更できるようにしますか？';
+
+  @override
+  String get ledgerStopImageChangesConfirm => '相手の画像変更権限を停止しますか？';
+
+  @override
   String get sharedLedgerStatisticsUnavailable => '共有アカウントの統計はまだ利用できません。管理者にお問い合わせください。';
 
   @override

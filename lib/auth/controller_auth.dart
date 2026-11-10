@@ -648,6 +648,13 @@ class ControllerAuth extends SafeChangeNotifier {
     }
 
     try {
+      final recoveredSession = supabase.auth.currentSession;
+      if (recoveredSession?.isExpired ?? false) {
+        await supabase.auth.refreshSession();
+        if (supabase.auth.currentUser?.id != localUser.id) {
+          return AccountValidationResult.unavailable;
+        }
+      }
       final response = await supabase.auth.getUser();
       if (supabase.auth.currentUser?.id != localUser.id) {
         return AccountValidationResult.unavailable;
@@ -790,16 +797,30 @@ class ControllerAuth extends SafeChangeNotifier {
         }
       }
 
-      // 🧹 若帳號不同，清空並重新載入日曆資料
+      final accountChanged = _currentAccount != oldAccount;
+
+      // Change the local scope immediately, but do not start protected reads
+      // until the recovered session has been verified.
       if (!_isLoggedIn) {
         controllerCalendar?.clearAll();
         dashboardController?.switchAccount(null);
-      } else if (_currentAccount != oldAccount) {
+      } else if (accountChanged) {
         controllerCalendar?.clearAll();
         dashboardController?.switchAccount(
           _currentAccount,
           includeCloudShares: _preferredStorage == DataStorageLocation.cloud,
         );
+      }
+
+      if (_isLoggedIn && !_isAnonymous) {
+        if (accountChanged) {
+          _markSubscriptionUnverified(pending: true);
+        }
+        final validation = await validateCurrentAccount(force: true);
+        if (validation != AccountValidationResult.valid) return;
+      }
+
+      if (_isLoggedIn && accountChanged) {
         if (_preferredStorage == DataStorageLocation.cloud) {
           await controllerCalendar?.syncCompletedEventReminders();
         }
@@ -807,11 +828,7 @@ class ControllerAuth extends SafeChangeNotifier {
       }
 
       if (_isLoggedIn && !_isAnonymous) {
-        if (_currentAccount != oldAccount) {
-          _markSubscriptionUnverified(pending: true);
-        }
         unawaited(_refreshSubscriptionAfterStartup());
-        unawaited(validateCurrentAccount(force: true));
       }
     } catch (error, stackTrace) {
       logger.e(

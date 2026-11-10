@@ -147,6 +147,30 @@ abstract class AppLocalizations {
   /// **'Stop accepting change proposals? Pending proposals will be rejected.'**
   String get ledgerStopProposalsConfirm;
 
+  /// Allow a shared ledger recipient to replace its image
+  ///
+  /// In en, this message translates to:
+  /// **'Allow image changes'**
+  String get ledgerAllowImageChanges;
+
+  /// Remove shared ledger image replacement permission
+  ///
+  /// In en, this message translates to:
+  /// **'Stop image changes'**
+  String get ledgerStopImageChanges;
+
+  /// Confirm direct shared ledger image replacement permission
+  ///
+  /// In en, this message translates to:
+  /// **'Allow this person to replace the account image directly without approval?'**
+  String get ledgerAllowImageChangesConfirm;
+
+  /// Confirm removal of shared ledger image replacement permission
+  ///
+  /// In en, this message translates to:
+  /// **'Stop allowing this person to change the account image?'**
+  String get ledgerStopImageChangesConfirm;
+
   /// Shared ledger statistics endpoint is not deployed
   ///
   /// In en, this message translates to:
