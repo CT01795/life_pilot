@@ -282,7 +282,11 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (imageValue != null && imageValue.isNotEmpty)
-                WidgetsEventImage(value: imageValue, height: 190),
+                WidgetsEventImage(
+                  value: imageValue,
+                  height: 190,
+                  preserveAspectRatio: true,
+                ),
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(

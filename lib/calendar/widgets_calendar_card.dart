@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/widgets/widgets_weather_icon.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/calendar/widgets_calendar_sub_card.dart';
 import 'package:life_pilot/event/widgets_event_utils.dart';
+import 'package:life_pilot/event/widgets_event_image.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/utils/weather_localization.dart';
@@ -318,7 +319,19 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
       ),
     );
 
-    final container = Container(margin: Insets.h8v16, child: content);
+    final container = Container(
+      margin: Insets.h8v16,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          WidgetsEventImage(
+            value: eventViewModel.masterGraphUrl,
+            preserveAspectRatio: true,
+          ),
+          content,
+        ],
+      ),
+    );
 
     return GestureDetector(
       onTap: eventViewModel.subEvents.isNotEmpty ? onTap : null,

@@ -571,7 +571,10 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          WidgetsEventImage(value: widget.eventViewModel.masterGraphUrl),
+          WidgetsEventImage(
+            value: widget.eventViewModel.masterGraphUrl,
+            preserveAspectRatio: true,
+          ),
           content,
         ],
       ),
