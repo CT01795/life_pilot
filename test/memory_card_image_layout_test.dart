@@ -8,15 +8,22 @@ void main() {
   testWidgets('memory image preserves its original aspect ratio', (
     tester,
   ) async {
-    Future<void> expectUnconstrainedHeight(double cardWidth) async {
+    Future<void> expectResponsiveHeight({
+      required double cardWidth,
+      required double viewportHeight,
+      required double expectedMaxHeight,
+    }) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Center(
-            child: SizedBox(
-              width: cardWidth,
-              child: const WidgetsEventImage(
-                value: 'image-data',
-                preserveAspectRatio: true,
+          home: MediaQuery(
+            data: MediaQueryData(size: Size(cardWidth, viewportHeight)),
+            child: Center(
+              child: SizedBox(
+                width: cardWidth,
+                child: const WidgetsEventImage(
+                  value: 'image-data',
+                  preserveAspectRatio: true,
+                ),
               ),
             ),
           ),
@@ -29,19 +36,42 @@ void main() {
             .preserveAspectRatio,
         isTrue,
       );
-      final outerImageBox = tester
-          .widgetList<SizedBox>(
+      final imageConstraint = tester
+          .widgetList<ConstrainedBox>(
             find.descendant(
               of: find.byType(WidgetsEventImage),
-              matching: find.byType(SizedBox),
+              matching: find.byType(ConstrainedBox),
             ),
           )
-          .firstWhere((box) => box.width == double.infinity);
-      expect(outerImageBox.height, isNull);
+          .firstWhere((box) => box.constraints.maxHeight == expectedMaxHeight);
+      expect(imageConstraint.constraints.maxHeight, expectedMaxHeight);
     }
 
-    await expectUnconstrainedHeight(300);
-    await expectUnconstrainedHeight(400);
+    await expectResponsiveHeight(
+      cardWidth: 300,
+      viewportHeight: 600,
+      expectedMaxHeight: 300,
+    );
+    await expectResponsiveHeight(
+      cardWidth: 400,
+      viewportHeight: 1000,
+      expectedMaxHeight: 500,
+    );
+  });
+
+  testWidgets('original-ratio images use contain instead of cropping', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: WidgetsEventImage(
+          value: 'https://example.com/image.jpg',
+          preserveAspectRatio: true,
+        ),
+      ),
+    );
+
+    expect(tester.widget<Image>(find.byType(Image)).fit, BoxFit.contain);
   });
 
   test('event and calendar cards preserve uploaded image proportions', () {

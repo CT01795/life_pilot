@@ -144,17 +144,22 @@ void main() {
     },
   );
   test('public import forwards records through controlled RPC', () async {
-    response = {'status': 'ok', 'inserted_rows': 1};
+    response = {
+      'status': 'ok',
+      'received_rows': 3,
+      'inserted_rows': 1,
+      'duplicate_rows': 2,
+    };
     final rows = [
       {'id': 'new', 'name': 'Event', 'start_date': '2026-12-01'},
     ];
-    expect(
-      await repository.importPublicEvents(
-        sourceUrl: 'https://strolltimes.com/test',
-        events: rows,
-      ),
-      response,
+    final result = await repository.importPublicEvents(
+      sourceUrl: 'https://strolltimes.com/test',
+      events: rows,
     );
+    expect(result.received, 3);
+    expect(result.inserted, 1);
+    expect(result.duplicates, 2);
     expect(
       requests.single.url.path,
       '/rest/v1/rpc/life_pilot_import_public_events',

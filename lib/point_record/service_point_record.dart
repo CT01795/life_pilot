@@ -6,7 +6,6 @@ import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/accounting/repository_account_image.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
 import 'package:life_pilot/record_statistics/repository_cloud_record_history.dart';
@@ -206,24 +205,14 @@ class ServicePointRecord {
       const columns = 'id,account,category,points';
       final List<dynamic> list;
       if (category == null && projectLimit != null) {
-        final responses = await Future.wait([
-          supabase
-              .from(TableNames.pointRecordAccount)
-              .select(columns)
-              .eq(Fields.createdBy, user)
-              .eq(Fields.isValid, true)
-              .eq('category', AccountCategory.personal.name)
-              .order(Fields.account, ascending: true),
-          supabase
-              .from(TableNames.pointRecordAccount)
-              .select(columns)
-              .eq(Fields.createdBy, user)
-              .eq(Fields.isValid, true)
-              .eq('category', AccountCategory.project.name)
-              .order(Fields.createdAt, ascending: false)
-              .limit(projectLimit),
-        ]);
-        list = [...responses[0], ...responses[1]];
+        final response = await supabase.rpc(
+          'get_my_ledger_account_options',
+          params: {'p_kind': 'points', 'p_project_limit': projectLimit},
+        );
+        if (response is! List) {
+          throw const FormatException('Invalid point account options');
+        }
+        list = List<dynamic>.from(response);
       } else {
         var query = supabase
             .from(TableNames.pointRecordAccount)

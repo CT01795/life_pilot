@@ -90,7 +90,17 @@ class _WidgetsEventImageState extends State<WidgetsEventImage> {
     }
     final image = _buildImage(context, imageValue);
     if (widget.preserveAspectRatio) {
-      return SizedBox(width: double.infinity, child: image);
+      final viewportHeight = MediaQuery.sizeOf(context).height;
+      final maxDisplayHeight = (viewportHeight * 0.5)
+          .clamp(160.0, 560.0)
+          .toDouble();
+      return SizedBox(
+        width: double.infinity,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxDisplayHeight),
+          child: image,
+        ),
+      );
     }
     return SizedBox(
       width: double.infinity,
@@ -105,7 +115,7 @@ class _WidgetsEventImageState extends State<WidgetsEventImage> {
     final cacheHeight = widget.preserveAspectRatio
         ? null
         : (widget.height * pixelRatio).round();
-    final fit = widget.preserveAspectRatio ? BoxFit.fitWidth : BoxFit.cover;
+    final fit = widget.preserveAspectRatio ? BoxFit.contain : BoxFit.cover;
     if (imageValue.startsWith('http://') || imageValue.startsWith('https://')) {
       return Image.network(
         imageValue,

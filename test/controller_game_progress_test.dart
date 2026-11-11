@@ -21,8 +21,6 @@ class _Service extends ServiceGame {
   Completer<List<ModelGameUser>>? pendingPage;
   Completer<DateTime?>? pendingLatest;
   final ranges = <(DateTime, DateTime, bool)>[];
-  final beforeDates = <DateTime>[];
-  int latestReads = 0;
 
   @override
   Future<GameProgressWindow> fetchUserProgressWindow({
@@ -49,49 +47,6 @@ class _Service extends ServiceGame {
       highestPassedLevel: 2,
       nextDate: next,
     );
-  }
-
-  @override
-  Future<int> fetchHighestPassedLevel({
-    required String userName,
-    required String gameType,
-    required String gameName,
-  }) async => 2;
-  @override
-  Future<List<ModelGameUser>> fetchUserProgressPage({
-    required String userName,
-    required String gameType,
-    required String gameName,
-    required DateTime dateFrom,
-    required DateTime dateTo,
-    bool includeLatestFallback = false,
-  }) async {
-    ranges.add((dateFrom, dateTo, includeLatestFallback));
-    if (fail) throw StateError('offline');
-    if (pendingPage != null) return pendingPage!.future;
-    return includeLatestFallback ? page : older;
-  }
-
-  @override
-  Future<bool> hasUserProgressBefore({
-    required String userName,
-    required String gameType,
-    required String gameName,
-    required DateTime before,
-  }) async {
-    beforeDates.add(before);
-    return more;
-  }
-
-  @override
-  Future<DateTime?> latestUserProgressDateBefore({
-    required String userName,
-    required String gameType,
-    required String gameName,
-    required DateTime before,
-  }) async {
-    latestReads++;
-    return pendingLatest?.future ?? Future.value(latest);
   }
 }
 
@@ -143,7 +98,7 @@ void main() {
   );
 
   test(
-    'superseded load-more does not probe a new games history boundary',
+    'superseded load-more does not start an obsolete progress window',
     () async {
       final service = _Service()..more = true;
       final c = _controller(service);
@@ -159,7 +114,7 @@ void main() {
       });
       expect(await c.loadMore(), isNull);
       await newer;
-      expect(service.latestReads, 0);
+      expect(service.ranges, hasLength(2));
       expect(c.isLoadingMore, isFalse);
     },
   );

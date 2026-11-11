@@ -8,7 +8,6 @@ import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:uuid/uuid.dart';
 import 'package:life_pilot/business_plan/repository_business_plan_reads.dart';
 
 class ServiceBusinessPlan {
@@ -40,69 +39,22 @@ class ServiceBusinessPlan {
     required String title,
     required String templateId,
   }) async {
-    List<String> sectionIdList = [];
     try {
-      // 1. 查詢
-      final exist = await RepositoryBusinessPlanReads(
-        supabase,
-      ).existingPlan(user: user, title: title);
-
-      if (exist != null) {
-        if (exist[Fields.isValid] == false) {
-          await supabase
-              .from(TableNames.businessPlan)
-              .update({Fields.isValid: true})
-              .eq(Fields.id, exist[Fields.id]);
-        } else {
-          throw Exception('Plan name already exists');
-        }
-      } else {
-        await supabase.from(TableNames.businessPlan).insert({
-          Fields.id: planId,
-          'title': title,
-          'template_id': templateId,
-          Fields.createdBy: user,
-          Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
-          Fields.isValid: true,
-        });
+      final currentAccount = supabase.auth.currentUser?.email
+          ?.trim()
+          .toLowerCase();
+      if (currentAccount == null ||
+          currentAccount != user.trim().toLowerCase()) {
+        throw StateError('Business plan account changed');
       }
-
-      // 2️⃣ 取得模板 sections
-      final responseSectionsTemplate = await RepositoryBusinessPlanReads(
-        supabase,
-      ).sections(templateId);
-
-      int i = 0;
-      for (final s in responseSectionsTemplate) {
-        sectionIdList.add(const Uuid().v4());
-
-        // 3️⃣ 建立 section
-        await supabase.from(TableNames.businessPlanSection).insert({
-          Fields.id: sectionIdList[i],
-          'plan_id': planId,
-          'title': s['title'],
-          'sort_order': s['sort_order'],
-        });
-
-        // 4️⃣ 建立題目
-        final responseQuestionsTemplate = await RepositoryBusinessPlanReads(
-          supabase,
-        ).questions(s[Fields.id]);
-
-        final questionRows = responseQuestionsTemplate.map((q) {
-          return {
-            Fields.id: const Uuid().v4(),
-            'section_id': sectionIdList[i],
-            'prompt': q['prompt'],
-            'sort_order': q['sort_order'],
-          };
-        }).toList();
-
-        await supabase
-            .from(TableNames.businessPlanQuestion)
-            .insert(questionRows);
-        i++;
-      }
+      await supabase.rpc(
+        'create_business_plan_from_template',
+        params: {
+          'p_plan_id': planId,
+          'p_title': title,
+          'p_template_id': templateId,
+        },
+      );
     } on Exception catch (exception, st) {
       logger.e(exception, stackTrace: st);
       rethrow;

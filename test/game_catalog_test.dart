@@ -7,7 +7,6 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/controller_game_list.dart';
 import 'package:life_pilot/game/model_game_catalog.dart';
 import 'package:life_pilot/game/model_game_item.dart';
-import 'package:life_pilot/game/model_game_user.dart';
 import 'package:life_pilot/game/page_game_list.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -52,33 +51,6 @@ class _Service extends ServiceGame {
     if (fail) throw StateError('unavailable');
     return games;
   }
-
-  @override
-  Future<int> fetchHighestPassedLevel({
-    required String userName,
-    required String gameType,
-    required String gameName,
-  }) async => 0;
-  @override
-  Future<List<ModelGameUser>> fetchUserProgressPage({
-    required String userName,
-    required String gameType,
-    required String gameName,
-    required DateTime dateFrom,
-    required DateTime dateTo,
-    bool includeLatestFallback = false,
-  }) async {
-    historyLoads++;
-    return [];
-  }
-
-  @override
-  Future<bool> hasUserProgressBefore({
-    required String userName,
-    required String gameType,
-    required String gameName,
-    required DateTime before,
-  }) async => false;
 }
 
 class _SyncFailure extends ServiceGame {

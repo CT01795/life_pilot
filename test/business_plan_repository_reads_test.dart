@@ -42,6 +42,16 @@ void main() {
       httpClient: MockClient((r) async {
         requests.add(r);
         if (r.method != 'GET') {
+          if (r.url.path.endsWith('/rpc/create_business_plan_from_template')) {
+            return http.Response(
+              duplicate
+                  ? jsonEncode({'code': '23505', 'message': 'plan_name_exists'})
+                  : jsonEncode('new'),
+              duplicate ? 409 : 200,
+              request: r,
+              headers: {'content-type': 'application/json'},
+            );
+          }
           return http.Response(
             'null',
             201,
@@ -267,7 +277,7 @@ void main() {
     },
   );
   test(
-    'creating from a template keeps all section/question values and original writes',
+    'creating from a template uses one atomic RPC with only identifiers',
     () async {
       await ServiceBusinessPlan().createPlanFromTemplate(
         user: 'one@example.com',
@@ -275,35 +285,17 @@ void main() {
         title: 'New',
         templateId: 't',
       );
-      final writes = requests.where((r) => r.method == 'POST').toList();
-      expect(writes, hasLength(5));
-      expect(jsonDecode(writes.first.body), containsPair('template_id', 't'));
+      expect(requests, hasLength(1));
+      expect(requests.single.method, 'POST');
       expect(
-        jsonDecode(writes.first.body),
-        containsPair(Fields.createdBy, 'one@example.com'),
+        requests.single.url.path,
+        endsWith('/rpc/create_business_plan_from_template'),
       );
-      final sections = writes
-          .where(
-            (r) => r.url.path.endsWith('/${TableNames.businessPlanSection}'),
-          )
-          .toList();
-      final questions = writes
-          .where(
-            (r) => r.url.path.endsWith('/${TableNames.businessPlanQuestion}'),
-          )
-          .toList();
-      expect(sections, hasLength(2));
-      expect(questions, hasLength(2));
-      for (var i = 0; i < 2; i++) {
-        final section = jsonDecode(sections[i].body) as Map;
-        final question = (jsonDecode(questions[i].body) as List).single as Map;
-        expect(section['plan_id'], 'new');
-        expect(section['sort_order'], i + 1);
-        expect(question['section_id'], section['id']);
-        expect(question['prompt'], '完整題目');
-        expect(question['sort_order'], 1);
-        expect(question.containsKey('unused_blob'), isFalse);
-      }
+      expect(jsonDecode(requests.single.body), {
+        'p_plan_id': 'new',
+        'p_title': 'New',
+        'p_template_id': 't',
+      });
     },
   );
   test('duplicate plan validation still stops before any write', () async {
@@ -318,7 +310,7 @@ void main() {
       throwsException,
     );
     expect(requests, hasLength(1));
-    expect(requests.single.method, 'GET');
+    expect(requests.single.method, 'POST');
   });
   test(
     'plan list mapping keeps status/date/title but does not preload details',

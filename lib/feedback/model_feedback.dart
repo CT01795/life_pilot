@@ -115,7 +115,7 @@ class ModelFeedback {
   }
 
   // helper for isolate
-  static Uint8List decodeBase64(String s) => base64Decode(s);
+  static Uint8List _decodeBase64(String s) => base64Decode(s);
   static Future<Uint8List> _decodeOffThread(String source) =>
-      compute(decodeBase64, source);
+      compute(_decodeBase64, source);
 }

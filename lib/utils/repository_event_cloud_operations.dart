@@ -1,4 +1,28 @@
 import 'package:life_pilot/utils/repository_cloud_gateway.dart';
+import 'package:life_pilot/utils/value_parser.dart';
+
+class PublicEventImportResult {
+  const PublicEventImportResult({
+    required this.received,
+    required this.inserted,
+    required this.duplicates,
+  });
+
+  final int received;
+  final int inserted;
+  final int duplicates;
+
+  factory PublicEventImportResult.fromResponse(dynamic response) {
+    if (response is! Map) {
+      throw const FormatException('Invalid public event import response');
+    }
+    return PublicEventImportResult(
+      received: parseIntValue(response['received_rows']),
+      inserted: parseIntValue(response['inserted_rows']),
+      duplicates: parseIntValue(response['duplicate_rows']),
+    );
+  }
+}
 
 /// Reads cached coordinates and calls the provider only for missing data.
 class RepositoryEventCloudOperations {
@@ -43,11 +67,13 @@ class RepositoryEventCloudOperations {
     };
   }
 
-  Future<dynamic> importPublicEvents({
+  Future<PublicEventImportResult> importPublicEvents({
     required String sourceUrl,
     required List<Map<String, dynamic>> events,
-  }) => gateway.rpc(
-    'life_pilot_import_public_events',
-    params: {'p_source_url': sourceUrl, 'p_events': events},
+  }) async => PublicEventImportResult.fromResponse(
+    await gateway.rpc(
+      'life_pilot_import_public_events',
+      params: {'p_source_url': sourceUrl, 'p_events': events},
+    ),
   );
 }

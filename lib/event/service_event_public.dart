@@ -18,12 +18,10 @@ import 'package:life_pilot/event/public_event_refresh.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/duplicate_tolerant_batch_writer.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/event_city_normalizer.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/value_parser.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:life_pilot/utils/repository_cloud_gateway.dart';
 import 'package:life_pilot/utils/repository_event_cloud_operations.dart';
@@ -182,13 +180,6 @@ class ServiceEventPublic {
     logger.e('Public event source failed: $url', error: error);
   }
 
-  Future<void> _markEventsUrlCompleted(String url, DateTime today) async {
-    await supabase.from(TableNames.recommendEventUrl).upsert({
-      'master_url': url,
-      'start_date': today.toUtc().toIso8601String(),
-    }, onConflict: 'master_url,start_date');
-  }
-
   Future<Set<String>> _insertIfNotExists(
     List<EventItem> events,
     RepositoryImportDeletionKeys importKeys,
@@ -223,10 +214,7 @@ class ServiceEventPublic {
     final dates = validEvents
         .map((event) => event.startDate)
         .whereType<DateTime>();
-    await Future.wait<void>([
-      importKeys.read(dates).then(dbNameDateSet.addAll),
-      importKeys.readNewExistingDays(dates).then(dbNameDateSet.addAll),
-    ]);
+    dbNameDateSet.addAll(await importKeys.readNewDays(dates));
 
     for (final e in validEvents) {
       e.city = EventCityNormalizer.normalize(e.city);
@@ -277,34 +265,24 @@ class ServiceEventPublic {
           );
         }
         final rows = resolvedEvents.map((event) => event.toJson()).toList();
-        final isCurrentUserAdmin =
-            supabase.auth.currentUser?.appMetadata['role'] ==
-            AuthConstants.adminRole;
-        if (isCurrentUserAdmin) {
-          await DuplicateTolerantBatchWriter.write(
-            items: rows,
-            writeBatch: (items) async {
-              await supabase.from(TableNames.recommendEvents).insert(items);
-            },
-            writeOne: (item) async {
-              await supabase.from(TableNames.recommendEvents).insert(item);
-            },
-            isDuplicateError: (error) =>
-                error is PostgrestException && error.code == '23505',
-            onDuplicate: (item) {
-              logger.i('Skipped duplicate imported event: ${item[Fields.id]}');
-            },
-          );
-          await _markEventsUrlCompleted(url, checkedAt);
-        } else {
-          for (var offset = 0; offset < rows.length; offset += 200) {
-            final end = offset + 200 < rows.length ? offset + 200 : rows.length;
-            final batch = rows.sublist(offset, end);
-            await RepositoryEventCloudOperations(
-              gateway: _cloudGateway,
-            ).importPublicEvents(sourceUrl: url, events: batch);
-          }
+        var insertedRows = 0;
+        var duplicateRows = 0;
+        for (var offset = 0; offset < rows.length; offset += 200) {
+          final end = offset + 200 < rows.length ? offset + 200 : rows.length;
+          final result =
+              await RepositoryEventCloudOperations(
+                gateway: _cloudGateway,
+              ).importPublicEvents(
+                sourceUrl: url,
+                events: rows.sublist(offset, end),
+              );
+          insertedRows += result.inserted;
+          duplicateRows += result.duplicates;
         }
+        logger.i(
+          'Public event database import: inserted=$insertedRows; '
+          'duplicates=$duplicateRows',
+        );
       } on Exception catch (ex) {
         logger.e(ex);
         rethrow;

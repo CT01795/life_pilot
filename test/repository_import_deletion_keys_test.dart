@@ -36,15 +36,13 @@ void main() {
       );
       addTearDown(client.dispose);
       final repository = RepositoryImportDeletionKeys(client);
-      expect(await repository.readExisting([]), isEmpty);
+      expect(await repository.readNewDays([]), isEmpty);
       expect(requests, isEmpty);
-      final existing = await repository.readNewExistingDays([day, day]);
+      final existing = await repository.readNewDays([day, day]);
       expect(existing, hasLength(3));
-      expect(await repository.readNewExistingDays([day]), isEmpty);
-      expect(await repository.read([day]), existing);
+      expect(await repository.readNewDays([day]), isEmpty);
       expect(requests.map((uri) => uri.path.split('/').last), [
-        'get_public_event_deduplication_rows',
-        'get_public_event_deduplication_rows',
+        'get_public_event_deduplication_rows_v2',
       ]);
       for (final uri in requests) {
         expect(uri.queryParameters, isEmpty);

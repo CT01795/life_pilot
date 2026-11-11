@@ -71,6 +71,44 @@ void main() {
       });
     },
   );
+  test('identical external reads reuse a short-lived response', () async {
+    final service = ServiceCloudApi(client: client);
+
+    final first = await service.post('/external/weather', {
+      'lat': 25,
+      'lng': 121,
+    });
+    final second = await service.post('/external/weather', {
+      'lng': 121,
+      'lat': 25,
+    });
+
+    expect(second, first);
+    expect(requests, hasLength(1));
+  });
+  test('simultaneous identical external reads share one invocation', () async {
+    gate = Completer<void>();
+    final service = ServiceCloudApi(client: client);
+
+    final first = service.post('/external/geocode', {'query': 'Taipei'});
+    final second = service.post('/external/geocode', {'query': 'Taipei'});
+    while (requests.isEmpty) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(requests, hasLength(1));
+
+    gate!.complete();
+    await Future.wait([first, second]);
+    expect(requests, hasLength(1));
+  });
+  test('account mutations are never cached or combined', () async {
+    final service = ServiceCloudApi(client: client);
+
+    await service.post('/account/admin/create-user', {'email': 'a@test.dev'});
+    await service.post('/account/admin/create-user', {'email': 'a@test.dev'});
+
+    expect(requests, hasLength(2));
+  });
   test(
     'stock route is rejected by non-stock transport before network',
     () async {

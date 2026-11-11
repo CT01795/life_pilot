@@ -132,13 +132,26 @@ class ServiceFeedback {
         .where((path) => path.isNotEmpty)
         .toList(growable: false);
     if (paths.isNotEmpty) {
-      return Future.wait([
-        for (final path in paths)
-          client.storage
-              .from('feedback-screenshots')
-              .download(path)
-              .then(base64Encode),
-      ]);
+      const concurrentDownloads = 3;
+      final images = <String>[];
+      for (
+        var offset = 0;
+        offset < paths.length;
+        offset += concurrentDownloads
+      ) {
+        final candidateEnd = offset + concurrentDownloads;
+        final end = candidateEnd < paths.length ? candidateEnd : paths.length;
+        images.addAll(
+          await Future.wait([
+            for (final path in paths.sublist(offset, end))
+              client.storage
+                  .from('feedback-screenshots')
+                  .download(path)
+                  .then(base64Encode),
+          ]),
+        );
+      }
+      return List.unmodifiable(images);
     }
     return List<String>.unmodifiable(
       (row['screenshot'] as List? ?? const []).map(parseStringValue),
