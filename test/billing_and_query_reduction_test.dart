@@ -255,7 +255,10 @@ void main() {
         'screenshot': ['encoded-image'],
       };
       expect(await ServiceFeedback().loadScreenshots(3), ['encoded-image']);
-      expect(requests.last.url.queryParameters['select'], 'screenshot');
+      expect(
+        requests.last.url.queryParameters['select'],
+        'screenshot,screenshot_paths',
+      );
       expect(requests.last.url.queryParameters['id'], 'eq.3');
     },
   );

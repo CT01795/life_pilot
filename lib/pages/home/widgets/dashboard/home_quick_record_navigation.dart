@@ -124,7 +124,7 @@ Future<void> openHomeAccountingDetails(BuildContext context) async {
   final user = auth.account;
   if ((accountId == null && accountName == null) || user == null) return;
   final service = context.read<ServiceAccounting>();
-  final accounts = await service.fetchAccounts(user: user, includeGraph: false);
+  final accounts = await service.fetchAccounts(user: user);
   if (!context.mounted || !scope.isCurrent) return;
   final account = accounts
       .where((item) => item.id == accountId || item.accountName == accountName)
@@ -209,7 +209,7 @@ Future<void> openHomePointDetails(BuildContext context) async {
   final user = auth.account;
   if ((accountId == null && accountName == null) || user == null) return;
   final service = context.read<ServicePointRecord>();
-  final accounts = await service.fetchAccounts(user: user, includeGraph: false);
+  final accounts = await service.fetchAccounts(user: user);
   if (!context.mounted || !scope.isCurrent) return;
   final account = accounts
       .where((item) => item.id == accountId || item.accountName == accountName)

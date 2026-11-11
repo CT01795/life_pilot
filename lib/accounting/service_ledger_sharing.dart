@@ -16,7 +16,6 @@ typedef SharedLedgerHomeSnapshot = ({
 
 typedef SharedLedgerDetailReads = ({
   Future<bool> canPropose,
-  Future<bool> canChangeImage,
   Future<Map<String, dynamic>> totals,
   Future<List<Map<String, dynamic>>> entries,
 });
@@ -174,7 +173,6 @@ class ServiceLedgerSharing {
     );
     return (
       canPropose: snapshot.then((row) => row['can_propose'] == true),
-      canChangeImage: snapshot.then((row) => row['can_change_image'] == true),
       totals: snapshot.then(
         (row) => Map<String, dynamic>.unmodifiable(row['totals'] as Map),
       ),
@@ -367,18 +365,6 @@ class ServiceLedgerSharing {
       'p_allowed': allowed,
     });
   }
-
-  Future<bool> canChangeImage(String id) => RepositorySessionReads(_db).read(
-    _group,
-    ('can-change-image', id),
-    () async {
-      return await _db.rpc(
-            'can_change_shared_ledger_image',
-            params: {'p_share_id': id},
-          ) ==
-          true;
-    },
-  );
 
   Future<void> updateSharedImage(String id, Uint8List bytes) async {
     final fields = await RepositoryAccountImage.imageFields(bytes);

@@ -58,7 +58,10 @@ class _AccountImageTileState extends State<AccountImageTile> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final size = MediaQuery.sizeOf(context).width < 400 ? 84.0 : 120.0;
+    // Grow smoothly with the device instead of holding every sub-400px phone
+    // at 84px. The old hard breakpoint made the image look proportionally
+    // smaller as phones approached 400 logical pixels wide.
+    final size = (MediaQuery.sizeOf(context).width * 0.25).clamp(92.0, 120.0);
     return SizedBox.square(
       dimension: size,
       child: Material(
@@ -102,11 +105,18 @@ class _AccountImageTileState extends State<AccountImageTile> {
             ),
             if (widget.changeImage != null)
               PositionedDirectional(
-                end: 0,
-                bottom: 0,
+                end: 4,
+                bottom: 4,
                 child: IconButton.filledTonal(
                   tooltip: loc.changeAccountImage,
-                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  style: IconButton.styleFrom(
+                    fixedSize: const Size.square(32),
+                    minimumSize: const Size.square(32),
+                    padding: EdgeInsets.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: const Icon(Icons.edit_outlined, size: 16),
                   onPressed: widget.changeImage,
                 ),
               ),

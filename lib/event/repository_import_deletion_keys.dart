@@ -28,39 +28,31 @@ class RepositoryImportDeletionKeys {
 
   Future<Set<String>> _read(String table, Iterable<DateTime> dates) async {
     final days = _calendarDays(dates).toList();
+    if (days.isEmpty) return {};
     final keys = <String>{};
-    const dayBatch = 12;
-    const pageSize = 300;
-    for (var index = 0; index < days.length; index += dayBatch) {
-      final clauses = days
-          .skip(index)
-          .take(dayBatch)
-          .map((day) {
-            final next = DateTime(day.year, day.month, day.day + 1);
-            return 'and(start_date.gte.${day.toUtc().toIso8601String()},'
-                'start_date.lt.${next.toUtc().toIso8601String()})';
-          })
-          .join(',');
-      for (var offset = 0; ; offset += pageSize) {
-        final rows = await client
-            .from(table)
-            .select('id,name,start_date,start_time,city,location')
-            .or(clauses)
-            .order('start_date')
-            .order('id')
-            .range(offset, offset + pageSize - 1);
-        for (final row in rows) {
-          final event = EventItem.fromJson(json: row);
-          if (event.startDate == null) continue;
-          event.startDate = event.startDate!.toLocal();
-          keys.addAll([
-            EventDeduplicationKey.byName(event),
-            EventDeduplicationKey.byNameIgnoringTime(event),
-            EventDeduplicationKey.byId(event),
-          ]);
-        }
-        if (rows.length < pageSize) break;
-      }
+    final rows =
+        await client.rpc(
+              'get_public_event_deduplication_rows',
+              params: {
+                'p_deleted': table == TableNames.recommendEventsDeleted,
+                'p_dates': days
+                    .map(
+                      (day) =>
+                          '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}',
+                    )
+                    .toList(growable: false),
+              },
+            )
+            as List;
+    for (final row in rows) {
+      final event = EventItem.fromJson(json: Map<String, dynamic>.from(row));
+      if (event.startDate == null) continue;
+      event.startDate = event.startDate!.toLocal();
+      keys.addAll([
+        EventDeduplicationKey.byName(event),
+        EventDeduplicationKey.byNameIgnoringTime(event),
+        EventDeduplicationKey.byId(event),
+      ]);
     }
     return keys;
   }

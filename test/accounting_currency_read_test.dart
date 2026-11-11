@@ -41,7 +41,6 @@ class _Service extends ServiceAccounting {
     required String user,
     String? category,
     int? projectLimit,
-    bool includeGraph = true,
   }) async => rows;
 }
 

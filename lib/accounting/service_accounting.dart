@@ -7,7 +7,6 @@ import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/accounting/repository_account_image.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
-import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
 import 'package:life_pilot/record_statistics/repository_cloud_record_history.dart';
@@ -24,6 +23,8 @@ import 'package:life_pilot/local_storage/repository_local_account_summary.dart';
 class ServiceAccounting {
   static const _accountModelColumns =
       'id,account,category,master_graph_url,balance,main_currency,exchange_rate';
+  static const _accountLinkColumns =
+      'id,account,category,balance,main_currency,exchange_rate';
   final _localAccountSummary = RepositoryLocalAccountSummary();
   final _localEventAccounts = RepositoryLocalEventAccount();
   final _localHistory = RepositoryLocalRecordHistory();
@@ -94,14 +95,11 @@ class ServiceAccounting {
           detailResource: TableNames.accountingDetail,
         );
         if (response == null) return null;
-        return ModelAccountingAccount.fromRow(
-          response,
-          masterGraphUrl: parseMasterGraph(response['master_graph_url']),
-        );
+        return ModelAccountingAccount.fromRow(response);
       }
       var response = await supabase
           .from(TableNames.accountingAccount)
-          .select(_accountModelColumns)
+          .select(_accountLinkColumns)
           .eq(Fields.id, eventId)
           .eq(Fields.createdBy, user)
           .eq(Fields.isValid, true)
@@ -121,7 +119,7 @@ class ServiceAccounting {
         if (linkedAccountId != null) {
           response = await supabase
               .from(TableNames.accountingAccount)
-              .select(_accountModelColumns)
+              .select(_accountLinkColumns)
               .eq(Fields.id, linkedAccountId)
               .eq(Fields.createdBy, user)
               .eq(Fields.isValid, true)
@@ -131,15 +129,7 @@ class ServiceAccounting {
 
       if (response == null) return null;
 
-      Uint8List? bytes;
-      if (response['master_graph_url'] != null) {
-        bytes = await compute<String?, Uint8List?>(
-          decodeBase64InIsolate,
-          response['master_graph_url'],
-        );
-      }
-
-      return ModelAccountingAccount.fromRow(response, masterGraphUrl: bytes);
+      return ModelAccountingAccount.fromRow(response);
     } on Exception {
       return null;
     }
@@ -181,7 +171,6 @@ class ServiceAccounting {
     required String user,
     String? category, // null = all categories
     int? projectLimit,
-    bool includeGraph = true,
   }) async {
     try {
       if (await _storesLocally) {
@@ -207,17 +196,12 @@ class ServiceAccounting {
             .map(
               (e) => ModelAccountingAccount.fromRow(
                 e,
-                masterGraphUrl: includeGraph
-                    ? parseMasterGraph(e['master_graph_url'])
-                    : null,
                 balanceOverride: page.totalFor(e),
               ),
             )
             .toList();
       }
-      final columns = includeGraph
-          ? '*'
-          : 'id,account,category,balance,main_currency,exchange_rate';
+      const columns = 'id,account,category,balance,main_currency,exchange_rate';
       final List<dynamic> list;
       if (category == null && projectLimit != null) {
         final responses = await Future.wait([
@@ -250,22 +234,7 @@ class ServiceAccounting {
         list = await query.order(Fields.account, ascending: true);
       }
 
-      if (!includeGraph) {
-        return list.map((row) => ModelAccountingAccount.fromRow(row)).toList();
-      }
-      return await Future.wait(
-        list.map((e) async {
-          final graph = e['master_graph_url'];
-          final bytes = graph == null
-              ? null
-              : await compute<String?, Uint8List?>(
-                  decodeBase64InIsolate,
-                  graph,
-                );
-
-          return ModelAccountingAccount.fromRow(e, masterGraphUrl: bytes);
-        }),
-      );
+      return list.map((row) => ModelAccountingAccount.fromRow(row)).toList();
     } on Exception catch (exception) {
       logger.e(exception);
       rethrow;
@@ -525,7 +494,7 @@ class ServiceAccounting {
       includeLatest: includeLatestFallback,
     );
     final result =
-        combinedRows ??
+        combinedRows?.rows ??
         List<Map<String, dynamic>>.from(
           await query.order('date', ascending: false),
         );
@@ -564,14 +533,17 @@ class ServiceAccounting {
           .limit(1);
       result.addAll(List<Map<String, dynamic>>.from(fallback));
     }
-    final totalRows = await supabase
-        .from(TableNames.accountingAccount)
-        .select('balance')
-        .eq(Fields.id, accountId)
-        .limit(1);
-    var balance = totalRows.isEmpty
-        ? 0
-        : parseNumValue(totalRows.first['balance']);
+    var balance = combinedRows?.total;
+    if (balance == null) {
+      final totalRows = await supabase
+          .from(TableNames.accountingAccount)
+          .select('balance')
+          .eq(Fields.id, accountId)
+          .limit(1);
+      balance = totalRows.isEmpty
+          ? 0
+          : parseNumValue(totalRows.first['balance']);
+    }
     if (owner != null && await _storesLocally) {
       final allLocal = await LocalDataStore.instance.list(
         owner: owner,
@@ -586,7 +558,7 @@ class ServiceAccounting {
           .fold<num>(0, (sum, row) => sum + parseNumValue(row['value']));
     }
     final unique = uniqueRecordRowsNewestFirst(result);
-    return unique.map((detail) => _mapDetail(detail, balance)).toList();
+    return unique.map((detail) => _mapDetail(detail, balance!)).toList();
   }
 
   Future<bool> hasRecordsBefore({

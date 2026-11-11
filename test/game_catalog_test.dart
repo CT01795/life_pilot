@@ -28,6 +28,23 @@ class _Service extends ServiceGame {
   Completer<List<ModelGameItem>>? pending;
   void Function()? onFetch;
   @override
+  Future<GameProgressWindow> fetchUserProgressWindow({
+    required String userName,
+    required String gameType,
+    required String gameName,
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    required bool includeLatestFallback,
+  }) async {
+    historyLoads++;
+    return const GameProgressWindow(
+      rows: [],
+      highestPassedLevel: 0,
+      nextDate: null,
+    );
+  }
+
+  @override
   Future<List<ModelGameItem>> fetchGames() async {
     loads++;
     onFetch?.call();

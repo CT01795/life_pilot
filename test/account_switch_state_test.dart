@@ -107,7 +107,6 @@ class _DelayedAccountingService extends ServiceAccounting {
     required String user,
     String? category,
     int? projectLimit,
-    bool includeGraph = true,
   }) => response.future;
 }
 
@@ -119,7 +118,6 @@ class _DelayedPointService extends ServicePointRecord {
     required String user,
     String? category,
     int? projectLimit,
-    bool includeGraph = true,
   }) => response.future;
 }
 

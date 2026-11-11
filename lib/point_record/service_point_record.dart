@@ -7,7 +7,6 @@ import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/accounting/repository_account_image.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
-import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
 import 'package:life_pilot/record_statistics/repository_cloud_record_history.dart';
@@ -24,6 +23,7 @@ import 'package:life_pilot/local_storage/repository_local_account_summary.dart';
 class ServicePointRecord {
   static const _accountModelColumns =
       'id,account,category,master_graph_url,points';
+  static const _accountLinkColumns = 'id,account,category,points';
   static const _pointDetailColumns =
       'id,account_id,created_at,date,primary_category,group,description,type,value';
   final _localAccountSummary = RepositoryLocalAccountSummary();
@@ -96,14 +96,11 @@ class ServicePointRecord {
           detailResource: TableNames.pointRecordDetail,
         );
         if (response == null) return null;
-        return ModelPointRecordAccount.fromRow(
-          response,
-          masterGraphUrl: parseMasterGraph(response['master_graph_url']),
-        );
+        return ModelPointRecordAccount.fromRow(response);
       }
       var response = await supabase
           .from(currentTable)
-          .select(_accountModelColumns)
+          .select(_accountLinkColumns)
           .eq(Fields.id, eventId)
           .eq(Fields.createdBy, user)
           .eq(Fields.isValid, true)
@@ -123,7 +120,7 @@ class ServicePointRecord {
         if (linkedAccountId != null) {
           response = await supabase
               .from(currentTable)
-              .select(_accountModelColumns)
+              .select(_accountLinkColumns)
               .eq(Fields.id, linkedAccountId)
               .eq(Fields.createdBy, user)
               .eq(Fields.isValid, true)
@@ -133,15 +130,7 @@ class ServicePointRecord {
 
       if (response == null) return null;
 
-      Uint8List? bytes;
-      if (response['master_graph_url'] != null) {
-        bytes = await compute<String?, Uint8List?>(
-          decodeBase64InIsolate,
-          response['master_graph_url'],
-        );
-      }
-
-      return ModelPointRecordAccount.fromRow(response, masterGraphUrl: bytes);
+      return ModelPointRecordAccount.fromRow(response);
     } on Exception catch (exception) {
       logger.e(exception);
       return null;
@@ -184,7 +173,6 @@ class ServicePointRecord {
     required String user,
     String? category, // null = all categories
     int? projectLimit,
-    bool includeGraph = true,
   }) async {
     try {
       if (await _storesLocally) {
@@ -210,15 +198,12 @@ class ServicePointRecord {
             .map(
               (e) => ModelPointRecordAccount.fromRow(
                 e,
-                masterGraphUrl: includeGraph
-                    ? parseMasterGraph(e['master_graph_url'])
-                    : null,
                 pointsOverride: page.totalFor(e).toInt(),
               ),
             )
             .toList();
       }
-      final columns = includeGraph ? '*' : 'id,account,category,points';
+      const columns = 'id,account,category,points';
       final List<dynamic> list;
       if (category == null && projectLimit != null) {
         final responses = await Future.wait([
@@ -251,22 +236,7 @@ class ServicePointRecord {
         list = await query.order(Fields.account, ascending: true);
       }
 
-      if (list.isEmpty) return [];
-      if (!includeGraph) {
-        return list.map((row) => ModelPointRecordAccount.fromRow(row)).toList();
-      }
-      return await Future.wait(
-        list.map((e) async {
-          final graph = e['master_graph_url'];
-          final bytes = graph == null
-              ? null
-              : await compute<String?, Uint8List?>(
-                  decodeBase64InIsolate,
-                  graph,
-                );
-          return ModelPointRecordAccount.fromRow(e, masterGraphUrl: bytes);
-        }),
-      );
+      return list.map((row) => ModelPointRecordAccount.fromRow(row)).toList();
     } on Exception catch (exception) {
       logger.e(exception);
       rethrow;
@@ -530,7 +500,7 @@ class ServicePointRecord {
       includeLatest: includeLatestFallback,
     );
     final result =
-        combinedRows ??
+        combinedRows?.rows ??
         List<Map<String, dynamic>>.from(
           await query.order('date', ascending: false),
         );
@@ -569,14 +539,15 @@ class ServicePointRecord {
           .limit(1);
       result.addAll(List<Map<String, dynamic>>.from(fallback));
     }
-    final totalRows = await supabase
-        .from(TableNames.pointRecordAccount)
-        .select('points')
-        .eq(Fields.id, accountId)
-        .limit(1);
-    var points = totalRows.isEmpty
-        ? 0
-        : parseIntValue(totalRows.first['points']);
+    var points = combinedRows?.total.toInt();
+    if (points == null) {
+      final totalRows = await supabase
+          .from(TableNames.pointRecordAccount)
+          .select('points')
+          .eq(Fields.id, accountId)
+          .limit(1);
+      points = totalRows.isEmpty ? 0 : parseIntValue(totalRows.first['points']);
+    }
     if (owner != null && await _storesLocally) {
       final allLocal = await LocalDataStore.instance.list(
         owner: owner,

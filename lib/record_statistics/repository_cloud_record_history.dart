@@ -3,6 +3,13 @@ import 'package:life_pilot/utils/repository_session_reads.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class CloudRecordHistoryWindow {
+  const CloudRecordHistoryWindow({required this.rows, required this.total});
+
+  final List<Map<String, dynamic>> rows;
+  final num total;
+}
+
 /// Reuses a recent existence probe once, for the exact same history boundary.
 class RepositoryCloudRecordHistory {
   ({Object key, DateTime date, DateTime readAt})? _hint;
@@ -15,7 +22,7 @@ class RepositoryCloudRecordHistory {
     _revision++;
   }
 
-  Future<List<Map<String, dynamic>>?> window(
+  Future<CloudRecordHistoryWindow?> window(
     SupabaseClient client, {
     required String table,
     required String kind,
@@ -79,7 +86,10 @@ class RepositoryCloudRecordHistory {
         readAt: DateTime.now(),
       );
     }
-    return List<Map<String, dynamic>>.from(rows);
+    return CloudRecordHistoryWindow(
+      rows: List<Map<String, dynamic>>.from(rows),
+      total: parseNumValue(result['total']),
+    );
   }
 
   Future<DateTime?> latestBefore(

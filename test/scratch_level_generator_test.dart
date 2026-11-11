@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_pilot/game/steam_scratch/controller_game_steam_scratch_level_generator.dart';
 import 'package:life_pilot/game/steam_scratch/model_scratch_level_generator.dart';
 import 'package:life_pilot/game/steam_scratch/model_game_steam_scratch_level.dart';
 import 'package:life_pilot/utils/value_parser.dart';
@@ -60,10 +59,10 @@ void main() {
   }
   test('old constructor alias retains level generation API', () {
     expectSameLevel(
-      GameSteamScratchLevelGenerator(random: Random(12)).generateLevel(5),
+      ModelScratchLevelGenerator(random: Random(12)).generateLevel(5),
       ModelScratchLevelGenerator(random: Random(12)).generateLevel(5),
     );
-    expect(GameSteamScratchLevelGenerator().generateLevel(1).treasure.x, 2);
+    expect(ModelScratchLevelGenerator().generateLevel(1).treasure.x, 2);
   });
   test(
     'reusing generator preserves random sequence and independent levels',

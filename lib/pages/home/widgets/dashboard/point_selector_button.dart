@@ -45,7 +45,6 @@ class PointSelectorButton extends StatelessWidget {
         final accounts = await context.read<ServicePointRecord>().fetchAccounts(
           user: auth.account ?? '',
           projectLimit: 2,
-          includeGraph: false,
         );
         return accounts
             .map(

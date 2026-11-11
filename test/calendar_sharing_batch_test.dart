@@ -82,14 +82,12 @@ void main() {
         'three@example.com',
       ], ids());
       expect(passes, 1);
-      expect(requests.map((row) => row['p_invited_email']), [
+      expect(requests, hasLength(1));
+      expect(requests.single['p_invited_emails'], [
         'two@example.com',
         'three@example.com',
       ]);
-      expect(requests.map((row) => row['p_event_ids']), [
-        ['a', 'b'],
-        ['a', 'b'],
-      ]);
+      expect(requests.single['p_event_ids'], ['a', 'b']);
     },
   );
   test(
@@ -102,9 +100,12 @@ void main() {
         ids.clear();
       };
       await service.inviteAll(recipients, ids);
-      expect(requests, hasLength(2));
-      expect(requests.last['p_invited_email'], 'three@example.com');
-      expect(requests.last['p_event_ids'], ['a', 'b']);
+      expect(requests, hasLength(1));
+      expect(requests.single['p_invited_emails'], [
+        'two@example.com',
+        'three@example.com',
+      ]);
+      expect(requests.single['p_event_ids'], ['a', 'b']);
     },
   );
   test(

@@ -65,11 +65,13 @@ class _DecodedImageCache {
 class WidgetsEventImage extends StatefulWidget {
   final String? value;
   final double height;
+  final bool preserveAspectRatio;
 
   const WidgetsEventImage({
     super.key,
     required this.value,
     this.height = 180,
+    this.preserveAspectRatio = false,
   });
 
   @override
@@ -86,21 +88,28 @@ class _WidgetsEventImageState extends State<WidgetsEventImage> {
     if (imageValue == null || imageValue.isEmpty) {
       return const SizedBox.shrink();
     }
+    final image = _buildImage(context, imageValue);
+    if (widget.preserveAspectRatio) {
+      return SizedBox(width: double.infinity, child: image);
+    }
     return SizedBox(
       width: double.infinity,
       height: widget.height,
-      child: _buildImage(context, imageValue),
+      child: image,
     );
   }
 
   Widget _buildImage(BuildContext context, String imageValue) {
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     final cacheWidth = (MediaQuery.sizeOf(context).width * pixelRatio).round();
-    final cacheHeight = (widget.height * pixelRatio).round();
+    final cacheHeight = widget.preserveAspectRatio
+        ? null
+        : (widget.height * pixelRatio).round();
+    final fit = widget.preserveAspectRatio ? BoxFit.fitWidth : BoxFit.cover;
     if (imageValue.startsWith('http://') || imageValue.startsWith('https://')) {
       return Image.network(
         imageValue,
-        fit: BoxFit.cover,
+        fit: fit,
         cacheWidth: cacheWidth,
         cacheHeight: cacheHeight,
         filterQuality: FilterQuality.low,
@@ -118,7 +127,7 @@ class _WidgetsEventImageState extends State<WidgetsEventImage> {
         if (bytes == null) return _buildErrorPlaceholder(context);
         return Image.memory(
           bytes,
-          fit: BoxFit.cover,
+          fit: fit,
           cacheWidth: cacheWidth,
           cacheHeight: cacheHeight,
           filterQuality: FilterQuality.low,
@@ -145,22 +154,22 @@ class _WidgetsEventImageState extends State<WidgetsEventImage> {
               key: const ValueKey('loading'),
               child: _buildLoadingPlaceholder(context),
             )
-          : KeyedSubtree(
-              key: const ValueKey('image'),
-              child: child,
-            ),
+          : KeyedSubtree(key: const ValueKey('image'), child: child),
     );
   }
 
   Widget _buildLoadingPlaceholder(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return ColoredBox(
-      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-      child: Center(
-        child: Icon(
-          Icons.image_outlined,
-          size: 34,
-          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
+    return SizedBox(
+      height: widget.height,
+      child: ColoredBox(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        child: Center(
+          child: Icon(
+            Icons.image_outlined,
+            size: 34,
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
+          ),
         ),
       ),
     );
@@ -168,13 +177,16 @@ class _WidgetsEventImageState extends State<WidgetsEventImage> {
 
   Widget _buildErrorPlaceholder(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return ColoredBox(
-      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-      child: Center(
-        child: Icon(
-          Icons.broken_image_outlined,
-          size: 34,
-          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
+    return SizedBox(
+      height: widget.height,
+      child: ColoredBox(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        child: Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: 34,
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
+          ),
         ),
       ),
     );

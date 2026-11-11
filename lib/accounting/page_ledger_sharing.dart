@@ -1011,12 +1011,10 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
     widget.kind == LedgerKind.accounting ? '#,##0.####' : '#,###',
   );
   late Future<bool> _capability;
-  late Future<bool> _imageCapability;
   late Future<Map<String, dynamic>> _summary;
   Future<List<Map<String, dynamic>>>? _firstEntries;
   final _entriesKey = GlobalKey<_LedgerPagesState>();
   bool _sending = false;
-  int _imageRevision = 0;
 
   @override
   void initState() {
@@ -1039,7 +1037,6 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
   void _loadFirstPage() {
     final reads = widget.service.detailFirstPage(widget.shareId);
     _capability = reads.canPropose;
-    _imageCapability = reads.canChangeImage;
     _summary = reads.totals;
     _firstEntries = reads.entries;
   }
@@ -1164,18 +1161,12 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    return FutureBuilder<(bool, bool)>(
-      future: Future.wait([
-        _capability,
-        _imageCapability,
-      ]).then((values) => (values[0], values[1])),
+    return FutureBuilder<bool>(
+      future: _capability,
       builder: (context, snapshot) {
         final canPropose =
             snapshot.connectionState == ConnectionState.done &&
-            snapshot.data?.$1 == true;
-        final canChangeImage =
-            snapshot.connectionState == ConnectionState.done &&
-            snapshot.data?.$2 == true;
+            snapshot.data == true;
         return Scaffold(
           appBar: AppBar(
             title: Text(
@@ -1209,36 +1200,6 @@ class _SharedLedgerEntriesPageState extends State<_SharedLedgerEntriesPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: AccountImageTile(
-                      key: ValueKey((
-                        widget.shareId,
-                        canChangeImage,
-                        _imageRevision,
-                      )),
-                      name: widget.name,
-                      loadThumbnail: () => const RepositoryAccountImage()
-                          .readShared(widget.shareId, thumbnail: true),
-                      loadImage: () => const RepositoryAccountImage()
-                          .readShared(widget.shareId, thumbnail: false),
-                      changeImage: canChangeImage
-                          ? () async {
-                              if (await _replaceSharedLedgerImage(
-                                    context,
-                                    widget.shareId,
-                                  ) &&
-                                  mounted) {
-                                setState(() {
-                                  _imageRevision++;
-                                  _loadFirstPage();
-                                });
-                              }
-                            }
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
                   _SharedLedgerTotals(
                     source: _summary,
                     refreshSourceIndependently: true,

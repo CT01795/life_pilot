@@ -422,7 +422,10 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          WidgetsEventImage(value: widget.eventViewModel.masterGraphUrl),
+          WidgetsEventImage(
+            value: widget.eventViewModel.masterGraphUrl,
+            preserveAspectRatio: true,
+          ),
           content,
         ],
       ),

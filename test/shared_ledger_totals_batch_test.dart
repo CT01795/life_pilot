@@ -133,12 +133,7 @@ void main() {
     );
     final detail = sharing.detailFirstPage('a');
     await expectLater(
-      Future.wait<Object>([
-        detail.canPropose,
-        detail.canChangeImage,
-        detail.totals,
-        detail.entries,
-      ]),
+      Future.wait<Object>([detail.canPropose, detail.totals, detail.entries]),
       notDeployed,
     );
     expect(requests.map((r) => r.url.pathSegments.last), [
@@ -153,9 +148,8 @@ void main() {
       'key',
       httpClient: MockClient((request) async {
         requests.add(request);
-        final rpc = request.url.pathSegments.last;
         return http.Response(
-          rpc == 'can_change_shared_ledger_image' ? 'true' : '',
+          '',
           200,
           request: request,
           headers: {'content-type': 'application/json'},
@@ -175,18 +169,13 @@ void main() {
       }),
     );
     final sharing = ServiceLedgerSharing(client: client);
-    expect(await sharing.canChangeImage('share-a'), isTrue);
     await sharing.allowImageChanges('share-a', true);
     await sharing.allowImageChanges('share-a', false);
     expect(requests.map((r) => r.url.pathSegments.last), [
-      'can_change_shared_ledger_image',
       'set_my_ledger_share_image_permission',
       'set_my_ledger_share_image_permission',
     ]);
-    expect(requests.skip(1).map((r) => jsonDecode(r.body)['p_allowed']), [
-      true,
-      false,
-    ]);
+    expect(requests.map((r) => jsonDecode(r.body)['p_allowed']), [true, false]);
   });
   for (final legacy in [false, true]) {
     test(

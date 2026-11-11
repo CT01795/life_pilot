@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_pilot/game/steam_scratch_maze/controller_game_steam_scratch_maze_level_generator.dart';
 import 'package:life_pilot/game/steam_scratch_maze/model_scratch_maze_generator.dart';
 import 'package:life_pilot/game/steam_scratch_maze/model_game_steam_scratch_maze_level.dart';
 
@@ -48,17 +47,14 @@ void main() {
     });
   }
   test('legacy constructor alias keeps seeded injection and level API', () {
-    final actual = GameSteamScratchMazeLevelGenerator(
+    final actual = ModelScratchMazeGenerator(
       random: Random(7),
     ).generateLevel(3);
     final expected = ModelScratchMazeGenerator(
       random: Random(7),
     ).generateLevel(3);
     expect(walls(actual), walls(expected));
-    expect(
-      GameSteamScratchMazeLevelGenerator().generateLevel(1).treasure.x,
-      16,
-    );
+    expect(ModelScratchMazeGenerator().generateLevel(1).treasure.x, 16);
   });
   test('reusing generator consumes randomness without sharing level state', () {
     final generator = ModelScratchMazeGenerator(random: Random(9));

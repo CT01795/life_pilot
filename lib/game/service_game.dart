@@ -306,6 +306,71 @@ class ServiceGame {
     return result.map(_mapProgressWithGame).toList();
   }
 
+  Future<GameProgressWindow> fetchUserProgressWindow({
+    required String userName,
+    required String gameType,
+    required String gameName,
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    required bool includeLatestFallback,
+  }) async {
+    if (await _storesLocally) {
+      final all = await _localProgress(userName, gameType, gameName);
+      final upper = DateTime(dateTo.year, dateTo.month, dateTo.day + 1);
+      var rows = all.where((row) {
+        final date = row.createdAt;
+        return date != null && !date.isBefore(dateFrom) && date.isBefore(upper);
+      }).toList();
+      if (includeLatestFallback && rows.isEmpty && all.isNotEmpty) {
+        rows = [all.first];
+      }
+      final boundary =
+          rows.length == 1 && rows.first.createdAt!.isBefore(dateFrom)
+          ? rows.first.createdAt!
+          : dateFrom;
+      final older =
+          all
+              .map((row) => row.createdAt)
+              .whereType<DateTime>()
+              .where((date) => date.isBefore(boundary))
+              .toList()
+            ..sort((a, b) => b.compareTo(a));
+      final highest = all
+          .where((row) => row.isPass ?? false)
+          .map((row) => row.level ?? 0)
+          .fold<int>(0, max);
+      return GameProgressWindow(
+        rows: rows,
+        highestPassedLevel: highest,
+        nextDate: older.firstOrNull,
+      );
+    }
+    final result = await supabase.rpc(
+      'get_my_game_progress_window',
+      params: {
+        'p_game_type': gameType,
+        'p_game_name': gameName,
+        'p_from': dateFrom.toUtc().toIso8601String(),
+        'p_until': DateTime(
+          dateTo.year,
+          dateTo.month,
+          dateTo.day + 1,
+        ).toUtc().toIso8601String(),
+        'p_include_latest': includeLatestFallback,
+      },
+    );
+    if (result is! Map || result['rows'] is! List) {
+      throw const FormatException('Invalid game progress window');
+    }
+    return GameProgressWindow(
+      rows: List<Map<String, dynamic>>.from(
+        result['rows'] as List,
+      ).map(ModelGameUser.fromMap).toList(growable: false),
+      highestPassedLevel: parseIntValue(result['highest_passed_level']),
+      nextDate: tryParseDateTimeValue(result['next_date'], toLocal: true),
+    );
+  }
+
   Future<bool> hasUserProgressBefore({
     required String userName,
     required String gameType,
@@ -1736,4 +1801,16 @@ class ServiceGame {
       Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
     });
   }
+}
+
+class GameProgressWindow {
+  const GameProgressWindow({
+    required this.rows,
+    required this.highestPassedLevel,
+    required this.nextDate,
+  });
+
+  final List<ModelGameUser> rows;
+  final int highestPassedLevel;
+  final DateTime? nextDate;
 }

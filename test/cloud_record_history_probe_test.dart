@@ -83,7 +83,7 @@ void main() {
     final concurrent = await Future.wait([read(), read()]);
     expect(concurrent, [date, date]);
     expect(requests, hasLength(7));
-    Future<List<Map<String, dynamic>>?> window({bool includeLatest = false}) =>
+    Future<CloudRecordHistoryWindow?> window({bool includeLatest = false}) =>
         repository.window(
           client,
           table: 'accounting_detail',
@@ -96,7 +96,7 @@ void main() {
           includeLatest: includeLatest,
         );
     final simultaneousWindows = await Future.wait([window(), window()]);
-    expect(simultaneousWindows.map((page) => page?.single['id']), [
+    expect(simultaneousWindows.map((page) => page?.rows.single['id']), [
       'one',
       'one',
     ]);
@@ -107,7 +107,7 @@ void main() {
     await window();
     expect(await read(probe: true), isNull);
     expect(requests, hasLength(9));
-    expect((await window(includeLatest: true))?.single['id'], 'fallback');
+    expect((await window(includeLatest: true))?.rows.single['id'], 'fallback');
     expect(await read(probe: true, before: DateTime.utc(2026, 9, 15)), date);
     expect(requests, hasLength(10));
     missing = true;

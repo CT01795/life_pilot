@@ -25,6 +25,33 @@ class _Service extends ServiceGame {
   int latestReads = 0;
 
   @override
+  Future<GameProgressWindow> fetchUserProgressWindow({
+    required String userName,
+    required String gameType,
+    required String gameName,
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    required bool includeLatestFallback,
+  }) async {
+    ranges.add((dateFrom, dateTo, includeLatestFallback));
+    if (fail) throw StateError('offline');
+    final rows = pendingPage == null
+        ? (includeLatestFallback ? page : older)
+        : await pendingPage!.future;
+    DateTime? next;
+    if (more) {
+      next = !includeLatestFallback && pendingLatest != null
+          ? await pendingLatest!.future
+          : (latest ?? dateFrom.subtract(const Duration(days: 1)));
+    }
+    return GameProgressWindow(
+      rows: rows,
+      highestPassedLevel: 2,
+      nextDate: next,
+    );
+  }
+
+  @override
   Future<int> fetchHighestPassedLevel({
     required String userName,
     required String gameType,
@@ -165,10 +192,7 @@ void main() {
       final c = _controller(service);
       addTearDown(c.dispose);
       await c.load(gameType: 'language', gameName: 'Speaking');
-      expect(service.beforeDates, [
-        _today.subtract(const Duration(days: 29)),
-        fallback,
-      ]);
+      expect(service.ranges, hasLength(1));
       expect(c.records.single.id, 'old');
       expect(c.hasMore, false);
     },
@@ -179,11 +203,11 @@ void main() {
       final oldDate = DateTime(2026, 4, 15);
       final service = _Service()
         ..page = [_row('a', _today)]
+        ..latest = oldDate
         ..more = true;
       final c = _controller(service);
       addTearDown(c.dispose);
       await c.load(gameType: 'language', gameName: 'Speaking');
-      service.latest = oldDate;
       service.more = false;
       service.older = [
         _row('a', _today),

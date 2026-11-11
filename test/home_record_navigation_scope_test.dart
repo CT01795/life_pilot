@@ -46,10 +46,8 @@ class _Accounting extends ServiceAccounting {
     required String user,
     String? category,
     int? projectLimit,
-    bool includeGraph = true,
   }) {
     expect(user, 'a@example.com');
-    expect(includeGraph, false);
     return pending.future;
   }
 }
@@ -71,10 +69,8 @@ class _Points extends ServicePointRecord {
     required String user,
     String? category,
     int? projectLimit,
-    bool includeGraph = true,
   }) {
     expect(user, 'a@example.com');
-    expect(includeGraph, false);
     return pending.future;
   }
 }

@@ -74,30 +74,16 @@ class ControllerGameProgress extends SafeChangeNotifier {
       final now = _now();
       final today = DateTime(now.year, now.month, now.day);
       var start = today.subtract(const Duration(days: 29));
-      final results = await Future.wait<Object>([
-        _service.fetchHighestPassedLevel(
-          userName: userName,
-          gameType: gameType,
-          gameName: gameName,
-        ),
-        _service.fetchUserProgressPage(
-          userName: userName,
-          gameType: gameType,
-          gameName: gameName,
-          dateFrom: start,
-          dateTo: today,
-          includeLatestFallback: true,
-        ),
-        _service.hasUserProgressBefore(
-          userName: userName,
-          gameType: gameType,
-          gameName: gameName,
-          before: start,
-        ),
-      ]);
+      final window = await _service.fetchUserProgressWindow(
+        userName: userName,
+        gameType: gameType,
+        gameName: gameName,
+        dateFrom: start,
+        dateTo: today,
+        includeLatestFallback: true,
+      );
       if (!_isCurrent(generation)) return null;
-      final records = results[1] as List<ModelGameUser>;
-      var more = results[2] as bool;
+      final records = window.rows;
       final fallbackDates = records
           .map((record) => record.createdAt)
           .whereType<DateTime>()
@@ -105,18 +91,11 @@ class ControllerGameProgress extends SafeChangeNotifier {
           .toList();
       if (records.isNotEmpty && fallbackDates.length == records.length) {
         start = fallbackDates.reduce((a, b) => a.isAfter(b) ? a : b);
-        more = await _service.hasUserProgressBefore(
-          userName: userName,
-          gameType: gameType,
-          gameName: gameName,
-          before: start,
-        );
-        if (!_isCurrent(generation)) return null;
       }
-      _unlockedMaxLevel = (results[0] as int) + 1;
+      _unlockedMaxLevel = window.highestPassedLevel + 1;
       _setRecords(records);
-      _startDate = start;
-      _hasMore = more;
+      _hasMore = window.nextDate != null;
+      _startDate = window.nextDate ?? start;
       return true;
     } catch (error, stackTrace) {
       if (!_isCurrent(generation)) return null;
@@ -152,38 +131,20 @@ class ControllerGameProgress extends SafeChangeNotifier {
     notifyListeners();
     try {
       if (!_isCurrent(generation)) return null;
-      final latest = await _service.latestUserProgressDateBefore(
+      final end = DateTime(before.year, before.month, before.day);
+      final start = end.subtract(const Duration(days: 29));
+      final window = await _service.fetchUserProgressWindow(
         userName: userName,
         gameType: gameType,
         gameName: gameName,
-        before: before,
+        dateFrom: start,
+        dateTo: end,
+        includeLatestFallback: false,
       );
-      if (!_isCurrent(generation)) return null;
-      if (latest == null) {
-        _hasMore = false;
-        return true;
-      }
-      final end = DateTime(latest.year, latest.month, latest.day);
-      final start = end.subtract(const Duration(days: 29));
-      final results = await Future.wait<Object>([
-        _service.fetchUserProgressPage(
-          userName: userName,
-          gameType: gameType,
-          gameName: gameName,
-          dateFrom: start,
-          dateTo: end,
-        ),
-        _service.hasUserProgressBefore(
-          userName: userName,
-          gameType: gameType,
-          gameName: gameName,
-          before: start,
-        ),
-      ]);
       if (!_isCurrent(generation)) return null;
       final identified = <String, ModelGameUser>{};
       final unidentified = <ModelGameUser>[];
-      for (final row in [..._records, ...results[0] as List<ModelGameUser>]) {
+      for (final row in [..._records, ...window.rows]) {
         final id = row.id;
         if (id == null || id.isEmpty) {
           unidentified.add(row);
@@ -198,8 +159,8 @@ class ControllerGameProgress extends SafeChangeNotifier {
           ),
         );
       _setRecords(records);
-      _startDate = start;
-      _hasMore = results[1] as bool;
+      _startDate = window.nextDate ?? start;
+      _hasMore = window.nextDate != null;
       return true;
     } catch (error, stackTrace) {
       if (!_isCurrent(generation)) return null;

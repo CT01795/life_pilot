@@ -45,7 +45,6 @@ class AccountSelectorButton extends StatelessWidget {
         final accounts = await context.read<ServiceAccounting>().fetchAccounts(
           user: auth.account ?? '',
           projectLimit: 2,
-          includeGraph: false,
         );
         return accounts
             .map(

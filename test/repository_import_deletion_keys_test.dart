@@ -43,18 +43,11 @@ void main() {
       expect(await repository.readNewExistingDays([day]), isEmpty);
       expect(await repository.read([day]), existing);
       expect(requests.map((uri) => uri.path.split('/').last), [
-        'recommended_events',
-        'recommended_events_deleted',
+        'get_public_event_deduplication_rows',
+        'get_public_event_deduplication_rows',
       ]);
       for (final uri in requests) {
-        expect(
-          uri.queryParameters['select'],
-          'id,name,start_date,start_time,city,location',
-        );
-        expect(
-          uri.queryParameters['or'],
-          contains(day.toUtc().toIso8601String()),
-        );
+        expect(uri.queryParameters, isEmpty);
       }
     },
   );

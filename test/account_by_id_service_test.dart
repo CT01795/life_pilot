@@ -66,14 +66,12 @@ void main() {
           if (points) {
             final accounts = await ServicePointRecord().fetchAccounts(
               user: 'one@example.com',
-              includeGraph: false,
             );
             expect(accounts.single.points, 1234);
             expect(accounts.single.masterGraphUrl, null);
           } else {
             final accounts = await ServiceAccounting().fetchAccounts(
               user: 'one@example.com',
-              includeGraph: false,
             );
             expect(accounts.single.balance, 23.4567);
             expect(accounts.single.currency, 'USD');
@@ -86,23 +84,6 @@ void main() {
           );
         },
       );
-
-      test('image-inclusive account lists still decode image bytes', () async {
-        response.single['master_graph_url'] = base64Encode([1, 2, 3]);
-        if (points) {
-          final accounts = await ServicePointRecord().fetchAccounts(
-            user: 'one@example.com',
-          );
-          expect(accounts.single.masterGraphUrl, [1, 2, 3]);
-        } else {
-          final accounts = await ServiceAccounting().fetchAccounts(
-            user: 'one@example.com',
-          );
-          expect(accounts.single.masterGraphUrl, [1, 2, 3]);
-        }
-        expect(requests, hasLength(1));
-        expect(requests.single.queryParameters['select'], '*');
-      });
 
       test(
         'one scoped request retrieves only the selected account without images',

@@ -4,7 +4,10 @@ import 'package:life_pilot/feedback/model_feedback.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/repository_session_reads.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/feedback/model_feedback_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 class ServiceFeedback {
   Future<FeedbackPage> loadFeedbackPage({
@@ -66,22 +69,40 @@ class ServiceFeedback {
     List<String>? cc, // ← 改成 List<String>
     List<Uint8List>? screenshots, // ← 支援多張
   }) async {
-    final screenshotBase64 = screenshots
-        ?.map((bytes) => base64Encode(bytes))
-        .toList();
     final client = supabase;
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw StateError('Authentication required');
+    final paths = <String>[];
     final reads = RepositorySessionReads(client);
     reads.invalidate('feedback');
     try {
+      for (final bytes in screenshots ?? const <Uint8List>[]) {
+        final path = '$userId/${const Uuid().v4()}.png';
+        await client.storage
+            .from('feedback-screenshots')
+            .uploadBinary(
+              path,
+              bytes,
+              fileOptions: const FileOptions(contentType: 'image/png'),
+            );
+        paths.add(path);
+      }
       await client.from(TableNames.feedback).insert({
         'subject': subject,
         'content': content,
         'cc': cc, // text[]
-        'screenshot': screenshotBase64, // text[] 或 bytea[]，依你的 schema
+        'screenshot_paths': paths,
         Fields.createdBy: account,
         Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
         'is_ok': false,
       });
+    } catch (_) {
+      if (paths.isNotEmpty) {
+        try {
+          await client.storage.from('feedback-screenshots').remove(paths);
+        } catch (_) {}
+      }
+      rethrow;
     } finally {
       reads.invalidate('feedback');
     }
@@ -99,17 +120,28 @@ class ServiceFeedback {
     if (owner == null) throw StateError('Authentication required');
     final row = await client
         .from(TableNames.feedback)
-        .select('screenshot')
+        .select('screenshot,screenshot_paths')
         .eq('id', id)
         .maybeSingle();
     if (client.auth.currentUser?.id != owner) {
       throw StateError('Feedback account changed');
     }
     if (row == null) throw StateError('Feedback no longer visible');
+    final paths = (row['screenshot_paths'] as List? ?? const [])
+        .map(parseStringValue)
+        .where((path) => path.isNotEmpty)
+        .toList(growable: false);
+    if (paths.isNotEmpty) {
+      return Future.wait([
+        for (final path in paths)
+          client.storage
+              .from('feedback-screenshots')
+              .download(path)
+              .then(base64Encode),
+      ]);
+    }
     return List<String>.unmodifiable(
-      (row['screenshot'] as List? ?? const [])
-          .map((value) => value as String)
-          .toList(growable: false),
+      (row['screenshot'] as List? ?? const []).map(parseStringValue),
     );
   }
 

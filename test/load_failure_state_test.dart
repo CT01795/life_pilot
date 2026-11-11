@@ -32,7 +32,6 @@ class _Accounting extends ServiceAccounting {
     required String user,
     String? category,
     int? projectLimit,
-    bool includeGraph = true,
   }) async {
     if (fail) throw StateError('offline');
     return [
@@ -52,7 +51,6 @@ class _Points extends ServicePointRecord {
     required String user,
     String? category,
     int? projectLimit,
-    bool includeGraph = true,
   }) async {
     if (fail) throw StateError('offline');
     return [

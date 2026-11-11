@@ -254,43 +254,30 @@ class DashboardRepository {
         currency: currency,
       );
     }
-    final accountResult = await supabase
-        .from(TableNames.accountingAccount)
-        .select('id,main_currency,balance')
-        .eq(Fields.id, accountId)
-        .eq(Fields.isValid, true)
-        .maybeSingle();
-
-    if (accountResult == null) {
-      return const AccountingDashboardSummary.empty();
-    }
-    //final accountId = accountResult[Fields.id];
-    final currency = accountResult['main_currency'];
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
     final end = start.add(const Duration(days: 1));
-    final result = await supabase
-        .from(TableNames.accountingDetail)
-        .select('description,value,currency,created_at,date,group')
-        .eq('account_id', accountId)
-        .eq('currency', currency)
-        .gte('date', start.toUtc().toIso8601String())
-        .lt('date', end.toUtc().toIso8601String())
-        .order('date', ascending: false);
-
-    final rows = result as List;
-    final records = rows
-        .take(5)
-        .map((e) => IncomeExpenseItem.fromJson(e))
-        .toList();
+    final result = await supabase.rpc(
+      'get_my_dashboard_ledger_summary',
+      params: {
+        'p_kind': 'accounting',
+        'p_account_id': accountId,
+        'p_day_start': start.toUtc().toIso8601String(),
+        'p_day_end': end.toUtc().toIso8601String(),
+      },
+    );
+    if (result == null) return const AccountingDashboardSummary.empty();
+    final row = Map<String, dynamic>.from(result as Map);
+    final records = (row['records'] as List? ?? const [])
+        .map(
+          (item) => IncomeExpenseItem.fromJson(Map<String, dynamic>.from(item)),
+        )
+        .toList(growable: false);
     return AccountingDashboardSummary(
       records: records,
-      total: parseNumValue(accountResult['balance']),
-      todayTotal: rows.fold<num>(
-        0,
-        (sum, row) => sum + parseNumValue(row['value']),
-      ),
-      currency: currency ?? 'TWD',
+      total: parseNumValue(row['total']),
+      todayTotal: parseNumValue(row['today_total']),
+      currency: parseStringValue(row['currency'], fallback: 'TWD'),
     );
   }
 
@@ -319,40 +306,29 @@ class DashboardRepository {
         todayTotal: details.todayTotal.toInt(),
       );
     }
-    final accountResult = await supabase
-        .from(TableNames.pointRecordAccount)
-        .select('id,points')
-        .eq(Fields.id, accountId)
-        .eq(Fields.isValid, true)
-        .maybeSingle();
-
-    if (accountResult == null) {
-      return const PointDashboardSummary.empty();
-    }
-    //final accountId = accountResult[Fields.id];
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
     final end = start.add(const Duration(days: 1));
-    final result = await supabase
-        .from(TableNames.pointRecordDetail)
-        .select('description,type,value,created_at,date,group')
-        .eq('account_id', accountId)
-        .gte('date', start.toUtc().toIso8601String())
-        .lt('date', end.toUtc().toIso8601String())
-        .order('date', ascending: false);
-
-    final rows = result as List;
-    final records = rows
-        .take(5)
-        .map((e) => PointRecordItem.fromJson(e))
-        .toList();
+    final result = await supabase.rpc(
+      'get_my_dashboard_ledger_summary',
+      params: {
+        'p_kind': 'points',
+        'p_account_id': accountId,
+        'p_day_start': start.toUtc().toIso8601String(),
+        'p_day_end': end.toUtc().toIso8601String(),
+      },
+    );
+    if (result == null) return const PointDashboardSummary.empty();
+    final row = Map<String, dynamic>.from(result as Map);
+    final records = (row['records'] as List? ?? const [])
+        .map(
+          (item) => PointRecordItem.fromJson(Map<String, dynamic>.from(item)),
+        )
+        .toList(growable: false);
     return PointDashboardSummary(
       records: records,
-      total: parseIntValue(accountResult['points']),
-      todayTotal: rows.fold<int>(
-        0,
-        (sum, row) => sum + parseIntValue(row['value']),
-      ),
+      total: parseIntValue(row['total']),
+      todayTotal: parseIntValue(row['today_total']),
     );
   }
 
