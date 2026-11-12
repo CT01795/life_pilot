@@ -211,6 +211,19 @@ class DashboardRepository {
     return (result as List).map((e) => DashboardCity.fromJson(e)).toList();
   }
 
+  Future<({List<DashboardCity> events, List<DashboardCity> places})>
+  loadRecommendationCityCounts() async {
+    await _requireNetworkForLocalCloudContent();
+    final result = await supabase.rpc('get_home_recommendation_city_counts');
+    if (result is! Map) {
+      throw const FormatException('Invalid recommendation city counts');
+    }
+    List<DashboardCity> decode(Object? value) => (value as List? ?? const [])
+        .map((row) => DashboardCity.fromJson(Map<String, dynamic>.from(row)))
+        .toList(growable: false);
+    return (events: decode(result['events']), places: decode(result['places']));
+  }
+
   Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async {
     await _requireNetworkForLocalCloudContent();
     final result = await supabase.rpc(
@@ -266,6 +279,10 @@ class DashboardRepository {
         'p_day_end': end.toUtc().toIso8601String(),
       },
     );
+    return _decodeAccountingSummary(result);
+  }
+
+  AccountingDashboardSummary _decodeAccountingSummary(Object? result) {
     if (result == null) return const AccountingDashboardSummary.empty();
     final row = Map<String, dynamic>.from(result as Map);
     final records = (row['records'] as List? ?? const [])
@@ -318,6 +335,10 @@ class DashboardRepository {
         'p_day_end': end.toUtc().toIso8601String(),
       },
     );
+    return _decodePointSummary(result);
+  }
+
+  PointDashboardSummary _decodePointSummary(Object? result) {
     if (result == null) return const PointDashboardSummary.empty();
     final row = Map<String, dynamic>.from(result as Map);
     final records = (row['records'] as List? ?? const [])

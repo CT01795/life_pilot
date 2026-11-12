@@ -195,6 +195,7 @@ class ControllerDashboard extends SafeChangeNotifier {
   List<DashboardCity> _placeCities = [];
   bool _placeCitiesLoaded = false;
   RefreshRequestCoordinator _placeCityRequests = RefreshRequestCoordinator();
+  RefreshRequestCoordinator _allCityRequests = RefreshRequestCoordinator();
 
   List<DashboardCity> get placeCities => _placeCities;
 
@@ -223,6 +224,7 @@ class ControllerDashboard extends SafeChangeNotifier {
     _placeCitiesLoaded = false;
     _eventCityRequests = RefreshRequestCoordinator();
     _placeCityRequests = RefreshRequestCoordinator();
+    _allCityRequests = RefreshRequestCoordinator();
     _sectionLoadingCounts.clear();
     _failedSections.clear();
     notifyListeners();
@@ -353,6 +355,38 @@ class ControllerDashboard extends SafeChangeNotifier {
     _placeCities = placeCities;
     _placeCitiesLoaded = true;
     notifyListeners();
+  }
+
+  Future<void> loadRecommendationCities(
+    String account, {
+    bool forceRefresh = false,
+  }) async {
+    final generation = _accountGeneration;
+    if (!_isCurrentRequest(account, generation)) return;
+    if (_eventCitiesLoaded &&
+        _placeCitiesLoaded &&
+        !forceRefresh &&
+        !_allCityRequests.isRunning) {
+      return;
+    }
+    await _allCityRequests.run(() async {
+      if (!_isCurrentRequest(account, generation)) return;
+      try {
+        final cities = await repository.loadRecommendationCityCounts();
+        if (!_isCurrentRequest(account, generation)) return;
+        _eventCities = cities.events;
+        _placeCities = cities.places;
+        _eventCitiesLoaded = true;
+        _placeCitiesLoaded = true;
+        notifyListeners();
+      } catch (error, stackTrace) {
+        logger.e(
+          'Could not load recommendation cities.',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }, force: forceRefresh);
   }
 
   Future<void> refreshAll({required String account}) async {

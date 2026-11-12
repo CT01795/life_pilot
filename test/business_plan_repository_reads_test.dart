@@ -42,6 +42,25 @@ void main() {
       httpClient: MockClient((r) async {
         requests.add(r);
         if (r.method != 'GET') {
+          if (r.url.path.endsWith('/rpc/get_my_business_plan_window')) {
+            return http.Response(
+              jsonEncode({
+                'rows': [
+                  {
+                    'id': 'p',
+                    'title': '企劃',
+                    'created_at': '2026-10-01T12:34:56Z',
+                    'status': 'in_progress',
+                  },
+                ],
+                'next_before': from.toIso8601String(),
+                'has_more': false,
+              }),
+              200,
+              request: r,
+              headers: {'content-type': 'application/json'},
+            );
+          }
           if (r.url.path.endsWith('/rpc/create_business_plan_from_template')) {
             return http.Response(
               duplicate
@@ -78,50 +97,15 @@ void main() {
                 'unused_blob': 'unneeded',
               },
             ],
-            TableNames.businessPlanTemplateSection => [
+            _ => [
               {
-                'id': 's1',
-                'title': '章節一',
-                'sort_order': 1,
-                'plan_id': 't',
-                'unused_blob': 'unneeded',
-              },
-              {
-                'id': 's2',
-                'title': '章節二',
-                'sort_order': 2,
-                'plan_id': 't',
+                'id': 'p',
+                'title': '企劃',
+                'created_at': '2026-10-01T12:34:56Z',
+                'status': 'in_progress',
                 'unused_blob': 'unneeded',
               },
             ],
-            TableNames.businessPlanTemplateQuestion => [
-              {
-                'id': 'q1',
-                'prompt': '完整題目',
-                'sort_order': 1,
-                'unused_blob': 'unneeded',
-              },
-            ],
-            _ =>
-              r.url.queryParameters.containsKey('title')
-                  ? duplicate
-                        ? [
-                            {
-                              'id': 'existing',
-                              'is_valid': true,
-                              'title': 'same',
-                            },
-                          ]
-                        : <Map<String, dynamic>>[]
-                  : [
-                      {
-                        'id': 'p',
-                        'title': '企劃',
-                        'created_at': '2026-10-01T12:34:56Z',
-                        'status': 'in_progress',
-                        'unused_blob': 'unneeded',
-                      },
-                    ],
           };
           final fields = (r.url.queryParameters['select'] ?? '*').split(',');
           payload = rows
@@ -147,7 +131,7 @@ void main() {
   tearDown(() => client.dispose());
 
   test(
-    'five read projections include only consumed fields and preserve filters/order',
+    'active read projections include only consumed fields and preserve filters/order',
     () async {
       final repo = RepositoryBusinessPlanReads(client);
       final templates = await repo.templates();
@@ -160,25 +144,6 @@ void main() {
       expect(
         requests.last.url.queryParameters['order'],
         'created_at.asc.nullslast',
-      );
-      await repo.sections('t');
-      expect(
-        requests.last.url.queryParameters['select'],
-        'id,title,sort_order',
-      );
-      expect(requests.last.url.queryParameters['plan_id'], 'eq.t');
-      await repo.questions('s1');
-      expect(requests.last.url.queryParameters['select'], 'prompt,sort_order');
-      expect(requests.last.url.queryParameters['section_id'], 'eq.s1');
-      expect(
-        requests.last.url.queryParameters['order'],
-        'sort_order.asc.nullslast',
-      );
-      await repo.existingPlan(user: 'one@example.com', title: 'Title');
-      expect(requests.last.url.queryParameters['select'], 'id,is_valid');
-      expect(
-        requests.last.url.queryParameters[Fields.createdBy],
-        'eq.one@example.com',
       );
       final plans = await repo.plans(
         user: 'one@example.com',
@@ -224,17 +189,6 @@ void main() {
       expect(requests, hasLength(2));
     },
   );
-  test('different template structure keys do not merge', () async {
-    gate = Completer<void>();
-    final repo = RepositoryBusinessPlanReads(client);
-    final a = repo.questions('s1'),
-        b = repo.questions('s2'),
-        c = repo.sections('t');
-    await Future<void>.delayed(Duration.zero);
-    expect(requests, hasLength(3));
-    gate!.complete();
-    await Future.wait([a, b, c]);
-  });
   test(
     'template read error stays visible and retry performs a fresh query',
     () async {
@@ -256,26 +210,16 @@ void main() {
     gate!.complete();
     await checked;
   });
-  test('shared raw template data cannot be mutated by a caller', () async {
-    final rows = await RepositoryBusinessPlanReads(client).sections('t');
-    expect(() => rows.clear(), throwsUnsupportedError);
-    expect(() => rows.first['title'] = 'changed', throwsUnsupportedError);
+  test('plan list reads remain independent across refresh workflows', () async {
+    gate = Completer<void>();
+    final repo = RepositoryBusinessPlanReads(client);
+    final a = repo.plans(user: 'one@example.com', from: from, to: to);
+    final b = repo.plans(user: 'one@example.com', from: from, to: to);
+    await Future<void>.delayed(Duration.zero);
+    expect(requests, hasLength(2));
+    gate!.complete();
+    await Future.wait([a, b]);
   });
-  test(
-    'plan lookup and list do not share reads across write workflows',
-    () async {
-      gate = Completer<void>();
-      final repo = RepositoryBusinessPlanReads(client);
-      final a = repo.existingPlan(user: 'one@example.com', title: 'x');
-      final b = repo.existingPlan(user: 'one@example.com', title: 'x');
-      final c = repo.plans(user: 'one@example.com', from: from, to: to);
-      final d = repo.plans(user: 'one@example.com', from: from, to: to);
-      await Future<void>.delayed(Duration.zero);
-      expect(requests, hasLength(4));
-      gate!.complete();
-      await Future.wait([a, b, c, d]);
-    },
-  );
   test(
     'creating from a template uses one atomic RPC with only identifiers',
     () async {
@@ -315,7 +259,8 @@ void main() {
   test(
     'plan list mapping keeps status/date/title but does not preload details',
     () async {
-      final plans = await ServiceBusinessPlan().fetchPlans(
+      final service = ServiceBusinessPlan();
+      final plans = await service.fetchPlans(
         user: 'one@example.com',
         dateFrom: from,
         dateTo: to,
@@ -325,6 +270,18 @@ void main() {
       expect(plans.single.createdAt, DateTime.utc(2026, 10, 1, 12, 34, 56));
       expect(plans.single.status, 'in_progress');
       expect(plans.single.sections, isEmpty);
+      expect(requests, hasLength(1));
+      expect(
+        requests.single.url.path,
+        endsWith('/rpc/get_my_business_plan_window'),
+      );
+      expect(
+        await service.hasPlansBefore(
+          user: 'one@example.com',
+          before: from,
+        ),
+        isFalse,
+      );
       expect(requests, hasLength(1));
     },
   );

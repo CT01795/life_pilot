@@ -492,8 +492,7 @@ class ControllerAuth extends SafeChangeNotifier {
     try {
       await Future.wait<void>([
         if (dashboardController != null) ...[
-          dashboardController!.loadEventCities(account),
-          dashboardController!.loadPlaceCities(account),
+          dashboardController!.loadRecommendationCities(account),
           dashboardController!.refreshAll(account: account),
         ],
         if (controllerCalendar != null)
@@ -522,8 +521,7 @@ class ControllerAuth extends SafeChangeNotifier {
     try {
       await Future.wait<void>([
         if (dashboardController != null) ...[
-          dashboardController!.loadEventCities(account),
-          dashboardController!.loadPlaceCities(account),
+          dashboardController!.loadRecommendationCities(account),
           dashboardController!.refreshAll(account: account),
         ],
         if (controllerCalendar != null)

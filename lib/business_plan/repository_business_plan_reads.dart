@@ -15,25 +15,6 @@ class RepositoryBusinessPlanReads {
         .eq(Fields.isValid, true)
         .order(Fields.createdAt, ascending: true),
   );
-  Future<List<Map<String, dynamic>>> sections(String templateId) =>
-      _templateRead(
-        ('sections', templateId),
-        () async => await client
-            .from(TableNames.businessPlanTemplateSection)
-            .select('id,title,sort_order')
-            .eq('plan_id', templateId)
-            .order('sort_order', ascending: true),
-      );
-  Future<List<Map<String, dynamic>>> questions(String sectionId) =>
-      _templateRead(
-        ('questions', sectionId),
-        () async => await client
-            .from(TableNames.businessPlanTemplateQuestion)
-            .select('prompt,sort_order')
-            .eq('section_id', sectionId)
-            .order('sort_order', ascending: true),
-      );
-
   Future<List<Map<String, dynamic>>> _templateRead(
     Object key,
     Future<List<Map<String, dynamic>>> Function() fetch,
@@ -47,21 +28,6 @@ class RepositoryBusinessPlanReads {
       );
     },
   );
-
-  // Do not share these reads across write workflows. A check performed after
-  // creating/renaming a plan must not reuse a request started before that write.
-  Future<Map<String, dynamic>?> existingPlan({
-    required String user,
-    required String title,
-  }) async {
-    final row = await client
-        .from(TableNames.businessPlan)
-        .select('id,is_valid')
-        .eq(Fields.createdBy, user)
-        .eq('title', title)
-        .maybeSingle();
-    return row == null ? null : Map<String, dynamic>.unmodifiable(row);
-  }
 
   Future<List<Map<String, dynamic>>> plans({
     required String user,
@@ -78,5 +44,23 @@ class RepositoryBusinessPlanReads {
     return List.unmodifiable(
       rows.map((row) => Map<String, dynamic>.unmodifiable(row)),
     );
+  }
+
+  Future<Map<String, dynamic>> planWindow({
+    required DateTime before,
+    required bool seekOlder,
+  }) async {
+    final result = await client.rpc(
+      'get_my_business_plan_window',
+      params: {
+        'p_before': before.toUtc().toIso8601String(),
+        'p_seek_older': seekOlder,
+        'p_window_days': 360,
+      },
+    );
+    if (result is! Map) {
+      throw const FormatException('Invalid business plan window');
+    }
+    return Map<String, dynamic>.unmodifiable(Map<String, dynamic>.from(result));
   }
 }

@@ -120,7 +120,7 @@ class ServiceFeedback {
     if (owner == null) throw StateError('Authentication required');
     final row = await client
         .from(TableNames.feedback)
-        .select('screenshot,screenshot_paths')
+        .select('screenshot_paths')
         .eq('id', id)
         .maybeSingle();
     if (client.auth.currentUser?.id != owner) {
@@ -153,8 +153,19 @@ class ServiceFeedback {
       }
       return List.unmodifiable(images);
     }
+    // Legacy Base64 is queried only for rows that have not been migrated to
+    // Storage. Normal rows never transfer the large historical column.
+    final legacy = await client
+        .from(TableNames.feedback)
+        .select('screenshot')
+        .eq('id', id)
+        .maybeSingle();
+    if (client.auth.currentUser?.id != owner) {
+      throw StateError('Feedback account changed');
+    }
+    if (legacy == null) throw StateError('Feedback no longer visible');
     return List<String>.unmodifiable(
-      (row['screenshot'] as List? ?? const []).map(parseStringValue),
+      (legacy['screenshot'] as List? ?? const []).map(parseStringValue),
     );
   }
 

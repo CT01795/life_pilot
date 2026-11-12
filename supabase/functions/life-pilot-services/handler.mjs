@@ -179,6 +179,20 @@ export function createHandler({ env, fetchImpl = fetch, now = Date.now }) {
         }, 60, 32));
       }
       if (route === 'external/geocode') return respond(await geocode(body.query));
+      if (route === 'external/geocode-batch') {
+        if (!Array.isArray(body.queries) || body.queries.length < 1 || body.queries.length > 25) {
+          fail(400, 'invalid_geocode_batch');
+        }
+        const results = [];
+        for (const query of body.queries) {
+          try { results.push(await geocode(query)); }
+          catch (error) {
+            if (error instanceof ServiceFailure && [400, 429, 503].includes(error.status)) throw error;
+            results.push({});
+          }
+        }
+        return respond({ results });
+      }
       if (route === 'external/map-geocode/backfill') {
         await requireAdmin();
         const offset = body.offset ?? 0, count = body.limit ?? 25;

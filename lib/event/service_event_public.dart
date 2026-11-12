@@ -246,24 +246,9 @@ class ServiceEventPublic {
 
     if (newEvents.isNotEmpty) {
       try {
-        const geocodeBatchSize = 4;
-        final resolvedEvents = <EventItem>[];
-        for (
-          var offset = 0;
-          offset < newEvents.length;
-          offset += geocodeBatchSize
-        ) {
-          final end = offset + geocodeBatchSize < newEvents.length
-              ? offset + geocodeBatchSize
-              : newEvents.length;
-          resolvedEvents.addAll(
-            await Future.wait(
-              newEvents
-                  .sublist(offset, end)
-                  .map(ClusterItem.getLatLngFromAddressItem),
-            ),
-          );
-        }
+        final resolvedEvents = await ClusterItem.getLatLngFromAddressItems(
+          newEvents,
+        );
         final rows = resolvedEvents.map((event) => event.toJson()).toList();
         var insertedRows = 0;
         var duplicateRows = 0;

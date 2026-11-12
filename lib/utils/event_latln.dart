@@ -245,4 +245,68 @@ class ClusterItem {
     event.lng = tmpMap["lng"];
     return event;
   }
+
+  static Future<List<EventItem>> getLatLngFromAddressItems(
+    List<EventItem> events,
+  ) async {
+    final pending = <(int, String)>[];
+    for (var index = 0; index < events.length; index++) {
+      final event = events[index];
+      if (event.lat != null && event.lng != null) continue;
+      final location = '${event.city}．${event.location}';
+      final parts = location.split('．');
+      final cityLike = parts.first;
+      final locationLike = parts.length > 1 ? parts[1] : parts.first;
+      try {
+        final result = await supabase.rpc(
+          'search_lat_lng',
+          params: {
+            'city_like': cityLike,
+            'location_like': locationLike,
+            'country_like': null,
+          },
+        );
+        if (result is List && result.isNotEmpty) {
+          event.lat = parseDoubleValue(result.first['lat']);
+          event.lng = parseDoubleValue(result.first['lng']);
+          continue;
+        }
+      } catch (error) {
+        logger.e('Error search_lat_lng: $error');
+      }
+      final address = parts.first.trim();
+      final query = '$address${detectCountryHint(parts.first)}';
+      if (query.isNotEmpty) pending.add((index, query));
+    }
+    if (pending.isEmpty) return events;
+    final token = supabase.auth.currentSession?.accessToken;
+    if (token == null || token.isEmpty) return events;
+
+    const batchSize = 25;
+    for (var offset = 0; offset < pending.length; offset += batchSize) {
+      final end = offset + batchSize < pending.length
+          ? offset + batchSize
+          : pending.length;
+      final batch = pending.sublist(offset, end);
+      final response = await apiCloud.post('/external/geocode-batch', {
+        'queries': batch.map((entry) => entry.$2).toList(growable: false),
+      }, bearerToken: token);
+      final results = response is Map ? response['results'] : null;
+      if (results is! List || results.length != batch.length) {
+        throw const FormatException('Invalid geocode batch response');
+      }
+      for (var index = 0; index < batch.length; index++) {
+        final coordinates = results[index];
+        if (coordinates is! Map ||
+            coordinates['lat'] is! num ||
+            coordinates['lng'] is! num) {
+          continue;
+        }
+        final event = events[batch[index].$1];
+        event.lat = parseDoubleValue(coordinates['lat']);
+        event.lng = parseDoubleValue(coordinates['lng']);
+      }
+    }
+    return events;
+  }
 }

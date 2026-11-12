@@ -108,20 +108,18 @@ class CalendarService {
       });
     }
     final nextDate = selectedDate.add(const Duration(days: 1));
-    final result = await supabase
-        .from(TableNames.calendarEvents)
-        .select('name,country,city,location,start_date')
-        .eq(Fields.account, account)
-        .gte('start_date', selectedDate.toUtc().toIso8601String())
-        .lt('start_date', nextDate.toUtc().toIso8601String())
-        .limit(20);
-    return result.any(
-      (row) =>
-          normalizedTextEquals(row['name'], place.name) &&
-          normalizedTextEquals(row[EventFields.country], place.country) &&
-          normalizedTextEquals(row['city'], place.city) &&
-          normalizedTextEquals(row['location'], place.location),
-    );
+    return await supabase.rpc(
+          'calendar_has_recommended_place',
+          params: {
+            'p_name': place.name,
+            'p_country': place.country,
+            'p_city': place.city,
+            'p_location': place.location,
+            'p_day_start': selectedDate.toUtc().toIso8601String(),
+            'p_day_end': nextDate.toUtc().toIso8601String(),
+          },
+        ) ==
+        true;
   }
 
   /// 加入行事曆

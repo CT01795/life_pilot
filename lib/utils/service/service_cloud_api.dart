@@ -159,6 +159,7 @@ class ServiceCloudApi {
     'external/weather' => const Duration(minutes: 5),
     'external/holidays' => const Duration(hours: 1),
     'external/geocode' => const Duration(hours: 24),
+    'external/geocode-batch' => const Duration(hours: 24),
     'event/get_public_event_url_data' => const Duration(minutes: 15),
     _ => null,
   };

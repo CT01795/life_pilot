@@ -1,6 +1,7 @@
 import 'dart:core';
 
 import 'package:life_pilot/business_plan/model_business_plan.dart';
+import 'package:life_pilot/business_plan/model_business_plan_window.dart';
 import 'package:life_pilot/business_plan/model_plan_question.dart';
 import 'package:life_pilot/business_plan/model_plan_section.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
@@ -11,6 +12,10 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/business_plan/repository_business_plan_reads.dart';
 
 class ServiceBusinessPlan {
+  ModelBusinessPlanWindow? _cachedPlanWindow;
+  DateTime? _cachedPlanWindowRequestBefore;
+  bool _cachedPlanWindowIsNextPage = false;
+
   // 1️⃣ 拉模板清單（給使用者選）
   Future<List<ModelPlanTemplate>> fetchTemplates() async {
     try {
@@ -103,24 +108,83 @@ class ServiceBusinessPlan {
     required DateTime dateTo,
   }) async {
     try {
-      final res = await RepositoryBusinessPlanReads(
-        supabase,
-      ).plans(user: user, from: dateFrom, to: dateTo);
-      return (res as List).map((e) {
-        return ModelBusinessPlan(
-          id: e[Fields.id],
-          title: e['title'],
-          createdAt:
-              tryParseDateTimeValue(e[Fields.createdAt]) ?? DateTime.now(),
-          status: parseStringValue(e['status'], fallback: 'not_started'),
-          sections: [], // 只用來顯示 list，實際 editor 再拉 detail
-        );
-      }).toList();
+      _requireCurrentBusinessPlanUser(user);
+      final cached = _cachedPlanWindow;
+      if (_cachedPlanWindowIsNextPage &&
+          cached != null &&
+          cached.plans.every(
+            (plan) =>
+                !plan.createdAt.isBefore(dateFrom) &&
+                plan.createdAt.isBefore(dateTo),
+          )) {
+        _cachedPlanWindowIsNextPage = false;
+        return List<ModelBusinessPlan>.of(cached.plans);
+      }
+      final window = await fetchPlanWindow(before: dateTo);
+      _cachePlanWindow(window, requestBefore: dateTo, isNextPage: false);
+      return List<ModelBusinessPlan>.of(window.plans);
     } on Exception catch (exception) {
       logger.e(exception);
       rethrow;
     }
   }
+
+  void _requireCurrentBusinessPlanUser(String user) {
+    final current = supabase.auth.currentUser?.email?.trim().toLowerCase();
+    if (current == null || current != user.trim().toLowerCase()) {
+      throw StateError('Business plan account changed');
+    }
+  }
+
+  void _cachePlanWindow(
+    ModelBusinessPlanWindow window, {
+    required DateTime requestBefore,
+    required bool isNextPage,
+  }) {
+    _cachedPlanWindow = window;
+    _cachedPlanWindowRequestBefore = requestBefore;
+    _cachedPlanWindowIsNextPage = isNextPage;
+  }
+
+  bool _sameInstant(DateTime? left, DateTime right) =>
+      left != null &&
+      left.toUtc().millisecondsSinceEpoch ==
+          right.toUtc().millisecondsSinceEpoch;
+
+  Future<ModelBusinessPlanWindow> fetchPlanWindow({
+    required DateTime before,
+    bool seekOlder = false,
+  }) async {
+    final data = await RepositoryBusinessPlanReads(
+      supabase,
+    ).planWindow(before: before, seekOlder: seekOlder);
+    final rows = (data['rows'] as List? ?? const [])
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .map(_planSummaryFromJson)
+        .toList(growable: false);
+    final nextBefore = tryParseDateTimeValue(
+      data['next_before'],
+      toLocal: true,
+    );
+    if (nextBefore == null) {
+      throw const FormatException('Invalid business plan cursor');
+    }
+    return ModelBusinessPlanWindow(
+      plans: rows,
+      nextBefore: nextBefore,
+      hasMore: data['has_more'] == true,
+    );
+  }
+
+  ModelBusinessPlan _planSummaryFromJson(Map<String, dynamic> row) =>
+      ModelBusinessPlan(
+        id: row[Fields.id],
+        title: row['title'],
+        createdAt:
+            tryParseDateTimeValue(row[Fields.createdAt]) ?? DateTime.now(),
+        status: parseStringValue(row['status'], fallback: 'not_started'),
+        sections: const [],
+      );
 
   Future<ModelBusinessPlan> fetchPlanDetail({required String planId}) async {
     try {
@@ -175,27 +239,27 @@ class ServiceBusinessPlan {
     required String user,
     required DateTime before,
   }) async {
-    final rows = await supabase
-        .from(TableNames.businessPlan)
-        .select(Fields.id)
-        .eq(Fields.createdBy, user)
-        .lt(Fields.createdAt, before.toUtc().toIso8601String())
-        .limit(1);
-    return rows.isNotEmpty;
+    _requireCurrentBusinessPlanUser(user);
+    final cached = _cachedPlanWindow;
+    if (cached != null && _sameInstant(cached.nextBefore, before)) {
+      return cached.hasMore;
+    }
+    final window = await fetchPlanWindow(before: before, seekOlder: true);
+    _cachePlanWindow(window, requestBefore: before, isNextPage: true);
+    return window.plans.isNotEmpty;
   }
 
   Future<DateTime?> latestPlanDateBefore({
     required String user,
     required DateTime before,
   }) async {
-    final rows = await supabase
-        .from(TableNames.businessPlan)
-        .select(Fields.createdAt)
-        .eq(Fields.createdBy, user)
-        .lt(Fields.createdAt, before.toUtc().toIso8601String())
-        .order(Fields.createdAt, ascending: false)
-        .limit(1);
-    if (rows.isEmpty) return null;
-    return tryParseDateTimeValue(rows.first[Fields.createdAt], toLocal: true);
+    _requireCurrentBusinessPlanUser(user);
+    var window = _cachedPlanWindow;
+    if (!_cachedPlanWindowIsNextPage ||
+        !_sameInstant(_cachedPlanWindowRequestBefore, before)) {
+      window = await fetchPlanWindow(before: before, seekOlder: true);
+      _cachePlanWindow(window, requestBefore: before, isNextPage: true);
+    }
+    return window?.plans.firstOrNull?.createdAt;
   }
 }

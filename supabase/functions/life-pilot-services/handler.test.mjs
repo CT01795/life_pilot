@@ -138,6 +138,19 @@ test('geocode miss fills shared cache, and never forwards caller credentials to 
   const save = s.calls.find((c) => c.url.pathname.endsWith('life_pilot_edge_finish'));
   assert.deepEqual(save.body.p_payload, r.data); assert.equal(save.options.headers.Authorization, 'Bearer server-key');
 });
+test('geocode batch resolves multiple addresses in one function request', async () => {
+  const s = setup({ fetch: (url) => {
+    if (url.hostname === 'api.openweathermap.org') {
+      return json(url.searchParams.get('q') === 'Taipei'
+        ? [{ lat: 25, lon: 121 }]
+        : [{ lat: 22.6, lon: 120.3 }]);
+    }
+  } });
+  const r = await s.run('external/geocode-batch', { queries: ['Taipei', 'Kaohsiung'] });
+  assert.equal(r.response.status, 200);
+  assert.deepEqual(r.data, { results: [{ lat: 25, lng: 121 }, { lat: 22.6, lng: 120.3 }] });
+  assert.equal(s.calls.filter((call) => call.url.hostname === 'api.openweathermap.org').length, 2);
+});
 test('provider errors never expose secrets and do not log out the caller', async () => {
   const s = setup({ fetch: (url) => url.hostname === 'api.openweathermap.org' ? json({ message: 'weather-secret' }, 401) : undefined });
   const r = await s.run('external/geocode', { query: 'Taipei' });
