@@ -9,7 +9,6 @@ import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/utils/model_personal_data_scope.dart';
-import 'package:life_pilot/utils/in_flight_read_pool.dart';
 
 class ControllerAccountingList extends SafeChangeNotifier {
   final ServiceAccounting _service;
@@ -20,9 +19,8 @@ class ControllerAccountingList extends SafeChangeNotifier {
   int _listRequest = 0;
   String? _loadingCategory;
   Future<void>? _loadFuture;
+  bool _hasLoadedAccounts = false;
   final _accountRefreshes = <String, Object>{};
-  final _currencyReads =
-      InFlightReadPool<(ModelPersonalDataScope, String), String>();
   int _currencyRevision = 0;
 
   ControllerAccountingList({
@@ -42,7 +40,6 @@ class ControllerAccountingList extends SafeChangeNotifier {
   @override
   void dispose() {
     auth?.removeListener(_onAuthChanged);
-    _currencyReads.invalidate();
     super.dispose();
   }
 
@@ -141,8 +138,12 @@ class ControllerAccountingList extends SafeChangeNotifier {
           .timeout(requestTimeout);
       if (!_isCurrent(generation) || request != _listRequest) return;
       accounts = loaded;
+      _hasLoadedAccounts = true;
     } catch (error) {
-      if (_isCurrent(generation) && request == _listRequest) loadError = error;
+      if (_isCurrent(generation) && request == _listRequest) {
+        loadError = error;
+        _hasLoadedAccounts = false;
+      }
     } finally {
       if (_isCurrent(generation) && request == _listRequest) {
         isLoading = false;
@@ -163,12 +164,12 @@ class ControllerAccountingList extends SafeChangeNotifier {
     if (_dataScopeKey == nextScope) return;
     _dataScopeKey = nextScope;
     _accountGeneration++;
-    _currencyReads.invalidate();
     _listRequest++;
     _loadFuture = null;
     _loadingCategory = null;
     isLoading = false;
     accounts = [];
+    _hasLoadedAccounts = false;
     loadError = null;
     mainCurrency = null;
     _currentCategory = null;
@@ -186,8 +187,8 @@ class ControllerAccountingList extends SafeChangeNotifier {
     if (notifierDisposed || _currentCategory == category) return;
     _currentCategory = category;
     _currencyRevision++;
-    _currencyReads.invalidate();
     accounts = [];
+    _hasLoadedAccounts = false;
     mainCurrency = null;
 
     await loadAccounts();
@@ -199,30 +200,19 @@ class ControllerAccountingList extends SafeChangeNotifier {
     final generation = _accountGeneration;
     final revision = _currencyRevision;
     final selectedCategory = category;
-    final user = auth?.currentAccount ?? '';
     bool isCurrent() =>
         _isCurrent(generation) &&
         revision == _currencyRevision &&
         category == selectedCategory;
-    String? currency;
-    try {
-      currency = accounts.isNotEmpty
-          ? accounts.first.currency
-          : await _currencyReads.read(
-              (_scopeKey(auth), selectedCategory),
-              () => _service.fetchLatestAccount(
-                user: user,
-                category: selectedCategory,
-              ),
-            );
-    } catch (_) {
-      if (isCurrent()) rethrow;
-      return;
+    final pending = _loadFuture;
+    if (pending != null) {
+      await pending;
+    } else if (!_hasLoadedAccounts) {
+      await loadAccounts(inputCategory: selectedCategory);
     }
     if (!isCurrent()) return;
-    // A list read may have finished while the fallback was pending. Prefer
-    // its current currency instead of publishing an older fallback response.
-    final resolved = accounts.isNotEmpty ? accounts.first.currency : currency;
+    if (!_hasLoadedAccounts && loadError != null) throw loadError!;
+    final resolved = accounts.isNotEmpty ? accounts.first.currency : 'TWD';
     if (mainCurrency == resolved) return;
     mainCurrency = resolved;
     notifyListeners();
@@ -238,10 +228,8 @@ class ControllerAccountingList extends SafeChangeNotifier {
     final selectedCategory = category;
     var currency = mainCurrency;
     if (currency == null || currency.isEmpty) {
-      currency = await _service.fetchLatestAccount(
-        user: user,
-        category: selectedCategory,
-      );
+      await loadMainCurrency();
+      currency = mainCurrency ?? 'TWD';
     }
     if (!_isCurrent(generation) || category != selectedCategory) {
       throw StateError('Account scope changed');

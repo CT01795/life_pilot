@@ -66,6 +66,43 @@ class LocalDataStore {
   String _countKey(String owner, String resource) =>
       '${owner.toLowerCase()}::record_count::$resource';
 
+  bool _isLedgerDetailResource(String resource) =>
+      resource == 'accounting_detail' || resource == 'point_record_detail';
+
+  num _ledgerValue(String resource, Object? value) =>
+      resource == 'point_record_detail'
+      ? parseIntValue(value)
+      : parseNumValue(value);
+
+  String? _ledgerTotalKey(String owner, String resource, Map? data) {
+    if (!_isLedgerDetailResource(resource) || data == null) return null;
+    final accountId = parseStringValue(data['account_id']);
+    if (accountId.isEmpty) return null;
+    final currency = resource == 'accounting_detail'
+        ? parseStringValue(data['currency'])
+        : '';
+    return '${owner.toLowerCase()}::ledger_total::$resource::$accountId::$currency';
+  }
+
+  Future<void> _adjustLedgerTotal(
+    DatabaseClient database,
+    String owner,
+    String resource,
+    Map? data,
+    num direction,
+  ) async {
+    final key = _ledgerTotalKey(owner, resource, data);
+    if (key == null) return;
+    final record = _settings.record(key);
+    final cached = await record.get(database);
+    final current = tryParseNumValue(cached?['value']);
+    if (current == null) return;
+    await record.put(database, {
+      'value': current + _ledgerValue(resource, data?['value']) * direction,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
+  }
+
   Future<void> _setCount(
     DatabaseClient database,
     String owner,
@@ -142,7 +179,8 @@ class LocalDataStore {
     final database = await _db;
     await database.transaction((transaction) async {
       final record = _records.record(_recordKey(owner, resource, id));
-      final existed = await record.exists(transaction);
+      final previous = await record.get(transaction);
+      final existed = previous != null;
       final ownerKey = owner.toLowerCase();
       if (_createAllowed[ownerKey] == false ||
           _writeChecks[ownerKey]?.call() == false) {
@@ -157,6 +195,14 @@ class LocalDataStore {
         'original_cloud_id': originalCloudId,
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       });
+      await _adjustLedgerTotal(
+        transaction,
+        owner,
+        resource,
+        previous?['data'] as Map?,
+        -1,
+      );
+      await _adjustLedgerTotal(transaction, owner, resource, data, 1);
       if (!existed) await _adjustCount(transaction, owner, resource, 1);
     });
     _invalidateResource(owner, resource);
@@ -264,8 +310,16 @@ class LocalDataStore {
     final database = await _db;
     await database.transaction((transaction) async {
       final record = _records.record(_recordKey(owner, resource, id));
-      final existed = await record.exists(transaction);
+      final previous = await record.get(transaction);
+      final existed = previous != null;
       await record.delete(transaction);
+      await _adjustLedgerTotal(
+        transaction,
+        owner,
+        resource,
+        previous?['data'] as Map?,
+        -1,
+      );
       if (existed) await _adjustCount(transaction, owner, resource, -1);
     });
     _invalidateResource(owner, resource);
@@ -284,8 +338,16 @@ class LocalDataStore {
         final stored = _records.record(
           _recordKey(owner, record.resource, record.id),
         );
-        if (await stored.exists(transaction)) {
+        final previous = await stored.get(transaction);
+        if (previous != null) {
           await stored.delete(transaction);
+          await _adjustLedgerTotal(
+            transaction,
+            owner,
+            record.resource,
+            previous['data'] as Map?,
+            -1,
+          );
           deletedByResource.update(
             record.resource,
             (value) => value + 1,
@@ -314,11 +376,12 @@ class LocalDataStore {
       await _settings.delete(
         transaction,
         finder: Finder(
-          filter: Filter.custom(
-            (record) => record.key.toString().startsWith(
-              '${owner.toLowerCase()}::record_count::',
-            ),
-          ),
+          filter: Filter.custom((record) {
+            final key = record.key.toString();
+            final prefix = '${owner.toLowerCase()}::';
+            return key.startsWith('${prefix}record_count::') ||
+                key.startsWith('${prefix}ledger_total::');
+          }),
         ),
       );
     });
@@ -369,5 +432,66 @@ class LocalDataStore {
       for (var index = 0; index < requested.length; index++)
         requested[index]: values[index],
     };
+  }
+
+  /// Returns ledger totals from a persistent local index. Existing installs
+  /// build missing keys with one detail scan; subsequent writes update them.
+  Future<Map<(String, String?), num>> ledgerTotals({
+    required String owner,
+    required String resource,
+    required Iterable<({String accountId, String? currency})> accounts,
+  }) async {
+    if (!_isLedgerDetailResource(resource)) {
+      throw ArgumentError.value(resource, 'resource');
+    }
+    final requested = accounts.toSet().toList(growable: false);
+    if (requested.isEmpty) return const {};
+    final database = await _db;
+    final values = <(String, String?), num>{};
+    final missing = <(String, String?)>[];
+    for (final account in requested) {
+      final key = _ledgerTotalKey(owner, resource, {
+        'account_id': account.accountId,
+        if (resource == 'accounting_detail') 'currency': account.currency ?? '',
+      });
+      final row = await _settings.record(key!).get(database);
+      final value = tryParseNumValue(row?['value']);
+      final outputKey = (account.accountId, account.currency);
+      if (value == null) {
+        missing.add(outputKey);
+      } else {
+        values[outputKey] = value;
+      }
+    }
+    if (missing.isEmpty) return Map.unmodifiable(values);
+
+    final details = await readOnlyRows(owner: owner, resource: resource);
+    for (final key in missing) {
+      values[key] = 0;
+    }
+    final missingSet = missing.toSet();
+    for (final detail in details) {
+      final key = (
+        parseStringValue(detail['account_id']),
+        resource == 'accounting_detail'
+            ? parseStringValue(detail['currency'])
+            : null,
+      );
+      if (!missingSet.contains(key)) continue;
+      values[key] = values[key]! + _ledgerValue(resource, detail['value']);
+    }
+    await database.transaction((transaction) async {
+      for (final key in missing) {
+        final settingKey = _ledgerTotalKey(owner, resource, {
+          'account_id': key.$1,
+          if (resource == 'accounting_detail') 'currency': key.$2 ?? '',
+        });
+        await _settings.record(settingKey!).put(transaction, {
+          'value': values[key],
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        });
+      }
+    });
+    return Map.unmodifiable(values);
   }
 }

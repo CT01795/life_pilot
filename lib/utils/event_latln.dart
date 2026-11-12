@@ -1,5 +1,4 @@
 import 'dart:core';
-import 'package:life_pilot/utils/repository_event_cloud_operations.dart';
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -167,26 +166,6 @@ class ClusterItem {
       final locationLike = tmpLocationDisplay.length > 1
           ? tmpLocationDisplay[1]
           : tmpLocationDisplay[0];
-      try {
-        final result = await supabase.rpc(
-          'search_lat_lng',
-          params: {
-            'city_like': cityLike,
-            'location_like': locationLike,
-            'country_like': null,
-          },
-        );
-        if (result is List && result.isNotEmpty) {
-          final loc = result[0];
-          return {
-            "lat": parseDoubleValue(loc['lat']),
-            "lng": parseDoubleValue(loc['lng']),
-          };
-        }
-      } catch (e) {
-        logger.e('Error search_lat_lng: $e');
-      }
-
       final currentCountry = detectCountryHint(tmpLocationDisplay[0]);
       final address = tmpLocationDisplay[0].trim();
       if (address.isEmpty && currentCountry.isEmpty) {
@@ -199,15 +178,33 @@ class ClusterItem {
       }
 
       final query = '$address$currentCountry';
-      final response = await RepositoryEventCloudOperations().geocode(
-        query: query,
-        backend: () => apiCloud.post('/external/geocode', {
-          'query': query,
-        }, bearerToken: accessToken),
+      final cached = await supabase.rpc(
+        'life_pilot_resolve_cached_address',
+        params: {
+          'p_city_like': cityLike,
+          'p_location_like': locationLike,
+          'p_country_like': null,
+          'p_query': query,
+        },
       );
-      if (response is Map<String, dynamic> &&
-          response['lat'] is num &&
-          response['lng'] is num) {
+      if (cached is Map) {
+        if (cached['lat'] is num && cached['lng'] is num) {
+          return {
+            'lat': parseDoubleValue(cached['lat']),
+            'lng': parseDoubleValue(cached['lng']),
+          };
+        }
+        // The empty object is a cached negative result.
+        if (cached.isEmpty) return {};
+        throw const FormatException('Invalid cached address response');
+      }
+      if (cached != null) {
+        throw const FormatException('Invalid cached address response');
+      }
+      final response = await apiCloud.post('/external/geocode', {
+        'query': query,
+      }, bearerToken: accessToken);
+      if (response is Map && response['lat'] is num && response['lng'] is num) {
         return {
           "lat": parseDoubleValue(response['lat']),
           "lng": parseDoubleValue(response['lng']),
@@ -250,33 +247,51 @@ class ClusterItem {
     List<EventItem> events,
   ) async {
     final pending = <(int, String)>[];
+    final cacheInputs = <Map<String, Object?>>[];
+    final unresolvedIndexes = <int>[];
     for (var index = 0; index < events.length; index++) {
       final event = events[index];
       if (event.lat != null && event.lng != null) continue;
       final location = '${event.city}．${event.location}';
       final parts = location.split('．');
-      final cityLike = parts.first;
-      final locationLike = parts.length > 1 ? parts[1] : parts.first;
-      try {
-        final result = await supabase.rpc(
-          'search_lat_lng',
-          params: {
-            'city_like': cityLike,
-            'location_like': locationLike,
-            'country_like': null,
-          },
-        );
-        if (result is List && result.isNotEmpty) {
-          event.lat = parseDoubleValue(result.first['lat']);
-          event.lng = parseDoubleValue(result.first['lng']);
+      unresolvedIndexes.add(index);
+      cacheInputs.add({
+        'city_like': parts.first,
+        'location_like': parts.length > 1 ? parts[1] : parts.first,
+        'country_like': null,
+      });
+    }
+    const cacheBatchSize = 100;
+    for (
+      var offset = 0;
+      offset < cacheInputs.length;
+      offset += cacheBatchSize
+    ) {
+      final end = offset + cacheBatchSize < cacheInputs.length
+          ? offset + cacheBatchSize
+          : cacheInputs.length;
+      final inputs = cacheInputs.sublist(offset, end);
+      final cached = await supabase.rpc(
+        'search_lat_lng_batch',
+        params: {'p_queries': inputs},
+      );
+      if (cached is! List || cached.length != inputs.length) {
+        throw const FormatException('Invalid geocode cache batch response');
+      }
+      for (var resultIndex = 0; resultIndex < cached.length; resultIndex++) {
+        final eventIndex = unresolvedIndexes[offset + resultIndex];
+        final event = events[eventIndex];
+        final result = cached[resultIndex];
+        if (result is Map && result['lat'] is num && result['lng'] is num) {
+          event.lat = parseDoubleValue(result['lat']);
+          event.lng = parseDoubleValue(result['lng']);
           continue;
         }
-      } catch (error) {
-        logger.e('Error search_lat_lng: $error');
+        final parts = '${event.city}．${event.location}'.split('．');
+        final address = parts.first.trim();
+        final query = '$address${detectCountryHint(parts.first)}';
+        if (query.isNotEmpty) pending.add((eventIndex, query));
       }
-      final address = parts.first.trim();
-      final query = '$address${detectCountryHint(parts.first)}';
-      if (query.isNotEmpty) pending.add((index, query));
     }
     if (pending.isEmpty) return events;
     final token = supabase.auth.currentSession?.accessToken;

@@ -6,53 +6,43 @@ void main() {
     'canonical snapshot values already include the purchased multiplier',
     () {
       expect(
-        entitlementSnapshotQuota(
-          const {'recommended_events': 40},
-          'recommended_events',
-          multiplier: 2,
-        ),
+        entitlementSnapshotQuota(const {
+          'recommended_events': 40,
+        }, 'recommended_events'),
         40,
       );
     },
   );
 
-  test('legacy recommendation quota applies the entitlement multiplier', () {
+  test('missing canonical quota is not inferred from retired keys', () {
     expect(
-      entitlementSnapshotQuota(
-        const {'recommended_event_quota': 20},
-        'recommended_events',
-        multiplier: 3,
-      ),
-      60,
+      entitlementSnapshotQuota(const {
+        'recommended_event_quota': 20,
+      }, 'recommended_events'),
+      isNull,
     );
   });
 
-  test('legacy image quota converts multiplied megabytes to bytes', () {
+  test('canonical image quota is already stored in bytes', () {
     expect(
-      entitlementSnapshotQuota(
-        const {'image_megabytes': 10},
-        'image_bytes',
-        multiplier: 2,
-      ),
-      20 * 1024 * 1024,
+      entitlementSnapshotQuota(const {
+        'image_bytes': 10 * 1024 * 1024,
+      }, 'image_bytes'),
+      10 * 1024 * 1024,
     );
   });
 
-  test('legacy record quota applies multiplier but retention days do not', () {
+  test('canonical record and retention values are read directly', () {
     expect(
-      entitlementSnapshotQuota(
-        const {'accounting_quota': 300},
-        'accounting_detail',
-        multiplier: 2,
-      ),
+      entitlementSnapshotQuota(const {
+        'accounting_detail': 600,
+      }, 'accounting_detail'),
       600,
     );
     expect(
-      entitlementSnapshotQuota(
-        const {'answer_history_days': 365},
-        'answer_history_days',
-        multiplier: 2,
-      ),
+      entitlementSnapshotQuota(const {
+        'answer_history_days': 365,
+      }, 'answer_history_days'),
       365,
     );
   });

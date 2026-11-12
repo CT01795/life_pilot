@@ -5,11 +5,11 @@ import 'package:life_pilot/accounting/model_accounting_detail.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/accounting/repository_account_image.dart';
+import 'package:life_pilot/accounting/repository_ledger_account_lookup.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
 import 'package:life_pilot/record_statistics/repository_cloud_record_history.dart';
-import 'package:life_pilot/utils/model_record_entry_defaults.dart';
 import 'package:life_pilot/utils/model_local_account_list.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
@@ -22,8 +22,6 @@ import 'package:life_pilot/local_storage/repository_local_account_summary.dart';
 class ServiceAccounting {
   static const _accountModelColumns =
       'id,account,category,master_graph_url,balance,main_currency,exchange_rate';
-  static const _accountLinkColumns =
-      'id,account,category,balance,main_currency,exchange_rate';
   final _localAccountSummary = RepositoryLocalAccountSummary();
   final _localEventAccounts = RepositoryLocalEventAccount();
   final _localHistory = RepositoryLocalRecordHistory();
@@ -38,33 +36,7 @@ class ServiceAccounting {
         DataStorageLocation.local;
   }
 
-  String currentTable = TableNames.accountingAccount;
   ServiceAccounting();
-
-  Future<(bool, String)?> latestDirectionAndCategory({
-    required String accountId,
-    String type = 'balance',
-  }) async {
-    Map<String, dynamic>? row;
-    if (await _storesLocally) {
-      row = await _localHistory.latestRecord(
-        owner: _localOwner!,
-        resource: TableNames.accountingDetail,
-        accountId: accountId,
-        type: type,
-      );
-    } else {
-      final rows = await supabase
-          .from(TableNames.accountingDetail)
-          .select('value,primary_category')
-          .eq('account_id', accountId)
-          .ilike('type', type)
-          .order('date', ascending: false)
-          .limit(1);
-      if (rows.isNotEmpty) row = Map<String, dynamic>.from(rows.first);
-    }
-    return ModelRecordEntryDefaults.accountingDirectionAndCategory(row);
-  }
 
   // ===== 帳戶 =====
   Uint8List? parseMasterGraph(dynamic data) {
@@ -96,35 +68,9 @@ class ServiceAccounting {
         if (response == null) return null;
         return ModelAccountingAccount.fromRow(response);
       }
-      var response = await supabase
-          .from(TableNames.accountingAccount)
-          .select(_accountLinkColumns)
-          .eq(Fields.id, eventId)
-          .eq(Fields.createdBy, user)
-          .eq(Fields.isValid, true)
-          .maybeSingle();
-
-      if (response == null) {
-        final linkedDetail = await supabase
-            .from(TableNames.accountingDetail)
-            .select('account_id')
-            .eq('event_id', eventId)
-            .order('date', ascending: false)
-            .limit(1)
-            .maybeSingle();
-        final linkedAccountId = parseOptionalStringValue(
-          linkedDetail?['account_id'],
-        );
-        if (linkedAccountId != null) {
-          response = await supabase
-              .from(TableNames.accountingAccount)
-              .select(_accountLinkColumns)
-              .eq(Fields.id, linkedAccountId)
-              .eq(Fields.createdBy, user)
-              .eq(Fields.isValid, true)
-              .maybeSingle();
-        }
-      }
+      final response = await RepositoryLedgerAccountLookup(
+        supabase,
+      ).find(kind: 'accounting', eventId: eventId, expectedEmail: user);
 
       if (response == null) return null;
 
@@ -174,22 +120,29 @@ class ServiceAccounting {
     try {
       if (await _storesLocally) {
         final owner = _localOwner!;
-        final snapshots = await Future.wait([
-          LocalDataStore.instance.readOnlyRows(
-            owner: owner,
-            resource: TableNames.accountingAccount,
-          ),
-          LocalDataStore.instance.readOnlyRows(
-            owner: owner,
-            resource: TableNames.accountingDetail,
-          ),
-        ]);
-        final page = ModelLocalAccountList.fromSnapshots(
-          accounts: snapshots[0],
-          details: snapshots[1],
-          points: false,
+        final accountRows = await LocalDataStore.instance.readOnlyRows(
+          owner: owner,
+          resource: TableNames.accountingAccount,
+        );
+        final selected = ModelLocalAccountList.selectAccounts(
+          accounts: accountRows,
           category: category,
           projectLimit: projectLimit,
+        );
+        final totals = await LocalDataStore.instance.ledgerTotals(
+          owner: owner,
+          resource: TableNames.accountingDetail,
+          accounts: selected.map(
+            (row) => (
+              accountId: parseStringValue(row[Fields.id]),
+              currency: parseStringValue(row['main_currency']),
+            ),
+          ),
+        );
+        final page = ModelLocalAccountList.fromIndexedTotals(
+          accounts: selected,
+          totals: totals,
+          points: false,
         );
         return page.rows
             .map(
@@ -457,20 +410,6 @@ class ServiceAccounting {
       return page.rows.map((row) => _mapDetail(row, page.total)).toList();
     }
     final upperBound = recordDayUpperBound(dateTo);
-    var query = supabase
-        .from(TableNames.accountingDetail)
-        .select(_accountingDetailColumns)
-        .eq('account_id', accountId)
-        .ilike('type', type);
-    if (includeReservedRecords) {
-      query = query.or(
-        recordRangeOrReservedFilter(from: dateFrom, upperBound: upperBound),
-      );
-    } else {
-      query = query
-          .gte('date', dateFrom.toUtc().toIso8601String())
-          .lt('date', upperBound.toUtc().toIso8601String());
-    }
     final combinedRows = await _cloudHistory.window(
       supabase,
       table: TableNames.accountingDetail,
@@ -482,11 +421,7 @@ class ServiceAccounting {
       includeReserved: includeReservedRecords,
       includeLatest: includeLatestFallback,
     );
-    final result =
-        combinedRows?.rows ??
-        List<Map<String, dynamic>>.from(
-          await query.order('date', ascending: false),
-        );
+    final result = List<Map<String, dynamic>>.from(combinedRows.rows);
     final owner = _localOwner;
     if (owner != null && await _storesLocally) {
       final localRows = await LocalDataStore.instance.list(
@@ -510,29 +445,7 @@ class ServiceAccounting {
         ),
       );
     }
-    final hasRegularRecord = result.any((row) => !isReservedRecordRow(row));
-    if (includeLatestFallback && combinedRows == null && !hasRegularRecord) {
-      final fallback = await supabase
-          .from(TableNames.accountingDetail)
-          .select(_accountingDetailColumns)
-          .eq('account_id', accountId)
-          .ilike('type', type)
-          .neq('primary_category', reservedRecordCategory)
-          .order('date', ascending: false)
-          .limit(1);
-      result.addAll(List<Map<String, dynamic>>.from(fallback));
-    }
-    var balance = combinedRows?.total;
-    if (balance == null) {
-      final totalRows = await supabase
-          .from(TableNames.accountingAccount)
-          .select('balance')
-          .eq(Fields.id, accountId)
-          .limit(1);
-      balance = totalRows.isEmpty
-          ? 0
-          : parseNumValue(totalRows.first['balance']);
-    }
+    var balance = combinedRows.total;
     if (owner != null && await _storesLocally) {
       final allLocal = await LocalDataStore.instance.list(
         owner: owner,
@@ -547,7 +460,7 @@ class ServiceAccounting {
           .fold<num>(0, (sum, row) => sum + parseNumValue(row['value']));
     }
     final unique = uniqueRecordRowsNewestFirst(result);
-    return unique.map((detail) => _mapDetail(detail, balance!)).toList();
+    return unique.map((detail) => _mapDetail(detail, balance)).toList();
   }
 
   Future<bool> hasRecordsBefore({
@@ -597,9 +510,6 @@ class ServiceAccounting {
       before: before,
     );
   }
-
-  static const _accountingDetailColumns =
-      'id,account_id,created_at,date,primary_category,group,description,type,value,currency';
 
   ModelAccountingDetail _mapDetail(
     Map<String, dynamic> detail,
@@ -731,35 +641,6 @@ class ServiceAccounting {
     } catch (e, st) {
       logger.e('updateAccountingDetail failed $e\n$st');
       rethrow;
-    }
-  }
-
-  Future<String> fetchLatestAccount({
-    required String user,
-    required String category,
-  }) async {
-    try {
-      if (await _storesLocally) {
-        final rows = await LocalDataStore.instance.readOnlyRows(
-          owner: _localOwner!,
-          resource: TableNames.accountingAccount,
-        );
-        return ModelRecordEntryDefaults.latestAccountCurrency(rows, category);
-      }
-      final response = await supabase
-          .from(TableNames.accountingAccount)
-          .select('main_currency')
-          .eq(Fields.createdBy, user)
-          .eq('category', category)
-          .eq(Fields.isValid, true)
-          .order(Fields.createdAt, ascending: false)
-          .limit(1)
-          .maybeSingle();
-
-      return response?['main_currency'] ?? 'TWD';
-    } catch (e, st) {
-      logger.e('fetchLatestAccount failed $e\n$st');
-      return 'TWD';
     }
   }
 

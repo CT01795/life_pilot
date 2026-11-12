@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
-import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/subscription/subscription_constants.dart';
 import 'package:life_pilot/subscription/subscription_entitlement_utils.dart';
 import 'package:life_pilot/subscription/subscription_quota_summary.dart';
@@ -69,54 +68,33 @@ void main() {
   });
 
   group('cumulative subscription quotas', () {
-    final cloudVersion = SubscriptionPricingVersion(
-      id: 'cloud-v1',
-      name: 'Cloud V1',
-      storagePlan: SubscriptionStoragePlan.cloud,
-      effectiveAt: DateTime.utc(2026),
-      quarterlyPriceTwd: 129,
-      quotas: const {
-        SubscriptionResource.calendarEvents: 30,
-        SubscriptionResource.answerHistoryDays: 30,
-      },
-    );
-
     test('adds canonical snapshots without applying multiplier twice', () {
-      final result = cumulativeSubscriptionQuotas(
-        [
-          {
-            'storage_plan': SubscriptionStoragePlan.cloud,
-            'quota_multiplier': 2,
-            'entitlement_snapshot': {SubscriptionResource.calendarEvents: 60},
-          },
-          {
-            'storage_plan': SubscriptionStoragePlan.cloud,
-            'quota_multiplier': 1,
-            'entitlement_snapshot': {SubscriptionResource.calendarEvents: 30},
-          },
-        ],
-        [cloudVersion],
-        storagePlan: SubscriptionStoragePlan.cloud,
-      );
+      final result = cumulativeSubscriptionQuotas([
+        {
+          'storage_plan': SubscriptionStoragePlan.cloud,
+          'quota_multiplier': 2,
+          'entitlement_snapshot': {SubscriptionResource.calendarEvents: 60},
+        },
+        {
+          'storage_plan': SubscriptionStoragePlan.cloud,
+          'quota_multiplier': 1,
+          'entitlement_snapshot': {SubscriptionResource.calendarEvents: 30},
+        },
+      ], storagePlan: SubscriptionStoragePlan.cloud);
 
       expect(result[SubscriptionResource.calendarEvents], 90);
     });
 
-    test('falls back to pricing version for old rows without snapshots', () {
-      final result = cumulativeSubscriptionQuotas(
-        [
-          {
-            'storage_plan': SubscriptionStoragePlan.cloud,
-            'quota_multiplier': 3,
-            'pricing_version_id': cloudVersion.id,
-          },
-        ],
-        [cloudVersion],
-        storagePlan: SubscriptionStoragePlan.cloud,
-      );
+    test('missing snapshots never infer quota from a pricing version', () {
+      final result = cumulativeSubscriptionQuotas([
+        {
+          'storage_plan': SubscriptionStoragePlan.cloud,
+          'quota_multiplier': 3,
+          'pricing_version_id': 'retired-version',
+        },
+      ], storagePlan: SubscriptionStoragePlan.cloud);
 
-      expect(result[SubscriptionResource.calendarEvents], 90);
-      expect(result, isNot(contains(SubscriptionResource.answerHistoryDays)));
+      expect(result, isEmpty);
     });
   });
 }

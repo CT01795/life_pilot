@@ -15,6 +15,10 @@ import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/service/network_availability.dart';
 
 class DashboardRepository {
+  ({String accountId, AccountingDashboardSummary summary})?
+  _bootstrapAccounting;
+  ({String accountId, PointDashboardSummary summary})? _bootstrapPoints;
+
   String? get _localOwner => supabase.auth.currentUser?.email?.toLowerCase();
 
   Future<bool> get _storesLocally async {
@@ -103,6 +107,8 @@ class DashboardRepository {
   Future<DashboardSetting> loadDashboardSetting({
     required String account,
   }) async {
+    _bootstrapAccounting = null;
+    _bootstrapPoints = null;
     if (await _storesLocally) {
       final rows = await LocalDataStore.instance.readOnlyRows(
         owner: account,
@@ -116,28 +122,40 @@ class DashboardRepository {
       }
       return _recoverLocalDashboardSetting(account);
     }
-    final result = await supabase
-        .from(TableNames.dashboardSetting)
-        .select(DashboardSetting.persistedColumns)
-        .eq(Fields.account, account)
-        .maybeSingle();
-
-    if (result == null) {
-      final setting = DashboardSetting(
-        recommendEventCity: '台北',
-        recommendPlaceCity: '台北',
-        language: 'zh',
-      );
-
-      await supabase.from('dashboard_setting').insert({
-        Fields.account: account,
-        ...setting.toJson(),
-      });
-
-      return setting;
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    final result = await supabase.rpc(
+      'get_or_create_my_dashboard_core',
+      params: {
+        'p_expected_email': account,
+        'p_day_start': start.toUtc().toIso8601String(),
+        'p_day_end': start
+            .add(const Duration(days: 1))
+            .toUtc()
+            .toIso8601String(),
+      },
+    );
+    if (result is! Map || result['setting'] is! Map) {
+      throw const FormatException('Invalid dashboard bootstrap response');
     }
-
-    return DashboardSetting.fromJson(result);
+    final setting = DashboardSetting.fromJson(
+      Map<String, dynamic>.from(result['setting'] as Map),
+    );
+    final accountingId = setting.accountingAccountId;
+    if (accountingId != null && accountingId.isNotEmpty) {
+      _bootstrapAccounting = (
+        accountId: accountingId,
+        summary: _decodeAccountingSummary(result['accounting']),
+      );
+    }
+    final pointId = setting.pointAccountId;
+    if (pointId != null && pointId.isNotEmpty) {
+      _bootstrapPoints = (
+        accountId: pointId,
+        summary: _decodePointSummary(result['points']),
+      );
+    }
+    return setting;
   }
 
   Future<DashboardSetting> _recoverLocalDashboardSetting(String account) async {
@@ -170,6 +188,8 @@ class DashboardRepository {
     required String account,
     required DashboardSetting setting,
   }) async {
+    _bootstrapAccounting = null;
+    _bootstrapPoints = null;
     if (await _storesLocally) {
       await LocalDataStore.instance.put(
         owner: account,
@@ -240,6 +260,11 @@ class DashboardRepository {
     required String accountId,
   }) async {
     if (accountId.isEmpty) return const AccountingDashboardSummary.empty();
+    final bootstrap = _bootstrapAccounting;
+    if (bootstrap != null && bootstrap.accountId == accountId) {
+      _bootstrapAccounting = null;
+      return bootstrap.summary;
+    }
     final localOwner = _localOwner;
     if (localOwner != null && await _storesLocally) {
       final account = await LocalDataStore.instance.readOnlyRow(
@@ -302,6 +327,11 @@ class DashboardRepository {
     required String accountId,
   }) async {
     if (accountId.isEmpty) return const PointDashboardSummary.empty();
+    final bootstrap = _bootstrapPoints;
+    if (bootstrap != null && bootstrap.accountId == accountId) {
+      _bootstrapPoints = null;
+      return bootstrap.summary;
+    }
     final localOwner = _localOwner;
     if (localOwner != null && await _storesLocally) {
       final account = await LocalDataStore.instance.readOnlyRow(

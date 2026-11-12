@@ -141,6 +141,7 @@ void main() {
           await putDetail('one', 20);
           expect((await read())!.total, 20);
           expect(first.total, 10);
+          expect(store.listReads, hasLength(1));
         },
       );
       test('detail deletion and recreation invalidate cached totals', () async {

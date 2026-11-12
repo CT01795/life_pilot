@@ -132,11 +132,7 @@ class SubscriptionEntitlement {
       endsAt: tryParseDateTimeValue(json['ends_at']) ?? DateTime.now(),
       quotas: {
         for (final resource in subscriptionQuotaResources)
-          resource: ?entitlementSnapshotQuota(
-            rawQuotas,
-            resource,
-            multiplier: multiplier,
-          ),
+          resource: ?entitlementSnapshotQuota(rawQuotas, resource),
       },
     );
   }

@@ -5,11 +5,11 @@ import 'package:life_pilot/point_record/model_point_record_detail.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/accounting/repository_account_image.dart';
+import 'package:life_pilot/accounting/repository_ledger_account_lookup.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
 import 'package:life_pilot/record_statistics/repository_cloud_record_history.dart';
-import 'package:life_pilot/utils/model_record_entry_defaults.dart';
 import 'package:life_pilot/utils/model_local_account_list.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
@@ -22,9 +22,6 @@ import 'package:life_pilot/local_storage/repository_local_account_summary.dart';
 class ServicePointRecord {
   static const _accountModelColumns =
       'id,account,category,master_graph_url,points';
-  static const _accountLinkColumns = 'id,account,category,points';
-  static const _pointDetailColumns =
-      'id,account_id,created_at,date,primary_category,group,description,type,value';
   final _localAccountSummary = RepositoryLocalAccountSummary();
   final _localEventAccounts = RepositoryLocalEventAccount();
   final _localHistory = RepositoryLocalRecordHistory();
@@ -39,33 +36,7 @@ class ServicePointRecord {
         DataStorageLocation.local;
   }
 
-  String currentTable = TableNames.pointRecordAccount;
   ServicePointRecord();
-
-  Future<(bool, String)?> latestDirectionAndCategory({
-    required String accountId,
-    String type = 'points',
-  }) async {
-    Map<String, dynamic>? row;
-    if (await _storesLocally) {
-      row = await _localHistory.latestRecord(
-        owner: _localOwner!,
-        resource: TableNames.pointRecordDetail,
-        accountId: accountId,
-        type: type,
-      );
-    } else {
-      final rows = await supabase
-          .from(TableNames.pointRecordDetail)
-          .select('value,primary_category')
-          .eq('account_id', accountId)
-          .ilike('type', type)
-          .order('date', ascending: false)
-          .limit(1);
-      if (rows.isNotEmpty) row = Map<String, dynamic>.from(rows.first);
-    }
-    return ModelRecordEntryDefaults.pointDirectionAndCategory(row);
-  }
 
   // ===== 帳戶 =====
   Uint8List? parseMasterGraph(dynamic data) {
@@ -97,35 +68,9 @@ class ServicePointRecord {
         if (response == null) return null;
         return ModelPointRecordAccount.fromRow(response);
       }
-      var response = await supabase
-          .from(currentTable)
-          .select(_accountLinkColumns)
-          .eq(Fields.id, eventId)
-          .eq(Fields.createdBy, user)
-          .eq(Fields.isValid, true)
-          .maybeSingle();
-
-      if (response == null) {
-        final linkedDetail = await supabase
-            .from(TableNames.pointRecordDetail)
-            .select('account_id')
-            .eq('event_id', eventId)
-            .order('date', ascending: false)
-            .limit(1)
-            .maybeSingle();
-        final linkedAccountId = parseOptionalStringValue(
-          linkedDetail?['account_id'],
-        );
-        if (linkedAccountId != null) {
-          response = await supabase
-              .from(currentTable)
-              .select(_accountLinkColumns)
-              .eq(Fields.id, linkedAccountId)
-              .eq(Fields.createdBy, user)
-              .eq(Fields.isValid, true)
-              .maybeSingle();
-        }
-      }
+      final response = await RepositoryLedgerAccountLookup(
+        supabase,
+      ).find(kind: 'points', eventId: eventId, expectedEmail: user);
 
       if (response == null) return null;
 
@@ -176,22 +121,27 @@ class ServicePointRecord {
     try {
       if (await _storesLocally) {
         final owner = _localOwner!;
-        final snapshots = await Future.wait([
-          LocalDataStore.instance.readOnlyRows(
-            owner: owner,
-            resource: TableNames.pointRecordAccount,
-          ),
-          LocalDataStore.instance.readOnlyRows(
-            owner: owner,
-            resource: TableNames.pointRecordDetail,
-          ),
-        ]);
-        final page = ModelLocalAccountList.fromSnapshots(
-          accounts: snapshots[0],
-          details: snapshots[1],
-          points: true,
+        final accountRows = await LocalDataStore.instance.readOnlyRows(
+          owner: owner,
+          resource: TableNames.pointRecordAccount,
+        );
+        final selected = ModelLocalAccountList.selectAccounts(
+          accounts: accountRows,
           category: category,
           projectLimit: projectLimit,
+        );
+        final totals = await LocalDataStore.instance.ledgerTotals(
+          owner: owner,
+          resource: TableNames.pointRecordDetail,
+          accounts: selected.map(
+            (row) =>
+                (accountId: parseStringValue(row[Fields.id]), currency: null),
+          ),
+        );
+        final page = ModelLocalAccountList.fromIndexedTotals(
+          accounts: selected,
+          totals: totals,
+          points: true,
         );
         return page.rows
             .map(
@@ -463,20 +413,6 @@ class ServicePointRecord {
       }).toList();
     }
     final upperBound = recordDayUpperBound(dateTo);
-    var query = supabase
-        .from(TableNames.pointRecordDetail)
-        .select(_pointDetailColumns)
-        .eq('account_id', accountId)
-        .ilike('type', type);
-    if (includeReservedRecords) {
-      query = query.or(
-        recordRangeOrReservedFilter(from: dateFrom, upperBound: upperBound),
-      );
-    } else {
-      query = query
-          .gte('date', dateFrom.toUtc().toIso8601String())
-          .lt('date', upperBound.toUtc().toIso8601String());
-    }
     final combinedRows = await _cloudHistory.window(
       supabase,
       table: TableNames.pointRecordDetail,
@@ -488,11 +424,7 @@ class ServicePointRecord {
       includeReserved: includeReservedRecords,
       includeLatest: includeLatestFallback,
     );
-    final result =
-        combinedRows?.rows ??
-        List<Map<String, dynamic>>.from(
-          await query.order('date', ascending: false),
-        );
+    final result = List<Map<String, dynamic>>.from(combinedRows.rows);
     final owner = _localOwner;
     if (owner != null && await _storesLocally) {
       final localRows = await LocalDataStore.instance.list(
@@ -516,27 +448,7 @@ class ServicePointRecord {
         ),
       );
     }
-    final hasRegularRecord = result.any((row) => !isReservedRecordRow(row));
-    if (includeLatestFallback && combinedRows == null && !hasRegularRecord) {
-      final fallback = await supabase
-          .from(TableNames.pointRecordDetail)
-          .select(_pointDetailColumns)
-          .eq('account_id', accountId)
-          .ilike('type', type)
-          .neq('primary_category', reservedRecordCategory)
-          .order('date', ascending: false)
-          .limit(1);
-      result.addAll(List<Map<String, dynamic>>.from(fallback));
-    }
-    var points = combinedRows?.total.toInt();
-    if (points == null) {
-      final totalRows = await supabase
-          .from(TableNames.pointRecordAccount)
-          .select('points')
-          .eq(Fields.id, accountId)
-          .limit(1);
-      points = totalRows.isEmpty ? 0 : parseIntValue(totalRows.first['points']);
-    }
+    var points = combinedRows.total.toInt();
     if (owner != null && await _storesLocally) {
       final allLocal = await LocalDataStore.instance.list(
         owner: owner,

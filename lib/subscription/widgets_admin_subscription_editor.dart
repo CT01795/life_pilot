@@ -365,7 +365,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                       ],
                     ),
                   ),
-                ..._buildCumulativeQuotaCards(context, loc, versions),
+                ..._buildCumulativeQuotaCards(context, loc),
               ],
               if (_subscriptionExists) ...[
                 Gaps.h8,
@@ -896,13 +896,11 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   List<Widget> _buildCumulativeQuotaCards(
     BuildContext context,
     AppLocalizations loc,
-    List<SubscriptionPricingVersion> versions,
   ) {
     final cards = <Widget>[];
     for (final storagePlan in SubscriptionStoragePlan.values) {
       final quotas = cumulativeSubscriptionQuotas(
         _lookedUpEntitlements,
-        versions,
         storagePlan: storagePlan,
       );
       if (quotas.isEmpty) continue;

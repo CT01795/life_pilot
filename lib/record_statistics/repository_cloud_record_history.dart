@@ -22,7 +22,7 @@ class RepositoryCloudRecordHistory {
     _revision++;
   }
 
-  Future<CloudRecordHistoryWindow?> window(
+  Future<CloudRecordHistoryWindow> window(
     SupabaseClient client, {
     required String table,
     required String kind,
@@ -34,10 +34,10 @@ class RepositoryCloudRecordHistory {
     bool includeLatest = false,
   }) async {
     final token = client.auth.currentSession?.accessToken;
-    if (token == null ||
-        !until.isAfter(from) ||
-        until.difference(from) > const Duration(days: 100)) {
-      return null;
+    if (token == null) throw StateError('Authentication required');
+    if (!until.isAfter(from) ||
+        until.difference(from) > const Duration(days: 36525)) {
+      throw ArgumentError('Invalid ledger history window');
     }
     final revision = _revision;
     final boundary = from.toUtc().toIso8601String();

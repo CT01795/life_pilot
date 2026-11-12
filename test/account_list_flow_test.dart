@@ -54,7 +54,6 @@ class _Requests {
 class _Accounting extends ServiceAccounting {
   _Accounting(this.requests);
   final _Requests requests;
-  Completer<String>? pendingCurrency;
   int creates = 0;
   @override
   Future<ModelAccountingAccount?> fetchAccountById({
@@ -90,11 +89,6 @@ class _Accounting extends ServiceAccounting {
     required String eventId,
     required String user,
   }) async => null;
-  @override
-  Future<String> fetchLatestAccount({
-    required String user,
-    required String category,
-  }) async => pendingCurrency == null ? 'TWD' : pendingCurrency!.future;
   @override
   Future<ModelAccountingAccount> createAccount({
     required String name,
@@ -533,16 +527,16 @@ void main() {
   }
 
   test(
-    'currency completion cannot create an account under a switched user',
+    'account-list completion cannot create an account under a switched user',
     () async {
       final auth = _Auth();
-      final service = _Accounting(_Requests())
-        ..pendingCurrency = Completer<String>();
+      final requests = _Requests();
+      final service = _Accounting(requests);
       final controller = ControllerAccountingList(service: service, auth: auth);
       final creation = controller.createAccount(name: 'name');
       final check = expectLater(creation, throwsStateError);
       auth.switchAccount();
-      service.pendingCurrency!.complete('USD');
+      requests.pending.single.complete(['old account']);
       await check;
       expect(service.creates, 0);
       expect(controller.mainCurrency, isNull);

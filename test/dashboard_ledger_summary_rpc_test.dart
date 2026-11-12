@@ -10,6 +10,60 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('dashboard bootstrap returns setting and both summaries once', () async {
+    final requests = <http.Request>[];
+    final client = SupabaseClient(
+      'https://example.supabase.co',
+      'test-key',
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        return http.Response(
+          jsonEncode({
+            'setting': {
+              'recommend_event_city': '台北',
+              'recommend_place_city': '台中',
+              'language': 'zh',
+              'accounting_account_id': 'accounting-id',
+              'accounting_account_name': '現金',
+              'point_account_id': 'point-id',
+              'point_account_name': '積分',
+            },
+            'accounting': {
+              'total': 120,
+              'today_total': -10,
+              'currency': 'TWD',
+              'records': [],
+            },
+            'points': {'total': 50, 'today_total': 5, 'records': []},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+          request: request,
+        );
+      }),
+    );
+    addTearDown(client.dispose);
+    supabase = client;
+
+    final repository = DashboardRepository();
+    final setting = await repository.loadDashboardSetting(
+      account: 'person@example.com',
+    );
+    final accounting = await repository.loadAccountingSummary(
+      accountId: 'accounting-id',
+    );
+    final points = await repository.loadPointSummary(accountId: 'point-id');
+
+    expect(setting.accountingAccountName, '現金');
+    expect(accounting.total, 120);
+    expect(points.total, 50);
+    expect(requests, hasLength(1));
+    expect(
+      requests.single.url.path,
+      endsWith('/rpc/get_or_create_my_dashboard_core'),
+    );
+  });
+
   test('dashboard ledger summaries each use one compact RPC', () async {
     final requests = <http.Request>[];
     final client = SupabaseClient(

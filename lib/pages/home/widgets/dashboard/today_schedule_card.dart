@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
+import 'package:life_pilot/accounting/service_ledger_entry_defaults.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -193,29 +194,20 @@ class TodayScheduleCard extends StatelessWidget {
                                         (bool, String)? accountingDefault;
                                         (bool, String)? pointDefault;
                                         try {
-                                          final defaults = await Future.wait([
-                                            accountingAccountId == null
-                                                ? Future<
-                                                    (bool, String)?
-                                                  >.value()
-                                                : ServiceAccounting()
-                                                      .latestDirectionAndCategory(
-                                                        accountId:
-                                                            accountingAccountId,
-                                                      ),
-                                            !showPoints ||
-                                                    pointAccountId == null
-                                                ? Future<
-                                                    (bool, String)?
-                                                  >.value()
-                                                : ServicePointRecord()
-                                                      .latestDirectionAndCategory(
-                                                        accountId:
-                                                            pointAccountId,
-                                                      ),
-                                          ]);
-                                          accountingDefault = defaults[0];
-                                          pointDefault = defaults[1];
+                                          final defaults =
+                                              await ServiceLedgerEntryDefaults()
+                                                  .load(
+                                                    expectedEmail:
+                                                        account ?? '',
+                                                    accountingAccountId:
+                                                        accountingAccountId,
+                                                    pointAccountId: showPoints
+                                                        ? pointAccountId
+                                                        : null,
+                                                  );
+                                          accountingDefault =
+                                              defaults.accounting;
+                                          pointDefault = defaults.points;
                                         } catch (error, stackTrace) {
                                           logger.w(
                                             'Could not load latest record defaults.',
