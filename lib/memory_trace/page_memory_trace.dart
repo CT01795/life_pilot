@@ -58,16 +58,18 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
         title: '',
         emptyText: loc.memoryTraceZero,
         searchPanelBuilder: widgetsSearchPanel,
-        listBuilder: ({
-          required List<EventItem> filteredEvents,
-          required ScrollController scrollController,
-        }) {
-          return WidgetsMemoryList(
-              filteredEvents: filteredEvents,
-              scrollController: scrollController,
-              controllerEvent: _controllerEvent,
-              auth: auth);
-        },
+        listBuilder:
+            ({
+              required List<EventItem> filteredEvents,
+              required ScrollController scrollController,
+            }) {
+              return WidgetsMemoryList(
+                filteredEvents: filteredEvents,
+                scrollController: scrollController,
+                controllerEvent: _controllerEvent,
+                auth: auth,
+              );
+            },
       ),
     );
   }

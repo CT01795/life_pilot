@@ -7,9 +7,6 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const MainPageBar(),
-      body: const PageMain(),
-    );
+    return Scaffold(appBar: const MainPageBar(), body: const PageMain());
   }
 }

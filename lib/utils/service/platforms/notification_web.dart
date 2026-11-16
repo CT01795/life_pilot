@@ -23,22 +23,26 @@ class NotificationServiceWeb implements ServiceNotificationPlatform {
 
   // 根據 event.reminderOptions 安排通知
   @override
-  Future<NotificationResult> scheduleEventReminders(
-      {required EventItem event}) async {
+  Future<NotificationResult> scheduleEventReminders({
+    required EventItem event,
+  }) async {
     return NotificationResult(success: false, message: '');
   }
 
   // 取消與此事件相關的所有提醒通知
   @override
-  Future<void> cancelEventReminders(
-      {required String eventId,
-      required List<CalendarReminderOption> reminderOptions}) async {
+  Future<void> cancelEventReminders({
+    required String eventId,
+    required List<CalendarReminderOption> reminderOptions,
+  }) async {
     cancelWebReminders();
   }
 
   @override
-  Future<List<EventNotification>> getTodayEventNotifications(
-      {required List<EventItem> events, required String close}) async {
+  Future<List<EventNotification>> getTodayEventNotifications({
+    required List<EventItem> events,
+    required String close,
+  }) async {
     if (events.isEmpty) return [];
 
     List<EventNotification> returnList = [];
@@ -46,11 +50,14 @@ class NotificationServiceWeb implements ServiceNotificationPlatform {
       final now = DateTime.now().subtract(Duration(hours: 1));
       String title = '\t\t\t\t\t\t\t\tReminder:';
       final body = events
-          .map((e) =>
-              '${!DateTimeCompare.isSameDayFutureTime(e.startDate, e.startTime, now) ? (!((e.endDate != null && DateTimeCompare.isSameDayFutureTime(e.endDate, e.endTime, now)) || (e.endDate == null && e.endTime != null && DateTimeCompare.isSameDayFutureTime(e.startDate, e.endTime, now))) ? now.formatDateString(passYear: true, formatShow: true) : '${e.endDate == null ? e.startDate!.formatDateString(passYear: true, formatShow: true) : e.endDate!.formatDateString(passYear: true, formatShow: true)} ${e.startTime!.formatTimeString()}') : '${e.startDate!.formatDateString(passYear: true, formatShow: true)} ${e.startTime!.formatTimeString()}'} ${e.name}')
+          .map(
+            (e) =>
+                '${!DateTimeCompare.isSameDayFutureTime(e.startDate, e.startTime, now) ? (!((e.endDate != null && DateTimeCompare.isSameDayFutureTime(e.endDate, e.endTime, now)) || (e.endDate == null && e.endTime != null && DateTimeCompare.isSameDayFutureTime(e.startDate, e.endTime, now))) ? now.formatDateString(passYear: true, formatShow: true) : '${e.endDate == null ? e.startDate!.formatDateString(passYear: true, formatShow: true) : e.endDate!.formatDateString(passYear: true, formatShow: true)} ${e.startTime!.formatTimeString()}') : '${e.startDate!.formatDateString(passYear: true, formatShow: true)} ${e.startTime!.formatTimeString()}'} ${e.name}',
+          )
           .join('\n');
-      returnList
-          .add(EventNotification(title: title, body: body, message: close));
+      returnList.add(
+        EventNotification(title: title, body: body, message: close),
+      );
       return returnList;
     } catch (e) {
       logger.e('Failed to open exact alarm settings: ${e.toString()}');

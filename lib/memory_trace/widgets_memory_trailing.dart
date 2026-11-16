@@ -21,7 +21,10 @@ Widget widgetsMemoryTrailing({
           icon: const Icon(Icons.edit),
           tooltip: loc.edit,
           onPressed: () => onEditPressed(
-                context: context, controller: controllerEvent, event: event),
+            context: context,
+            controller: controllerEvent,
+            event: event,
+          ),
         ),
       ],
     ),

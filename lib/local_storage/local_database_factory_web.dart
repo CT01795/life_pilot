@@ -8,8 +8,9 @@ import 'package:sembast_web/utils/jdb.dart';
 // before the application can catch the error. Life Pilot does not require
 // live cross-tab local-data synchronization, so use the same IndexedDB
 // storage without the broadcast layer.
-final DatabaseFactory _lifePilotWebFactory =
-    DatabaseFactoryJdb(JdbFactoryIdb(idbFactoryWeb));
+final DatabaseFactory _lifePilotWebFactory = DatabaseFactoryJdb(
+  JdbFactoryIdb(idbFactoryWeb),
+);
 
 Future<Database> openLifePilotLocalDatabase() {
   return _lifePilotWebFactory.openDatabase('life_pilot_local');

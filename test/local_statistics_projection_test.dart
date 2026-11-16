@@ -63,6 +63,14 @@ class _SnapshotStore extends LocalDataStore {
   List<Map<String, dynamic>> snapshot = const [];
   Completer<void>? gate;
   int reads = 0;
+  final _indexed =
+      <
+        (String, String, String, String?),
+        (
+          Object,
+          ({num total, List<Map<String, dynamic>> rows, Object revision}),
+        )
+      >{};
   _SnapshotStore(super.database) : super.withDatabase();
   @override
   Future<List<Map<String, dynamic>>> readOnlyRows({
@@ -72,6 +80,48 @@ class _SnapshotStore extends LocalDataStore {
     reads++;
     await gate?.future;
     return snapshot;
+  }
+
+  @override
+  Future<({num total, List<Map<String, dynamic>> rows, Object revision})>
+  ledgerStatistics({
+    required String owner,
+    required String resource,
+    required String accountId,
+    String? currency,
+    required DateTime now,
+    required bool history,
+    bool Function()? shouldContinue,
+  }) async {
+    reads++;
+    await gate?.future;
+    if (shouldContinue?.call() == false) {
+      return (
+        total: 0 as num,
+        rows: const <Map<String, dynamic>>[],
+        revision: Object(),
+      );
+    }
+    final key = (owner, resource, accountId, currency);
+    final cached = _indexed[key];
+    if (cached != null && identical(cached.$1, snapshot)) return cached.$2;
+    final selected = snapshot.where(
+      (row) =>
+          row['account_id'] == accountId &&
+          (resource != TableNames.accountingDetail ||
+              currency == null ||
+              row['currency'] == currency),
+    );
+    final result = (
+      total: selected.fold<num>(
+        0,
+        (sum, row) => sum + parseNumValue(row['value']),
+      ),
+      rows: List<Map<String, dynamic>>.unmodifiable(selected),
+      revision: snapshot as Object,
+    );
+    _indexed[key] = (snapshot, result);
+    return result;
   }
 }
 
@@ -378,7 +428,9 @@ void main() {
         expect(await total(account: 'other-1'), 0);
         expect(source.reads, reads);
         expect(await total(account: 'other-0'), 0);
-        expect(source.reads, greaterThan(reads));
+        // The service projection was evicted, but the persistent aggregate
+        // remains reusable without revisiting raw detail rows.
+        expect(source.reads, reads);
       },
     );
 
@@ -405,7 +457,7 @@ void main() {
       expect(await total(owner: 'two@example.com'), 10);
       final reads = source.reads;
       expect(await total(), 10);
-      expect(source.reads, greaterThan(reads));
+      expect(source.reads, reads);
     });
     for (final kind in RecordStatisticsKind.values) {
       test(

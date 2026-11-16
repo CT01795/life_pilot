@@ -50,8 +50,10 @@ class WidgetsEventDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildCloseButton(
-      {required BuildContext context, required AppLocalizations loc}) {
+  Widget _buildCloseButton({
+    required BuildContext context,
+    required AppLocalizations loc,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(

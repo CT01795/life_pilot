@@ -160,9 +160,9 @@ class ServiceExportExcel {
           description: parseStringValue(row[colsToDetail["description"] ?? 99]),
           unit: parseStringValue(row[colsToDetail["unit"] ?? 99]),
           ageMin:
-              parseStringValue(row[colsToDetail["ageMin"] ?? 99])
-                  .trim()
-                  .isNotEmpty
+              parseStringValue(
+                row[colsToDetail["ageMin"] ?? 99],
+              ).trim().isNotEmpty
               ? parseNumValue(
                   parseStringValue(
                     row[colsToDetail["ageMin"] ?? 99]!.value,
@@ -170,9 +170,9 @@ class ServiceExportExcel {
                 )
               : null,
           ageMax:
-              parseStringValue(row[colsToDetail["ageMax"] ?? 99])
-                  .trim()
-                  .isNotEmpty
+              parseStringValue(
+                row[colsToDetail["ageMax"] ?? 99],
+              ).trim().isNotEmpty
               ? parseNumValue(
                   parseStringValue(
                     row[colsToDetail["ageMax"] ?? 99]!.value,
@@ -180,17 +180,17 @@ class ServiceExportExcel {
                 )
               : null,
           isFree:
-              parseStringValue(row[colsToDetail["isFree"] ?? 99])
-                  .trim()
-                  .isNotEmpty
+              parseStringValue(
+                row[colsToDetail["isFree"] ?? 99],
+              ).trim().isNotEmpty
               ? parseStringValue(
                   row[colsToDetail["isFree"] ?? 99],
                 ).contains(loc.free)
               : null,
           priceMin:
-              parseStringValue(row[colsToDetail["priceMin"] ?? 99])
-                  .trim()
-                  .isNotEmpty
+              parseStringValue(
+                row[colsToDetail["priceMin"] ?? 99],
+              ).trim().isNotEmpty
               ? parseNumValue(
                   parseStringValue(
                     row[colsToDetail["priceMin"] ?? 99]!.value,
@@ -198,9 +198,9 @@ class ServiceExportExcel {
                 )
               : null,
           priceMax:
-              parseStringValue(row[colsToDetail["priceMax"] ?? 99])
-                  .trim()
-                  .isNotEmpty
+              parseStringValue(
+                row[colsToDetail["priceMax"] ?? 99],
+              ).trim().isNotEmpty
               ? parseNumValue(
                   parseStringValue(
                     row[colsToDetail["priceMax"] ?? 99]!.value,
@@ -208,14 +208,12 @@ class ServiceExportExcel {
                 )
               : null,
           isOutdoor:
-              parseStringValue(row[colsToDetail["isOutdoor"] ?? 99])
-                  .trim()
-                  .isNotEmpty
+              parseStringValue(
+                row[colsToDetail["isOutdoor"] ?? 99],
+              ).trim().isNotEmpty
               ? parseStringValue(
                   row[colsToDetail["isOutdoor"] ?? 99],
-                ).contains(
-                  loc.outdoor,
-                )
+                ).contains(loc.outdoor)
               : null,
           id: parseOptionalStringValue(row[colsToDetail["id"] ?? 99]),
           masterUrl: parseOptionalStringValue(
@@ -285,8 +283,9 @@ class ServiceExportExcel {
           name: parseStringValue(row[colsToDetail["name"] ?? 99]?.value),
           type: parseStringValue(row[colsToDetail["type"] ?? 99]?.value),
           city: parseStringValue(row[colsToDetail["city"] ?? 99]?.value),
-          location:
-              parseStringValue(row[colsToDetail["location"] ?? 99]?.value),
+          location: parseStringValue(
+            row[colsToDetail["location"] ?? 99]?.value,
+          ),
           //fee: row[?]?.value?.toString(),
           startDate: tryParseDateTimeValue(
             parseStringValue(row[colsToDetail["startDate"] ?? 99]?.value),
@@ -300,13 +299,14 @@ class ServiceExportExcel {
           endTime: EventDateTimeParser.parseTime(
             parseStringValue(row[colsToDetail["endTime"] ?? 99]?.value),
           ),
-          description:
-              parseStringValue(row[colsToDetail["description"] ?? 99]?.value),
+          description: parseStringValue(
+            row[colsToDetail["description"] ?? 99]?.value,
+          ),
           unit: parseStringValue(row[colsToDetail["unit"] ?? 99]?.value),
           ageMin:
-              parseStringValue(row[colsToDetail["ageMin"] ?? 99]?.value)
-                  .trim()
-                  .isNotEmpty
+              parseStringValue(
+                row[colsToDetail["ageMin"] ?? 99]?.value,
+              ).trim().isNotEmpty
               ? parseNumValue(
                   parseStringValue(
                     row[colsToDetail["ageMin"] ?? 99]!.value,
@@ -314,9 +314,9 @@ class ServiceExportExcel {
                 )
               : null,
           ageMax:
-              parseStringValue(row[colsToDetail["ageMax"] ?? 99]?.value)
-                  .trim()
-                  .isNotEmpty
+              parseStringValue(
+                row[colsToDetail["ageMax"] ?? 99]?.value,
+              ).trim().isNotEmpty
               ? parseNumValue(
                   parseStringValue(
                     row[colsToDetail["ageMax"] ?? 99]!.value,
@@ -324,19 +324,17 @@ class ServiceExportExcel {
                 )
               : null,
           isFree:
-              parseStringValue(row[colsToDetail["isFree"] ?? 99]?.value)
-                  .trim()
-                  .isNotEmpty
+              parseStringValue(
+                row[colsToDetail["isFree"] ?? 99]?.value,
+              ).trim().isNotEmpty
               ? parseStringValue(
                   row[colsToDetail["isFree"] ?? 99]?.value,
-                ).contains(
-                  loc.free,
-                )
+                ).contains(loc.free)
               : null,
           priceMin:
-              parseStringValue(row[colsToDetail["priceMin"] ?? 99]?.value)
-                  .trim()
-                  .isNotEmpty
+              parseStringValue(
+                row[colsToDetail["priceMin"] ?? 99]?.value,
+              ).trim().isNotEmpty
               ? parseNumValue(
                   parseStringValue(
                     row[colsToDetail["priceMin"] ?? 99]!.value,
@@ -344,9 +342,9 @@ class ServiceExportExcel {
                 )
               : null,
           priceMax:
-              parseStringValue(row[colsToDetail["priceMax"] ?? 99]?.value)
-                  .trim()
-                  .isNotEmpty
+              parseStringValue(
+                row[colsToDetail["priceMax"] ?? 99]?.value,
+              ).trim().isNotEmpty
               ? parseNumValue(
                   parseStringValue(
                     row[colsToDetail["priceMax"] ?? 99]!.value,
@@ -354,16 +352,14 @@ class ServiceExportExcel {
                 )
               : null,
           isOutdoor:
-              parseStringValue(row[colsToDetail["isOutdoor"] ?? 99]?.value)
-                  .trim()
-                  .isNotEmpty
+              parseStringValue(
+                row[colsToDetail["isOutdoor"] ?? 99]?.value,
+              ).trim().isNotEmpty
               ? row[colsToDetail["isOutdoor"] ?? 99]?.value
                     ?.toString()
                     .contains(loc.outdoor)
               : null,
-          id: parseOptionalStringValue(
-            row[colsToDetail["id"] ?? 99]?.value,
-          ),
+          id: parseOptionalStringValue(row[colsToDetail["id"] ?? 99]?.value),
           masterUrl: parseOptionalStringValue(
             row[colsToDetail["masterUrl"] ?? 99]?.value,
           ),

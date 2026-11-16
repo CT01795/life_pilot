@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/local_storage/repository_local_record_history.dart';
+import 'package:life_pilot/utils/model_local_record_page.dart';
 import 'package:sembast/sembast_memory.dart';
 
 class _Store extends LocalDataStore {
@@ -30,6 +31,22 @@ class _Store extends LocalDataStore {
       resource: resource,
       matches: matches,
       cacheScope: cacheScope,
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> ledgerScopeRows({
+    required String owner,
+    required String resource,
+    required String accountId,
+    required String type,
+  }) {
+    if (fail) throw StateError('read unavailable');
+    return super.ledgerScopeRows(
+      owner: owner,
+      resource: resource,
+      accountId: accountId,
+      type: type,
     );
   }
 }
@@ -65,20 +82,19 @@ void main() {
           'value': value,
         },
       );
-      Future<bool> has() => repository.hasRecordsBefore(
+      Future<ModelLocalRecordPage> cursorPage() => repository.page(
         owner: owner,
         resource: resource,
         accountId: 'a',
         type: type,
-        before: before,
+        points: resource == 'point_record_detail',
+        from: before,
+        to: before.add(const Duration(days: 1)),
+        includeLatestFallback: false,
+        includeReservedRecords: false,
       );
-      Future<DateTime?> latest() => repository.latestRecordDateBefore(
-        owner: owner,
-        resource: resource,
-        accountId: 'a',
-        type: type,
-        before: before,
-      );
+      Future<bool> has() async => (await cursorPage()).hasMore;
+      Future<DateTime?> latest() async => (await cursorPage()).nextDate;
       Future<Map<String, dynamic>?> latestDetail() => repository.latestRecord(
         owner: owner,
         resource: resource,
@@ -180,7 +196,7 @@ void main() {
           await put('type', '2026-09-28', rowType: 'other');
           expect(await has(), false);
           await put('match', '2026-09-01', rowType: ' ${type.toUpperCase()} ');
-          expect(await latest(), DateTime(2026, 9, 1));
+          expect(await latest(), isNull);
         },
       );
       test('updates and deletes invalidate history snapshots', () async {

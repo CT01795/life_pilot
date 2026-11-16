@@ -11,6 +11,7 @@ import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/model_personal_data_scope.dart';
 
 class ControllerPointRecordList extends SafeChangeNotifier {
+  static const accountPageSize = 20;
   final ServicePointRecord service;
   final Duration requestTimeout;
   ControllerAuth? auth;
@@ -62,7 +63,11 @@ class ControllerPointRecordList extends SafeChangeNotifier {
 
   List<ModelPointRecordAccount> accounts = [];
   bool isLoading = false;
+  bool isLoadingMore = false;
+  bool hasMore = false;
+  bool hasRequestedMore = false;
   Object? loadError;
+  Object? loadMoreError;
 
   bool _isCurrent(int generation) =>
       !notifierDisposed &&
@@ -118,6 +123,9 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     final user = auth?.currentAccount ?? '';
     _loadingCategory = requestedCategory;
     isLoading = true;
+    hasRequestedMore = false;
+    isLoadingMore = false;
+    loadMoreError = null;
     loadError = null;
     final completion = Completer<void>();
     final future = completion.future;
@@ -144,10 +152,16 @@ class ControllerPointRecordList extends SafeChangeNotifier {
       // Bound only the read, not create/delete operations. Timeout releases
       // the shared request; its late response cannot publish or block retry.
       final loaded = await service
-          .fetchAccounts(user: user, category: requestedCategory)
+          .fetchAccounts(
+            user: user,
+            category: requestedCategory,
+            offset: 0,
+            limit: accountPageSize + 1,
+          )
           .timeout(requestTimeout);
       if (!_isCurrent(generation) || request != _listRequest) return;
-      accounts = loaded;
+      hasMore = loaded.length > accountPageSize;
+      accounts = loaded.take(accountPageSize).toList(growable: false);
     } catch (error) {
       if (_isCurrent(generation) && request == _listRequest) loadError = error;
     } finally {
@@ -175,6 +189,10 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     _loadingCategory = null;
     isLoading = false;
     accounts = [];
+    hasMore = false;
+    hasRequestedMore = false;
+    isLoadingMore = false;
+    loadMoreError = null;
     loadError = null;
     _currentCategory = null;
     if (notify) notifyListeners();
@@ -203,6 +221,48 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     final generation = _accountGeneration;
     await service.deleteAccount(accountId: accountId);
     if (_isCurrent(generation)) await loadAccounts();
+  }
+
+  Future<void> loadMoreAccounts() async {
+    if (notifierDisposed || isLoading || isLoadingMore || !hasMore) return;
+    final generation = _accountGeneration;
+    final request = _listRequest;
+    final selectedCategory = category;
+    final user = auth?.currentAccount ?? '';
+    isLoadingMore = true;
+    hasRequestedMore = true;
+    loadMoreError = null;
+    notifyListeners();
+    try {
+      final loaded = await service
+          .fetchAccounts(
+            user: user,
+            category: selectedCategory,
+            offset: accounts.length,
+            limit: accountPageSize + 1,
+          )
+          .timeout(requestTimeout);
+      if (!_isCurrent(generation) ||
+          request != _listRequest ||
+          category != selectedCategory) {
+        return;
+      }
+      hasMore = loaded.length > accountPageSize;
+      final known = accounts.map((row) => row.id).toSet();
+      accounts = List.unmodifiable([
+        ...accounts,
+        ...loaded.take(accountPageSize).where((row) => known.add(row.id)),
+      ]);
+    } catch (error) {
+      if (_isCurrent(generation) && request == _listRequest) {
+        loadMoreError = error;
+      }
+    } finally {
+      if (_isCurrent(generation) && request == _listRequest) {
+        isLoadingMore = false;
+        notifyListeners();
+      }
+    }
   }
 
   Future<void> updateAccountImage(String accountId, XFile pickedFile) async {

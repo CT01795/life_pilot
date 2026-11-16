@@ -29,8 +29,9 @@ Widget widgetsSearchPanel({
                       tooltip: loc.clear,
                       onPressed: () => controllerEvent.updateKeywords(null),
                     ),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onChanged: (text) =>
                 controllerEvent.updateKeywordsDebounced(text.trim()),
@@ -76,9 +77,7 @@ Widget widgetsSearchPanel({
                 loc: loc,
               );
               if (constraints.maxWidth < 520) {
-                return Column(
-                  children: [startDate, Gaps.h8, endDate],
-                );
+                return Column(children: [startDate, Gaps.h8, endDate]);
               }
               return Row(
                 children: [

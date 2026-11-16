@@ -1,9 +1,6 @@
 import 'package:life_pilot/l10n/app_localizations.dart';
 
-String localizeWeatherCondition(
-  AppLocalizations loc,
-  String condition,
-) {
+String localizeWeatherCondition(AppLocalizations loc, String condition) {
   return switch (condition.toLowerCase()) {
     'thunderstorm' => loc.weatherThunderstorm,
     'drizzle' => loc.weatherDrizzle,
@@ -17,8 +14,7 @@ String localizeWeatherCondition(
     'sand' ||
     'ash' ||
     'squall' ||
-    'tornado' =>
-      loc.weatherMist,
+    'tornado' => loc.weatherMist,
     'clear' => loc.weatherClear,
     'clouds' => loc.weatherClouds,
     _ => condition,

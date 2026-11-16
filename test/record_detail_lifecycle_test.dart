@@ -1,705 +1,227 @@
 import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/accounting/controller_accounting_detail.dart';
 import 'package:life_pilot/accounting/model_accounting_detail.dart';
-import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/point_record/controller_point_record_detail.dart';
 import 'package:life_pilot/point_record/model_point_record_detail.dart';
-import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
-import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/model_record_history_page.dart';
 
 class _Auth extends ControllerAuth {
   String account = 'a@example.com';
   DataStorageLocation storage = DataStorageLocation.cloud;
-  int usageReads = 0;
-  int dataRevision = 0;
-  @override
-  int get personalDataRevision => dataRevision;
+
   @override
   String get currentAccount => account;
+
   @override
   DataStorageLocation get preferredStorage => storage;
-  @override
-  Future<void> refreshSubscriptionUsage({bool notify = true}) async {
-    usageReads++;
-  }
 
   void changeAccount() {
     account = 'b@example.com';
     notifyListeners();
   }
-
-  void changeStorage() {
-    storage = DataStorageLocation.local;
-    notifyListeners();
-  }
-
-  void cleanup() {
-    dataRevision++;
-    notifyListeners();
-  }
-}
-
-class _Row {
-  _Row(this.id, {DateTime? date, this.category = 'food'})
-    : date = date ?? DateTime.now();
-  final String id, category;
-  final DateTime date;
-}
-
-class _Requests {
-  final pages = <Completer<List<_Row>>>[];
-  final ranges = <(DateTime, DateTime, bool, bool)>[];
-  final histories = <Completer<bool>>[];
-  final beforeDates = <DateTime>[];
-  final latest = <Completer<DateTime?>>[];
-  final cursors = <DateTime>[];
-  final writes = <Completer<void>>[];
-  Future<List<_Row>> page(
-    DateTime from,
-    DateTime to,
-    bool fallback,
-    bool reserved,
-  ) {
-    ranges.add((from, to, fallback, reserved));
-    final done = Completer<List<_Row>>();
-    pages.add(done);
-    return done.future;
-  }
-
-  Future<bool> history(DateTime before) {
-    beforeDates.add(before);
-    final done = Completer<bool>();
-    histories.add(done);
-    return done.future;
-  }
-
-  Future<DateTime?> older(DateTime before) {
-    cursors.add(before);
-    final done = Completer<DateTime?>();
-    latest.add(done);
-    return done.future;
-  }
-
-  Future<void> write() {
-    final done = Completer<void>();
-    writes.add(done);
-    return done.future;
-  }
 }
 
 class _Accounting extends ServiceAccounting {
-  _Accounting(this.requests);
-  final _Requests requests;
+  final requests = <Completer<ModelRecordHistoryPage<ModelAccountingDetail>>>[];
+
   @override
-  Future<List<ModelAccountingDetail>> fetchRecordsPage({
+  Future<ModelRecordHistoryPage<ModelAccountingDetail>> fetchRecordsPage({
     required String accountId,
     required String type,
     required DateTime dateFrom,
     required DateTime dateTo,
     bool includeLatestFallback = false,
     bool includeReservedRecords = true,
-  }) async {
-    final rows = await requests.page(
-      dateFrom,
-      dateTo,
-      includeLatestFallback,
-      includeReservedRecords,
-    );
-    return List.unmodifiable(
-      rows.map(
-        (row) => ModelAccountingDetail(
-          id: row.id,
-          accountId: accountId,
-          createdAt: row.date,
-          date: row.date,
-          primaryCategory: row.category,
-          description: row.id,
-          type: type,
-          value: 1.25,
-          currency: 'TWD',
-          balance: 10.5,
-        ),
-      ),
-    );
+  }) {
+    final request = Completer<ModelRecordHistoryPage<ModelAccountingDetail>>();
+    requests.add(request);
+    return request.future;
   }
-
-  @override
-  Future<bool> hasRecordsBefore({
-    required String accountId,
-    required String type,
-    required DateTime before,
-  }) => requests.history(before);
-  @override
-  Future<DateTime?> latestRecordDateBefore({
-    required String accountId,
-    required String type,
-    required DateTime before,
-  }) => requests.older(before);
-  @override
-  Future<void> insertRecordsBatch({
-    required String accountId,
-    required String type,
-    required List<AccountingPreview> records,
-    required String? currency,
-  }) => requests.write();
-  @override
-  Future<void> updateAccountingDetail({
-    required String detailId,
-    required num newValue,
-    required String newCurrency,
-    required String newDescription,
-    required DateTime newDate,
-    required String newPrimaryCategory,
-    String? newSecondaryCategory,
-  }) => requests.write();
-  @override
-  Future<void> deleteAccountingDetail({required String detailId}) =>
-      requests.write();
 }
 
 class _Points extends ServicePointRecord {
-  _Points(this.requests);
-  final _Requests requests;
+  final requests =
+      <Completer<ModelRecordHistoryPage<ModelPointRecordDetail>>>[];
+
   @override
-  Future<List<ModelPointRecordDetail>> fetchRecordsPage({
+  Future<ModelRecordHistoryPage<ModelPointRecordDetail>> fetchRecordsPage({
     required String accountId,
     required String type,
     required DateTime dateFrom,
     required DateTime dateTo,
     bool includeLatestFallback = false,
     bool includeReservedRecords = true,
-  }) async {
-    final rows = await requests.page(
-      dateFrom,
-      dateTo,
-      includeLatestFallback,
-      includeReservedRecords,
-    );
-    return List.unmodifiable(
-      rows.map(
-        (row) => ModelPointRecordDetail(
-          id: row.id,
-          accountId: accountId,
-          createdAt: row.date,
-          date: row.date,
-          primaryCategory: row.category,
-          description: row.id,
-          type: type,
-          value: 1,
-          points: 10,
-        ),
-      ),
-    );
+  }) {
+    final request = Completer<ModelRecordHistoryPage<ModelPointRecordDetail>>();
+    requests.add(request);
+    return request.future;
   }
-
-  @override
-  Future<bool> hasRecordsBefore({
-    required String accountId,
-    required String type,
-    required DateTime before,
-  }) => requests.history(before);
-  @override
-  Future<DateTime?> latestRecordDateBefore({
-    required String accountId,
-    required String type,
-    required DateTime before,
-  }) => requests.older(before);
-  @override
-  Future<void> insertRecordsBatch({
-    required String accountId,
-    required String type,
-    required List<PointRecordPreview> records,
-  }) => requests.write();
-  @override
-  Future<void> updatePointRecordDetail({
-    required String detailId,
-    required int newValue,
-    required String newDescription,
-    required DateTime newDate,
-    required String newPrimaryCategory,
-    String? newSecondaryCategory,
-  }) => requests.write();
-  @override
-  Future<void> deletePointRecordDetail({required String detailId}) =>
-      requests.write();
 }
 
-class _Harness {
-  _Harness.accounting(ControllerAccountingDetail c)
-    : controller = c,
-      load = c.loadToday,
-      more = c.loadMore,
-      ids = (() => c.todayRecords.map((r) => r.id).toList()),
-      loading = (() => c.isLoading),
-      loadingMore = (() => c.isLoadingMore),
-      commit = (() => c.commitRecords([
-        AccountingPreview(
-          description: 'A',
-          value: 1.25,
-          currency: 'TWD',
-          exchangeRate: 1,
-        ),
-      ])),
-      update = (() => c.updateAccountingDetail(
-        AccountingPreview(
-          id: 'a',
-          description: 'A',
-          value: 2.5,
-          currency: 'TWD',
-          exchangeRate: 1,
-        ),
-      )),
-      delete = (() => c.deleteAccountingDetail('a'));
-  _Harness.points(ControllerPointRecordDetail c)
-    : controller = c,
-      load = c.loadToday,
-      more = c.loadMore,
-      ids = (() => c.todayRecords.map((r) => r.id).toList()),
-      loading = (() => c.isLoading),
-      loadingMore = (() => c.isLoadingMore),
-      commit = (() =>
-          c.commitRecords([PointRecordPreview(description: 'A', value: 1)])),
-      update = (() => c.updatePointRecordDetail(
-        PointRecordPreview(id: 'a', description: 'A', value: 2),
-      )),
-      delete = (() => c.deletePointRecordDetail('a'));
-  final SafeChangeNotifier controller;
-  final Future<void> Function({String? inputAccountId}) load, more;
-  final Future<void> Function() commit, update, delete;
-  final List<String> Function() ids;
-  final bool Function() loading, loadingMore;
-}
+ModelAccountingDetail _accountingRow(String id, DateTime date) =>
+    ModelAccountingDetail(
+      id: id,
+      accountId: 'account',
+      createdAt: date,
+      date: date,
+      primaryCategory: 'food',
+      description: id,
+      type: 'balance',
+      value: 1,
+      currency: 'TWD',
+      balance: 2,
+    );
 
-Future<void> _flush() => Future<void>.delayed(Duration.zero);
+ModelPointRecordDetail _pointRow(String id, DateTime date) =>
+    ModelPointRecordDetail(
+      id: id,
+      accountId: 'account',
+      createdAt: date,
+      date: date,
+      primaryCategory: 'task',
+      description: id,
+      type: 'points',
+      value: 1,
+      points: 2,
+    );
 
 void main() {
-  for (final accounting in [true, false]) {
-    group(accounting ? 'accounting detail' : 'point detail', () {
-      late _Auth auth;
-      late _Requests requests;
-      late _Harness h;
-      late int changeSignals;
-      setUp(() {
-        changeSignals = 0;
-        auth = _Auth();
-        requests = _Requests();
-        h = accounting
-            ? _Harness.accounting(
-                ControllerAccountingDetail(
-                  service: _Accounting(requests),
-                  auth: auth,
-                  accountId: 'acct',
-                  onRecordsChanged: () => changeSignals++,
-                ),
-              )
-            : _Harness.points(
-                ControllerPointRecordDetail(
-                  service: _Points(requests),
-                  auth: auth,
-                  accountId: 'acct',
-                  onRecordsChanged: () => changeSignals++,
-                ),
-              );
-      });
-      tearDown(() {
-        if (!h.controller.notifierDisposed) h.controller.dispose();
-        auth.dispose();
-      });
-      Future<void> seed({bool more = true}) async {
-        final pending = h.load();
-        requests.pages.last.complete([_Row('initial')]);
-        await _flush();
-        requests.histories.last.complete(more);
-        await pending;
-      }
+  test(
+    'accounting pages include the next cursor without metadata probes',
+    () async {
+      final auth = _Auth();
+      final service = _Accounting();
+      final controller = ControllerAccountingDetail(
+        service: service,
+        auth: auth,
+        accountId: 'account',
+      );
+      addTearDown(controller.dispose);
+      final firstDate = DateTime(2026, 11, 16);
+      final nextDate = DateTime(2026, 9, 15);
 
-      for (final stage in [
-        'initial page',
-        'initial metadata',
-        'older date',
-        'older page',
-        'older metadata',
-      ]) {
-        for (final change in [
-          'account',
-          'storage',
-          'cleanup',
-          'dispose',
-          'none',
-        ]) {
-          test('$stage failure after $change respects read scope', () async {
-            final initial = stage.startsWith('initial');
-            if (!initial) await seed();
-            final pending = initial ? h.load() : h.more();
-            // Attach the error handler before failing any asynchronous stage.
-            final checked = expectLater(
-              pending,
-              change == 'none' ? throwsStateError : completes,
-            );
-            if (stage.startsWith('older') && stage != 'older date') {
-              requests.latest.last.complete(DateTime(2026, 4));
-              await _flush();
-            }
-            if (stage.endsWith('metadata')) {
-              requests.pages.last.complete([_Row('not published')]);
-              await _flush();
-            }
-            if (change == 'account') {
-              auth.changeAccount();
-            } else if (change == 'storage') {
-              auth.changeStorage();
-            } else if (change == 'cleanup') {
-              auth.cleanup();
-            } else if (change == 'dispose') {
-              h.controller.dispose();
-            }
-            var notifications = 0;
-            if (!h.controller.notifierDisposed) {
-              h.controller.addListener(() => notifications++);
-            }
-            if (stage == 'older date') {
-              requests.latest.last.completeError(StateError('offline'));
-            } else if (stage.endsWith('metadata')) {
-              requests.histories.last.completeError(StateError('offline'));
-            } else {
-              requests.pages.last.completeError(StateError('offline'));
-            }
-            await checked;
-            if (change == 'none') {
-              expect(initial ? h.loading() : h.loadingMore(), isFalse);
-              expect(h.ids(), initial ? isEmpty : ['initial']);
-            } else {
-              expect(notifications, 0);
-              if (change != 'dispose') expect(h.ids(), isEmpty);
-            }
-          });
-        }
-      }
+      final initial = controller.loadToday();
+      expect(service.requests, hasLength(1));
+      service.requests.single.complete(
+        ModelRecordHistoryPage(
+          rows: [_accountingRow('new', firstDate)],
+          total: 10,
+          nextBefore: DateTime(2026, 10, 17),
+          nextDate: nextDate,
+        ),
+      );
+      await initial;
+      expect(controller.hasMore, isTrue);
 
-      for (final stage in ['older page', 'older metadata']) {
-        test(
-          'cleanup invalidates late $stage without replacing fresh data',
-          () async {
-            await seed();
-            final old = h.more();
-            requests.latest.single.complete(DateTime(2026, 4));
-            await _flush();
-            final oldPage = requests.pages.last;
-            if (stage == 'older metadata') {
-              oldPage.complete([_Row('deleted older row')]);
-              await _flush();
-            }
-            final oldMetadata = requests.histories.last;
-            auth.cleanup();
-            expect(h.ids(), isEmpty);
-            expect(h.loading(), isFalse);
-            expect(h.loadingMore(), isFalse);
-            final fresh = h.load();
-            requests.pages.last.complete([_Row('remaining')]);
-            await _flush();
-            requests.histories.last.complete(false);
-            await fresh;
-            final pageCount = requests.pages.length;
-            final historyCount = requests.histories.length;
-            if (stage == 'older metadata') {
-              oldMetadata.complete(true);
-            } else {
-              oldPage.complete([_Row('deleted older row')]);
-            }
-            await old;
-            await h.more();
-            expect(h.ids(), ['remaining']);
-            expect(h.loading(), isFalse);
-            expect(h.loadingMore(), isFalse);
-            expect(requests.pages, hasLength(pageCount));
-            expect(requests.histories, hasLength(historyCount));
-            expect(requests.latest, hasLength(1));
-          },
-        );
-      }
+      final more = controller.loadMore();
+      expect(service.requests, hasLength(2));
+      service.requests.last.complete(
+        ModelRecordHistoryPage(
+          rows: [_accountingRow('old', nextDate)],
+          total: 10,
+          nextBefore: DateTime(2026, 8, 16),
+          nextDate: null,
+        ),
+      );
+      await more;
+      expect(controller.todayRecords.map((row) => row.id), ['new', 'old']);
+      expect(controller.hasMore, isFalse);
+    },
+  );
 
-      test(
-        'cleanup during initial notification prevents an obsolete read',
-        () async {
-          var cleaned = false;
-          h.controller.addListener(() {
-            if (!cleaned && h.loading()) {
-              cleaned = true;
-              auth.cleanup();
-            }
-          });
-          await h.load();
-          expect(requests.pages, isEmpty);
-          expect(h.loading(), isFalse);
-          expect(h.ids(), isEmpty);
-        },
-      );
+  test('point pages include the next cursor without metadata probes', () async {
+    final auth = _Auth();
+    final service = _Points();
+    final controller = ControllerPointRecordDetail(
+      service: service,
+      auth: auth,
+      accountId: 'account',
+    );
+    addTearDown(controller.dispose);
+    final firstDate = DateTime(2026, 11, 16);
+    final nextDate = DateTime(2026, 9, 15);
 
-      test('obsolete history error cannot clear a newer refresh', () async {
-        await seed();
-        final old = h.more();
-        final fresh = h.load();
-        requests.latest.single.completeError(StateError('old probe'));
-        await old;
-        expect(h.loading(), isTrue);
-        expect(h.ids(), ['initial']);
-        requests.pages.last.complete([_Row('fresh')]);
-        await _flush();
-        requests.histories.last.complete(false);
-        await fresh;
-        expect(h.ids(), ['fresh']);
-        expect(h.loading(), isFalse);
-      });
+    final initial = controller.loadToday();
+    service.requests.single.complete(
+      ModelRecordHistoryPage(
+        rows: [_pointRow('new', firstDate)],
+        total: 10,
+        nextBefore: DateTime(2026, 10, 17),
+        nextDate: nextDate,
+      ),
+    );
+    await initial;
+    final more = controller.loadMore();
+    expect(service.requests, hasLength(2));
+    service.requests.last.complete(
+      ModelRecordHistoryPage(
+        rows: [_pointRow('old', nextDate)],
+        total: 10,
+        nextBefore: DateTime(2026, 8, 16),
+        nextDate: null,
+      ),
+    );
+    await more;
+    expect(controller.todayRecords.map((row) => row.id), ['new', 'old']);
+    expect(controller.hasMore, isFalse);
+  });
 
-      test('currency selection skips unchanged values and disposed state', () {
-        if (!accounting) return;
-        final controller = h.controller as ControllerAccountingDetail;
-        var notifications = 0;
-        controller.addListener(() => notifications++);
-        controller.currentCurrency = 'TWD';
-        final afterChange = notifications;
-        controller.currentCurrency = 'TWD';
-        expect(notifications, afterChange);
-        controller.currentCurrency = 'USD';
-        expect(notifications, afterChange + 1);
-        controller.dispose();
-        controller.currentCurrency = 'JPY';
-        expect(controller.currentCurrency, 'USD');
-        expect(notifications, afterChange + 1);
-      });
+  test('late accounting page is ignored after account switch', () async {
+    final auth = _Auth();
+    final service = _Accounting();
+    final controller = ControllerAccountingDetail(
+      service: service,
+      auth: auth,
+      accountId: 'account',
+    );
+    addTearDown(controller.dispose);
 
-      test(
-        'latest fallback excludes reserved rows when choosing history cursor',
-        () async {
-          final pending = h.load();
-          requests.pages.single.complete([
-            _Row('reserved', category: 'reserved'),
-            _Row('old', date: DateTime(2026, 4, 15)),
-          ]);
-          await _flush();
-          expect(requests.beforeDates.single, DateTime(2026, 4, 15));
-          requests.histories.single.complete(false);
-          await pending;
-          expect(h.ids(), ['reserved', 'old']);
-        },
-      );
-      for (final change in ['account', 'storage', 'cleanup', 'dispose']) {
-        test(
-          '$change during initial query prevents metadata and publication',
-          () async {
-            final pending = h.load();
-            if (change == 'account') {
-              auth.changeAccount();
-            } else if (change == 'storage') {
-              auth.changeStorage();
-            } else if (change == 'cleanup') {
-              auth.cleanup();
-            } else {
-              h.controller.dispose();
-            }
-            requests.pages.single.complete([_Row('old')]);
-            await pending;
-            expect(requests.histories, isEmpty);
-            expect(h.ids(), isEmpty);
-          },
-        );
-      }
-      test(
-        'same-account notification retains visible records without requery',
-        () async {
-          await seed();
-          auth.notifyListeners();
-          expect(h.ids(), ['initial']);
-          expect(requests.pages.length, 1);
-        },
-      );
-      test(
-        'account switch during initial notification prevents unsent read',
-        () async {
-          var changed = false;
-          h.controller.addListener(() {
-            if (!changed && h.loading()) {
-              changed = true;
-              auth.changeAccount();
-            }
-          });
-          await h.load();
-          expect(requests.pages, isEmpty);
-        },
-      );
-      test('full refresh blocks new load-more until it completes', () async {
-        await seed();
-        final refreshed = h.load();
-        await h.more();
-        expect(requests.latest, isEmpty);
-        requests.pages.last.complete([_Row('new')]);
-        await _flush();
-        requests.histories.last.complete(false);
-        await refreshed;
-        expect(h.ids(), ['new']);
-      });
-      test('full refresh supersedes pending older-date probe', () async {
-        await seed();
-        final old = h.more();
-        final fresh = h.load();
-        requests.latest.single.complete(DateTime(2026, 4));
-        await old;
-        expect(requests.pages.length, 2);
-        expect(h.loading(), isTrue);
-        requests.pages.last.complete([_Row('new')]);
-        await _flush();
-        requests.histories.last.complete(false);
-        await fresh;
-        expect(h.ids(), ['new']);
-        expect(h.loadingMore(), isFalse);
-      });
-      test('late history page cannot append after full refresh', () async {
-        await seed();
-        final old = h.more();
-        requests.latest.single.complete(DateTime(2026, 4));
-        await _flush();
-        final fresh = h.load();
-        requests.pages.last.complete([_Row('new')]);
-        await _flush();
-        requests.histories.last.complete(false);
-        await fresh;
-        final metadataCalls = requests.histories.length;
-        requests.pages[1].complete([_Row('stale')]);
-        await old;
-        expect(h.ids(), ['new']);
-        expect(requests.histories.length, metadataCalls);
-      });
-      test(
-        'read-only service pages can append and deduplicate safely',
-        () async {
-          await seed();
-          final old = h.more();
-          requests.latest.single.complete(DateTime(2026, 4));
-          await _flush();
-          requests.pages.last.complete([
-            _Row('older', date: DateTime(2026, 4)),
-            _Row('initial'),
-          ]);
-          await _flush();
-          requests.histories.last.complete(false);
-          await old;
-          expect(h.ids(), ['initial', 'older']);
-        },
-      );
-      test(
-        'storage change while metadata is pending discards all old results',
-        () async {
-          final pending = h.load();
-          requests.pages.single.complete([_Row('old')]);
-          await _flush();
-          auth.changeStorage();
-          requests.histories.single.complete(true);
-          await pending;
-          expect(h.ids(), isEmpty);
-          expect(h.loading(), isFalse);
-        },
-      );
-      test(
-        'history-page failure keeps records and retries the same cursor',
-        () async {
-          await seed();
-          final pending = h.more();
-          final checked = expectLater(pending, throwsStateError);
-          requests.latest.single.complete(DateTime(2026, 4));
-          await _flush();
-          requests.pages.last.completeError(StateError('offline'));
-          await checked;
-          expect(h.ids(), ['initial']);
-          expect(h.loadingMore(), isFalse);
-          final retry = h.more();
-          expect(requests.cursors.last, requests.cursors.first);
-          requests.latest.last.complete(null);
-          await retry;
-          expect(h.ids(), ['initial']);
-        },
-      );
-      test(
-        'metadata failure retains visible data and allows full retry',
-        () async {
-          await seed();
-          final pending = h.load();
-          final checked = expectLater(pending, throwsStateError);
-          requests.pages.last.complete([_Row('new')]);
-          await _flush();
-          requests.histories.last.completeError(StateError('metadata'));
-          await checked;
-          expect(h.ids(), ['initial']);
-          expect(h.loading(), isFalse);
-          final retry = h.load();
-          requests.pages.last.complete([_Row('retried')]);
-          await _flush();
-          requests.histories.last.complete(false);
-          await retry;
-          expect(h.ids(), ['retried']);
-        },
-      );
+    final loading = controller.loadToday();
+    auth.changeAccount();
+    service.requests.single.complete(
+      ModelRecordHistoryPage(
+        rows: [_accountingRow('stale', DateTime(2026, 11, 16))],
+        total: 1,
+        nextBefore: DateTime(2026, 10, 17),
+        nextDate: null,
+      ),
+    );
+    await loading;
+    expect(controller.todayRecords, isEmpty);
+    expect(controller.isLoading, isFalse);
+  });
 
-      for (final operation in ['commit', 'update', 'delete']) {
-        Future<void> act() => switch (operation) {
-          'commit' => h.commit(),
-          'update' => h.update(),
-          _ => h.delete(),
-        };
-        for (final change in ['account', 'storage', 'cleanup', 'dispose']) {
-          test(
-            '$operation completion after $change does not reload or refresh usage',
-            () async {
-              final pending = act();
-              expect(requests.writes.length, 1);
-              if (change == 'account') {
-                auth.changeAccount();
-              } else if (change == 'storage') {
-                auth.changeStorage();
-              } else if (change == 'cleanup') {
-                auth.cleanup();
-              } else {
-                h.controller.dispose();
-              }
-              requests.writes.single.complete();
-              await pending;
-              expect(changeSignals, 0);
-              expect(auth.usageReads, 0);
-              expect(requests.pages, isEmpty);
-            },
-          );
-        }
-      }
-      test(
-        'successful commit refreshes usage and reloads the current detail',
-        () async {
-          final pending = h.commit();
-          requests.writes.single.complete();
-          await _flush();
-          expect(auth.usageReads, 1);
-          requests.pages.single.complete([_Row('saved')]);
-          await _flush();
-          requests.histories.single.complete(false);
-          await pending;
-          expect(h.ids(), ['saved']);
-          expect(changeSignals, 1);
-        },
-      );
-      test('disposed controller ignores reads and all writes', () async {
-        h.controller.dispose();
-        await h.load();
-        await h.more();
-        await h.commit();
-        await h.update();
-        await h.delete();
-        expect(requests.writes, isEmpty);
-        expect(changeSignals, 0);
-        expect(requests.pages, isEmpty);
-      });
-    });
-  }
+  test('failed point page can retry', () async {
+    final auth = _Auth();
+    final service = _Points();
+    final controller = ControllerPointRecordDetail(
+      service: service,
+      auth: auth,
+      accountId: 'account',
+    );
+    addTearDown(controller.dispose);
+
+    final failed = controller.loadToday();
+    service.requests.single.completeError(StateError('offline'));
+    await expectLater(failed, throwsStateError);
+    expect(controller.isLoading, isFalse);
+
+    final retried = controller.loadToday();
+    service.requests.last.complete(
+      ModelRecordHistoryPage(
+        rows: [_pointRow('fresh', DateTime(2026, 11, 16))],
+        total: 1,
+        nextBefore: DateTime(2026, 10, 17),
+        nextDate: null,
+      ),
+    );
+    await retried;
+    expect(controller.todayRecords.single.id, 'fresh');
+  });
 }

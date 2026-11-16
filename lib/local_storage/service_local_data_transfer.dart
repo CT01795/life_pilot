@@ -220,9 +220,10 @@ class ServiceLocalDataTransfer {
     bool allowOmittingAnswers = false,
   }) async {
     final payload = <Map<String, Object?>>[];
-    final dashboardSettings = await _store.list(
+    final dashboardSetting = await _store.readOnlyRow(
       owner: account,
       resource: TableNames.dashboardSetting,
+      id: account.toLowerCase(),
     );
     for (final resource in _resources) {
       final rows = await _store.list(owner: account, resource: resource);
@@ -239,7 +240,7 @@ class ServiceLocalDataTransfer {
         payload.add({'table_name': resource, 'record': normalizedRow});
       }
     }
-    if (payload.isEmpty && dashboardSettings.isEmpty) {
+    if (payload.isEmpty && dashboardSetting == null) {
       await _store.deleteAllRecords(owner: account);
       return const LocalDataTransferResult(moved: 0, failed: 0);
     }
@@ -249,9 +250,7 @@ class ServiceLocalDataTransfer {
         params: {
           'p_allow_history_omission': allowOmittingAnswers,
           'p_records': payload,
-          'p_dashboard_setting': dashboardSettings.isEmpty
-              ? null
-              : dashboardSettings.first,
+          'p_dashboard_setting': dashboardSetting,
         },
       );
       final receipt = CloudRestoreReceipt.parse(

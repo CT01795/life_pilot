@@ -13,6 +13,7 @@ import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/apps/service_module.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/business_plan/model_business_plan.dart';
+import 'package:life_pilot/business_plan/model_business_plan_window.dart';
 import 'package:life_pilot/business_plan/service_business_plan.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
@@ -31,6 +32,7 @@ import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
+import 'package:life_pilot/utils/model_record_history_page.dart';
 import 'package:life_pilot/utils/service/service_notification/service_notification_platform.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 
@@ -107,6 +109,8 @@ class _DelayedAccountingService extends ServiceAccounting {
     required String user,
     String? category,
     int? projectLimit,
+    int? offset,
+    int? limit,
   }) => response.future;
 }
 
@@ -118,25 +122,26 @@ class _DelayedPointService extends ServicePointRecord {
     required String user,
     String? category,
     int? projectLimit,
+    int? offset,
+    int? limit,
   }) => response.future;
 }
 
 class _DelayedBusinessPlanService extends ServiceBusinessPlan {
-  final response = Completer<List<ModelBusinessPlan>>();
+  final response = Completer<ModelBusinessPlanWindow>();
 
   @override
-  Future<List<ModelBusinessPlan>> fetchPlans({
-    required String user,
-    required DateTime dateFrom,
-    required DateTime dateTo,
+  Future<ModelBusinessPlanWindow> fetchPlanWindow({
+    required DateTime before,
+    bool seekOlder = false,
   }) => response.future;
 }
 
 class _DelayedAccountingDetailService extends ServiceAccounting {
-  final response = Completer<List<ModelAccountingDetail>>();
+  final response = Completer<ModelRecordHistoryPage<ModelAccountingDetail>>();
 
   @override
-  Future<List<ModelAccountingDetail>> fetchRecordsPage({
+  Future<ModelRecordHistoryPage<ModelAccountingDetail>> fetchRecordsPage({
     required String accountId,
     required String type,
     required DateTime dateFrom,
@@ -147,10 +152,10 @@ class _DelayedAccountingDetailService extends ServiceAccounting {
 }
 
 class _DelayedPointDetailService extends ServicePointRecord {
-  final response = Completer<List<ModelPointRecordDetail>>();
+  final response = Completer<ModelRecordHistoryPage<ModelPointRecordDetail>>();
 
   @override
-  Future<List<ModelPointRecordDetail>> fetchRecordsPage({
+  Future<ModelRecordHistoryPage<ModelPointRecordDetail>> fetchRecordsPage({
     required String accountId,
     required String type,
     required DateTime dateFrom,
@@ -287,14 +292,20 @@ void main() {
       final request = controller.loadPlans();
       auth.account = 'new-admin@example.com';
       controller.updateAuth(auth, notify: false);
-      service.response.complete([
-        ModelBusinessPlan(
-          id: 'old-plan',
-          title: 'Old account plan',
-          createdAt: DateTime.now(),
-          sections: const [],
+      service.response.complete(
+        ModelBusinessPlanWindow(
+          plans: [
+            ModelBusinessPlan(
+              id: 'old-plan',
+              title: 'Old account plan',
+              createdAt: DateTime.now(),
+              sections: const [],
+            ),
+          ],
+          nextBefore: DateTime(2025),
+          hasMore: false,
         ),
-      ]);
+      );
       await request;
 
       expect(controller.plans, isEmpty);
@@ -318,19 +329,26 @@ void main() {
       final request = controller.loadToday();
       auth.account = 'new@example.com';
       controller.updateAuth(auth, notify: false);
-      service.response.complete([
-        ModelAccountingDetail(
-          id: 'old-detail',
-          accountId: 'old-account-id',
-          createdAt: DateTime.now(),
-          date: DateTime.now(),
-          primaryCategory: 'food',
-          description: 'Old record',
-          type: 'balance',
-          value: 100,
-          currency: 'TWD',
+      service.response.complete(
+        ModelRecordHistoryPage(
+          rows: [
+            ModelAccountingDetail(
+              id: 'old-detail',
+              accountId: 'old-account-id',
+              createdAt: DateTime.now(),
+              date: DateTime.now(),
+              primaryCategory: 'food',
+              description: 'Old record',
+              type: 'balance',
+              value: 100,
+              currency: 'TWD',
+            ),
+          ],
+          total: 100,
+          nextBefore: DateTime.now(),
+          nextDate: null,
         ),
-      ]);
+      );
       await request;
 
       expect(controller.todayRecords, isEmpty);
@@ -351,18 +369,25 @@ void main() {
     final request = controller.loadToday();
     auth.account = 'new@example.com';
     controller.updateAuth(auth, notify: false);
-    service.response.complete([
-      ModelPointRecordDetail(
-        id: 'old-detail',
-        accountId: 'old-account-id',
-        createdAt: DateTime.now(),
-        date: DateTime.now(),
-        primaryCategory: 'virtue',
-        description: 'Old record',
-        type: 'points',
-        value: 10,
+    service.response.complete(
+      ModelRecordHistoryPage(
+        rows: [
+          ModelPointRecordDetail(
+            id: 'old-detail',
+            accountId: 'old-account-id',
+            createdAt: DateTime.now(),
+            date: DateTime.now(),
+            primaryCategory: 'virtue',
+            description: 'Old record',
+            type: 'points',
+            value: 10,
+          ),
+        ],
+        total: 10,
+        nextBefore: DateTime.now(),
+        nextDate: null,
       ),
-    ]);
+    );
     await request;
 
     expect(controller.todayRecords, isEmpty);

@@ -34,7 +34,7 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
   bool isLoading = false;
   bool isLoadingMore = false;
   bool hasMore = false;
-  DateTime? _loadedStartDate;
+  DateTime? _nextRecordDate;
 
   static ModelPersonalDataScope _scopeKey(ControllerAuth? auth) =>
       ModelPersonalDataScope(
@@ -78,7 +78,7 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     isLoading = false;
     isLoadingMore = false;
     hasMore = false;
-    _loadedStartDate = null;
+    _nextRecordDate = null;
     if (notify) notifyListeners();
   }
 
@@ -95,30 +95,17 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     try {
       if (!_isCurrent(generation, request)) return;
       final window = ModelRecordHistory.windowEndingAt(DateTime.now());
-      var loadedStartDate = window.start;
-      final loadedRecords = await service.fetchRecordsPage(
+      final page = await service.fetchRecordsPage(
         accountId: targetAccountId,
         type: currentType,
-        dateFrom: loadedStartDate,
+        dateFrom: window.start,
         dateTo: window.end,
         includeLatestFallback: true,
       );
       if (!_isCurrent(generation, request)) return;
-      loadedStartDate = ModelRecordHistory.fallbackStart(
-        loadedRecords,
-        start: loadedStartDate,
-        categoryOf: (record) => record.primaryCategory,
-        dateOf: (record) => record.localTime,
-      );
-      final loadedHasMore = await service.hasRecordsBefore(
-        accountId: targetAccountId,
-        type: currentType,
-        before: loadedStartDate,
-      );
-      if (!_isCurrent(generation, request)) return;
-      todayRecords = loadedRecords;
-      _loadedStartDate = loadedStartDate;
-      hasMore = loadedHasMore;
+      todayRecords = page.rows;
+      _nextRecordDate = page.nextDate;
+      hasMore = page.hasMore;
       _sortAndDeduplicate();
       _calculateTotals(inputAccountId: inputAccountId);
     } catch (_) {
@@ -137,46 +124,30 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
         isLoading ||
         isLoadingMore ||
         !hasMore ||
-        _loadedStartDate == null ||
+        _nextRecordDate == null ||
         !_isCurrent(_accountGeneration)) {
       return;
     }
     final generation = _accountGeneration;
     final request = _requestId;
-    final before = _loadedStartDate!;
+    final nextDate = _nextRecordDate!;
     isLoadingMore = true;
     notifyListeners();
     final targetAccountId = inputAccountId ?? accountId;
     try {
       if (!_isCurrent(generation, request)) return;
-      final latestOlder = await service.latestRecordDateBefore(
-        accountId: targetAccountId,
-        type: currentType,
-        before: before,
-      );
-      if (!_isCurrent(generation, request)) return;
-      if (latestOlder == null) {
-        hasMore = false;
-        return;
-      }
-      final window = ModelRecordHistory.windowEndingAt(latestOlder);
-      final loadedRecords = await service.fetchRecordsPage(
+      final window = ModelRecordHistory.windowEndingAt(nextDate);
+      final page = await service.fetchRecordsPage(
         accountId: targetAccountId,
         type: currentType,
         dateFrom: window.start,
         dateTo: window.end,
       );
       if (!_isCurrent(generation, request)) return;
-      final loadedHasMore = await service.hasRecordsBefore(
-        accountId: targetAccountId,
-        type: currentType,
-        before: window.start,
-      );
-      if (!_isCurrent(generation, request)) return;
-      todayRecords = [...todayRecords, ...loadedRecords];
-      _loadedStartDate = window.start;
+      todayRecords = [...todayRecords, ...page.rows];
+      _nextRecordDate = page.nextDate;
       _sortAndDeduplicate();
-      hasMore = loadedHasMore;
+      hasMore = page.hasMore;
     } catch (_) {
       if (_isCurrent(generation, request)) rethrow;
     } finally {

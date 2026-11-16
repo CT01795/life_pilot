@@ -25,7 +25,6 @@ class ServiceLedgerSharing {
   final SupabaseClient? _client;
   SupabaseClient get _db => _client ?? supabase;
   static const _group = 'ledger-sharing';
-  static const _homeLinksGroup = 'ledger-sharing-home-links';
   static const _pendingGroup = 'ledger-sharing-pending';
   static const pageSize = 30;
   static const _totalsBatchSize = 12;
@@ -37,24 +36,11 @@ class ServiceLedgerSharing {
         Map<(String, DateTime), Map<String, Completer<Map<String, dynamic>>>>
       >();
 
-  Future<List<Map<String, dynamic>>> homeLinks() =>
-      RepositorySessionReads(_db).read(_homeLinksGroup, 'home-links', () async {
-        final rows = await _db.rpc('list_my_ledger_home_links');
-        return List<Map<String, dynamic>>.from(rows as List);
-      });
-
   Future<void> setHomeLink(String id, bool linked) async {
-    final client = _db;
-    final reads = RepositorySessionReads(client);
-    reads.invalidate(_homeLinksGroup);
-    try {
-      await client.rpc(
-        'set_my_ledger_home_link',
-        params: {'p_share_id': id, 'p_linked': linked},
-      );
-    } finally {
-      reads.invalidate(_homeLinksGroup);
-    }
+    await _db.rpc(
+      'set_my_ledger_home_link',
+      params: {'p_share_id': id, 'p_linked': linked},
+    );
   }
 
   Future<List<Map<String, dynamic>>> overviewPage(
@@ -417,7 +403,6 @@ class ServiceLedgerSharing {
       // Pending submissions do not change ledger entries or totals.
       if (!pendingOnly) {
         reads.invalidate(_group);
-        reads.invalidate(_homeLinksGroup);
       }
     }
 

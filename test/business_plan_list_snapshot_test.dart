@@ -5,6 +5,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/business_plan/model_business_plan.dart';
 import 'package:life_pilot/business_plan/model_business_plan_list.dart';
+import 'package:life_pilot/business_plan/model_business_plan_window.dart';
 import 'package:life_pilot/business_plan/service_business_plan.dart';
 
 ModelBusinessPlan _plan(String id, {String status = 'not_started'}) =>
@@ -27,16 +28,14 @@ class _Service extends ServiceBusinessPlan {
   List<ModelBusinessPlan> rows = [];
   final statusWrites = <Completer<void>>[];
   @override
-  Future<List<ModelBusinessPlan>> fetchPlans({
-    required String user,
-    required DateTime dateFrom,
-    required DateTime dateTo,
-  }) async => rows;
-  @override
-  Future<bool> hasPlansBefore({
-    required String user,
+  Future<ModelBusinessPlanWindow> fetchPlanWindow({
     required DateTime before,
-  }) async => false;
+    bool seekOlder = false,
+  }) async => ModelBusinessPlanWindow(
+    plans: rows,
+    nextBefore: before.subtract(const Duration(days: 360)),
+    hasMore: false,
+  );
   @override
   Future<void> updatePlanStatus({
     required String planId,

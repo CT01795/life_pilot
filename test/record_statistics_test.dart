@@ -645,7 +645,7 @@ void main() {
         await put('USD', currency: 'USD');
         await put('old', date: DateTime(2026, 9, 30));
         await put('next', date: DateTime(2026, 11));
-        expect((await read()).map((r) => r['id']), ['mine']);
+        expect((await read()).map((r) => r['value']), [10]);
         expect((await read(history: true)).length, 3);
       },
     );

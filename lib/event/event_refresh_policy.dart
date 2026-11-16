@@ -17,7 +17,8 @@ class EventRefreshPolicy {
     if (!hasCheckedUpdate || updatedToday || isRunning) return false;
     if (isAdmin) return true;
 
-    final isMobileApp = !isWeb &&
+    final isMobileApp =
+        !isWeb &&
         (platform == TargetPlatform.android || platform == TargetPlatform.iOS);
     return isMobileApp;
   }

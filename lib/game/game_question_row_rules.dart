@@ -43,11 +43,25 @@ class GameQuestionRowRules {
     final answerKey = duplicateKey(answer);
     final groupKey = normalizeStringValue(group);
     return rows.any(
-      (row) =>
-          parseOptionalStringValue(row[Fields.id]) != excludingId &&
-          normalizeStringValue(row['group']) == groupKey &&
-          duplicateKey(row['question']) == questionKey &&
-          duplicateKey(row['answer']) == answerKey,
+      (row) => isDuplicateRow(
+        row,
+        questionKey: questionKey,
+        answerKey: answerKey,
+        groupKey: groupKey,
+        excludingId: excludingId,
+      ),
     );
   }
+
+  static bool isDuplicateRow(
+    Map row, {
+    required String questionKey,
+    required String answerKey,
+    required String groupKey,
+    String? excludingId,
+  }) =>
+      parseOptionalStringValue(row[Fields.id]) != excludingId &&
+      normalizeStringValue(row['group']) == groupKey &&
+      duplicateKey(row['question']) == questionKey &&
+      duplicateKey(row['answer']) == answerKey;
 }

@@ -18,7 +18,6 @@ import 'package:life_pilot/utils/text_normalization.dart';
 class ControllerBusinessPlan extends SafeChangeNotifier {
   final ServiceBusinessPlan _service;
   final Duration requestTimeout;
-  final Duration historyTimeout;
   ControllerAuth? auth;
   String? _accountKey;
   int _accountGeneration = 0;
@@ -39,7 +38,6 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     required ServiceBusinessPlan service,
     required this.auth,
     this.requestTimeout = const Duration(seconds: 30),
-    this.historyTimeout = const Duration(seconds: 10),
   }) : _service = service,
        _accountKey = normalizeText(auth?.currentAccount);
 
@@ -63,15 +61,13 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
 
   bool isPlansLoading = false; // 列表用
   Object? plansLoadError;
-  bool isCheckingPlanHistory = false;
-  Object? planHistoryError;
   Object? loadMorePlansError;
   int _planListRevision = 0;
   bool isTemplateLoading = false;
   Object? templateLoadError;
   bool isLoadingMorePlans = false;
   bool hasMorePlans = false;
-  DateTime? _plansStartDate;
+  DateTime? _plansBefore;
   final Set<String> _selectedStatuses = {'in_progress', 'not_started'};
   Set<String>? _selectedStatusesSnapshot;
   Set<String> get selectedStatuses =>
@@ -113,12 +109,10 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     questionIndex = 0;
     isPlansLoading = false;
     plansLoadError = null;
-    isCheckingPlanHistory = false;
-    planHistoryError = null;
     loadMorePlansError = null;
     isLoadingMorePlans = false;
     hasMorePlans = false;
-    _plansStartDate = null;
+    _plansBefore = null;
     if (notify) safeNotify();
   }
 
@@ -243,35 +237,27 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   }
 
   Future<void> loadPlans() async {
-    if (notifierDisposed ||
-        isPlansLoading ||
-        isCheckingPlanHistory ||
-        isLoadingMorePlans) {
+    if (notifierDisposed || isPlansLoading || isLoadingMorePlans) {
       return;
     }
     final generation = _accountGeneration;
     final revision = ++_planListRevision;
-    final user = auth?.currentAccount ?? AuthConstants.guest;
     isPlansLoading = true;
     plansLoadError = null;
-    planHistoryError = null;
     loadMorePlansError = null;
     safeNotify();
     try {
       final now = DateTime.now();
       final dateTo = DateTime(now.year, now.month, now.day + 1);
-      final dateFrom = dateTo.subtract(const Duration(days: 360));
       if (!_isPlanListCurrent(generation, revision)) return;
-      final loadedPlans = await _service
-          .fetchPlans(user: user, dateFrom: dateFrom, dateTo: dateTo)
+      final window = await _service
+          .fetchPlanWindow(before: dateTo)
           .timeout(requestTimeout);
       if (!_isPlanListCurrent(generation, revision)) return;
-      plans = loadedPlans;
-      _plansStartDate = dateFrom;
+      plans = window.plans;
+      _plansBefore = window.nextBefore;
+      hasMorePlans = window.hasMore;
       _sortAndDeduplicatePlans();
-      // Publish useful content before waiting for the optional history probe.
-      isPlansLoading = false;
-      await _checkPlanHistory(user, dateFrom, generation, revision);
     } catch (error) {
       if (_isPlanListCurrent(generation, revision)) plansLoadError = error;
     } finally {
@@ -286,49 +272,6 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
       !notifierDisposed &&
       generation == _accountGeneration &&
       revision == _planListRevision;
-
-  Future<void> _checkPlanHistory(
-    String user,
-    DateTime before,
-    int generation,
-    int revision,
-  ) async {
-    if (!_isPlanListCurrent(generation, revision)) return;
-    isCheckingPlanHistory = true;
-    planHistoryError = null;
-    safeNotify();
-    try {
-      if (!_isPlanListCurrent(generation, revision)) return;
-      final hasMore = await _service
-          .hasPlansBefore(user: user, before: before)
-          .timeout(historyTimeout);
-      if (_isPlanListCurrent(generation, revision)) hasMorePlans = hasMore;
-    } catch (error) {
-      if (_isPlanListCurrent(generation, revision)) planHistoryError = error;
-    } finally {
-      if (_isPlanListCurrent(generation, revision)) {
-        isCheckingPlanHistory = false;
-        safeNotify();
-      }
-    }
-  }
-
-  Future<void> retryPlanHistory() async {
-    final before = _plansStartDate;
-    if (notifierDisposed ||
-        before == null ||
-        isPlansLoading ||
-        isLoadingMorePlans ||
-        isCheckingPlanHistory) {
-      return;
-    }
-    await _checkPlanHistory(
-      auth?.currentAccount ?? AuthConstants.guest,
-      before,
-      _accountGeneration,
-      _planListRevision,
-    );
-  }
 
   List<ModelBusinessPlan> get visiblePlans => _visiblePlans ??=
       ModelBusinessPlanList.visible(_plans, _selectedStatuses);
@@ -346,47 +289,27 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   Future<void> loadMorePlans() async {
     if (notifierDisposed ||
         isPlansLoading ||
-        isCheckingPlanHistory ||
         isLoadingMorePlans ||
         !hasMorePlans ||
-        _plansStartDate == null) {
+        _plansBefore == null) {
       return;
     }
     final generation = _accountGeneration;
     final revision = _planListRevision;
-    final before = _plansStartDate!;
-    final user = auth?.currentAccount ?? AuthConstants.guest;
+    final before = _plansBefore!;
     isLoadingMorePlans = true;
     loadMorePlansError = null;
-    planHistoryError = null;
     safeNotify();
     try {
       if (!_isPlanListCurrent(generation, revision)) return;
-      final latestOlder = await _service
-          .latestPlanDateBefore(user: user, before: before)
+      final window = await _service
+          .fetchPlanWindow(before: before, seekOlder: true)
           .timeout(requestTimeout);
       if (!_isPlanListCurrent(generation, revision)) return;
-      if (latestOlder == null) {
-        hasMorePlans = false;
-        return;
-      }
-      final dateTo = DateTime(
-        latestOlder.year,
-        latestOlder.month,
-        latestOlder.day + 1,
-      );
-      final dateFrom = dateTo.subtract(const Duration(days: 360));
-      final loadedPlans = await _service
-          .fetchPlans(user: user, dateFrom: dateFrom, dateTo: dateTo)
-          .timeout(requestTimeout);
-      if (!_isPlanListCurrent(generation, revision)) return;
-      plans = [...plans, ...loadedPlans];
-      // Advance only after a successful page read, so failures can retry the
-      // same date window without skipping older records.
-      _plansStartDate = dateFrom;
+      plans = [...plans, ...window.plans];
+      _plansBefore = window.nextBefore;
+      hasMorePlans = window.hasMore;
       _sortAndDeduplicatePlans();
-      isLoadingMorePlans = false;
-      await _checkPlanHistory(user, dateFrom, generation, revision);
     } catch (error) {
       if (_isPlanListCurrent(generation, revision)) loadMorePlansError = error;
     } finally {

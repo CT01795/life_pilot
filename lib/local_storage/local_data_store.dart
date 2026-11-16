@@ -66,8 +66,219 @@ class LocalDataStore {
   String _countKey(String owner, String resource) =>
       '${owner.toLowerCase()}::record_count::$resource';
 
+  String _detailScopeKey(String owner, String resource, Map? data) {
+    final accountId = parseStringValue(data?['account_id']);
+    final type = parseStringValue(data?['type']).toLowerCase();
+    return '${owner.toLowerCase()}::ledger_scope::$resource::$accountId::$type';
+  }
+
+  String _defaultAccountKey(String owner, String resource) =>
+      '${owner.toLowerCase()}::default_account::$resource';
+
+  String _calendarWindowKey(String owner, String resource) =>
+      '${owner.toLowerCase()}::calendar_window::$resource';
+
+  String _eventDateIndexKey(String owner, String resource) =>
+      '${owner.toLowerCase()}::event_date_index::$resource';
+
   bool _isLedgerDetailResource(String resource) =>
       resource == 'accounting_detail' || resource == 'point_record_detail';
+
+  bool _isLedgerAccountResource(String resource) =>
+      resource == 'accounting_account' || resource == 'point_record_account';
+
+  bool _isIndexedEventResource(String resource) =>
+      resource == 'calendar_events' || resource == 'memory_trace';
+
+  Future<void> _adjustEventDateIndex(
+    DatabaseClient database,
+    String owner,
+    String resource,
+    String id,
+    Map? data,
+    bool add,
+  ) async {
+    if (!_isIndexedEventResource(resource) || data == null) return;
+    final record = _settings.record(_eventDateIndexKey(owner, resource));
+    final cached = await record.get(database);
+    if (cached?['version'] != 2 ||
+        cached?['entries'] is! List ||
+        cached?['undated_ids'] is! List) {
+      return;
+    }
+    final entries = (cached!['entries'] as List)
+        .map((entry) => Map<String, dynamic>.from(entry as Map))
+        .where((entry) => parseStringValue(entry['id']) != id)
+        .toList();
+    final undatedIds = (cached['undated_ids'] as List)
+        .map(parseStringValue)
+        .where((value) => value.isNotEmpty && value != id)
+        .toList();
+    if (add) {
+      final date = tryParseDateTimeValue(data['start_date']);
+      if (date != null) {
+        entries.add({'id': id, 'date': date.toUtc().toIso8601String()});
+      } else {
+        undatedIds.add(id);
+      }
+    }
+    entries.sort((left, right) {
+      final byDate = parseStringValue(
+        left['date'],
+      ).compareTo(parseStringValue(right['date']));
+      return byDate != 0
+          ? byDate
+          : parseStringValue(
+              left['id'],
+            ).compareTo(parseStringValue(right['id']));
+    });
+    await record.put(database, {
+      'version': 2,
+      'entries': entries,
+      'undated_ids': undatedIds,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
+  }
+
+  Future<Map<String, Object?>> _eventDateIndex(
+    Database database,
+    String owner,
+    String resource,
+  ) async {
+    final key = _eventDateIndexKey(owner, resource);
+    final cached = await _settings.record(key).get(database);
+    if (cached?['version'] == 2 &&
+        cached?['entries'] is List &&
+        cached?['undated_ids'] is List) {
+      return Map<String, Object?>.from(cached!);
+    }
+    return database.transaction((transaction) async {
+      final existing = await _settings.record(key).get(transaction);
+      if (existing?['version'] == 2 &&
+          existing?['entries'] is List &&
+          existing?['undated_ids'] is List) {
+        return Map<String, Object?>.from(existing!);
+      }
+      final snapshots = await _records.find(
+        transaction,
+        finder: Finder(
+          filter: Filter.and([
+            Filter.equals('owner', owner.toLowerCase()),
+            Filter.equals('resource', resource),
+          ]),
+        ),
+      );
+      final entries = <Map<String, dynamic>>[];
+      final undatedIds = <String>[];
+      for (final snapshot in snapshots) {
+        final data = snapshot.value['data'];
+        if (data is! Map) continue;
+        final id = parseStringValue(snapshot.value['id']);
+        final date = tryParseDateTimeValue(data['start_date']);
+        if (date == null) {
+          undatedIds.add(id);
+        } else {
+          entries.add({'id': id, 'date': date.toUtc().toIso8601String()});
+        }
+      }
+      entries.sort((left, right) {
+        final byDate = parseStringValue(
+          left['date'],
+        ).compareTo(parseStringValue(right['date']));
+        return byDate != 0
+            ? byDate
+            : parseStringValue(
+                left['id'],
+              ).compareTo(parseStringValue(right['id']));
+      });
+      final built = <String, Object?>{
+        'version': 2,
+        'entries': entries,
+        'undated_ids': undatedIds,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      };
+      await _settings.record(key).put(transaction, built);
+      return built;
+    });
+  }
+
+  Future<void> _adjustDetailScope(
+    DatabaseClient database,
+    String owner,
+    String resource,
+    String id,
+    Map? data,
+    bool add,
+  ) async {
+    if (!_isLedgerDetailResource(resource) || data == null) return;
+    final key = _detailScopeKey(owner, resource, data);
+    final record = _settings.record(key);
+    final cached = await record.get(database);
+    if (cached?['ids'] is! List) return;
+    final ids = (cached!['ids'] as List)
+        .map(parseStringValue)
+        .where((value) => value.isNotEmpty && value != id)
+        .toList();
+    if (add) ids.add(id);
+    await record.put(database, {
+      'ids': ids,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
+  }
+
+  bool _calendarMatches(Map data, DateTime start, DateTime end) {
+    if (data['is_completed'] == true) return false;
+    final eventStart = tryParseDateTimeValue(data['start_date'], toLocal: true);
+    if (eventStart == null || !eventStart.isBefore(end)) return false;
+    final eventEnd = tryParseDateTimeValue(data['end_date'], toLocal: true);
+    return !(eventEnd ?? eventStart).isBefore(start);
+  }
+
+  Future<void> _adjustCalendarWindow(
+    DatabaseClient database,
+    String owner,
+    String resource,
+    String id,
+    Map? data,
+    bool add,
+  ) async {
+    if (resource != 'calendar_events' || data == null) return;
+    final record = _settings.record(_calendarWindowKey(owner, resource));
+    final cached = await record.get(database);
+    if (cached?['ids'] is! List) return;
+    final start = tryParseDateTimeValue(cached?['start'], toLocal: true);
+    final end = tryParseDateTimeValue(cached?['end'], toLocal: true);
+    if (start == null || end == null) return;
+    final ids = (cached!['ids'] as List)
+        .map(parseStringValue)
+        .where((value) => value.isNotEmpty && value != id)
+        .toList();
+    if (add && _calendarMatches(data, start, end)) ids.add(id);
+    await record.put(database, {
+      ...cached,
+      'ids': ids,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
+  }
+
+  Future<void> _seedDefaultAccount(
+    DatabaseClient database,
+    String owner,
+    String resource,
+    String id,
+    Map? data,
+  ) async {
+    if (!_isLedgerAccountResource(resource) || data?['is_valid'] != true) {
+      return;
+    }
+    final record = _settings.record(_defaultAccountKey(owner, resource));
+    if (await record.get(database) == null) {
+      await record.put(database, {
+        'id': id,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      });
+    }
+  }
 
   num _ledgerValue(String resource, Object? value) =>
       resource == 'point_record_detail'
@@ -82,6 +293,72 @@ class LocalDataStore {
         ? parseStringValue(data['currency'])
         : '';
     return '${owner.toLowerCase()}::ledger_total::$resource::$accountId::$currency';
+  }
+
+  String? _ledgerStatisticsKey(String owner, String resource, Map? data) {
+    if (!_isLedgerDetailResource(resource) || data == null) return null;
+    final accountId = parseStringValue(data['account_id']);
+    if (accountId.isEmpty) return null;
+    final currency = resource == 'accounting_detail'
+        ? data['_all_currencies'] == true
+              ? '*'
+              : parseStringValue(data['currency'])
+        : '';
+    return '${owner.toLowerCase()}::ledger_statistics::$resource::$accountId::$currency';
+  }
+
+  String _dayToken(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+
+  String? _ledgerDayKey(String owner, String resource, Map? data) {
+    if (!_isLedgerDetailResource(resource) || data == null) return null;
+    final accountId = parseStringValue(data['account_id']);
+    final date = tryParseDateTimeValue(data['date'], toLocal: true);
+    if (accountId.isEmpty || date == null) return null;
+    final currency = resource == 'accounting_detail'
+        ? parseStringValue(data['currency'])
+        : '';
+    return '${owner.toLowerCase()}::ledger_day::$resource::$accountId::$currency::${_dayToken(date)}';
+  }
+
+  Future<void> _adjustLedgerDay(
+    DatabaseClient database,
+    String owner,
+    String resource,
+    String id,
+    Map? data,
+    num direction,
+  ) async {
+    final key = _ledgerDayKey(owner, resource, data);
+    if (key == null) return;
+    final record = _settings.record(key);
+    final cached = await record.get(database);
+    final current = tryParseNumValue(cached?['value']);
+    if (current == null || cached?['entries'] is! List) return;
+    final entries = (cached!['entries'] as List)
+        .map((entry) => Map<String, dynamic>.from(entry as Map))
+        .where((entry) => entry['id'] != id)
+        .toList();
+    if (direction > 0) {
+      entries.add({'id': id, 'date': parseStringValue(data?['date'])});
+      entries.sort((left, right) {
+        final byDate = parseStringValue(
+          right['date'],
+        ).compareTo(parseStringValue(left['date']));
+        return byDate != 0
+            ? byDate
+            : parseStringValue(
+                left['id'],
+              ).compareTo(parseStringValue(right['id']));
+      });
+    }
+    await record.put(database, {
+      'value': current + _ledgerValue(resource, data?['value']) * direction,
+      'entries': entries,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
   }
 
   Future<void> _adjustLedgerTotal(
@@ -101,6 +378,54 @@ class LocalDataStore {
       'value': current + _ledgerValue(resource, data?['value']) * direction,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     });
+  }
+
+  Future<void> _adjustLedgerStatistics(
+    DatabaseClient database,
+    String owner,
+    String resource,
+    Map? data,
+    int direction,
+  ) async {
+    if (data == null) return;
+    final scopes = <Map>{
+      data,
+      if (resource == 'accounting_detail') {...data, '_all_currencies': true},
+    };
+    for (final scope in scopes) {
+      final key = _ledgerStatisticsKey(owner, resource, scope);
+      if (key == null) continue;
+      final record = _settings.record(key);
+      final cached = await record.get(database);
+      if (cached?['version'] != 1 || cached?['days'] is! Map) continue;
+      final days = Map<String, dynamic>.from(cached!['days'] as Map);
+      final date = tryParseDateTimeValue(data['date'], toLocal: true);
+      if (date != null) {
+        final token = _dayToken(date);
+        final previous = days[token] is Map
+            ? Map<String, dynamic>.from(days[token] as Map)
+            : <String, dynamic>{};
+        final count = parseIntValue(previous['count']) + direction;
+        if (count <= 0) {
+          days.remove(token);
+        } else {
+          days[token] = {
+            'count': count,
+            'value':
+                parseNumValue(previous['value']) +
+                _ledgerValue(resource, data['value']) * direction,
+          };
+        }
+      }
+      await record.put(database, {
+        'version': 1,
+        'total':
+            parseNumValue(cached['total']) +
+            _ledgerValue(resource, data['value']) * direction,
+        'days': days,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      });
+    }
   }
 
   Future<void> _setCount(
@@ -202,7 +527,52 @@ class LocalDataStore {
         previous?['data'] as Map?,
         -1,
       );
+      await _adjustLedgerStatistics(
+        transaction,
+        owner,
+        resource,
+        previous?['data'] as Map?,
+        -1,
+      );
+      await _adjustLedgerDay(
+        transaction,
+        owner,
+        resource,
+        id,
+        previous?['data'] as Map?,
+        -1,
+      );
+      await _adjustDetailScope(
+        transaction,
+        owner,
+        resource,
+        id,
+        previous?['data'] as Map?,
+        false,
+      );
+      await _adjustCalendarWindow(
+        transaction,
+        owner,
+        resource,
+        id,
+        previous?['data'] as Map?,
+        false,
+      );
+      await _adjustEventDateIndex(
+        transaction,
+        owner,
+        resource,
+        id,
+        previous?['data'] as Map?,
+        false,
+      );
       await _adjustLedgerTotal(transaction, owner, resource, data, 1);
+      await _adjustLedgerStatistics(transaction, owner, resource, data, 1);
+      await _adjustLedgerDay(transaction, owner, resource, id, data, 1);
+      await _adjustDetailScope(transaction, owner, resource, id, data, true);
+      await _adjustCalendarWindow(transaction, owner, resource, id, data, true);
+      await _adjustEventDateIndex(transaction, owner, resource, id, data, true);
+      await _seedDefaultAccount(transaction, owner, resource, id, data);
       if (!existed) await _adjustCount(transaction, owner, resource, 1);
     });
     _invalidateResource(owner, resource);
@@ -301,6 +671,69 @@ class LocalDataStore {
     }
   }
 
+  /// Returns only the first matching row and never fills the whole-resource
+  /// cache. Use this for existence checks and targeted recovery paths.
+  Future<Map<String, dynamic>?> readOnlyFirstMatchingRow({
+    required String owner,
+    required String resource,
+    required bool Function(Map data) matches,
+  }) async {
+    final snapshots = await _records
+        .find(
+          await _db,
+          finder: Finder(
+            filter: Filter.and([
+              Filter.equals('owner', owner.toLowerCase()),
+              Filter.equals('resource', resource),
+              Filter.custom((snapshot) {
+                final value = snapshot.value;
+                final data = value is Map ? value['data'] : null;
+                return data is Map && matches(data);
+              }),
+            ]),
+            limit: 1,
+          ),
+        )
+        .timeout(const Duration(seconds: 10));
+    if (snapshots.isEmpty) return null;
+    return Map<String, dynamic>.unmodifiable(
+      snapshots.single.value['data']! as Map,
+    );
+  }
+
+  /// Returns a bounded owner/resource page after filtering in the database.
+  Future<List<Map<String, dynamic>>> readOnlyMatchingPage({
+    required String owner,
+    required String resource,
+    required bool Function(Map data) matches,
+    required int offset,
+    required int limit,
+  }) async {
+    if (offset < 0 || limit < 1) throw ArgumentError('Invalid local page');
+    final snapshots = await _records
+        .find(
+          await _db,
+          finder: Finder(
+            filter: Filter.and([
+              Filter.equals('owner', owner.toLowerCase()),
+              Filter.equals('resource', resource),
+              Filter.custom((snapshot) {
+                final value = snapshot.value;
+                final data = value is Map ? value['data'] : null;
+                return data is Map && matches(data);
+              }),
+            ]),
+            offset: offset,
+            limit: limit,
+          ),
+        )
+        .timeout(const Duration(seconds: 10));
+    return List.unmodifiable([
+      for (final snapshot in snapshots)
+        Map<String, dynamic>.unmodifiable(snapshot.value['data']! as Map),
+    ]);
+  }
+
   Future<void> delete({
     required String owner,
     required String resource,
@@ -320,49 +753,48 @@ class LocalDataStore {
         previous?['data'] as Map?,
         -1,
       );
+      await _adjustLedgerStatistics(
+        transaction,
+        owner,
+        resource,
+        previous?['data'] as Map?,
+        -1,
+      );
+      await _adjustLedgerDay(
+        transaction,
+        owner,
+        resource,
+        id,
+        previous?['data'] as Map?,
+        -1,
+      );
+      await _adjustDetailScope(
+        transaction,
+        owner,
+        resource,
+        id,
+        previous?['data'] as Map?,
+        false,
+      );
+      await _adjustCalendarWindow(
+        transaction,
+        owner,
+        resource,
+        id,
+        previous?['data'] as Map?,
+        false,
+      );
+      await _adjustEventDateIndex(
+        transaction,
+        owner,
+        resource,
+        id,
+        previous?['data'] as Map?,
+        false,
+      );
       if (existed) await _adjustCount(transaction, owner, resource, -1);
     });
     _invalidateResource(owner, resource);
-  }
-
-  Future<void> deleteMany({
-    required String owner,
-    required Iterable<({String resource, String id})> records,
-  }) async {
-    _assertDeleteAllowed(owner);
-    final recordList = records.toList(growable: false);
-    final database = await _db;
-    await database.transaction((transaction) async {
-      final deletedByResource = <String, int>{};
-      for (final record in recordList) {
-        final stored = _records.record(
-          _recordKey(owner, record.resource, record.id),
-        );
-        final previous = await stored.get(transaction);
-        if (previous != null) {
-          await stored.delete(transaction);
-          await _adjustLedgerTotal(
-            transaction,
-            owner,
-            record.resource,
-            previous['data'] as Map?,
-            -1,
-          );
-          deletedByResource.update(
-            record.resource,
-            (value) => value + 1,
-            ifAbsent: () => 1,
-          );
-        }
-      }
-      for (final entry in deletedByResource.entries) {
-        await _adjustCount(transaction, owner, entry.key, -entry.value);
-      }
-    });
-    for (final resource
-        in recordList.map((record) => record.resource).toSet()) {
-      _invalidateResource(owner, resource);
-    }
   }
 
   Future<void> deleteAllRecords({required String owner}) async {
@@ -380,7 +812,13 @@ class LocalDataStore {
             final key = record.key.toString();
             final prefix = '${owner.toLowerCase()}::';
             return key.startsWith('${prefix}record_count::') ||
-                key.startsWith('${prefix}ledger_total::');
+                key.startsWith('${prefix}ledger_total::') ||
+                key.startsWith('${prefix}ledger_statistics::') ||
+                key.startsWith('${prefix}ledger_day::') ||
+                key.startsWith('${prefix}ledger_scope::') ||
+                key.startsWith('${prefix}default_account::') ||
+                key.startsWith('${prefix}calendar_window::') ||
+                key.startsWith('${prefix}event_date_index::');
           }),
         ),
       );
@@ -434,6 +872,238 @@ class LocalDataStore {
     };
   }
 
+  /// Reads only one account/type detail scope. Existing installs build the
+  /// persistent ID index once; later writes maintain it transactionally.
+  Future<List<Map<String, dynamic>>> ledgerScopeRows({
+    required String owner,
+    required String resource,
+    required String accountId,
+    required String type,
+  }) async {
+    if (!_isLedgerDetailResource(resource)) {
+      throw ArgumentError.value(resource, 'resource');
+    }
+    final probe = {'account_id': accountId, 'type': type};
+    final key = _detailScopeKey(owner, resource, probe);
+    final database = await _db;
+    var cached = await _settings.record(key).get(database);
+    if (cached?['ids'] is! List) {
+      cached = await database.transaction((transaction) async {
+        final existing = await _settings.record(key).get(transaction);
+        if (existing?['ids'] is List) return existing;
+        final snapshots = await _records.find(
+          transaction,
+          finder: Finder(
+            filter: Filter.and([
+              Filter.equals('owner', owner.toLowerCase()),
+              Filter.equals('resource', resource),
+              Filter.custom((snapshot) {
+                final value = snapshot.value;
+                if (value is! Map) return false;
+                final data = value['data'];
+                return data is Map &&
+                    parseStringValue(data['account_id']) == accountId &&
+                    parseStringValue(data['type']).toLowerCase() ==
+                        type.toLowerCase();
+              }),
+            ]),
+          ),
+        );
+        final built = <String, Object?>{
+          'ids': [
+            for (final snapshot in snapshots)
+              parseStringValue(snapshot.value['id']),
+          ],
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        };
+        await _settings.record(key).put(transaction, built);
+        return built;
+      });
+    }
+    final index = cached;
+    if (index == null || index['ids'] is! List) {
+      throw StateError('Local ledger scope index was not created');
+    }
+    final rows = <Map<String, dynamic>>[];
+    for (final id in index['ids'] as List) {
+      final snapshot = await _records
+          .record(_recordKey(owner, resource, parseStringValue(id)))
+          .get(database);
+      final data = snapshot?['data'];
+      if (data is Map) rows.add(Map<String, dynamic>.unmodifiable(data));
+    }
+    return List.unmodifiable(rows);
+  }
+
+  /// Returns the current local calendar window without loading all events.
+  Future<List<Map<String, dynamic>>> calendarRowsInRange({
+    required String owner,
+    required String resource,
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    if (resource != 'calendar_events' || !end.isAfter(start)) {
+      throw ArgumentError('Invalid calendar range');
+    }
+    final key = _calendarWindowKey(owner, resource);
+    final database = await _db;
+    var cached = await _settings.record(key).get(database);
+    final cachedStart = tryParseDateTimeValue(cached?['start'], toLocal: true);
+    final cachedEnd = tryParseDateTimeValue(cached?['end'], toLocal: true);
+    if (cached?['ids'] is! List || cachedStart != start || cachedEnd != end) {
+      final snapshots = await _records.find(
+        database,
+        finder: Finder(
+          filter: Filter.and([
+            Filter.equals('owner', owner.toLowerCase()),
+            Filter.equals('resource', resource),
+            Filter.custom((snapshot) {
+              final value = snapshot.value;
+              if (value is! Map) return false;
+              final data = value['data'];
+              return data is Map && _calendarMatches(data, start, end);
+            }),
+          ]),
+        ),
+      );
+      cached = <String, Object?>{
+        'start': start.toIso8601String(),
+        'end': end.toIso8601String(),
+        'ids': [
+          for (final snapshot in snapshots)
+            parseStringValue(snapshot.value['id']),
+        ],
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      };
+      await _settings.record(key).put(database, cached);
+    }
+    final index = cached;
+    if (index == null || index['ids'] is! List) {
+      throw StateError('Local calendar window index was not created');
+    }
+    final rows = <Map<String, dynamic>>[];
+    for (final id in index['ids'] as List) {
+      final snapshot = await _records
+          .record(_recordKey(owner, resource, parseStringValue(id)))
+          .get(database);
+      final data = snapshot?['data'];
+      if (data is Map) rows.add(Map<String, dynamic>.unmodifiable(data));
+    }
+    return List.unmodifiable(rows);
+  }
+
+  /// Returns the first valid local account using a persistent pointer.
+  Future<Map<String, dynamic>?> defaultAccount({
+    required String owner,
+    required String resource,
+  }) async {
+    if (!_isLedgerAccountResource(resource)) {
+      throw ArgumentError.value(resource, 'resource');
+    }
+    final database = await _db;
+    final setting = _settings.record(_defaultAccountKey(owner, resource));
+    final cached = await setting.get(database);
+    final id = parseStringValue(cached?['id']);
+    if (id.isNotEmpty) {
+      final row = await readOnlyRow(owner: owner, resource: resource, id: id);
+      if (row?['is_valid'] == true) return row;
+    }
+    final snapshots = await _records.find(
+      database,
+      finder: Finder(
+        filter: Filter.and([
+          Filter.equals('owner', owner.toLowerCase()),
+          Filter.equals('resource', resource),
+          Filter.custom((snapshot) {
+            final value = snapshot.value;
+            if (value is! Map) return false;
+            final data = value['data'];
+            return data is Map && data['is_valid'] == true;
+          }),
+        ]),
+        limit: 1,
+      ),
+    );
+    if (snapshots.isEmpty) {
+      await setting.delete(database);
+      return null;
+    }
+    final snapshot = snapshots.first;
+    await setting.put(database, {
+      'id': parseStringValue(snapshot.value['id']),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
+    final data = snapshot.value['data'];
+    if (data is! Map) return null;
+    return Map<String, dynamic>.unmodifiable(data);
+  }
+
+  /// Finds the newest local event before [before] from a persistent date
+  /// index. Existing installs build the index once; writes keep it current.
+  Future<Map<String, dynamic>?> eventRowBefore({
+    required String owner,
+    required String resource,
+    required DateTime before,
+  }) async {
+    if (!_isIndexedEventResource(resource)) {
+      throw ArgumentError.value(resource, 'resource');
+    }
+    final database = await _db;
+    final entries = (await _eventDateIndex(
+      database,
+      owner,
+      resource,
+    ))['entries'];
+    if (entries is! List) {
+      throw StateError('Local event date index was not created');
+    }
+    final boundary = before.toUtc();
+    for (final value in entries.reversed) {
+      final entry = value as Map;
+      final date = tryParseDateTimeValue(entry['date']);
+      if (date == null || !date.isBefore(boundary)) continue;
+      return readOnlyRow(
+        owner: owner,
+        resource: resource,
+        id: parseStringValue(entry['id']),
+      );
+    }
+    return null;
+  }
+
+  /// Reads only events whose local calendar date is inside the inclusive
+  /// window. Missing and malformed dates remain visible as in the legacy
+  /// local query, without forcing every dated row to be loaded.
+  Future<List<Map<String, dynamic>>> eventRowsInRange({
+    required String owner,
+    required String resource,
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    if (!_isIndexedEventResource(resource) || end.isBefore(start)) {
+      throw ArgumentError('Invalid event range');
+    }
+    final database = await _db;
+    final index = await _eventDateIndex(database, owner, resource);
+    final from = DateTime(start.year, start.month, start.day);
+    final through = DateTime(end.year, end.month, end.day);
+    final ids = <String>[
+      for (final value in index['entries']! as List)
+        if (tryParseDateTimeValue((value as Map)['date'], toLocal: true)
+            case final DateTime date
+            when !DateTime(date.year, date.month, date.day).isBefore(from) &&
+                !DateTime(date.year, date.month, date.day).isAfter(through))
+          parseStringValue(value['id']),
+      for (final id in index['undated_ids']! as List) parseStringValue(id),
+    ];
+    final rows = <Map<String, dynamic>>[];
+    for (final id in ids) {
+      final row = await readOnlyRow(owner: owner, resource: resource, id: id);
+      if (row != null) rows.add(row);
+    }
+    return List.unmodifiable(rows);
+  }
+
   /// Returns ledger totals from a persistent local index. Existing installs
   /// build missing keys with one detail scan; subsequent writes update them.
   Future<Map<(String, String?), num>> ledgerTotals({
@@ -465,11 +1135,23 @@ class LocalDataStore {
     }
     if (missing.isEmpty) return Map.unmodifiable(values);
 
-    final details = await readOnlyRows(owner: owner, resource: resource);
+    final missingSet = missing.toSet();
+    final details = await readOnlyMatchingRows(
+      owner: owner,
+      resource: resource,
+      matches: (detail) {
+        final key = (
+          parseStringValue(detail['account_id']),
+          resource == 'accounting_detail'
+              ? parseStringValue(detail['currency'])
+              : null,
+        );
+        return missingSet.contains(key);
+      },
+    );
     for (final key in missing) {
       values[key] = 0;
     }
-    final missingSet = missing.toSet();
     for (final detail in details) {
       final key = (
         parseStringValue(detail['account_id']),
@@ -493,5 +1175,193 @@ class LocalDataStore {
       }
     });
     return Map.unmodifiable(values);
+  }
+
+  /// Returns daily aggregates for one ledger account. Existing data is
+  /// filtered to the requested account once; later writes maintain the index.
+  Future<({num total, List<Map<String, dynamic>> rows, Object revision})>
+  ledgerStatistics({
+    required String owner,
+    required String resource,
+    required String accountId,
+    String? currency,
+    required DateTime now,
+    required bool history,
+    bool Function()? shouldContinue,
+  }) async {
+    if (!_isLedgerDetailResource(resource) || accountId.isEmpty) {
+      throw ArgumentError('Invalid ledger statistics scope');
+    }
+    final scope = <String, Object?>{
+      'account_id': accountId,
+      if (resource == 'accounting_detail' && currency != null)
+        'currency': currency,
+      if (resource == 'accounting_detail' && currency == null)
+        '_all_currencies': true,
+    };
+    final key = _ledgerStatisticsKey(owner, resource, scope)!;
+    final database = await _db;
+    var cached = await _settings.record(key).get(database);
+    if (cached?['version'] != 1 || cached?['days'] is! Map) {
+      final details = await readOnlyMatchingRows(
+        owner: owner,
+        resource: resource,
+        matches: (row) =>
+            parseStringValue(row['account_id']) == accountId &&
+            (resource != 'accounting_detail' ||
+                currency == null ||
+                parseStringValue(row['currency']) == currency),
+      );
+      num total = 0;
+      final days = <String, Map<String, Object?>>{};
+      for (final detail in details) {
+        if (shouldContinue?.call() == false) {
+          return (
+            total: 0 as num,
+            rows: const <Map<String, dynamic>>[],
+            revision: Object(),
+          );
+        }
+        final value = _ledgerValue(resource, detail['value']);
+        total += value;
+        final date = tryParseDateTimeValue(detail['date'], toLocal: true);
+        if (date == null) continue;
+        final token = _dayToken(date);
+        final day = days[token] ?? const {'count': 0, 'value': 0};
+        days[token] = {
+          'count': parseIntValue(day['count']) + 1,
+          'value': parseNumValue(day['value']) + value,
+        };
+      }
+      cached = <String, Object?>{
+        'version': 1,
+        'total': total,
+        'days': days,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      };
+      await _settings.record(key).put(database, cached);
+    }
+    final days = Map<String, dynamic>.from(cached!['days'] as Map);
+    final monthPrefix =
+        '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-';
+    final tokens =
+        days.keys
+            .where((token) => history || token.startsWith(monthPrefix))
+            .toList()
+          ..sort();
+    return (
+      total: parseNumValue(cached['total']),
+      rows: List<Map<String, dynamic>>.unmodifiable([
+        for (final token in tokens)
+          {
+            'account_id': accountId,
+            'date': '${token}T12:00:00',
+            'value': parseNumValue((days[token] as Map)['value']),
+            if (resource == 'accounting_detail' && currency != null)
+              'currency': currency,
+          },
+      ]),
+      revision: cached['updated_at'] ?? cached,
+    );
+  }
+
+  /// Returns one local ledger day's total and newest rows from a persistent
+  /// index. Existing installs scan the detail resource once for a missing day;
+  /// later writes maintain the index in the same transaction as the record.
+  Future<({num total, List<Map<String, dynamic>> rows})> ledgerDaySummary({
+    required String owner,
+    required String resource,
+    required String accountId,
+    required DateTime day,
+    String? currency,
+    int previewLimit = 5,
+  }) async {
+    if (!_isLedgerDetailResource(resource)) {
+      throw ArgumentError.value(resource, 'resource');
+    }
+    if (previewLimit < 0) {
+      throw ArgumentError.value(previewLimit, 'previewLimit');
+    }
+    final probe = <String, Object?>{
+      'account_id': accountId,
+      'date': day.toIso8601String(),
+      if (resource == 'accounting_detail') 'currency': currency ?? '',
+    };
+    final key = _ledgerDayKey(owner, resource, probe)!;
+    final database = await _db;
+    var cached = await _settings.record(key).get(database);
+    if (tryParseNumValue(cached?['value']) == null ||
+        cached?['entries'] is! List) {
+      cached = await database.transaction((transaction) async {
+        final existing = await _settings.record(key).get(transaction);
+        if (tryParseNumValue(existing?['value']) != null &&
+            existing?['entries'] is List) {
+          return existing;
+        }
+        final token = _dayToken(day);
+        num total = 0;
+        final entries = <Map<String, dynamic>>[];
+        final snapshots = await _records.find(
+          transaction,
+          finder: Finder(
+            filter: Filter.and([
+              Filter.equals('owner', owner.toLowerCase()),
+              Filter.equals('resource', resource),
+            ]),
+          ),
+        );
+        for (final snapshot in snapshots) {
+          final data = snapshot.value['data'];
+          if (data is! Map ||
+              parseStringValue(data['account_id']) != accountId ||
+              (resource == 'accounting_detail' &&
+                  parseStringValue(data['currency']) != (currency ?? ''))) {
+            continue;
+          }
+          final date = tryParseDateTimeValue(data['date'], toLocal: true);
+          if (date == null || _dayToken(date) != token) continue;
+          total += _ledgerValue(resource, data['value']);
+          entries.add({
+            'id': parseStringValue(snapshot.value['id']),
+            'date': parseStringValue(data['date']),
+          });
+        }
+        entries.sort((left, right) {
+          final byDate = parseStringValue(
+            right['date'],
+          ).compareTo(parseStringValue(left['date']));
+          return byDate != 0
+              ? byDate
+              : parseStringValue(
+                  left['id'],
+                ).compareTo(parseStringValue(right['id']));
+        });
+        final built = <String, Object?>{
+          'value': total,
+          'entries': entries,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        };
+        await _settings.record(key).put(transaction, built);
+        return built;
+      });
+    }
+    final total = tryParseNumValue(cached?['value']) ?? 0;
+    final ids = (cached?['entries'] as List? ?? const [])
+        .take(previewLimit)
+        .map((entry) => parseStringValue((entry as Map)['id']))
+        .where((id) => id.isNotEmpty)
+        .toList(growable: false);
+    final rows = <Map<String, dynamic>>[];
+    for (final id in ids) {
+      final snapshot = await _records
+          .record(_recordKey(owner, resource, id))
+          .get(database);
+      final data = snapshot?['data'];
+      if (data is Map) {
+        rows.add(Map<String, dynamic>.unmodifiable(data));
+      }
+    }
+    return (total: total, rows: List<Map<String, dynamic>>.unmodifiable(rows));
   }
 }

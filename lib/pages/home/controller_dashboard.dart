@@ -163,7 +163,7 @@ class ControllerDashboard extends SafeChangeNotifier {
     _sharedRestored = true;
     final revision = _sharedSelectionRevision;
     try {
-      final links = await _sharing.homeLinks();
+      final links = repository.takeBootstrapSharedLedgers();
       if (!_isCurrentRequest(account, generation) ||
           revision != _sharedSelectionRevision) {
         return;
@@ -179,8 +179,26 @@ class ControllerDashboard extends SafeChangeNotifier {
           id: id,
           name: row['account_name']?.toString() ?? '',
         );
-        refreshSharedSummary(points: points);
+        final rawSnapshot = row['snapshot'];
+        if (rawSnapshot is! Map ||
+            rawSnapshot['totals'] is! Map ||
+            rawSnapshot['entries'] is! List) {
+          throw const FormatException('Invalid shared ledger bootstrap');
+        }
+        final snapshot = (
+          totals: Map<String, dynamic>.unmodifiable(
+            rawSnapshot['totals'] as Map,
+          ),
+          entries: List<Map<String, dynamic>>.unmodifiable(
+            (rawSnapshot['entries'] as List).map(
+              (entry) => Map<String, dynamic>.unmodifiable(entry as Map),
+            ),
+          ),
+        );
+        _sharedSummaries[points] = Future.value(snapshot);
+        _sharedToday[points] = snapshot.totals;
       }
+      notifyListeners();
     } catch (_) {
       if (_isCurrentRequest(account, generation)) _sharedRestored = false;
     }

@@ -18,6 +18,7 @@ import 'package:life_pilot/point_record/page_point_record_detail.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 
 class PagePointRecord extends StatelessWidget {
   const PagePointRecord({super.key});
@@ -161,12 +162,9 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
           return const Center(child: CircularProgressIndicator());
         }
 
-        return Selector<
-          ControllerPointRecordList,
-          List<ModelPointRecordAccount>
-        >(
-          selector: (_, c) => c.accounts,
-          builder: (context, accounts, _) {
+        return Consumer<ControllerPointRecordList>(
+          builder: (context, controller, _) {
+            final accounts = controller.accounts;
             if (accounts.isEmpty && !showShares) {
               if (context.read<ControllerPointRecordList>().loadError != null) {
                 return const SizedBox.shrink();
@@ -176,18 +174,36 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
               );
             }
 
+            final sharedOffset = showShares ? 1 : 0;
+            final showFooter =
+                controller.hasMore ||
+                controller.isLoadingMore ||
+                controller.loadMoreError != null ||
+                controller.hasRequestedMore;
+            final contentCount = accounts.length + sharedOffset;
             return ListView.builder(
               scrollCacheExtent: const ScrollCacheExtent.pixels(240),
               addAutomaticKeepAlives: false,
-              itemCount: accounts.length + (showShares ? 1 : 0),
+              itemCount: contentCount + (showFooter ? 1 : 0),
               itemBuilder: (context, index) {
+                if (showFooter && index == contentCount) {
+                  return WidgetsLoadMore(
+                    owner: controller,
+                    hasMore: controller.hasMore,
+                    count: accounts.length,
+                    scope: controller.category,
+                    loading: controller.isLoadingMore,
+                    error: controller.loadMoreError,
+                    onLoadMore: controller.loadMoreAccounts,
+                  );
+                }
                 if (showShares && index == 0) {
                   return SharedLedgerOverview(
                     key: ValueKey(owner),
                     kind: LedgerKind.points,
                   );
                 }
-                final account = accounts[index - (showShares ? 1 : 0)];
+                final account = accounts[index - sharedOffset];
                 return _AccountCard(
                   key: ValueKey(account.id),
                   accountId: account.id,

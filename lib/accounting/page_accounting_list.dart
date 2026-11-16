@@ -17,6 +17,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
+import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 
 class PageAccountingList extends StatefulWidget {
   const PageAccountingList({super.key});
@@ -129,9 +130,9 @@ class _PageAccountingListState extends State<PageAccountingList>
           return const Center(child: CircularProgressIndicator());
         }
 
-        return Selector<ControllerAccountingList, List<ModelAccountingAccount>>(
-          selector: (_, c) => c.accounts,
-          builder: (context, accounts, _) {
+        return Consumer<ControllerAccountingList>(
+          builder: (context, controller, _) {
+            final accounts = controller.accounts;
             if (accounts.isEmpty && !showShares) {
               if (context.read<ControllerAccountingList>().loadError != null) {
                 return const SizedBox.shrink();
@@ -141,18 +142,36 @@ class _PageAccountingListState extends State<PageAccountingList>
               );
             }
 
+            final sharedOffset = showShares ? 1 : 0;
+            final showFooter =
+                controller.hasMore ||
+                controller.isLoadingMore ||
+                controller.loadMoreError != null ||
+                controller.hasRequestedMore;
+            final contentCount = accounts.length + sharedOffset;
             return ListView.builder(
               scrollCacheExtent: const ScrollCacheExtent.pixels(240),
               addAutomaticKeepAlives: false,
-              itemCount: accounts.length + (showShares ? 1 : 0),
+              itemCount: contentCount + (showFooter ? 1 : 0),
               itemBuilder: (context, index) {
+                if (showFooter && index == contentCount) {
+                  return WidgetsLoadMore(
+                    owner: controller,
+                    hasMore: controller.hasMore,
+                    count: accounts.length,
+                    scope: controller.category,
+                    loading: controller.isLoadingMore,
+                    error: controller.loadMoreError,
+                    onLoadMore: controller.loadMoreAccounts,
+                  );
+                }
                 if (showShares && index == 0) {
                   return SharedLedgerOverview(
                     key: ValueKey(owner),
                     kind: LedgerKind.accounting,
                   );
                 }
-                final account = accounts[index - (showShares ? 1 : 0)];
+                final account = accounts[index - sharedOffset];
                 return _AccountCard(
                   key: ValueKey(account.id),
                   accountId: account.id,

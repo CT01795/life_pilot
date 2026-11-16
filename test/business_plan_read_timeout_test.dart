@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/business_plan/model_business_plan.dart';
+import 'package:life_pilot/business_plan/model_business_plan_window.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
 import 'package:life_pilot/business_plan/service_business_plan.dart';
 
@@ -23,25 +24,22 @@ class _Auth extends ControllerAuth {
 }
 
 class _Service extends ServiceBusinessPlan {
-  final pages = <Completer<List<ModelBusinessPlan>>>[];
-  final ranges = <(DateTime, DateTime)>[];
+  final pages = <Completer<ModelBusinessPlanWindow>>[];
+  final boundaries = <DateTime>[];
+  final seeks = <bool>[];
   final templates = <Completer<List<ModelPlanTemplate>>>[];
   final details = <({String id, Completer<ModelBusinessPlan> done})>[];
-  final histories = <Completer<bool>>[];
-  final older = <Completer<DateTime?>>[];
-  final boundaries = <DateTime>[];
-  bool gateHistory = false, gateOlder = false, more = true;
   late final createGate = Completer<void>();
   int creates = 0;
   @override
-  Future<List<ModelBusinessPlan>> fetchPlans({
-    required String user,
-    required DateTime dateFrom,
-    required DateTime dateTo,
+  Future<ModelBusinessPlanWindow> fetchPlanWindow({
+    required DateTime before,
+    bool seekOlder = false,
   }) {
-    final done = Completer<List<ModelBusinessPlan>>();
+    final done = Completer<ModelBusinessPlanWindow>();
     pages.add(done);
-    ranges.add((dateFrom, dateTo));
+    boundaries.add(before);
+    seeks.add(seekOlder);
     return done.future;
   }
 
@@ -56,29 +54,6 @@ class _Service extends ServiceBusinessPlan {
   Future<ModelBusinessPlan> fetchPlanDetail({required String planId}) {
     final done = Completer<ModelBusinessPlan>();
     details.add((id: planId, done: done));
-    return done.future;
-  }
-
-  @override
-  Future<bool> hasPlansBefore({
-    required String user,
-    required DateTime before,
-  }) {
-    if (!gateHistory) return Future.value(more);
-    final done = Completer<bool>();
-    histories.add(done);
-    return done.future;
-  }
-
-  @override
-  Future<DateTime?> latestPlanDateBefore({
-    required String user,
-    required DateTime before,
-  }) {
-    boundaries.add(before);
-    if (!gateOlder) return Future.value(DateTime(2024, 10));
-    final done = Completer<DateTime?>();
-    older.add(done);
     return done.future;
   }
 
@@ -105,7 +80,6 @@ void main() {
       service: service,
       auth: auth,
       requestTimeout: const Duration(milliseconds: 20),
-      historyTimeout: const Duration(milliseconds: 10),
     );
   });
   tearDown(() {
@@ -114,82 +88,69 @@ void main() {
   });
   Future<void> seed(WidgetTester tester) async {
     final pending = c.loadPlans();
-    service.pages.last.complete([_plan('initial')]);
+    service.pages.last.complete(
+      ModelBusinessPlanWindow(
+        plans: [_plan('initial')],
+        nextBefore: DateTime(2025),
+        hasMore: true,
+      ),
+    );
     await tester.pump();
     await pending;
   }
 
-  for (final stage in ['list', 'history', 'older date', 'older page']) {
+  for (final stage in ['list', 'older page']) {
     for (final fails in [false, true]) {
       testWidgets(
         '$stage timeout retains data and retries (late failure=$fails)',
         (tester) async {
-          final older = stage.startsWith('older');
-          if (stage != 'history') await seed(tester);
-          if (stage == 'history') service.gateHistory = true;
-          if (stage == 'older date') service.gateOlder = true;
+          final older = stage == 'older page';
+          if (older) await seed(tester);
           final pending = older ? c.loadMorePlans() : c.loadPlans();
           await tester.pump();
-          if (stage == 'history') {
-            service.pages.last.complete([_plan('initial')]);
-            await tester.pump();
-          }
           final snapshot = c.plans;
           final pageCount = service.pages.length;
           await tester.pump(const Duration(milliseconds: 21));
           await pending;
-          final error = stage == 'list'
-              ? c.plansLoadError
-              : stage == 'history'
-              ? c.planHistoryError
-              : c.loadMorePlansError;
+          final error = older ? c.loadMorePlansError : c.plansLoadError;
           expect(error, isA<TimeoutException>());
           expect(c.plans, same(snapshot));
           expect(c.isPlansLoading, isFalse);
-          expect(c.isCheckingPlanHistory, isFalse);
           expect(c.isLoadingMorePlans, isFalse);
-          if (stage == 'history') {
-            fails
-                ? service.histories.last.completeError(
-                    StateError('late history'),
-                  )
-                : service.histories.last.complete(true);
-          } else if (stage == 'older date') {
-            fails
-                ? service.older.last.completeError(StateError('late date'))
-                : service.older.last.complete(DateTime(2024));
-          } else {
-            fails
-                ? service.pages.last.completeError(StateError('late page'))
-                : service.pages.last.complete([_plan('old')]);
-          }
+          fails
+              ? service.pages.last.completeError(StateError('late page'))
+              : service.pages.last.complete(
+                  ModelBusinessPlanWindow(
+                    plans: [_plan('old')],
+                    nextBefore: DateTime(2024),
+                    hasMore: true,
+                  ),
+                );
           await tester.pump();
           expect(c.plans, same(snapshot));
           expect(service.pages.length, pageCount);
-          service.gateHistory = false;
-          service.gateOlder = false;
-          service.more = false;
-          final retry = stage == 'history'
-              ? c.retryPlanHistory()
-              : older
-              ? c.loadMorePlans()
-              : c.loadPlans();
+          final retry = older ? c.loadMorePlans() : c.loadPlans();
           await tester.pump();
-          if (stage != 'history') service.pages.last.complete([_plan('retry')]);
+          service.pages.last.complete(
+            ModelBusinessPlanWindow(
+              plans: [_plan('retry')],
+              nextBefore: DateTime(2023),
+              hasMore: false,
+            ),
+          );
           await tester.pump();
           await retry;
           expect(c.plansLoadError, isNull);
-          expect(c.planHistoryError, isNull);
           expect(c.loadMorePlansError, isNull);
           expect(c.hasMorePlans, isFalse);
           expect(c.isLoadingMorePlans, isFalse);
-          expect(c.isCheckingPlanHistory, isFalse);
-          if (stage == 'history') {
-            expect(c.plans, same(snapshot));
-          } else {
-            expect(c.plans.map((p) => p.id), contains('retry'));
+          expect(c.plans.map((p) => p.id), contains('retry'));
+          if (older) {
+            expect(
+              service.boundaries[service.boundaries.length - 2],
+              service.boundaries.last,
+            );
           }
-          if (older) expect(service.boundaries.first, service.boundaries.last);
         },
       );
     }

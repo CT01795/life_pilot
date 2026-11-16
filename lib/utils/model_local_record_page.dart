@@ -6,8 +6,15 @@ import 'package:life_pilot/utils/value_parser.dart';
 class ModelLocalRecordPage {
   final List<RecordRow> rows;
   final num total;
-  ModelLocalRecordPage._(List<RecordRow> rows, this.total)
-    : rows = List.unmodifiable(rows);
+  final DateTime nextBefore;
+  final DateTime? nextDate;
+  bool get hasMore => nextDate != null;
+  ModelLocalRecordPage._(
+    List<RecordRow> rows,
+    this.total,
+    this.nextBefore,
+    this.nextDate,
+  ) : rows = List.unmodifiable(rows);
 
   static ModelLocalRecordPage accounting(
     Iterable<RecordRow> source, {
@@ -66,6 +73,8 @@ class ModelLocalRecordPage {
     final upperBound = recordDayUpperBound(to);
     final visible = <RecordRow>[];
     RecordRow? latestRegular;
+    DateTime? latestBeforeFrom;
+    DateTime? secondLatestBeforeFrom;
     var hasRegular = false;
     num total = 0;
     for (final row in source) {
@@ -76,6 +85,19 @@ class ModelLocalRecordPage {
       }
       if (knownTotal == null) total += valueOf(row['value']);
       final reserved = isReservedRecordRow(row);
+      final date = reserved ? null : recordRowDate(row);
+      if (date != null && date.isBefore(from)) {
+        if (latestBeforeFrom == null || date.isAfter(latestBeforeFrom)) {
+          if (latestBeforeFrom == null || date != latestBeforeFrom) {
+            secondLatestBeforeFrom = latestBeforeFrom;
+          }
+          latestBeforeFrom = date;
+        } else if (date.isBefore(latestBeforeFrom) &&
+            (secondLatestBeforeFrom == null ||
+                date.isAfter(secondLatestBeforeFrom))) {
+          secondLatestBeforeFrom = date;
+        }
+      }
       if (includeLatestFallback &&
           !reserved &&
           (latestRegular == null ||
@@ -97,7 +119,23 @@ class ModelLocalRecordPage {
       visible.add(latestRegular);
     }
     sortRecordRowsNewestFirst(visible);
-    return ModelLocalRecordPage._(visible, knownTotal ?? total);
+    final fallbackDate = includeLatestFallback && !hasRegular
+        ? recordRowDate(latestRegular ?? const <String, dynamic>{})
+        : null;
+    final boundary = fallbackDate != null && fallbackDate.isBefore(from)
+        ? fallbackDate
+        : from;
+    final nextDate =
+        (fallbackDate != null && fallbackDate.isBefore(from)
+                ? secondLatestBeforeFrom
+                : latestBeforeFrom)
+            ?.toLocal();
+    return ModelLocalRecordPage._(
+      visible,
+      knownTotal ?? total,
+      boundary,
+      nextDate,
+    );
   }
 }
 
@@ -173,8 +211,10 @@ class ModelLocalRecordDateIndex {
     }
 
     addRange(_regular);
+    DateTime? fallbackDate;
     if (visible.isEmpty && includeLatestFallback && _latest != null) {
       visible.add(_latest!);
+      fallbackDate = recordRowDate(_latest!);
     }
     if (includeReservedRecords) {
       visible.addAll(_reserved);
@@ -182,6 +222,13 @@ class ModelLocalRecordDateIndex {
       addRange(_datedReserved);
     }
     sortRecordRowsNewestFirst(visible);
-    return ModelLocalRecordPage._(visible, _total);
+    final boundary = fallbackDate != null && fallbackDate.isBefore(from)
+        ? fallbackDate
+        : from;
+    final nextIndex = _lowerBound(_regular, boundary);
+    final nextDate = nextIndex == 0
+        ? null
+        : _regular[nextIndex - 1].$1.toLocal();
+    return ModelLocalRecordPage._(visible, _total, boundary, nextDate);
   }
 }

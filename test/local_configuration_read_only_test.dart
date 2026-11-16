@@ -38,13 +38,6 @@ void main() {
           store.delete(owner: 'a', resource: 'memory_trace', id: 'one'),
           rejected,
         );
-        await expectLater(
-          store.deleteMany(
-            owner: 'a',
-            records: [(resource: 'memory_trace', id: 'one')],
-          ),
-          rejected,
-        );
         await expectLater(store.deleteAllRecords(owner: 'a'), rejected);
         expect(
           (await store.readOnlyRow(

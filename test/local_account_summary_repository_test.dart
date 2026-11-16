@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/local_storage/repository_local_account_summary.dart';
-import 'package:life_pilot/utils/model_local_account_list.dart';
 import 'package:sembast/sembast_memory.dart';
 
 class _Store extends LocalDataStore {
@@ -33,6 +32,22 @@ class _Store extends LocalDataStore {
     }
     listReads.add('$owner:$resource');
     return super.readOnlyRows(owner: owner, resource: resource);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> readOnlyMatchingRows({
+    required String owner,
+    required String resource,
+    required bool Function(Map data) matches,
+    Object? cacheScope,
+  }) {
+    listReads.add('$owner:$resource');
+    return super.readOnlyMatchingRows(
+      owner: owner,
+      resource: resource,
+      matches: matches,
+      cacheScope: cacheScope,
+    );
   }
 }
 
@@ -102,11 +117,7 @@ void main() {
         expect(result.row['id'], 'selected');
         expect(store.keyReads, ['$owner:$accounts:selected']);
         expect(store.listReads, ['$owner:$details']);
-        final rows = await store.readOnlyRows(owner: owner, resource: details);
-        final reference = points
-            ? ModelLocalAccountList.points([result.row], rows)
-            : ModelLocalAccountList.accounting([result.row], rows);
-        expect(result.total, reference.totalFor(result.row));
+        expect(result.total, points ? 98 : 10.3456);
         expect(result.total, isNot(999));
       });
 

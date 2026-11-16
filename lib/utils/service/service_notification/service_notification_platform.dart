@@ -4,17 +4,15 @@ import 'package:life_pilot/utils/enum.dart';
 
 // 抽象通知服務：統一 API，不同平台會有不同實作
 abstract class ServiceNotificationPlatform {
-
   FlutterLocalNotificationsPlugin? get plugin;
 
   Future<void> initialize();
 
-  Future<NotificationResult> scheduleEventReminders({
-    required EventItem event
-  });
+  Future<NotificationResult> scheduleEventReminders({required EventItem event});
 
   Future<void> cancelEventReminders({
-    required String eventId, required List<CalendarReminderOption> reminderOptions
+    required String eventId,
+    required List<CalendarReminderOption> reminderOptions,
   });
 
   Future<List<EventNotification>> getTodayEventNotifications({

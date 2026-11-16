@@ -13,12 +13,19 @@ class _Store extends LocalDataStore {
     required String resource,
   }) => throw StateError('Must not clone whole resource lists');
   @override
-  Future<List<Map<String, dynamic>>> readOnlyRows({
+  Future<List<Map<String, dynamic>>> readOnlyMatchingRows({
     required String owner,
     required String resource,
+    required bool Function(Map data) matches,
+    Object? cacheScope,
   }) {
     listReads.add(resource);
-    return super.readOnlyRows(owner: owner, resource: resource);
+    return super.readOnlyMatchingRows(
+      owner: owner,
+      resource: resource,
+      matches: matches,
+      cacheScope: cacheScope,
+    );
   }
 
   @override

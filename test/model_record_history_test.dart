@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/utils/model_record_history.dart';
 
 class _Row {
-  _Row(this.id, this.date, [this.category = 'food']);
-  final String id, category;
+  _Row(this.id, this.date);
+  final String id;
   final DateTime date;
 }
 
@@ -173,54 +173,6 @@ void main() {
     expect(dates, 10000);
   });
   test(
-    'fallback ignores reserved rows and retains latest older regular date',
-    () {
-      final rows = [
-        _Row('reserved', DateTime(2027), 'reserved'),
-        _Row('old', DateTime(2026, 4, 1)),
-        _Row('latest', DateTime(2026, 4, 15)),
-      ];
-      expect(
-        ModelRecordHistory.fallbackStart(
-          rows,
-          start: start,
-          categoryOf: (r) => r.category,
-          dateOf: (r) => r.date,
-        ),
-        DateTime(2026, 4, 15),
-      );
-      expect(
-        ModelRecordHistory.fallbackStart(
-          rows.take(1),
-          start: start,
-          categoryOf: (r) => r.category,
-          dateOf: (r) => r.date,
-        ),
-        start,
-      );
-    },
-  );
-  test(
-    'current-window regular row stops fallback scan without reading later dates',
-    () {
-      var reads = 0;
-      final rows = [_Row('today', start), _Row('later', DateTime(2026, 4))];
-      expect(
-        ModelRecordHistory.fallbackStart(
-          rows,
-          start: start,
-          categoryOf: (r) => r.category,
-          dateOf: (r) {
-            reads++;
-            return r.date;
-          },
-        ),
-        start,
-      );
-      expect(reads, 1);
-    },
-  );
-  test(
     'empty input retains the original cursor and has no ordering output',
     () {
       expect(
@@ -230,15 +182,6 @@ void main() {
           dateOf: (r) => r.date,
         ),
         isEmpty,
-      );
-      expect(
-        ModelRecordHistory.fallbackStart<_Row>(
-          [],
-          start: start,
-          categoryOf: (r) => r.category,
-          dateOf: (r) => r.date,
-        ),
-        start,
       );
     },
   );

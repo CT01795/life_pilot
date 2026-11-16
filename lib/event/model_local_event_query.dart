@@ -1,60 +1,9 @@
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
-import 'package:life_pilot/utils/value_parser.dart';
 
 /// Filter lightweight row fields before decoding descriptions/sub-events.
 class ModelLocalEventQuery {
-  /// Stop at the first eligible date; never decode event content for metadata.
-  static bool hasRowsBefore(
-    Iterable<Map<String, dynamic>> rows,
-    DateTime before,
-  ) {
-    final dates = _LocalHistoryDateReader();
-    for (final row in rows) {
-      final date = dates.read(row[EventFields.startDate]);
-      if (date != null && date.isBefore(before)) return true;
-    }
-    return false;
-  }
-
-  /// Finds the fallback row in one pass, without sorting or decoding history.
-  static Map<String, dynamic>? latestRowBefore(
-    Iterable<Map<String, dynamic>> rows,
-    DateTime before,
-  ) {
-    final dates = _LocalHistoryDateReader();
-    Map<String, dynamic>? latest;
-    DateTime? latestDate;
-    for (final row in rows) {
-      final date = dates.read(row[EventFields.startDate]);
-      if (date == null || !date.isBefore(before)) continue;
-      if (latestDate == null || date.isAfter(latestDate)) {
-        latestDate = date;
-        latest = row;
-      }
-    }
-    return latest;
-  }
-
-  static List<EventItem> select(
-    List<Map<String, dynamic>> rows, {
-    required DateTime start,
-    required DateTime end,
-    String? id,
-    int offset = 0,
-    int? limit,
-    bool Function()? shouldContinue,
-  }) => iterate(
-    rows,
-    start: start,
-    end: end,
-    id: id,
-    offset: offset,
-    limit: limit,
-    shouldContinue: shouldContinue,
-  ).toList();
-
   static Iterable<EventItem> iterate(
     List<Map<String, dynamic>> rows, {
     required DateTime start,
@@ -103,22 +52,5 @@ class ModelLocalEventQuery {
       }
       if (previousMatch) yield row;
     }
-  }
-}
-
-/// One string entry per metadata query, including failed parses. Do not retain
-/// rows or share decisions between queries with different history boundaries.
-class _LocalHistoryDateReader {
-  String? _text;
-  DateTime? _date;
-
-  DateTime? read(Object? raw) {
-    // Legacy stored DateTime values must not be stringified or normalized.
-    if (raw is! String) return tryParseDateTimeValue(raw);
-    if (raw != _text) {
-      _text = raw;
-      _date = tryParseDateTimeValue(raw);
-    }
-    return _date;
   }
 }

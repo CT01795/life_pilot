@@ -4,11 +4,7 @@ class SearchFilter {
   DateTime? startDate;
   DateTime? endDate;
 
-  SearchFilter({
-    this.keywords = '',
-    this.startDate,
-    this.endDate,
-  });
+  SearchFilter({this.keywords = '', this.startDate, this.endDate});
 
   void clear() {
     keywords = '';

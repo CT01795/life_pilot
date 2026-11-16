@@ -90,22 +90,23 @@ class CalendarService {
       scheduledDate ?? DateTime.now(),
     );
     if (await _storesLocally(account)) {
-      final rows = await LocalDataStore.instance.list(
+      final row = await LocalDataStore.instance.readOnlyFirstMatchingRow(
         owner: account,
         resource: TableNames.calendarEvents,
+        matches: (row) {
+          final date = tryParseDateTimeValue(
+            parseStringValue(row['start_date']),
+            toLocal: true,
+          );
+          return normalizedTextEquals(row['name'], place.name) &&
+              normalizedTextEquals(row[EventFields.country], place.country) &&
+              normalizedTextEquals(row['city'], place.city) &&
+              normalizedTextEquals(row['location'], place.location) &&
+              date != null &&
+              DateUtils.isSameDay(date, selectedDate);
+        },
       );
-      return rows.any((row) {
-        final date = tryParseDateTimeValue(
-          parseStringValue(row['start_date']),
-          toLocal: true,
-        );
-        return normalizedTextEquals(row['name'], place.name) &&
-            normalizedTextEquals(row[EventFields.country], place.country) &&
-            normalizedTextEquals(row['city'], place.city) &&
-            normalizedTextEquals(row['location'], place.location) &&
-            date != null &&
-            DateUtils.isSameDay(date, selectedDate);
-      });
+      return row != null;
     }
     final nextDate = selectedDate.add(const Duration(days: 1));
     return await supabase.rpc(

@@ -15,6 +15,7 @@ class ModelLocalRecordStatistics {
     required String accountId,
     required RecordStatisticsKind kind,
     String? currency,
+    num? totalOverride,
   }) {
     final history = <Map<String, dynamic>>[];
     final months = <(int, int), List<Map<String, dynamic>>>{};
@@ -35,7 +36,7 @@ class ModelLocalRecordStatistics {
       (months[(date.year, date.month)] ??= []).add(row);
     }
     return ModelLocalRecordStatistics._(
-      total,
+      totalOverride ?? total,
       List.unmodifiable(history),
       Map.unmodifiable({
         for (final entry in months.entries)

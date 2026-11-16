@@ -18,10 +18,7 @@ class EventHttpRequester {
 
   void close() => _client.close();
 
-  Future<http.Response> get(
-    Uri uri, {
-    Map<String, String>? headers,
-  }) {
+  Future<http.Response> get(Uri uri, {Map<String, String>? headers}) {
     return _send(() => _client.get(uri, headers: headers));
   }
 
@@ -32,23 +29,17 @@ class EventHttpRequester {
     Encoding? encoding,
   }) {
     return _send(
-      () => _client.post(
-        uri,
-        headers: headers,
-        body: body,
-        encoding: encoding,
-      ),
+      () => _client.post(uri, headers: headers, body: body, encoding: encoding),
     );
   }
 
-  Future<http.Response> _send(
-    Future<http.Response> Function() request,
-  ) async {
+  Future<http.Response> _send(Future<http.Response> Function() request) async {
     final attempts = maxAttempts < 1 ? 1 : maxAttempts;
     for (var attempt = 1; attempt <= attempts; attempt++) {
       try {
         final response = await request().timeout(timeout);
-        final shouldRetry = response.statusCode >= 500 &&
+        final shouldRetry =
+            response.statusCode >= 500 &&
             response.statusCode <= 599 &&
             attempt < attempts;
         if (!shouldRetry) return response;

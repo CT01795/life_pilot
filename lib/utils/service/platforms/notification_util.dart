@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 
-List<EventItem> getTodayEventNotificationsList(
-    {required List<EventItem> events}) {
+List<EventItem> getTodayEventNotificationsList({
+  required List<EventItem> events,
+}) {
   final now = DateTime.now();
   final nowSub1 = now.subtract(Duration(hours: 1));
   // 過濾出尚未發生的事件
@@ -34,10 +35,7 @@ List<EventItem> getTodayEventNotificationsList(
   return todayEvents;
 }
 
-DateTime? getDateTime({
-  required DateTime? date,
-  required TimeOfDay? time,
-}) {
+DateTime? getDateTime({required DateTime? date, required TimeOfDay? time}) {
   DateTime? returnDate;
   if (date != null && time != null) {
     returnDate = DateTime(
@@ -48,13 +46,7 @@ DateTime? getDateTime({
       time.minute,
     );
   } else if (date != null) {
-    returnDate = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      23,
-      59,
-    );
+    returnDate = DateTime(date.year, date.month, date.day, 23, 59);
   }
   return returnDate;
 }

@@ -40,10 +40,15 @@ class _Requests {
   final categories = <String>[];
   final pending = <Completer<List<String>>>[];
   bool immediate = false;
+  List<String>? allRows;
   void Function()? onFetch;
-  Future<List<String>> fetch(String? category) {
+  Future<List<String>> fetch(String? category, {int? offset, int? limit}) {
     categories.add(category!);
     onFetch?.call();
+    if (allRows case final rows?) {
+      final start = offset ?? 0;
+      return Future.value(rows.skip(start).take(limit ?? rows.length).toList());
+    }
     if (immediate) return Future.value(['$category account']);
     final request = Completer<List<String>>();
     pending.add(request);
@@ -74,7 +79,9 @@ class _Accounting extends ServiceAccounting {
     required String user,
     String? category,
     int? projectLimit,
-  }) async => (await requests.fetch(category))
+    int? offset,
+    int? limit,
+  }) async => (await requests.fetch(category, offset: offset, limit: limit))
       .map(
         (id) => ModelAccountingAccount(
           id: id,
@@ -129,7 +136,9 @@ class _Points extends ServicePointRecord {
     required String user,
     String? category,
     int? projectLimit,
-  }) async => (await requests.fetch(category))
+    int? offset,
+    int? limit,
+  }) async => (await requests.fetch(category, offset: offset, limit: limit))
       .map(
         (id) => ModelPointRecordAccount(
           id: id,
@@ -166,22 +175,28 @@ class _Harness {
   _Harness.accounting(ControllerAccountingList c)
     : controller = c,
       load = c.loadAccounts,
+      loadMore = c.loadMoreAccounts,
       select = c.setCategory,
       ids = (() => c.accounts.map((a) => a.id).toList()),
       loading = (() => c.isLoading),
+      hasMore = (() => c.hasMore),
       error = (() => c.loadError);
   _Harness.points(ControllerPointRecordList c)
     : controller = c,
       load = c.loadAccounts,
+      loadMore = c.loadMoreAccounts,
       select = c.setCategory,
       ids = (() => c.accounts.map((a) => a.id).toList()),
       loading = (() => c.isLoading),
+      hasMore = (() => c.hasMore),
       error = (() => c.loadError);
   final SafeChangeNotifier controller;
   final Future<void> Function({String? inputCategory}) load;
+  final Future<void> Function() loadMore;
   final Future<void> Function(String) select;
   final List<String> Function() ids;
   final bool Function() loading;
+  final bool Function() hasMore;
   final Object? Function() error;
 }
 
@@ -250,6 +265,20 @@ void main() {
       tearDown(() {
         if (!h.controller.notifierDisposed) h.controller.dispose();
         auth.dispose();
+      });
+
+      test('account overview loads bounded pages without duplicates', () async {
+        requests.allRows = List.generate(45, (index) => 'account-$index');
+        await h.load();
+        expect(h.ids(), hasLength(20));
+        expect(h.hasMore(), isTrue);
+        await h.loadMore();
+        expect(h.ids(), hasLength(40));
+        expect(h.hasMore(), isTrue);
+        await h.loadMore();
+        expect(h.ids(), hasLength(45));
+        expect(h.hasMore(), isFalse);
+        expect(h.ids().toSet(), hasLength(45));
       });
 
       for (final lateFailure in [false, true]) {

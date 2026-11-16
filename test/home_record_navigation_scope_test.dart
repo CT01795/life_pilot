@@ -46,6 +46,8 @@ class _Accounting extends ServiceAccounting {
     required String user,
     String? category,
     int? projectLimit,
+    int? offset,
+    int? limit,
   }) {
     expect(user, 'a@example.com');
     return pending.future;
@@ -69,6 +71,8 @@ class _Points extends ServicePointRecord {
     required String user,
     String? category,
     int? projectLimit,
+    int? offset,
+    int? limit,
   }) {
     expect(user, 'a@example.com');
     return pending.future;

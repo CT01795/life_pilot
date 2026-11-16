@@ -14,14 +14,11 @@ class AppTheme {
         foregroundColor: Colors.white,
         backgroundColor: const Color(0xFF0066CC),
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFF0066CC),
-      ),
+      style: TextButton.styleFrom(foregroundColor: const Color(0xFF0066CC)),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(

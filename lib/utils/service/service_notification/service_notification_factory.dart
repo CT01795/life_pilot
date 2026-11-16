@@ -28,4 +28,3 @@ void setNotificationService(ServiceNotificationPlatform service) {
 void resetNotificationService() {
   _instance = null;
 }
-

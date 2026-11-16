@@ -9,7 +9,7 @@ class ControllerNotification {
   ServiceNotificationPlatform get service => _service;
 
   ControllerNotification({required ServiceNotificationPlatform service})
-      : _service = service;
+    : _service = service;
 
   Future<void> initialize() async {
     await _service.initialize();
@@ -40,11 +40,14 @@ class ControllerNotification {
   }
 
   // 取消事件提醒
-  Future<void> cancelEventReminders(
-      {required String eventId,
-      required List<CalendarReminderOption> reminderOptions}) async {
+  Future<void> cancelEventReminders({
+    required String eventId,
+    required List<CalendarReminderOption> reminderOptions,
+  }) async {
     await _service.cancelEventReminders(
-        eventId: eventId, reminderOptions: reminderOptions);
+      eventId: eventId,
+      reminderOptions: reminderOptions,
+    );
   }
 
   Future<void> cancelAllEventReminders({required String eventId}) async {
@@ -62,7 +65,9 @@ class ControllerNotification {
     final newEvents = getTodayEventNotificationsList(events: events);
     return newEvents.isNotEmpty
         ? await _service.getTodayEventNotifications(
-            events: newEvents, close: closeText)
+            events: newEvents,
+            close: closeText,
+          )
         : [];
   }
 }

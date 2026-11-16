@@ -35,6 +35,7 @@ void main() {
               'records': [],
             },
             'points': {'total': 50, 'today_total': 5, 'records': []},
+            'shared_ledgers': [],
           }),
           200,
           headers: {'content-type': 'application/json'},
@@ -60,7 +61,7 @@ void main() {
     expect(requests, hasLength(1));
     expect(
       requests.single.url.path,
-      endsWith('/rpc/get_or_create_my_dashboard_core'),
+      endsWith('/rpc/get_or_create_my_dashboard_core_v2'),
     );
   });
 

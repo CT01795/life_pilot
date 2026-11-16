@@ -260,11 +260,8 @@ void main() {
     'plan list mapping keeps status/date/title but does not preload details',
     () async {
       final service = ServiceBusinessPlan();
-      final plans = await service.fetchPlans(
-        user: 'one@example.com',
-        dateFrom: from,
-        dateTo: to,
-      );
+      final window = await service.fetchPlanWindow(before: to);
+      final plans = window.plans;
       expect(plans.single.id, 'p');
       expect(plans.single.title, '企劃');
       expect(plans.single.createdAt, DateTime.utc(2026, 10, 1, 12, 34, 56));
@@ -275,13 +272,7 @@ void main() {
         requests.single.url.path,
         endsWith('/rpc/get_my_business_plan_window'),
       );
-      expect(
-        await service.hasPlansBefore(
-          user: 'one@example.com',
-          before: from,
-        ),
-        isFalse,
-      );
+      expect(window.hasMore, isFalse);
       expect(requests, hasLength(1));
     },
   );

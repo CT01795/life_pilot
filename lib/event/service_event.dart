@@ -160,9 +160,30 @@ class ServiceEvent {
     );
     if (shouldContinue?.call() == false) return [];
     if (useLocal) {
-      final localRows = await LocalDataStore.instance
-          .readOnlyRows(owner: inputUser!, resource: tableName)
-          .timeout(const Duration(seconds: 15));
+      final queryStart =
+          dateS ??
+          (tableName == TableNames.memoryTrace
+              ? today.subtract(const Duration(days: 29))
+              : today);
+      final queryEnd =
+          dateE ?? DateTime(today.year + 2, today.month, today.day);
+      final Map<String, dynamic>? exact = id == null || id.isEmpty
+          ? null
+          : await LocalDataStore.instance.readOnlyRow(
+              owner: inputUser!,
+              resource: tableName,
+              id: id,
+            );
+      final localRows = exact == null
+          ? await LocalDataStore.instance
+                .eventRowsInRange(
+                  owner: inputUser!,
+                  resource: tableName,
+                  start: queryStart,
+                  end: queryEnd,
+                )
+                .timeout(const Duration(seconds: 15))
+          : <Map<String, dynamic>>[exact];
       if (shouldContinue?.call() == false) return [];
       final selected = ModelLocalEventQuery.iterate(
         tableName == TableNames.calendarEvents
@@ -174,12 +195,8 @@ class ServiceEvent {
                   })
                   .toList(growable: false)
             : localRows,
-        start:
-            dateS ??
-            (tableName == TableNames.memoryTrace
-                ? today.subtract(const Duration(days: 29))
-                : today),
-        end: dateE ?? DateTime(today.year + 2, today.month, today.day),
+        start: queryStart,
+        end: queryEnd,
         id: id,
         offset: offset,
         limit: limit,
@@ -297,12 +314,13 @@ class ServiceEvent {
     );
     if (shouldContinue?.call() == false) return false;
     if (local) {
-      final rows = await LocalDataStore.instance.readOnlyRows(
+      final row = await LocalDataStore.instance.eventRowBefore(
         owner: inputUser!,
         resource: tableName,
+        before: before,
       );
       if (shouldContinue?.call() == false) return false;
-      return ModelLocalEventQuery.hasRowsBefore(rows, before);
+      return row != null;
     }
     var query = supabase
         .from(tableName)
@@ -332,12 +350,12 @@ class ServiceEvent {
     );
     if (shouldContinue?.call() == false) return null;
     if (local) {
-      final rows = await LocalDataStore.instance.readOnlyRows(
+      final latest = await LocalDataStore.instance.eventRowBefore(
         owner: inputUser!,
         resource: tableName,
+        before: before,
       );
       if (shouldContinue?.call() == false) return null;
-      final latest = ModelLocalEventQuery.latestRowBefore(rows, before);
       if (latest == null) return null;
       onLatestEvent?.call(_decodeEventRow(latest));
       return tryParseDateTimeValue(latest[EventFields.startDate]);

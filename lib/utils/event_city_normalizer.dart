@@ -2,8 +2,10 @@ class EventCityNormalizer {
   const EventCityNormalizer._();
 
   static String normalize(String city) {
-    final cleaned =
-        city.replaceAll('\u200B', '').trim().replaceAll('\u81FA', '\u53F0');
+    final cleaned = city
+        .replaceAll('\u200B', '')
+        .trim()
+        .replaceAll('\u81FA', '\u53F0');
 
     switch (cleaned.toLowerCase()) {
       case 'hsinchu city':

@@ -15,7 +15,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get ledgerDeclineShare => '閲覧をやめる';
 
   @override
-  String get ledgerDeclineShareExplanation => 'この共有アカウントを閲覧できなくなります。元のデータは削除されません。';
+  String get ledgerDeclineShareExplanation =>
+      'この共有アカウントを閲覧できなくなります。元のデータは削除されません。';
 
   @override
   String get ledgerDeclineShareConfirm => 'この共有アカウントの閲覧をやめますか？';
@@ -39,13 +40,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get ledgerStopImageChanges => '画像変更の権限を停止';
 
   @override
-  String get ledgerAllowImageChangesConfirm => '相手が承認なしでアカウント画像を直接変更できるようにしますか？';
+  String get ledgerAllowImageChangesConfirm =>
+      '相手が承認なしでアカウント画像を直接変更できるようにしますか？';
 
   @override
   String get ledgerStopImageChangesConfirm => '相手の画像変更権限を停止しますか？';
 
   @override
-  String get sharedLedgerStatisticsUnavailable => '共有アカウントの統計はまだ利用できません。管理者にお問い合わせください。';
+  String get sharedLedgerStatisticsUnavailable =>
+      '共有アカウントの統計はまだ利用できません。管理者にお問い合わせください。';
 
   @override
   String get sharedLedgerStatisticsLoadFailed => '共有アカウントの統計を読み込めませんでした。';
@@ -66,7 +69,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get ledgerSharedAccount => '共有アカウント';
 
   @override
-  String get accountPurgeMoreFiles => '一部のファイルを削除しました。アカウントは無効のままです。削除を再実行してください。';
+  String get accountPurgeMoreFiles =>
+      '一部のファイルを削除しました。アカウントは無効のままです。削除を再実行してください。';
 
   @override
   String get accountPurgeInProgress => '削除処理中です。しばらくしてから再試行してください。';
@@ -132,10 +136,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get refreshList => '一覧を再読み込み';
 
   @override
-  String get cloudDeleteUnconfirmedLocalCopyKept => 'クラウドの削除結果を確認できないため、この端末のコピーを保持しました。転送を繰り返さず、再読み込みして管理者に結果の確認を依頼してください。';
+  String get cloudDeleteUnconfirmedLocalCopyKept =>
+      'クラウドの削除結果を確認できないため、この端末のコピーを保持しました。転送を繰り返さず、再読み込みして管理者に結果の確認を依頼してください。';
 
   @override
-  String get cloudZeroHistoryTransferWarning => 'クラウドプランでは個々の回答を保存しません。回答は転送せず、転送成功後に端末のコピーを削除します。ゲームのスコアと進捗は転送されます。';
+  String get cloudZeroHistoryTransferWarning =>
+      'クラウドプランでは個々の回答を保存しません。回答は転送せず、転送成功後に端末のコピーを削除します。ゲームのスコアと進捗は転送されます。';
 
   @override
   String cloudHistoryOmitted(int count) {
@@ -153,7 +159,8 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String billingMonthlyPrice(int price) {
-    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat priceNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String priceString = priceNumberFormat.format(price);
 
     return '月額 NT\$$priceString';
@@ -178,7 +185,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get localImagesDeviceOnly => '端末の画像は端末容量を使用します。クラウド画像容量は含まれません。';
 
   @override
-  String get cloudSubmissionExplanation => 'イベント・スポットの上限は期限前のクラウド投稿数です。端末データの無制限とは別に計算します。';
+  String get cloudSubmissionExplanation =>
+      'イベント・スポットの上限は期限前のクラウド投稿数です。端末データの無制限とは別に計算します。';
 
   @override
   String get activeEventSubmissions => '期限前のイベント投稿';
@@ -187,25 +195,30 @@ class AppLocalizationsJa extends AppLocalizations {
   String get activePlaceSubmissions => '期限前のスポット投稿';
 
   @override
-  String get subscriptionConfigurationMissing => '適用される利用枠が未設定です。閲覧のみ可能で、追加・編集・削除はできません。管理者にお問い合わせください。';
+  String get subscriptionConfigurationMissing =>
+      '適用される利用枠が未設定です。閲覧のみ可能で、追加・編集・削除はできません。管理者にお問い合わせください。';
 
   @override
   String get recordInputInvalid => '説明と 0 より大きい値を入力してください。';
 
   @override
-  String get recordTextInvalid => '形式が正しくありません。説明、+ または -、0 以外の数値（小数点以下4桁まで）を入力してください。例：昼食-120；給与+30000。まだ保存されていません。';
+  String get recordTextInvalid =>
+      '形式が正しくありません。説明、+ または -、0 以外の数値（小数点以下4桁まで）を入力してください。例：昼食-120；給与+30000。まだ保存されていません。';
 
   @override
-  String get pointRecordTextInvalid => '形式が正しくありません。0 以外の整数を入力してください。例：運動+10；遅刻-2。各項目を確認してください。まだ保存されていません。';
+  String get pointRecordTextInvalid =>
+      '形式が正しくありません。0 以外の整数を入力してください。例：運動+10；遅刻-2。各項目を確認してください。まだ保存されていません。';
 
   @override
-  String get localSubscriptionRequiredForChanges => 'ローカルプランは未有効です。閲覧と削除のみできます。契約後、管理者に有効化を依頼してください。';
+  String get localSubscriptionRequiredForChanges =>
+      'ローカルプランは未有効です。閲覧と削除のみできます。契約後、管理者に有効化を依頼してください。';
 
   @override
   String get quotaNotLimited => '制限なし';
 
   @override
-  String get subscriptionLocalRequiresActiveSubscription => '本機データを追加・変更するには、有効なローカルプランの契約が必要です';
+  String get subscriptionLocalRequiresActiveSubscription =>
+      '本機データを追加・変更するには、有効なローカルプランの契約が必要です';
 
   @override
   String get subscriptionCurrentLocalInactive => '現在の保存先：この端末（ローカルプラン未契約）';
@@ -214,10 +227,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionCurrentLocalPromotion => '現在の保存先：この端末（キャンペーン期間中）';
 
   @override
-  String get dataStorageLocalPromotionNoSubscription => 'キャンペーン期間中は一時的に利用できます。ローカルプラン未契約の場合、終了後は閲覧と削除のみ可能です。';
+  String get dataStorageLocalPromotionNoSubscription =>
+      'キャンペーン期間中は一時的に利用できます。ローカルプラン未契約の場合、終了後は閲覧と削除のみ可能です。';
 
   @override
-  String get accountNoLongerAvailable => 'このアカウントは削除されたか、ログインの有効期限が切れました。もう一度ログインしてください。';
+  String get accountNoLongerAvailable =>
+      'このアカウントは削除されたか、ログインの有効期限が切れました。もう一度ログインしてください。';
 
   @override
   String get accessDenied => 'アクセス権限がありません';
@@ -395,7 +410,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dataClearLocalAction => '端末データを削除';
 
   @override
-  String get dataClearLocalConfirm => 'この端末の個人データをすべて完全に削除します。元に戻せません。削除後、クラウドへの切り替えを再試行できます。続行しますか？';
+  String get dataClearLocalConfirm =>
+      'この端末の個人データをすべて完全に削除します。元に戻せません。削除後、クラウドへの切り替えを再試行できます。続行しますか？';
 
   @override
   String get dataClearLocalFailed => '端末データを削除できませんでした。後でもう一度お試しください。';
@@ -410,7 +426,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dataMoveToLocal => 'クラウドデータをこのデバイスへ移動';
 
   @override
-  String get dataMoveToLocalConfirm => 'コピーと検証後にクラウドから削除され、このデバイス、ブラウザ、現在のブラウザプロファイルでのみ表示されます。別の環境には自動表示されず、サイトデータを消去すると永久に失われる可能性があります。続行しますか？';
+  String get dataMoveToLocalConfirm =>
+      'コピーと検証後にクラウドから削除され、このデバイス、ブラウザ、現在のブラウザプロファイルでのみ表示されます。別の環境には自動表示されず、サイトデータを消去すると永久に失われる可能性があります。続行しますか？';
 
   @override
   String get dataMoveToLocalFailed => '一部のデータを移動できなかったため、クラウドの元データを保持しました。';
@@ -589,7 +606,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get verifyingAccount => 'アカウントを確認しています…';
 
   @override
-  String get adminPricingDeleteCheckFailed => 'このプランを削除できるか確認できませんでした。再試行してください。';
+  String get adminPricingDeleteCheckFailed =>
+      'このプランを削除できるか確認できませんでした。再試行してください。';
 
   @override
   String get accountVerificationFailed => 'アカウントを確認できませんでした。再試行してください。';
@@ -664,13 +682,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get priceMin => '最低価格';
 
   @override
-  String get publishedContentDeleteAdminOnly => '公開済みの情報を削除できるのは管理者のみです。編集して保存すると審査待ちに戻ります。';
+  String get publishedContentDeleteAdminOnly =>
+      '公開済みの情報を削除できるのは管理者のみです。編集して保存すると審査待ちに戻ります。';
 
   @override
-  String get previouslyPublishedContentDeleteAdminOnly => 'この情報は以前公開されていたため、削除できるのは管理者のみです。編集して再審査を申請できます。';
+  String get previouslyPublishedContentDeleteAdminOnly =>
+      'この情報は以前公開されていたため、削除できるのは管理者のみです。編集して再審査を申請できます。';
 
   @override
-  String get submissionPermissionDenied => '現在、このアカウントには投稿の書き込み権限がありません。管理者に投稿権限の更新を依頼してください。';
+  String get submissionPermissionDenied =>
+      '現在、このアカウントには投稿の書き込み権限がありません。管理者に投稿権限の更新を依頼してください。';
 
   @override
   String get publishedSubmission => '公開中';
@@ -765,22 +786,26 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gameInstructions => '遊び方';
 
   @override
-  String get gameInstructionsGeneral => '画面の案内に従って問題を完成してください。スピーカーで音声を再生できます。マイクをタップして話し始め、もう一度タップして終了します。動かせるブロックは目的の位置へドラッグし、回答後に確認または送信してください。';
+  String get gameInstructionsGeneral =>
+      '画面の案内に従って問題を完成してください。スピーカーで音声を再生できます。マイクをタップして話し始め、もう一度タップして終了します。動かせるブロックは目的の位置へドラッグし、回答後に確認または送信してください。';
 
   @override
   String get gameInstructionsGrammar => '問題を聞くか読んで正しい文法の答えを選びます。';
 
   @override
-  String get gameInstructionsSentence => '問題の音声を再生し、単語ブロックを正しい順番にドラッグしてから確認を押します。';
+  String get gameInstructionsSentence =>
+      '問題の音声を再生し、単語ブロックを正しい順番にドラッグしてから確認を押します。';
 
   @override
-  String get gameInstructionsSpeaking => '問題を再生し、マイクをタップして話し始め、もう一度タップして終了・送信します。';
+  String get gameInstructionsSpeaking =>
+      '問題を再生し、マイクをタップして話し始め、もう一度タップして終了・送信します。';
 
   @override
   String get gameInstructionsTranslation => '問題と選択肢の音声を再生し、正しい翻訳にチェックします。';
 
   @override
-  String get gameInstructionsSocial => '場面と選択肢を聞き、最適な返答にチェックします。文字を押すと音声のみ再生されます。';
+  String get gameInstructionsSocial =>
+      '場面と選択肢を聞き、最適な返答にチェックします。文字を押すと音声のみ再生されます。';
 
   @override
   String get gameInstructionsWordSearch => '問題を聞くか読み、文字マスから答えを順番に選んで送信します。';
@@ -789,19 +814,24 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gameInstructionsPuzzleMap => '難易度を選び、ヒントを使って地図パズルを完成させ、答えを送信します。';
 
   @override
-  String get gameInstructionsMonomino => '上の矢印をマスへドラッグしてキャラクターをゴールまで導き、経路を確認します。';
+  String get gameInstructionsMonomino =>
+      '上の矢印をマスへドラッグしてキャラクターをゴールまで導き、経路を確認します。';
 
   @override
-  String get gameInstructionsPolyomino => '左のブロックをマスへドラッグします。タップで回転し、経路をつないだら送信します。';
+  String get gameInstructionsPolyomino =>
+      '左のブロックをマスへドラッグします。タップで回転し、経路をつないだら送信します。';
 
   @override
-  String get gameInstructionsScratch => 'エディターで Blockly 命令を並べて開始を押し、障害物を避けて宝物を取ります。';
+  String get gameInstructionsScratch =>
+      'エディターで Blockly 命令を並べて開始を押し、障害物を避けて宝物を取ります。';
 
   @override
-  String get gameInstructionsScratchMaze => 'エディターで Blockly 命令を並べて開始を押し、迷路を通ってゴールへ導きます。方向ブロック1個につき1マス進みます。さらに進むには、ブロックを追加するか繰り返しブロックを使ってください。';
+  String get gameInstructionsScratchMaze =>
+      'エディターで Blockly 命令を並べて開始を押し、迷路を通ってゴールへ導きます。方向ブロック1個につき1マス進みます。さらに進むには、ブロックを追加するか繰り返しブロックを使ってください。';
 
   @override
-  String get gameInstructionsMarioTranslation => '左右移動、ジャンプ、発射を使います。問題や単語を押すと音声が再生され、正しい単語を集めて翻訳を完成します。';
+  String get gameInstructionsMarioTranslation =>
+      '左右移動、ジャンプ、発射を使います。問題や単語を押すと音声が再生され、正しい単語を集めて翻訳を完成します。';
 
   @override
   String get checkOption => 'チェック';
@@ -959,7 +989,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get accountSecurity => 'アカウント保護';
 
   @override
-  String get adminPasswordHelpBody => 'Life Pilot にログインできません。パスワード変更の対応をお願いします。\n\n対応後、このメールアドレスに結果をご返信ください。';
+  String get adminPasswordHelpBody =>
+      'Life Pilot にログインできません。パスワード変更の対応をお願いします。\n\n対応後、このメールアドレスに結果をご返信ください。';
 
   @override
   String adminPasswordHelpEmailUnavailable(String email) {
@@ -973,7 +1004,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminPasswordHelpSubject => 'Life Pilot パスワード変更依頼';
 
   @override
-  String get adminPasswordResetDescription => '依頼者のアカウントメールを入力して一時パスワードを作成します。ユーザーに返信し、ログイン後すぐに変更するよう案内してください。';
+  String get adminPasswordResetDescription =>
+      '依頼者のアカウントメールを入力して一時パスワードを作成します。ユーザーに返信し、ログイン後すぐに変更するよう案内してください。';
 
   @override
   String get adminPasswordResetFailed => '一時パスワードを作成できませんでした。後でもう一度お試しください。';
@@ -997,7 +1029,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminAccountCreateAction => '承認して作成';
 
   @override
-  String get adminAccountCreateAlreadyExists => 'このメールアドレスには既にアカウントがあります。パスワード再設定を使用してください。';
+  String get adminAccountCreateAlreadyExists =>
+      'このメールアドレスには既にアカウントがあります。パスワード再設定を使用してください。';
 
   @override
   String get adminAccountCreateFailed => 'アカウントを作成できませんでした。後でもう一度お試しください。';
@@ -1014,7 +1047,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get registrationAdminApprovalTitle => 'アカウント作成を申請';
 
   @override
-  String get registrationAdminApprovalDescription => '登録時のパスワード入力は不要です。メールアドレスを入力し、申請を送信してください。承認後にアカウントが作成されると、管理者から仮パスワードが届きます。';
+  String get registrationAdminApprovalDescription =>
+      '登録時のパスワード入力は不要です。メールアドレスを入力し、申請を送信してください。承認後にアカウントが作成されると、管理者から仮パスワードが届きます。';
 
   @override
   String get registrationAdminApprovalAction => '管理者へメール';
@@ -1028,7 +1062,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get registrationAdminApprovalOpened => 'メールの下書きを開きました。内容を確認して送信してください。アカウントはまだ作成されていません。管理者の承認をお待ちください。';
+  String get registrationAdminApprovalOpened =>
+      'メールの下書きを開きました。内容を確認して送信してください。アカウントはまだ作成されていません。管理者の承認をお待ちください。';
 
   @override
   String get adminTemporaryPasswordCopied => '一時パスワードをコピーしました。';
@@ -1042,7 +1077,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get adminTemporaryPasswordInstruction => 'コピーしてユーザーに返信し、ログイン後すぐに「アカウント保護」で変更するよう案内してください。';
+  String get adminTemporaryPasswordInstruction =>
+      'コピーしてユーザーに返信し、ログイン後すぐに「アカウント保護」で変更するよう案内してください。';
 
   @override
   String get adminTemporaryPasswordLabel => '一時パスワード';
@@ -1093,22 +1129,26 @@ class AppLocalizationsJa extends AppLocalizations {
   String get moduleAuthorization => '機能権限';
 
   @override
-  String get moduleAuthorizationDescription => '一般ユーザーに追加で許可する機能を設定します。ホームと機能メニューに同時に反映されます。';
+  String get moduleAuthorizationDescription =>
+      '一般ユーザーに追加で許可する機能を設定します。ホームと機能メニューに同時に反映されます。';
 
   @override
-  String get moduleAuthorizationLoadFailed => '機能権限を読み込めません。アカウントを確認して再試行してください。';
+  String get moduleAuthorizationLoadFailed =>
+      '機能権限を読み込めません。アカウントを確認して再試行してください。';
 
   @override
   String get moduleAuthorizationNoAccess => '追加機能は許可されていません。';
 
   @override
-  String get moduleAuthorizationNotDeployed => '機能権限が未導入です。先に Supabase で権限 SQL を実行してください。';
+  String get moduleAuthorizationNotDeployed =>
+      '機能権限が未導入です。先に Supabase で権限 SQL を実行してください。';
 
   @override
   String get moduleAuthorizationSaved => '機能権限を更新しました。';
 
   @override
-  String get moduleAuthorizationSaveFailed => '機能権限が正しく更新されませんでした。再検索してお試しください。';
+  String get moduleAuthorizationSaveFailed =>
+      '機能権限が正しく更新されませんでした。再検索してお試しください。';
 
   @override
   String get moduleAuthorizationSearchFirst => '先にユーザーのメールアドレスを入力して検索してください。';
@@ -1123,16 +1163,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get noPasswordError => 'パスワードを入力してください';
 
   @override
-  String get noRecoverySession => 'システムは有効な「検証用資格情報」を見つけられないか、その資格情報の有効期限が切れています';
+  String get noRecoverySession =>
+      'システムは有効な「検証用資格情報」を見つけられないか、その資格情報の有効期限が切れています';
 
   @override
   String get password => 'パスワード';
 
   @override
-  String get passwordDoesNotMeetPolicy => '新しいパスワードがセキュリティ要件を満たしていません。英字、数字、記号を追加してもう一度お試しください。';
+  String get passwordDoesNotMeetPolicy =>
+      '新しいパスワードがセキュリティ要件を満たしていません。英字、数字、記号を追加してもう一度お試しください。';
 
   @override
-  String get passwordHelpDescription => 'パスワードを忘れた場合は管理者にメールしてください。処理後、管理者が返信します。';
+  String get passwordHelpDescription =>
+      'パスワードを忘れた場合は管理者にメールしてください。処理後、管理者が返信します。';
 
   @override
   String get passwordHelpTitle => '管理者によるサポート';
@@ -1144,10 +1187,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get passwordMustBeDifferent => '新しいパスワードは現在のパスワードと異なるものにしてください。';
 
   @override
-  String get passwordReauthenticationRequired => 'セキュリティ保護のため、先にメール認証でパスワードを再設定してください。';
+  String get passwordReauthenticationRequired =>
+      'セキュリティ保護のため、先にメール認証でパスワードを再設定してください。';
 
   @override
-  String get passwordRecoveryChoiceDescription => '確認メールで自分で再設定するか、管理者にメールで依頼してください。';
+  String get passwordRecoveryChoiceDescription =>
+      '確認メールで自分で再設定するか、管理者にメールで依頼してください。';
 
   @override
   String get passwordRecoveryChoiceTitle => '再設定方法を選択';
@@ -1168,7 +1213,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get resetByEmailVerification => '確認メールで再設定';
 
   @override
-  String get resetByEmailVerificationDescription => '新しいパスワードを設定するための安全なリンクをメールで送信します。';
+  String get resetByEmailVerificationDescription =>
+      '新しいパスワードを設定するための安全なリンクをメールで送信します。';
 
   @override
   String get resetPassword => 'パスワード再設定';
@@ -1255,7 +1301,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get userMenuButton => 'ユーザー選択';
 
   @override
-  String get accountDeletionCloudOnly => 'アカウント削除の申請はクラウドモードでのみ利用できます。先に保存先をクラウドに切り替えてください。';
+  String get accountDeletionCloudOnly =>
+      'アカウント削除の申請はクラウドモードでのみ利用できます。先に保存先をクラウドに切り替えてください。';
 
   @override
   String get adminPricingAccountingQuota => '家計簿明細';
@@ -1286,7 +1333,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminPricingDeleted => '料金バージョンを削除しました。';
 
   @override
-  String get adminPricingDeleteInUse => '使用済みのバージョンは変更・削除できません。新しいバージョンを作成してください。';
+  String get adminPricingDeleteInUse =>
+      '使用済みのバージョンは変更・削除できません。新しいバージョンを作成してください。';
 
   @override
   String get adminPricingPriceRule => '無料プランは0、有料プランは0より大きい料金を設定してください。';
@@ -1304,7 +1352,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminPricingImageQuota => '画像容量（MB）';
 
   @override
-  String get adminPricingLocalZeroUnlimited => '端末の基本記録と問題数は0で無制限です。クラウド投稿の上限は別枠です。クラウド回答履歴の0日は保存しません。';
+  String get adminPricingLocalZeroUnlimited =>
+      '端末の基本記録と問題数は0で無制限です。クラウド投稿の上限は別枠です。クラウド回答履歴の0日は保存しません。';
 
   @override
   String get adminPricingMemoryQuota => '思い出';
@@ -1371,21 +1420,24 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminSubscriptionEmail => 'ユーザーEmail';
 
   @override
-  String get adminSubscriptionEmailOrAllHint => 'メールを入力して個別検索。空欄で検索すると全員を表示します。';
+  String get adminSubscriptionEmailOrAllHint =>
+      'メールを入力して個別検索。空欄で検索すると全員を表示します。';
 
   @override
   String get adminSubscriptionAllUsers => '全ユーザーの契約と合計容量';
 
   @override
   String adminSubscriptionActiveCount(int count) {
-    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '有効な上限 $countString 件';
   }
 
   @override
-  String get adminSubscriptionEntitlementDeleted => 'この上限を削除しました。他の上限は保持されています。';
+  String get adminSubscriptionEntitlementDeleted =>
+      'この上限を削除しました。他の上限は保持されています。';
 
   @override
   String get adminSubscriptionEntitlements => '作成済みの上限';
@@ -1394,13 +1446,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminSubscriptionExpiry => '特典期限';
 
   @override
-  String get adminSubscriptionExpiryMustBeFuture => '終了日は現在より後にしてください。同日終了の場合は明日以降を選択してください。';
+  String get adminSubscriptionExpiryMustBeFuture =>
+      '終了日は現在より後にしてください。同日終了の場合は明日以降を選択してください。';
 
   @override
   String get adminSubscriptionSimilarQuotaTitle => '有効な上限があります';
 
   @override
-  String get adminSubscriptionSimilarQuotaMessage => 'このユーザーには有効な上限があります。それでも追加しますか？';
+  String get adminSubscriptionSimilarQuotaMessage =>
+      'このユーザーには有効な上限があります。それでも追加しますか？';
 
   @override
   String get adminSubscriptionAddQuotaConfirm => '追加する';
@@ -1426,7 +1480,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminSubscriptionFree => '無料';
 
   @override
-  String get adminSubscriptionInactiveWarning => '3か月間変更がない場合、アカウントとクラウドデータを削除します。';
+  String get adminSubscriptionInactiveWarning =>
+      '3か月間変更がない場合、アカウントとクラウドデータを削除します。';
 
   @override
   String get adminSubscriptionInvalidExtensionDays => '1～3650日の範囲で入力してください。';
@@ -1499,7 +1554,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminVendorPricingCreated => '主催者料金バージョンを作成しました。';
 
   @override
-  String get adminVendorPricingSubtitle => '今後の購入は最新の有効バージョンを使用し、既存の権利は購入時の内容を保持します。';
+  String get adminVendorPricingSubtitle =>
+      '今後の購入は最新の有効バージョンを使用し、既存の権利は購入時の内容を保持します。';
 
   @override
   String get adminVendorPricingTitle => 'ベンダー料金バージョンを作成';
@@ -1517,10 +1573,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminVendorSubscriptionTitle => '主催者サブスクリプション管理';
 
   @override
-  String get calendarInvitationQuotaExceeded => 'カレンダー共有の上限に達しました。既存の共有を削除するか、プランを変更してください。';
+  String get calendarInvitationQuotaExceeded =>
+      'カレンダー共有の上限に達しました。既存の共有を削除するか、プランを変更してください。';
 
   @override
-  String get dataCleanupCloudExplanation => 'クラウドの超過状況を確認し、超過分のみ、または全データを削除できます。';
+  String get dataCleanupCloudExplanation =>
+      'クラウドの超過状況を確認し、超過分のみ、または全データを削除できます。';
 
   @override
   String get dataStorageCloud => 'クラウド';
@@ -1532,21 +1590,32 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dataStorageLocal => 'このデバイス';
 
   @override
-  String get dataStorageLocalPlanRequired => 'デバイス Plus の支払いと管理者による有効化の後に切り替えてください。';
+  String get dataStorageLocalPlanRequired =>
+      'デバイス Plus の支払いと管理者による有効化の後に切り替えてください。';
 
   @override
-  String get dataStorageLocalWarning => 'ローカルデータは、このデバイス、ブラウザ、現在のブラウザプロファイルでのみ表示できます。別のデバイス、ブラウザ、プロファイルには自動表示されません。アプリの削除やサイト／ブラウザデータの消去で永久に失われる可能性があります。プラン上限内であればクラウドへ戻せます。';
+  String get dataStorageLocalWarning =>
+      'ローカルデータは、このデバイス、ブラウザ、現在のブラウザプロファイルでのみ表示できます。別のデバイス、ブラウザ、プロファイルには自動表示されません。アプリの削除やサイト／ブラウザデータの消去で永久に失われる可能性があります。プラン上限内であればクラウドへ戻せます。';
 
   @override
   String get dataStorageTitle => '保存先';
 
   @override
-  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+  String dataUploadQuotaExceeded(
+    String resource,
+    int used,
+    int incoming,
+    int quota,
+  ) {
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
     final String usedString = usedNumberFormat.format(used);
-    final intl.NumberFormat incomingNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat incomingNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String incomingString = incomingNumberFormat.format(incoming);
-    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat quotaNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String quotaString = quotaNumberFormat.format(quota);
 
     return 'アップロードをキャンセルしました：$resource はクラウドで $usedString 件使用中です。今回 $incomingString 件を追加すると、プラン上限 $quotaString 件を超えます。';
@@ -1559,7 +1628,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dataUploadToCloudAction => 'ローカルデータをクラウドへ移動';
 
   @override
-  String get dataUploadToCloudConfirm => 'クラウドと競合しないデータのみアップロードします。失敗したデータはこの端末に残ります。続行しますか？';
+  String get dataUploadToCloudConfirm =>
+      'クラウドと競合しないデータのみアップロードします。失敗したデータはこの端末に残ります。続行しますか？';
 
   @override
   String get dataUploadToCloudFailed => '一部のデータをアップロードできなかったため、この端末に保持しました。';
@@ -1577,13 +1647,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get quotaFreePeriodClear => '設定を削除';
 
   @override
-  String get quotaFreePeriodClearConfirm => '容量無制限期間を削除しますか？通常のプラン上限が直ちに適用されます。';
+  String get quotaFreePeriodClearConfirm =>
+      '容量無制限期間を削除しますか？通常のプラン上限が直ちに適用されます。';
 
   @override
   String get quotaFreePeriodCleared => '容量無制限キャンペーンを削除しました。';
 
   @override
-  String get quotaFreePeriodDescription => 'この期間に追加するクラウドデータはプラン上限の対象外です。終了後は自動的に通常の上限へ戻ります。';
+  String get quotaFreePeriodDescription =>
+      'この期間に追加するクラウドデータはプラン上限の対象外です。終了後は自動的に通常の上限へ戻ります。';
 
   @override
   String get quotaFreePeriodDisabled => '無効';
@@ -1631,7 +1703,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get quotaFreePeriodTargetAccounts => '対象アカウント';
 
   @override
-  String get quotaFreePeriodTargetAccountsHint => '複数のメールをカンマまたは改行で区切って入力します。空欄の場合はすべての一般ユーザーが対象です。';
+  String get quotaFreePeriodTargetAccountsHint =>
+      '複数のメールをカンマまたは改行で区切って入力します。空欄の場合はすべての一般ユーザーが対象です。';
 
   @override
   String get quotaFreePeriodAllUsers => 'すべての一般ユーザーが対象';
@@ -1642,7 +1715,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get quotaFreePeriodUserBanner => 'キャンペーン期間中は新規データが無制限で、クラウドとこの端末を自由に切り替えられます。終了後は通常のプラン上限に戻ります。';
+  String get quotaFreePeriodUserBanner =>
+      'キャンペーン期間中は新規データが無制限で、クラウドとこの端末を自由に切り替えられます。終了後は通常のプラン上限に戻ります。';
 
   @override
   String get quotaFreePeriodUserBannerShort => 'キャンペーン期間中は新規データが無制限です。';
@@ -1667,10 +1741,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get quotaFreePeriodReminderDays => '終了前の通知日数（任意）';
 
   @override
-  String get quotaFreePeriodReminderDaysHint => '空欄の場合、最終日まで通常のキャンペーン案内のみ表示します。';
+  String get quotaFreePeriodReminderDaysHint =>
+      '空欄の場合、最終日まで通常のキャンペーン案内のみ表示します。';
 
   @override
-  String get quotaFreePeriodReminderDaysInvalid => '通知日数は 1～365 を入力するか、空欄にしてください。';
+  String get quotaFreePeriodReminderDaysInvalid =>
+      '通知日数は 1～365 を入力するか、空欄にしてください。';
 
   @override
   String quotaFreePeriodReminderSummary(int days) {
@@ -1695,7 +1771,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionCommonFeatures => '両プランに含まれる機能';
 
   @override
-  String get subscriptionCommonFeaturesDetail => 'カレンダー、家計簿、ポイント、おすすめイベント・スポット、管理者問題集。本体保存データは無制限です。株式とビジネスプランは管理者専用です。';
+  String get subscriptionCommonFeaturesDetail =>
+      'カレンダー、家計簿、ポイント、おすすめイベント・スポット、管理者問題集。本体保存データは無制限です。株式とビジネスプランは管理者専用です。';
 
   @override
   String get subscriptionCurrentAdmin => '現在の権限：管理者（無制限）';
@@ -1731,13 +1808,16 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get subscriptionPartialExpiryImpact => '他のサブスクリプションは引き続き有効です。終了後の合計利用枠は以下のとおりです。';
+  String get subscriptionPartialExpiryImpact =>
+      '他のサブスクリプションは引き続き有効です。終了後の合計利用枠は以下のとおりです。';
 
   @override
-  String get subscriptionExpiringCloudImpact => '終了後は残りの有効なクラウド枠を適用し、有料枠がなければ無料枠に切り替わります。超過データは猶予期間後に整理対象となります。';
+  String get subscriptionExpiringCloudImpact =>
+      '終了後は残りの有効なクラウド枠を適用し、有料枠がなければ無料枠に切り替わります。超過データは猶予期間後に整理対象となります。';
 
   @override
-  String get subscriptionExpiringLocalImpact => '更新しない場合、端末データは閲覧・削除のみとなり、追加・編集はできません。';
+  String get subscriptionExpiringLocalImpact =>
+      '更新しない場合、端末データは閲覧・削除のみとなり、追加・編集はできません。';
 
   @override
   String get subscriptionQuotaScheduleTitle => '期限後の容量変化';
@@ -1754,7 +1834,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionFreeName => 'クラウド無料プラン';
 
   @override
-  String get subscriptionFreePersonalRecords => 'クラウド保存：カレンダー、家計簿、ポイント、思い出を各30件まで';
+  String get subscriptionFreePersonalRecords =>
+      'クラウド保存：カレンダー、家計簿、ポイント、思い出を各30件まで';
 
   @override
   String get subscriptionFreePrice => 'NT\$0';
@@ -1766,7 +1847,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionImageStorage => '画像容量';
 
   @override
-  String get subscriptionInactiveAccountWarning => '無料アカウントに有効期限はありません。3か月間データの追加・変更がない場合、アカウントとクラウドデータは自動的に削除されます。';
+  String get subscriptionInactiveAccountWarning =>
+      '無料アカウントに有効期限はありません。3か月間データの追加・変更がない場合、アカウントとクラウドデータは自動的に削除されます。';
 
   @override
   String get subscriptionLatestLocalVersionTitle => '次回の支払いに適用されるローカル Plus 版';
@@ -1775,17 +1857,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionLocalAnswerHistory => 'この端末の回答履歴は件数制限なし';
 
   @override
-  String get subscriptionLocalPaidFeature => '契約期間中、この端末の記録と画像は数量制限なし。他の端末には自動表示されません';
+  String get subscriptionLocalPaidFeature =>
+      '契約期間中、この端末の記録と画像は数量制限なし。他の端末には自動表示されません';
 
   @override
   String get subscriptionLocalPublicSubmissionTitle => '公開投稿の上限';
 
   @override
   String subscriptionLocalPublicSubmissionQuota(int events, int attractions) {
-    final intl.NumberFormat eventsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat eventsNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String eventsString = eventsNumberFormat.format(events);
-    final intl.NumberFormat attractionsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String attractionsString = attractionsNumberFormat.format(attractions);
+    final intl.NumberFormat attractionsNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String attractionsString = attractionsNumberFormat.format(
+      attractions,
+    );
 
     return 'おすすめイベント $eventsString 件、おすすめスポット $attractionsString 件';
   }
@@ -1798,7 +1885,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String subscriptionLocalUsage(int used) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
     final String usedString = usedNumberFormat.format(used);
 
     return 'この端末：$usedString 件／制限なし';
@@ -1826,12 +1915,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionNextVersionTitle => '次回支払いに適用される最新版';
 
   @override
-  String subscriptionOverageItem(String resource, int used, int quota, int excess) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+  String subscriptionOverageItem(
+    String resource,
+    int used,
+    int quota,
+    int excess,
+  ) {
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
     final String usedString = usedNumberFormat.format(used);
-    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat quotaNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String quotaString = quotaNumberFormat.format(quota);
-    final intl.NumberFormat excessNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat excessNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String excessString = excessNumberFormat.format(excess);
 
     return '$resource：$usedString/$quotaString（$excessString 件超過）';
@@ -1844,7 +1942,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionPlusName => 'クラウド Plus';
 
   @override
-  String get subscriptionPlusPersonalRecords => 'カレンダー、家計簿、ポイント、思い出のクラウドデータ各300件';
+  String get subscriptionPlusPersonalRecords =>
+      'カレンダー、家計簿、ポイント、思い出のクラウドデータ各300件';
 
   @override
   String get subscriptionPlusPrice => '四半期 NT\$129から';
@@ -1856,7 +1955,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionPurchaseComingSoon => 'アプリ内サブスクリプションは近日公開';
 
   @override
-  String get subscriptionPurchaseExplanation => '現在Plusは購入できません。ストア決済開始後、このページに正式価格、更新条件、購入、購入の復元、サブスクリプション管理を表示します。';
+  String get subscriptionPurchaseExplanation =>
+      '現在Plusは購入できません。ストア決済開始後、このページに正式価格、更新条件、購入、購入の復元、サブスクリプション管理を表示します。';
 
   @override
   String get subscriptionQuarterlyPayment => '四半期料金';
@@ -1865,28 +1965,37 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionQuotaMultiplier => '容量倍率';
 
   @override
-  String get subscriptionQuotaReached => '現在のプランの上限に達しました。古いデータを削除してから追加するか、Plusへアップグレードしてください。';
+  String get subscriptionQuotaReached =>
+      '現在のプランの上限に達しました。古いデータを削除してから追加するか、Plusへアップグレードしてください。';
 
   @override
   String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
     final String usedString = usedNumberFormat.format(used);
-    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat quotaNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String quotaString = quotaNumberFormat.format(quota);
-    final intl.NumberFormat remainingNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat remainingNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String remainingString = remainingNumberFormat.format(remaining);
 
     return 'クラウド上限に達しました。$quotaString 件中 $usedString 件を使用中で、あと $remainingString 件追加できます。古いデータを削除するか、このデバイスへ切り替えるか、Plusへアップグレードしてください。';
   }
 
   @override
-  String get subscriptionRenewalRequired => '変更が拒否されました。利用枠を再読み込みし、解決しない場合は管理者に連絡してください。';
+  String get subscriptionRenewalRequired =>
+      '変更が拒否されました。利用枠を再読み込みし、解決しない場合は管理者に連絡してください。';
 
   @override
   String subscriptionUsage(int used, int quota) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
     final String usedString = usedNumberFormat.format(used);
-    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat quotaNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String quotaString = quotaNumberFormat.format(quota);
 
     return '使用済み $usedString／$quotaString';
@@ -1903,14 +2012,17 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get vendorContentQuotaReached => '公開枠が上限に達しました。公開中の情報を削除するか、主催者プランをアップグレードしてください。';
+  String get vendorContentQuotaReached =>
+      '公開枠が上限に達しました。公開中の情報を削除するか、主催者プランをアップグレードしてください。';
 
   @override
-  String get vendorImageQuotaReached => '画像容量が上限に達しました。画像を削除するか、主催者プランをアップグレードしてください。';
+  String get vendorImageQuotaReached =>
+      '画像容量が上限に達しました。画像を削除するか、主催者プランをアップグレードしてください。';
 
   @override
   String vendorPlanActivityQuota(int count) {
-    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '期限前のイベント投稿は最大 $countString 件';
@@ -1918,7 +2030,8 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String vendorPlanAttractionQuota(int count) {
-    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '期限前のスポット投稿は最大 $countString 件';
@@ -1926,14 +2039,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String vendorPlanImageQuota(int count) {
-    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '画像容量 $countString MB';
   }
 
   @override
-  String get vendorPricingActiveOnlyNote => '利用枠は終了していない情報のみ数えます。終了済みの情報は公開枠を使用しません。';
+  String get vendorPricingActiveOnlyNote =>
+      '利用枠は終了していない情報のみ数えます。終了済みの情報は公開枠を使用しません。';
 
   @override
   String get vendorPricingDescription => '無料で始め、必要に応じて公開件数と分析期間を拡張できます。';
@@ -1949,7 +2064,8 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String vendorQuotaRemaining(int count, String suffix) {
-    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '残り $countString$suffix';
@@ -2004,7 +2120,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get calendarInvitationDuplicate => 'これらの予定はすでにこのアカウントと共有されています。';
 
   @override
-  String get calendarInvitationEventUnavailable => '選択した予定が存在しないか共有できません。更新して選び直してください。';
+  String get calendarInvitationEventUnavailable =>
+      '選択した予定が存在しないか共有できません。更新して選び直してください。';
 
   @override
   String get calendarInvitationFailed => 'カレンダーの招待を更新できませんでした。';
@@ -2030,7 +2147,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get calendarInvitationSent => '招待を送信しました。';
 
   @override
-  String get calendarInvitationStateChanged => '招待の状態が変更されました。更新してもう一度操作してください。';
+  String get calendarInvitationStateChanged =>
+      '招待の状態が変更されました。更新してもう一度操作してください。';
 
   @override
   String get calendarInvite => '閲覧者を招待';
@@ -2255,7 +2373,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventRefreshSucceeded => 'おすすめイベントを更新しました。';
 
   @override
-  String eventRefreshSucceededSummary(int successful, int attempted, int failed) {
+  String eventRefreshSucceededSummary(
+    int successful,
+    int attempted,
+    int failed,
+  ) {
     return '更新完了：$attempted件中$successful件成功、$failed件失敗しました。';
   }
 
@@ -2376,7 +2498,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vendorCreateAccountAction => 'アカウントを作成して投稿';
 
   @override
-  String get vendorCreateAccountDescription => 'アカウントを作成してイベントを投稿し、審査状況の確認や公開情報の更新ができます。';
+  String get vendorCreateAccountDescription =>
+      'アカウントを作成してイベントを投稿し、審査状況の確認や公開情報の更新ができます。';
 
   @override
   String get vendorCreateAccountTitle => 'イベント主催者ですか？';
@@ -2409,7 +2532,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vendorNextStepClickTitle => '閲覧を興味につなげる';
 
   @override
-  String get vendorNextStepExposureMessage => '明確な名称、カバー画像、都市情報で、見つけやすく理解しやすくなります。';
+  String get vendorNextStepExposureMessage =>
+      '明確な名称、カバー画像、都市情報で、見つけやすく理解しやすくなります。';
 
   @override
   String get vendorNextStepExposureTitle => '第一印象をわかりやすく';
@@ -2427,13 +2551,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vendorNextStepGrowingTitle => '情報が行動につながっています';
 
   @override
-  String get vendorNextStepRegistrationMessage => '申込URLが有効で、申込方法と案内が明確か確認してください。';
+  String get vendorNextStepRegistrationMessage =>
+      '申込URLが有効で、申込方法と案内が明確か確認してください。';
 
   @override
   String get vendorNextStepRegistrationTitle => '申込をわかりやすく';
 
   @override
-  String get vendorNextStepReviewMessage => 'ここで結果を確認できます。承認後、予定を立てるすべてのユーザーに公開されます。';
+  String get vendorNextStepReviewMessage =>
+      'ここで結果を確認できます。承認後、予定を立てるすべてのユーザーに公開されます。';
 
   @override
   String get vendorNextStepReviewTitle => '投稿を審査中です';
@@ -2481,14 +2607,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String vendorQuarterlyPrice(int price) {
-    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat priceNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String priceString = priceNumberFormat.format(price);
 
     return '四半期 NT\$$priceString';
   }
 
   @override
-  String get vendorRecentSubmissionsEmpty => '投稿はまだありません。最初のイベントまたは観光地を追加してください。';
+  String get vendorRecentSubmissionsEmpty =>
+      '投稿はまだありません。最初のイベントまたは観光地を追加してください。';
 
   @override
   String get vendorRecentSubmissionsTitle => '最近の投稿';
@@ -2497,7 +2625,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vendorRegistrationAnalytics => '同じワークスペースで成果を確認';
 
   @override
-  String get vendorRegistrationDescription => 'イベント、スポット、審査状況を管理する主催者ワークスペースを利用します。';
+  String get vendorRegistrationDescription =>
+      'イベント、スポット、審査状況を管理する主催者ワークスペースを利用します。';
 
   @override
   String get vendorRegistrationFreeStart => '無料の主催者プランから開始';
@@ -2518,10 +2647,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vendorSubmissionBenefitReview => '審査状況が明確';
 
   @override
-  String get vendorSubmissionDescription => '予定を計画しているユーザーにイベントやスポットを届け、公開後も投稿者が管理できます。';
+  String get vendorSubmissionDescription =>
+      '予定を計画しているユーザーにイベントやスポットを届け、公開後も投稿者が管理できます。';
 
   @override
-  String get vendorSubmissionGuideDescription => '正確な日付、会場、主催者、申込URLを入力してください。審査後に公開され、修正すると再審査となります。';
+  String get vendorSubmissionGuideDescription =>
+      '正確な日付、会場、主催者、申込URLを入力してください。審査後に公開され、修正すると再審査となります。';
 
   @override
   String get vendorSubmissionGuideTitle => 'イベントを見つけてもらう';
@@ -2646,7 +2777,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapCoordinateBackfillFailed => '地図座標を補完できませんでした。後でもう一度お試しください。';
 
   @override
-  String mapCoordinateBackfillResult(int saved, int remaining, String coverage) {
+  String mapCoordinateBackfillResult(
+    int saved,
+    int remaining,
+    String coverage,
+  ) {
     return '$saved件を保存、残り$remaining件、カバー率$coverage%。';
   }
 
@@ -2797,7 +2932,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get editRecord => '明細を編集';
 
   @override
-  String get homeInsightConnectAccounts => '収支とポイントのアカウントを選ぶと、予定の完了時にまとめて振り返れます。';
+  String get homeInsightConnectAccounts =>
+      '収支とポイントのアカウントを選ぶと、予定の完了時にまとめて振り返れます。';
 
   @override
   String get quickAddAccounting => 'かんたん収支記録';
@@ -3005,22 +3141,26 @@ class AppLocalizationsJa extends AppLocalizations {
   String get grammarBaseWord => '単語の原形（例：head）';
 
   @override
-  String get grammarQuestionHelp => '一般文法では We are young のような完成した文を入力すると、are が自動的に空欄になります。plural カテゴリーでは head と heads だけを入力します。';
+  String get grammarQuestionHelp =>
+      '一般文法では We are young のような完成した文を入力すると、are が自動的に空欄になります。plural カテゴリーでは head と heads だけを入力します。';
 
   @override
   String get inactiveQuestion => '無効';
 
   @override
-  String get japaneseTranslationQuestionHelp => '問題に日本語、正解に翻訳を入力します。同じグループに3問以上作成してください。';
+  String get japaneseTranslationQuestionHelp =>
+      '問題に日本語、正解に翻訳を入力します。同じグループに3問以上作成してください。';
 
   @override
-  String get koreanTranslationQuestionHelp => '問題に韓国語、正解に翻訳を入力します。同じグループに3問以上作成してください。';
+  String get koreanTranslationQuestionHelp =>
+      '問題に韓国語、正解に翻訳を入力します。同じグループに3問以上作成してください。';
 
   @override
   String get leaveGameConfirmation => 'ゲームを終了して前のページに戻りますか？';
 
   @override
-  String get localQuestionBankOnly => '本体モードでは、この端末の個人問題集のみ使用できます。管理者問題集は利用できません。';
+  String get localQuestionBankOnly =>
+      '本体モードでは、この端末の個人問題集のみ使用できます。管理者問題集は利用できません。';
 
   @override
   String get monominoGameTitle => 'モノミノゲーム';
@@ -3089,7 +3229,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get questionGroupLevelRange => 'level 数字は 1 から 30 の範囲で入力してください。';
 
   @override
-  String get questionHasAnswersDeleteBlocked => 'この問題には解答履歴があるため削除できません。代わりに無効化できます。';
+  String get questionHasAnswersDeleteBlocked =>
+      'この問題には解答履歴があるため削除できません。代わりに無効化できます。';
 
   @override
   String get questionReactivated => '問題を再有効化しました。';
@@ -3119,7 +3260,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sentenceOrWord => '完成した単語または正しい文';
 
   @override
-  String get sentenceQuestionHelp => 'mother や I love apples のように、完成した単語または正しい文だけを入力してください。並べ替え形式に自動変換されます。';
+  String get sentenceQuestionHelp =>
+      'mother や I love apples のように、完成した単語または正しい文だけを入力してください。並べ替え形式に自動変換されます。';
 
   @override
   String get socialTitle => 'ソーシャル';
@@ -3131,7 +3273,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get threeQuestionsRequired => 'このレベルで使用できる問題が、問題集全体で3問以上必要です。';
 
   @override
-  String get translationQuestionHelp => '問題に原文、正解に翻訳を入力します。同じグループに3問以上作成すると、誤答を2つ生成できます。';
+  String get translationQuestionHelp =>
+      '問題に原文、正解に翻訳を入力します。同じグループに3問以上作成すると、誤答を2つ生成できます。';
 
   @override
   String get translationTitle => '翻訳';
@@ -3173,7 +3316,8 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String vendorPlanAnalyticsDays(int count) {
-    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '直近 $countString 日間の分析';
@@ -3310,10 +3454,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get accountDeletionPending => '申請中';
 
   @override
-  String get accountDeletionPendingDescription => 'アカウント削除申請は管理者の確認待ちです。削除を取りやめる場合は、申請の取消を依頼できます。';
+  String get accountDeletionPendingDescription =>
+      'アカウント削除申請は管理者の確認待ちです。削除を取りやめる場合は、申請の取消を依頼できます。';
 
   @override
-  String get accountDeletionRequestDescription => '申請は管理者に送られ、管理者が承認した後にアカウントとデータが削除されます。';
+  String get accountDeletionRequestDescription =>
+      '申請は管理者に送られ、管理者が承認した後にアカウントとデータが削除されます。';
 
   @override
   String get accountMenuAccountDeletion => 'アカウントを削除';
@@ -3325,10 +3471,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get accountMenuDataExport => 'データを出力';
 
   @override
-  String get adminAccountDeletionCancellationConfirmed => '取消を確認し、元の削除申請を削除しました。';
+  String get adminAccountDeletionCancellationConfirmed =>
+      '取消を確認し、元の削除申請を削除しました。';
 
   @override
-  String get adminAccountDeletionCancellationRequested => 'ユーザーがアカウント削除の取消を申請しました。';
+  String get adminAccountDeletionCancellationRequested =>
+      'ユーザーがアカウント削除の取消を申請しました。';
 
   @override
   String get adminAccountDeletionCompleted => 'アカウントと関連データを削除しました。';
@@ -3353,7 +3501,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dataExportIncludedPages => 'ダウンロード内容：カレンダー、思い出、支出、ポイント。';
 
   @override
-  String get dataExportRequestDescription => '個人データを Excel でダウンロードします。おすすめイベントとスポットは含まれません。対象データは Excel 内で確認できます。';
+  String get dataExportRequestDescription =>
+      '個人データを Excel でダウンロードします。おすすめイベントとスポットは含まれません。対象データは Excel 内で確認できます。';
 
   @override
   String get dataExportSummarySheet => 'エクスポート概要';
@@ -3461,7 +3610,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get performanceContents => 'コンテンツ詳細';
 
   @override
-  String get performancePeriodHint => '月を選ぶと、その月に終了する内容のみ表示します。「期限前」は月の選択を解除し、期限前の全内容を表示します。数値は累計です。';
+  String get performancePeriodHint =>
+      '月を選ぶと、その月に終了する内容のみ表示します。「期限前」は月の選択を解除し、期限前の全内容を表示します。数値は累計です。';
 
   @override
   String get performanceNoExpiry => '終了日未設定';
@@ -3487,5 +3637,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get performanceMetricShareExplanation => '分子はこの項目の数値、分母は現在の月と検索条件で絞り込んだ同じ指標の合計です。例：25／100 は25%を表します。ユニーク訪問者数ではありません。';
+  String get performanceMetricShareExplanation =>
+      '分子はこの項目の数値、分母は現在の月と検索条件で絞り込んだ同じ指標の合計です。例：25／100 は25%を表します。ユニーク訪問者数ではありません。';
 }

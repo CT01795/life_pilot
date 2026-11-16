@@ -25,70 +25,13 @@ class _Row extends MapBase<String, dynamic> {
   dynamic remove(Object? key) => data.remove(key);
 }
 
-class _StoredDate implements DateTime {
-  final DateTime value;
-  _StoredDate(this.value);
-  @override
-  bool isBefore(DateTime other) => value.isBefore(other);
-  @override
-  String toString() => throw StateError('Do not stringify stored DateTime');
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final start = DateTime(2026, 10, 1), end = DateTime(2026, 10, 15);
-  test('history date runs preserve strict boundaries and first-row ties', () {
-    final first = _Row('first', '2026-09-30T23:00:00Z');
-    final rows = [
-      for (var i = 0; i < 100; i++) _Row('invalid-$i', 'invalid'),
-      for (var i = 0; i < 100; i++) _Row('future-$i', '2027-01-01'),
-      for (var i = 0; i < 100; i++) _Row('old-$i', '2020-01-01'),
-      first,
-      _Row('same-instant', '2026-10-01T01:00:00+02:00'),
-      for (var i = 0; i < 100; i++) _Row('boundary-$i', '2026-10-01T00:00:00Z'),
-    ];
-    final before = DateTime.utc(2026, 10, 1);
-    expect(ModelLocalEventQuery.hasRowsBefore(rows, before), isTrue);
-    expect(ModelLocalEventQuery.latestRowBefore(rows, before), same(first));
-    expect(rows.every((row) => row.decodes == 0), isTrue);
-  });
-
-  test('metadata date memo never carries boundaries or edits across calls', () {
-    final row = _Row('event', '2026-09-30');
-    final rows = [row, row];
-    expect(ModelLocalEventQuery.hasRowsBefore(rows, start), isTrue);
-    expect(ModelLocalEventQuery.hasRowsBefore(rows, DateTime(2020)), isFalse);
-    row.data['start_date'] = '2027-01-01';
-    expect(ModelLocalEventQuery.latestRowBefore(rows, start), isNull);
-    row.data['start_date'] = '2020-01-01';
-    expect(ModelLocalEventQuery.latestRowBefore(rows, start), same(row));
-    expect(row.decodes, 0);
-  });
-
-  test('metadata supports mixed stored dates, strings and invalid runs', () {
-    final legacy = _Row('legacy', null)
-      ..data['start_date'] = DateTime.utc(2026, 9, 30, 23, 30);
-    final rows = [
-      _Row('old', '2026-09-30T22:00:00Z'),
-      _Row('bad', 'bad'),
-      _Row('bad-again', 'bad'),
-      legacy,
-      _Row('older', '2026-09-30T22:00:00Z'),
-      _Row('missing', null),
-    ];
-    expect(
-      ModelLocalEventQuery.latestRowBefore(rows, DateTime.utc(2026, 10, 1)),
-      same(legacy),
-    );
-    expect(rows.every((row) => row.decodes == 0), isTrue);
-  });
-
   test('cancelled local iteration decodes no first event', () {
     final rows = [_Row('a', '2026-10-10')];
     expect(
-      ModelLocalEventQuery.select(
+      ModelLocalEventQuery.iterate(
         rows,
         start: start,
         end: end,
@@ -117,7 +60,7 @@ void main() {
     final rows = List.generate(20, (i) => _Row('$i', '2026-10-10'));
     var checks = 0;
     expect(
-      ModelLocalEventQuery.select(
+      ModelLocalEventQuery.iterate(
         rows,
         start: start,
         end: end,
@@ -149,7 +92,7 @@ void main() {
       for (var i = 0; i < 100; i++) _Row('visible-$i', '2026-10-10'),
       for (var i = 0; i < 100; i++) _Row('future-$i', '2027-01-01'),
     ];
-    final result = ModelLocalEventQuery.select(
+    final result = ModelLocalEventQuery.iterate(
       rows,
       start: start,
       end: end,
@@ -201,7 +144,7 @@ void main() {
       _Row('visible', '2026-10-10'),
     ];
     expect(
-      ModelLocalEventQuery.select(
+      ModelLocalEventQuery.iterate(
         rows,
         start: start,
         end: end,
@@ -209,93 +152,6 @@ void main() {
       ['n1', 'n2', 'b1', 'b2', 'visible'],
     );
   });
-  test('history metadata directly compares stored DateTime values', () {
-    final row = _Row('stored', null);
-    row.data['start_date'] = _StoredDate(DateTime(2026, 9, 30));
-    expect(ModelLocalEventQuery.hasRowsBefore([row], start), isTrue);
-    expect(ModelLocalEventQuery.latestRowBefore([row], start), same(row));
-    expect(row.decodes, 0);
-  });
-  test('history availability stops after the first matching row', () {
-    Iterable<Map<String, dynamic>> rows() sync* {
-      yield _Row('match', '2026-09-30');
-      throw StateError('Do not continue scanning after a match');
-    }
-
-    expect(ModelLocalEventQuery.hasRowsBefore(rows(), start), isTrue);
-  });
-  test('history metadata excludes equal, future and malformed dates', () {
-    final rows = [
-      _Row('equal', '2026-10-01'),
-      _Row('future', '2026-10-02'),
-      _Row('invalid', 'invalid'),
-      _Row('missing', null),
-    ];
-    expect(ModelLocalEventQuery.hasRowsBefore(rows, start), isFalse);
-    expect(ModelLocalEventQuery.latestRowBefore(rows, start), isNull);
-    expect(ModelLocalEventQuery.hasRowsBefore([], start), isFalse);
-    expect(rows.every((row) => row.decodes == 0), isTrue);
-  });
-  test('history existence compares instants rather than date text', () {
-    final row = _Row('offset', '2026-09-30T23:00:00-02:00');
-    expect(
-      ModelLocalEventQuery.hasRowsBefore([row], DateTime.utc(2026, 10, 1)),
-      isFalse,
-    );
-    expect(
-      ModelLocalEventQuery.hasRowsBefore([row], DateTime.utc(2026, 10, 1, 2)),
-      isTrue,
-    );
-  });
-  test('latest equal-date ties keep the original first row', () {
-    final first = _Row('first', '2026-09-30');
-    final second = _Row('second', '2026-09-30');
-    expect(
-      ModelLocalEventQuery.latestRowBefore([first, second], start),
-      same(first),
-    );
-  });
-  test('latest fallback accepts legacy DateTime fields as well as text', () {
-    final row = _Row('legacy', null);
-    row.data['start_date'] = DateTime.utc(2026, 9, 30);
-    expect(ModelLocalEventQuery.latestRowBefore([row], start)?['id'], 'legacy');
-  });
-  test(
-    'latest fallback finds the newest older row without decoding history',
-    () {
-      final rows = [
-        ...List.generate(5000, (i) => _Row('$i', '2020-01-01')),
-        _Row('latest', '2026-09-30T23:59:00'),
-        _Row('excluded', '2026-10-01'),
-        _Row('invalid', 'bad'),
-      ];
-      final result = ModelLocalEventQuery.latestRowBefore(rows, start);
-      expect(result!['id'], 'latest');
-      expect(rows.fold<int>(0, (sum, row) => sum + row.decodes), 0);
-    },
-  );
-
-  test(
-    'latest fallback compares timezone instants and returns null if none',
-    () {
-      final rows = [
-        _Row('earlier', '2026-09-30T23:00:00Z'),
-        _Row('later', '2026-09-30T20:00:00-04:00'),
-      ];
-      expect(
-        ModelLocalEventQuery.latestRowBefore(
-          rows,
-          DateTime.utc(2026, 10, 2),
-        )!['id'],
-        'later',
-      );
-      expect(
-        ModelLocalEventQuery.latestRowBefore(rows, DateTime.utc(2020)),
-        null,
-      );
-      expect(ModelLocalEventQuery.latestRowBefore([], start), null);
-    },
-  );
   test('local iterator decodes only the consumed preview', () {
     final rows = List.generate(1000, (i) => _Row('$i', '2026-10-10'));
     final iterator = ModelLocalEventQuery.iterate(
@@ -321,7 +177,7 @@ void main() {
       _Row('end', '2026-10-15'),
       _Row('after', '2026-10-16'),
     ];
-    final result = ModelLocalEventQuery.select(
+    final result = ModelLocalEventQuery.iterate(
       rows,
       start: start.add(const Duration(hours: 10)),
       end: end,
@@ -331,7 +187,7 @@ void main() {
   });
   test('offset and limit are applied before full record decoding', () {
     final rows = List.generate(10, (i) => _Row('$i', '2026-10-10'));
-    final result = ModelLocalEventQuery.select(
+    final result = ModelLocalEventQuery.iterate(
       rows,
       start: start,
       end: end,
@@ -344,7 +200,7 @@ void main() {
   test('id lookup ignores date window and only decodes matching record', () {
     final rows = [_Row('old', '2020-01-01'), _Row('new', '2026-10-10')];
     expect(
-      ModelLocalEventQuery.select(
+      ModelLocalEventQuery.iterate(
         rows,
         start: start,
         end: end,
@@ -356,7 +212,10 @@ void main() {
   });
   test('undated and malformed dates preserve existing inclusion behavior', () {
     final rows = [_Row('null', null), _Row('bad', 'not a date')];
-    expect(ModelLocalEventQuery.select(rows, start: start, end: end).length, 2);
+    expect(
+      ModelLocalEventQuery.iterate(rows, start: start, end: end).length,
+      2,
+    );
   });
   test('large old history does not decode out-of-window sub-events', () {
     final rows = [
@@ -364,7 +223,7 @@ void main() {
       _Row('visible', '2026-10-10'),
     ];
     expect(
-      ModelLocalEventQuery.select(rows, start: start, end: end).single.id,
+      ModelLocalEventQuery.iterate(rows, start: start, end: end).single.id,
       'visible',
     );
     expect(rows.fold<int>(0, (sum, row) => sum + row.decodes), 1);
@@ -387,7 +246,7 @@ void main() {
           })
           .map((event) => event.id);
       expect(
-        ModelLocalEventQuery.select(
+        ModelLocalEventQuery.iterate(
           rows,
           start: start,
           end: end,

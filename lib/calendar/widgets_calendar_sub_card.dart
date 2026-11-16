@@ -11,12 +11,13 @@ class WidgetsCalendarSubCard extends StatelessWidget {
   final VoidCallback onOpenLink;
   final EventViewModel event;
 
-  const WidgetsCalendarSubCard(
-      {super.key,
-      required this.event,
-      this.onTap,
-      this.onDelete,
-      required this.onOpenLink});
+  const WidgetsCalendarSubCard({
+    super.key,
+    required this.event,
+    this.onTap,
+    this.onDelete,
+    required this.onOpenLink,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,14 +30,13 @@ class WidgetsCalendarSubCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("👉 ${event.name}",
-              style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            "👉 ${event.name}",
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           Text(event.dateRange),
           if (event.tags.isNotEmpty)
-            WidgetsCalendarCard.tags(
-              context: context,
-              typeList: event.tags,
-            ),
+            WidgetsCalendarCard.tags(context: context, typeList: event.tags),
           if (event.hasLocation)
             Text(
               event.locationDisplay,

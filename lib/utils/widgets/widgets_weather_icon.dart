@@ -4,11 +4,7 @@ class WidgetsWeatherIcon extends StatelessWidget {
   final String icon;
   final double size;
 
-  const WidgetsWeatherIcon({
-    super.key,
-    required this.icon,
-    this.size = 40,
-  });
+  const WidgetsWeatherIcon({super.key, required this.icon, this.size = 40});
 
   @override
   Widget build(BuildContext context) {

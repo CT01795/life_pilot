@@ -2,8 +2,8 @@ import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 
-/// Exact account lookup; totals reuse the account-list projection's rules.
-/// Unchanged detail snapshots reuse their total; no account-list read needed.
+/// Exact account lookup backed by the same persistent totals index as the list.
+/// The repository returns data only; controllers remain responsible for state.
 class RepositoryLocalAccountSummary {
   RepositoryLocalAccountSummary({LocalDataStore? store})
     : _store = store ?? LocalDataStore.instance;

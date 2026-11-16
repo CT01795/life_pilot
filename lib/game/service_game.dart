@@ -67,13 +67,21 @@ class ServiceGame {
     required String group,
     String? excludingId,
   }) async {
-    return GameQuestionRowRules.hasDuplicateQuestion(
-      await _localQuestions(tableName),
-      question: question,
-      answer: answer,
-      group: group,
-      excludingId: excludingId,
-    );
+    final questionKey = GameQuestionRowRules.duplicateKey(question);
+    final answerKey = GameQuestionRowRules.duplicateKey(answer);
+    final groupKey = normalizeStringValue(group);
+    return await LocalDataStore.instance.readOnlyFirstMatchingRow(
+          owner: _ownerEmail,
+          resource: tableName,
+          matches: (row) => GameQuestionRowRules.isDuplicateRow(
+            row,
+            questionKey: questionKey,
+            answerKey: answerKey,
+            groupKey: groupKey,
+            excludingId: excludingId,
+          ),
+        ) !=
+        null;
   }
 
   Future<void> _insertAnswer(

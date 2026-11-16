@@ -11,6 +11,7 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
 import 'package:life_pilot/record_statistics/repository_cloud_record_history.dart';
 import 'package:life_pilot/utils/model_local_account_list.dart';
+import 'package:life_pilot/utils/model_record_history_page.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
@@ -116,14 +117,26 @@ class ServiceAccounting {
     required String user,
     String? category, // null = all categories
     int? projectLimit,
+    int? offset,
+    int? limit,
   }) async {
     try {
       if (await _storesLocally) {
         final owner = _localOwner!;
-        final accountRows = await LocalDataStore.instance.readOnlyRows(
-          owner: owner,
-          resource: TableNames.accountingAccount,
-        );
+        final accountRows = offset != null && limit != null
+            ? await LocalDataStore.instance.readOnlyMatchingPage(
+                owner: owner,
+                resource: TableNames.accountingAccount,
+                matches: (row) =>
+                    row[Fields.isValid] == true &&
+                    (category == null || row['category'] == category),
+                offset: offset,
+                limit: limit,
+              )
+            : await LocalDataStore.instance.readOnlyRows(
+                owner: owner,
+                resource: TableNames.accountingAccount,
+              );
         final selected = ModelLocalAccountList.selectAccounts(
           accounts: accountRows,
           category: category,
@@ -173,7 +186,10 @@ class ServiceAccounting {
         if (category != null) {
           query = query.eq('category', category);
         }
-        list = await query.order(Fields.account, ascending: true);
+        final ordered = query.order(Fields.account, ascending: true);
+        list = offset != null && limit != null
+            ? await ordered.range(offset, offset + limit - 1)
+            : await ordered;
       }
 
       return list.map((row) => ModelAccountingAccount.fromRow(row)).toList();
@@ -205,18 +221,16 @@ class ServiceAccounting {
           Fields.isValid: true,
           Fields.createdAt: now,
         };
-        final existing =
-            (await LocalDataStore.instance.list(
-              owner: _localOwner!,
-              resource: TableNames.accountingAccount,
-            )).any(
-              (r) =>
-                  parseStringValue(r[Fields.account]).toLowerCase() ==
-                      name.toLowerCase() &&
-                  r['category'] == category &&
-                  r[Fields.isValid] == true,
-            );
-        if (existing) throw Exception('Account already exists');
+        final existing = await LocalDataStore.instance.readOnlyFirstMatchingRow(
+          owner: _localOwner!,
+          resource: TableNames.accountingAccount,
+          matches: (row) =>
+              parseStringValue(row[Fields.account]).toLowerCase() ==
+                  name.toLowerCase() &&
+              row['category'] == category &&
+              row[Fields.isValid] == true,
+        );
+        if (existing != null) throw Exception('Account already exists');
         await LocalDataStore.instance.put(
           owner: _localOwner!,
           resource: TableNames.accountingAccount,
@@ -294,29 +308,28 @@ class ServiceAccounting {
   Future<void> deleteAccount({required String accountId}) async {
     try {
       if (await _storesLocally) {
-        final rows = await LocalDataStore.instance.list(
+        final account = await LocalDataStore.instance.readOnlyRow(
           owner: _localOwner!,
           resource: TableNames.accountingAccount,
+          id: accountId,
         );
-        final matches = rows.where(
-          (row) => parseStringValue(row[Fields.id]) == accountId,
-        );
-        if (matches.isNotEmpty) {
+        if (account != null) {
           await LocalDataStore.instance.put(
             owner: _localOwner!,
             resource: TableNames.accountingAccount,
             id: accountId,
-            data: {...matches.first, Fields.isValid: false},
+            data: {...account, Fields.isValid: false},
             syncState: LocalSyncState.modifiedLocally,
           );
         }
-        final settings = await LocalDataStore.instance.list(
+        final setting = await LocalDataStore.instance.readOnlyRow(
           owner: _localOwner!,
           resource: TableNames.dashboardSetting,
+          id: _localOwner!,
         );
-        for (final setting in settings) {
+        if (setting != null) {
           if (parseStringValue(setting['accounting_account_id']) != accountId) {
-            continue;
+            return;
           }
           await LocalDataStore.instance.put(
             owner: _localOwner!,
@@ -387,7 +400,7 @@ class ServiceAccounting {
   }
 
   // ===== 明細 =====
-  Future<List<ModelAccountingDetail>> fetchRecordsPage({
+  Future<ModelRecordHistoryPage<ModelAccountingDetail>> fetchRecordsPage({
     required String accountId,
     required String type,
     required DateTime dateFrom,
@@ -407,7 +420,12 @@ class ServiceAccounting {
         includeLatestFallback: includeLatestFallback,
         includeReservedRecords: includeReservedRecords,
       );
-      return page.rows.map((row) => _mapDetail(row, page.total)).toList();
+      return ModelRecordHistoryPage(
+        rows: page.rows.map((row) => _mapDetail(row, page.total)).toList(),
+        total: page.total,
+        nextBefore: page.nextBefore,
+        nextDate: page.nextDate,
+      );
     }
     final upperBound = recordDayUpperBound(dateTo);
     final combinedRows = await _cloudHistory.window(
@@ -421,93 +439,14 @@ class ServiceAccounting {
       includeReserved: includeReservedRecords,
       includeLatest: includeLatestFallback,
     );
-    final result = List<Map<String, dynamic>>.from(combinedRows.rows);
-    final owner = _localOwner;
-    if (owner != null && await _storesLocally) {
-      final localRows = await LocalDataStore.instance.list(
-        owner: owner,
-        resource: TableNames.accountingDetail,
-      );
-      result.addAll(
-        localRows.where(
-          (row) =>
-              recordRowMatchesAccountAndType(
-                row,
-                accountId: accountId,
-                type: type,
-              ) &&
-              recordRowIsInRange(
-                row,
-                from: dateFrom,
-                upperBound: upperBound,
-                includeReservedRecords: includeReservedRecords,
-              ),
-        ),
-      );
-    }
-    var balance = combinedRows.total;
-    if (owner != null && await _storesLocally) {
-      final allLocal = await LocalDataStore.instance.list(
-        owner: owner,
-        resource: TableNames.accountingDetail,
-      );
-      balance += allLocal
-          .where(
-            (row) =>
-                parseStringValue(row['account_id']) == accountId &&
-                parseStringValue(row['type']) == type,
-          )
-          .fold<num>(0, (sum, row) => sum + parseNumValue(row['value']));
-    }
-    final unique = uniqueRecordRowsNewestFirst(result);
-    return unique.map((detail) => _mapDetail(detail, balance)).toList();
-  }
-
-  Future<bool> hasRecordsBefore({
-    required String accountId,
-    required String type,
-    required DateTime before,
-  }) async {
-    if (await _storesLocally) {
-      return _localHistory.hasRecordsBefore(
-        owner: _localOwner!,
-        resource: TableNames.accountingDetail,
-        accountId: accountId,
-        type: type,
-        before: before,
-      );
-    }
-    return await _cloudHistory.latestBefore(
-          supabase,
-          table: TableNames.accountingDetail,
-          accountId: accountId,
-          type: type,
-          before: before,
-          rememberForNextPage: true,
-        ) !=
-        null;
-  }
-
-  Future<DateTime?> latestRecordDateBefore({
-    required String accountId,
-    required String type,
-    required DateTime before,
-  }) async {
-    if (await _storesLocally) {
-      return _localHistory.latestRecordDateBefore(
-        owner: _localOwner!,
-        resource: TableNames.accountingDetail,
-        accountId: accountId,
-        type: type,
-        before: before,
-      );
-    }
-    return _cloudHistory.latestBefore(
-      supabase,
-      table: TableNames.accountingDetail,
-      accountId: accountId,
-      type: type,
-      before: before,
+    final unique = uniqueRecordRowsNewestFirst(combinedRows.rows);
+    return ModelRecordHistoryPage(
+      rows: unique
+          .map((detail) => _mapDetail(detail, combinedRows.total))
+          .toList(),
+      total: combinedRows.total,
+      nextBefore: combinedRows.nextBefore,
+      nextDate: combinedRows.nextDate,
     );
   }
 
@@ -651,27 +590,19 @@ class ServiceAccounting {
     try {
       if (await _storesLocally) {
         final owner = _localOwner!;
-        final rows = await LocalDataStore.instance.list(
+        final account = await LocalDataStore.instance.readOnlyRow(
           owner: owner,
           resource: TableNames.accountingAccount,
+          id: accountId,
         );
-        final account = rows
-            .where((row) => parseStringValue(row[Fields.id]) == accountId)
-            .firstOrNull;
         if (account == null) {
           throw StateError('Local accounting account not found.');
         }
-        final details = await LocalDataStore.instance.list(
+        final totals = await LocalDataStore.instance.ledgerTotals(
           owner: owner,
           resource: TableNames.accountingDetail,
+          accounts: [(accountId: accountId, currency: currency)],
         );
-        final balance = details
-            .where(
-              (row) =>
-                  parseStringValue(row['account_id']) == accountId &&
-                  parseStringValue(row['currency']) == currency,
-            )
-            .fold<num>(0, (sum, row) => sum + parseNumValue(row['value']));
         await LocalDataStore.instance.put(
           owner: owner,
           resource: TableNames.accountingAccount,
@@ -679,7 +610,7 @@ class ServiceAccounting {
           data: {
             ...account,
             'main_currency': currency,
-            'balance': balance,
+            'balance': totals[(accountId, currency)] ?? 0,
             'exchange_rate': null,
           },
           syncState: LocalSyncState.modifiedLocally,

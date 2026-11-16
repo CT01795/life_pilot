@@ -6,11 +6,12 @@ class ModelPlanSection {
   final List<ModelPlanQuestion> questions;
   final int sortOrder;
 
-  ModelPlanSection(
-      {required this.id,
-      required this.title,
-      required this.questions,
-      this.sortOrder = 0});
+  ModelPlanSection({
+    required this.id,
+    required this.title,
+    required this.questions,
+    this.sortOrder = 0,
+  });
 
   ModelPlanSection copyWith({
     String? id,

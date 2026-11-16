@@ -12,10 +12,6 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/business_plan/repository_business_plan_reads.dart';
 
 class ServiceBusinessPlan {
-  ModelBusinessPlanWindow? _cachedPlanWindow;
-  DateTime? _cachedPlanWindowRequestBefore;
-  bool _cachedPlanWindowIsNextPage = false;
-
   // 1️⃣ 拉模板清單（給使用者選）
   Future<List<ModelPlanTemplate>> fetchTemplates() async {
     try {
@@ -102,55 +98,6 @@ class ServiceBusinessPlan {
     }
   }
 
-  Future<List<ModelBusinessPlan>> fetchPlans({
-    required String user,
-    required DateTime dateFrom,
-    required DateTime dateTo,
-  }) async {
-    try {
-      _requireCurrentBusinessPlanUser(user);
-      final cached = _cachedPlanWindow;
-      if (_cachedPlanWindowIsNextPage &&
-          cached != null &&
-          cached.plans.every(
-            (plan) =>
-                !plan.createdAt.isBefore(dateFrom) &&
-                plan.createdAt.isBefore(dateTo),
-          )) {
-        _cachedPlanWindowIsNextPage = false;
-        return List<ModelBusinessPlan>.of(cached.plans);
-      }
-      final window = await fetchPlanWindow(before: dateTo);
-      _cachePlanWindow(window, requestBefore: dateTo, isNextPage: false);
-      return List<ModelBusinessPlan>.of(window.plans);
-    } on Exception catch (exception) {
-      logger.e(exception);
-      rethrow;
-    }
-  }
-
-  void _requireCurrentBusinessPlanUser(String user) {
-    final current = supabase.auth.currentUser?.email?.trim().toLowerCase();
-    if (current == null || current != user.trim().toLowerCase()) {
-      throw StateError('Business plan account changed');
-    }
-  }
-
-  void _cachePlanWindow(
-    ModelBusinessPlanWindow window, {
-    required DateTime requestBefore,
-    required bool isNextPage,
-  }) {
-    _cachedPlanWindow = window;
-    _cachedPlanWindowRequestBefore = requestBefore;
-    _cachedPlanWindowIsNextPage = isNextPage;
-  }
-
-  bool _sameInstant(DateTime? left, DateTime right) =>
-      left != null &&
-      left.toUtc().millisecondsSinceEpoch ==
-          right.toUtc().millisecondsSinceEpoch;
-
   Future<ModelBusinessPlanWindow> fetchPlanWindow({
     required DateTime before,
     bool seekOlder = false,
@@ -233,33 +180,5 @@ class ServiceBusinessPlan {
         .from(TableNames.businessPlan)
         .update({'status': status})
         .eq(Fields.id, planId);
-  }
-
-  Future<bool> hasPlansBefore({
-    required String user,
-    required DateTime before,
-  }) async {
-    _requireCurrentBusinessPlanUser(user);
-    final cached = _cachedPlanWindow;
-    if (cached != null && _sameInstant(cached.nextBefore, before)) {
-      return cached.hasMore;
-    }
-    final window = await fetchPlanWindow(before: before, seekOlder: true);
-    _cachePlanWindow(window, requestBefore: before, isNextPage: true);
-    return window.plans.isNotEmpty;
-  }
-
-  Future<DateTime?> latestPlanDateBefore({
-    required String user,
-    required DateTime before,
-  }) async {
-    _requireCurrentBusinessPlanUser(user);
-    var window = _cachedPlanWindow;
-    if (!_cachedPlanWindowIsNextPage ||
-        !_sameInstant(_cachedPlanWindowRequestBefore, before)) {
-      window = await fetchPlanWindow(before: before, seekOlder: true);
-      _cachePlanWindow(window, requestBefore: before, isNextPage: true);
-    }
-    return window?.plans.firstOrNull?.createdAt;
   }
 }

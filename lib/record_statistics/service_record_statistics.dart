@@ -14,10 +14,11 @@ class ServiceRecordStatistics {
   static const _maximumLocalProjections = 8;
   final LocalDataStore localStore;
   final String? sharedLedgerId;
-  List<Map<String, dynamic>>? _localSource;
-  Object? _localScope;
-  final Map<(String, String?), ModelLocalRecordStatistics> _localProjections =
-      {};
+  final Map<
+    (String, RecordStatisticsKind, String, String?),
+    (Object, ModelLocalRecordStatistics)
+  >
+  _localProjections = {};
   ServiceRecordStatistics({LocalDataStore? localStore, this.sharedLedgerId})
     : localStore = localStore ?? LocalDataStore.instance;
 
@@ -31,42 +32,37 @@ class ServiceRecordStatistics {
     final table = kind == RecordStatisticsKind.accounting
         ? TableNames.accountingDetail
         : TableNames.pointRecordDetail;
-    final source = await localStore.readOnlyRows(owner: owner, resource: table);
+    final indexed = await localStore.ledgerStatistics(
+      owner: owner,
+      resource: table,
+      accountId: accountId,
+      currency: currency,
+      now: DateTime.now(),
+      history: true,
+      shouldContinue: shouldContinue,
+    );
     // A scope change/timeout may occur while opening the local database.
     // Check before scanning values/dates or replacing the cached projection.
     if (shouldContinue?.call() == false) return null;
-    final zone = DateTime.now();
-    final scope = (
-      owner.toLowerCase(),
-      kind,
-      zone.timeZoneName,
-      zone.timeZoneOffset,
-    );
-    // LocalDataStore replaces its immutable list after writes/deletes/moves.
-    // Never retain an aggregate across a changed resource snapshot or scope.
-    if (!identical(source, _localSource) || scope != _localScope) {
-      _localProjections.clear();
-      _localSource = source;
-      _localScope = scope;
-    }
-    final key = (accountId, currency);
+    final key = (owner.toLowerCase(), kind, accountId, currency);
     // Refresh insertion order on hits. Alternating between recently viewed
     // accounts no longer discards an unchanged immutable-snapshot projection.
     final cached = _localProjections.remove(key);
-    if (cached != null) {
+    if (cached != null && cached.$1 == indexed.revision) {
       _localProjections[key] = cached;
-      return cached;
+      return cached.$2;
     }
     final projection = ModelLocalRecordStatistics(
-      source,
+      indexed.rows,
       accountId: accountId,
       kind: kind,
       currency: currency,
+      totalOverride: indexed.total,
     );
     if (_localProjections.length >= _maximumLocalProjections) {
       _localProjections.remove(_localProjections.keys.first);
     }
-    _localProjections[key] = projection;
+    _localProjections[key] = (indexed.revision, projection);
     return projection;
   }
 

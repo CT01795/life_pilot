@@ -3,7 +3,7 @@ import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_recommendations.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_schedule_query.dart';
-import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_detail_query.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_detail_projection.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
 import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
@@ -18,6 +18,13 @@ class DashboardRepository {
   ({String accountId, AccountingDashboardSummary summary})?
   _bootstrapAccounting;
   ({String accountId, PointDashboardSummary summary})? _bootstrapPoints;
+  List<Map<String, dynamic>> _bootstrapSharedLedgers = const [];
+
+  List<Map<String, dynamic>> takeBootstrapSharedLedgers() {
+    final rows = _bootstrapSharedLedgers;
+    _bootstrapSharedLedgers = const [];
+    return rows;
+  }
 
   String? get _localOwner => supabase.auth.currentUser?.email?.toLowerCase();
 
@@ -38,9 +45,11 @@ class DashboardRepository {
     final query = ModelDashboardScheduleQuery(DateTime.now());
     final localOwner = _localOwner;
     if (localOwner != null && await _storesLocally) {
-      final rows = await LocalDataStore.instance.readOnlyRows(
+      final rows = await LocalDataStore.instance.calendarRowsInRange(
         owner: localOwner,
         resource: TableNames.calendarEvents,
+        start: query.today,
+        end: query.rangeEnd,
       );
       return query.selectLocal(
         rows.where((row) {
@@ -109,13 +118,15 @@ class DashboardRepository {
   }) async {
     _bootstrapAccounting = null;
     _bootstrapPoints = null;
+    _bootstrapSharedLedgers = const [];
     if (await _storesLocally) {
-      final rows = await LocalDataStore.instance.readOnlyRows(
+      final row = await LocalDataStore.instance.readOnlyRow(
         owner: account,
         resource: TableNames.dashboardSetting,
+        id: account.toLowerCase(),
       );
-      if (rows.isNotEmpty) {
-        final saved = DashboardSetting.fromJson(rows.first);
+      if (row != null) {
+        final saved = DashboardSetting.fromJson(row);
         if (saved.accountingAccountId != null || saved.pointAccountId != null) {
           return saved;
         }
@@ -124,10 +135,14 @@ class DashboardRepository {
     }
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
+    final monthStart = DateTime(now.year, now.month);
+    final monthEnd = DateTime(now.year, now.month + 1);
     final result = await supabase.rpc(
-      'get_or_create_my_dashboard_core',
+      'get_or_create_my_dashboard_core_v2',
       params: {
         'p_expected_email': account,
+        'p_month_start': monthStart.toUtc().toIso8601String(),
+        'p_month_end': monthEnd.toUtc().toIso8601String(),
         'p_day_start': start.toUtc().toIso8601String(),
         'p_day_end': start
             .add(const Duration(days: 1))
@@ -135,9 +150,16 @@ class DashboardRepository {
             .toIso8601String(),
       },
     );
-    if (result is! Map || result['setting'] is! Map) {
+    if (result is! Map ||
+        result['setting'] is! Map ||
+        result['shared_ledgers'] is! List) {
       throw const FormatException('Invalid dashboard bootstrap response');
     }
+    _bootstrapSharedLedgers = List<Map<String, dynamic>>.unmodifiable(
+      (result['shared_ledgers'] as List).map(
+        (row) => Map<String, dynamic>.unmodifiable(row as Map),
+      ),
+    );
     final setting = DashboardSetting.fromJson(
       Map<String, dynamic>.from(result['setting'] as Map),
     );
@@ -162,18 +184,18 @@ class DashboardRepository {
     // Local mode must remain independent from Supabase. If the transferred
     // dashboard setting is incomplete, rebuild it from local account rows.
     final accounts = await Future.wait([
-      LocalDataStore.instance.readOnlyRows(
+      LocalDataStore.instance.defaultAccount(
         owner: account,
         resource: TableNames.accountingAccount,
       ),
-      LocalDataStore.instance.readOnlyRows(
+      LocalDataStore.instance.defaultAccount(
         owner: account,
         resource: TableNames.pointRecordAccount,
       ),
     ]);
     final setting = DashboardSetting.fromLocalAccounts(
-      accountingAccounts: accounts[0],
-      pointAccounts: accounts[1],
+      accountingAccounts: [if (accounts[0] != null) accounts[0]!],
+      pointAccounts: [if (accounts[1] != null) accounts[1]!],
     );
     await LocalDataStore.instance.put(
       owner: account,
@@ -389,17 +411,13 @@ class DashboardRepository {
     required String accountId,
     String? currency,
   }) async {
-    final query = ModelDashboardDetailQuery(
-      now: DateTime.now(),
-      accountId: accountId,
-      currency: currency,
-    );
-    final rows = await LocalDataStore.instance.readOnlyRows(
+    final summary = await LocalDataStore.instance.ledgerDaySummary(
       owner: owner,
       resource: resource,
+      accountId: accountId,
+      day: DateTime.now(),
+      currency: currency,
     );
-    return resource == TableNames.pointRecordDetail
-        ? query.selectPoints(rows)
-        : query.selectAccounting(rows);
+    return ModelDashboardDetailProjection(summary.rows, summary.total);
   }
 }

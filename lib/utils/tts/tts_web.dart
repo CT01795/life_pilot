@@ -32,8 +32,9 @@ Future<void> speakWeb(String text, {String? group, bool? isQuestion}) async {
   final utterance = html.SpeechSynthesisUtterance(text.split('/').first.trim());
 
   if (group == null || isQuestion == null) {
-    utterance.lang =
-        RegExp(r'[\u4e00-\u9fff]').hasMatch(text) ? 'zh-TW' : 'en-US';
+    utterance.lang = RegExp(r'[\u4e00-\u9fff]').hasMatch(text)
+        ? 'zh-TW'
+        : 'en-US';
     await _speakOnce(utterance, utterance.text ?? text);
     return;
   }

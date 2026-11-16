@@ -102,15 +102,12 @@ void main() {
   );
 
   test(
-    'bulk deletion and clearing owner records invalidate cached snapshots',
+    'deletion and clearing owner records invalidate cached snapshots',
     () async {
       await put('one');
       await put('two');
       await read();
-      await store.deleteMany(
-        owner: owner,
-        records: [(resource: resource, id: 'one')],
-      );
+      await store.delete(owner: owner, resource: resource, id: 'one');
       expect((await read()).single['id'], 'two');
       await store.deleteAllRecords(owner: owner);
       expect(await read(), isEmpty);

@@ -46,17 +46,18 @@ class ModelAccountingDetail {
     String? secondaryCategory,
   }) {
     return ModelAccountingDetail(
-        id: id,
-        accountId: accountId,
-        createdAt: createdAt,
-        date: date ?? this.date,
-        primaryCategory: primaryCategory ?? this.primaryCategory,
-        secondaryCategory: secondaryCategory ?? this.secondaryCategory,
-        description: description ?? this.description,
-        type: type,
-        value: value ?? this.value,
-        currency: currency ?? this.currency,
-        exchangeRate: exchangeRate ?? this.exchangeRate,
-        balance: balance ?? this.balance);
+      id: id,
+      accountId: accountId,
+      createdAt: createdAt,
+      date: date ?? this.date,
+      primaryCategory: primaryCategory ?? this.primaryCategory,
+      secondaryCategory: secondaryCategory ?? this.secondaryCategory,
+      description: description ?? this.description,
+      type: type,
+      value: value ?? this.value,
+      currency: currency ?? this.currency,
+      exchangeRate: exchangeRate ?? this.exchangeRate,
+      balance: balance ?? this.balance,
+    );
   }
 }

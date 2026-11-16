@@ -27,9 +27,11 @@ class RepositoryLocalEventAccount {
         parseStringValue(row[Fields.id]) == id;
     if (valid(direct, eventId)) return direct;
 
-    final details = await _store.readOnlyRows(
+    final details = await _store.readOnlyMatchingRows(
       owner: owner,
       resource: detailResource,
+      matches: (row) => parseStringValue(row['event_id']) == eventId,
+      cacheScope: eventId,
     );
     final accountId = parseOptionalStringValue(
       latestRecordRowForEvent(details, eventId)?['account_id'],

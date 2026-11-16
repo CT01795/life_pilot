@@ -187,17 +187,10 @@ class _PageBusinessPlanState extends State<_PageBusinessPlanBody> {
 
 Widget _buildPlanHistoryAction(BuildContext context, ControllerBusinessPlan c) {
   final loc = AppLocalizations.of(context)!;
-  if (c.isCheckingPlanHistory || c.isLoadingMorePlans) {
+  if (c.isLoadingMorePlans) {
     return const Padding(
       padding: EdgeInsets.all(16),
       child: CircularProgressIndicator(),
-    );
-  }
-  if (c.planHistoryError != null) {
-    return TextButton.icon(
-      onPressed: c.retryPlanHistory,
-      icon: const Icon(Icons.refresh),
-      label: Text(loc.retry),
     );
   }
   if (c.loadMorePlansError != null) {
