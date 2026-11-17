@@ -58,7 +58,10 @@ class ServiceGame {
       DataStorageLocation.local;
 
   Future<List<Map<String, dynamic>>> _localQuestions(String tableName) =>
-      LocalDataStore.instance.list(owner: _ownerEmail, resource: tableName);
+      LocalDataStore.instance.readOnlyRows(
+        owner: _ownerEmail,
+        resource: tableName,
+      );
 
   Future<bool> _hasLocalDuplicate({
     required String tableName,
@@ -134,6 +137,7 @@ class ServiceGame {
           Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
         },
       );
+      invalidateLocalProgress();
       return;
     }
     await supabase.from(TableNames.gameUser).insert({
@@ -590,11 +594,13 @@ class ServiceGame {
         )
         .where((category) => category.isNotEmpty)
         .toSet();
-    categories.addAll(
-      (await _localQuestions(TableNames.gameSocialScenarios))
-          .map((row) => parseStringValue(row['category']))
-          .where((value) => value.isNotEmpty),
-    );
+    if (localMode) {
+      categories.addAll(
+        (await _localQuestions(TableNames.gameSocialScenarios))
+            .map((row) => parseStringValue(row['category']))
+            .where((value) => value.isNotEmpty),
+      );
+    }
     return categories.toList()..sort();
   }
 
