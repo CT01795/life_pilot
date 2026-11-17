@@ -1,0 +1,56 @@
+{
+  "verified_on": "2026-11-10",
+  "project_ref": "ccktdpycnferbrjrdtkp",
+  "project_name": "life-pilot-2025",
+  "environment": "production",
+  "removed": {
+    "public.life_pilot_has_active_cloud_plus()": true,
+    "public.life_pilot_subscription_plan_for_user(uuid)": true
+  },
+  "before": {
+    "remaining_functions": {
+      "count": 207,
+      "hash": "0c4d293e443d272438663a9f7557918b"
+    },
+    "policies": {
+      "count": 125,
+      "hash": "a67077dceccea502460f903a96037356"
+    },
+    "triggers": {
+      "count": 83,
+      "hash": "30bd7ed933b88a27c4a2802f1010404e"
+    },
+    "role_settings": {
+      "count": 15,
+      "hash": "8a225e73204fe5492101419e441bb5b7"
+    }
+  },
+  "after": {
+    "remaining_functions": {
+      "count": 207,
+      "hash": "0c4d293e443d272438663a9f7557918b"
+    },
+    "policies": {
+      "count": 125,
+      "hash": "a67077dceccea502460f903a96037356"
+    },
+    "triggers": {
+      "count": 83,
+      "hash": "30bd7ed933b88a27c4a2802f1010404e"
+    },
+    "role_settings": {
+      "count": 15,
+      "hash": "8a225e73204fe5492101419e441bb5b7"
+    }
+  },
+  "unchanged": {
+    "remaining_functions": true,
+    "policies": true,
+    "triggers": true,
+    "role_settings": true
+  },
+  "notes": [
+    "The function count excludes the two retirement targets in both snapshots.",
+    "This verifies database object definitions and settings, not authenticated UI flows."
+  ]
+}

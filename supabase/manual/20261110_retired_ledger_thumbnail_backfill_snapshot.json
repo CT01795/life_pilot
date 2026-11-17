@@ -1,0 +1,21 @@
+{
+  "captured_on": "2026-11-10",
+  "project_ref": "ccktdpycnferbrjrdtkp",
+  "project_name": "life-pilot-2025",
+  "environment": "production",
+  "function": {
+    "signature": "public.backfill_my_ledger_thumbnail(text,uuid,text,text)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres",
+      "service_role=X/postgres"
+    ],
+    "definition": "CREATE OR REPLACE FUNCTION public.backfill_my_ledger_thumbnail(p_resource text, p_account_id uuid, p_original_hash text, p_thumbnail text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\ndeclare v_owner text := public.life_pilot_user_email(); v_updated bigint;\r\nbegin\r\n  if auth.uid() is null or nullif(v_owner, '') is null then\r\n    raise exception 'authentication_required' using errcode = '42501';\r\n  end if;\r\n  if p_resource is null or p_resource not in ('accounting_account', 'point_record_account')\r\n    or p_original_hash is null or p_original_hash !~ '^[0-9a-f]{64}$'\r\n    or p_thumbnail is null or length(p_thumbnail) not between 1 and 65536\r\n    or (p_thumbnail not like 'iVBORw0KGgo%' and p_thumbnail not like '/9j/%') then\r\n    raise exception 'invalid_ledger_thumbnail' using errcode = '22023';\r\n  end if;\r\n  execute format('update public.%I set thumbnail_base64 = $1\r\n    where id = $2 and lower(trim(created_by)) = $3 and is_valid\r\n      and thumbnail_base64 is null\r\n      and encode(sha256(convert_to(master_graph_url, ''UTF8'')), ''hex'') = $4', p_resource)\r\n    using p_thumbnail, p_account_id, v_owner, p_original_hash;\r\n  get diagnostics v_updated = row_count;\r\n  return jsonb_build_object('updated', v_updated > 0);\r\nend;\r\n$function$\n"
+  },
+  "dependency_audit": {
+    "source_callers": [],
+    "catalog_dependents": []
+  },
+  "replacement": "public.upgrade_my_ledger_thumbnail(text,uuid,text,text,text)"
+}

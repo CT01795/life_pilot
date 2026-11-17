@@ -1,0 +1,31 @@
+{
+  "captured_on": "2026-11-10",
+  "project_ref": "ccktdpycnferbrjrdtkp",
+  "project_name": "life-pilot-2025",
+  "environment": "production",
+  "functions": [
+    {
+      "signature": "public.life_pilot_has_active_cloud_plus()",
+      "owner": "postgres",
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.life_pilot_has_active_cloud_plus()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\n  select exists (\r\n    select 1\r\n    from public.get_my_subscription_status() status\r\n    where lower(coalesce(status.plan, '')) = 'plus'\r\n      and lower(coalesce(status.storage_plan, 'cloud')) = 'cloud'\r\n      and lower(coalesce(status.status, 'inactive')) in ('active', 'canceled')\r\n      and (\r\n        status.current_period_end is null\r\n        or status.current_period_end > now()\r\n      )\r\n  );\r\n$function$\n"
+    },
+    {
+      "signature": "public.life_pilot_subscription_plan_for_user(uuid)",
+      "owner": "postgres",
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.life_pilot_subscription_plan_for_user(p_user_id uuid)\n RETURNS text\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\n  select case\r\n    when coalesce(s.unlimited_quota, false)\r\n      and coalesce(s.current_period_end, s.expires_at) > now() then 'plus'\r\n    when s.plan = 'plus' and s.status in ('active','trialing')\r\n      and coalesce(s.current_period_end, s.expires_at) > now() then 'plus'\r\n    else 'free' end\r\n  from (select p_user_id as id) x\r\n  left join public.user_subscriptions s on s.user_id = x.id;\r\n$function$\n"
+    }
+  ],
+  "dependency_audit": {
+    "source_callers": [],
+    "catalog_dependents": [],
+    "object_refs": []
+  }
+}

@@ -20,6 +20,37 @@
   public 函式的定義／擁有者／ACL，以及觸發器、政策與角色設定摘要完全一致。
   此為資料庫物件驗證，不代表已完成登入後的實機操作測試。
 
+## 2026-11-10 訂閱 helper
+
+- `20261110_retire_subscription_helpers.sql`：退役兩個已確認無內外部呼叫者的
+  訂閱 helper。
+- `20261110_retired_subscription_helpers_snapshot.json`：正式資料庫刪除前的
+  完整定義、擁有者、ACL 與依賴盤點。
+- `20261110_retired_subscription_helpers_verification.json`：保存正式環境的
+  移除結果與前後安全指紋。
+- 正式環境已移除
+  `life_pilot_has_active_cloud_plus()` 與
+  `life_pilot_subscription_plan_for_user(uuid)`。
+- 其餘 207 個 public 函式、125 個 RLS policy、83 個 trigger 與 15 筆角色設定
+  的數量及內容指紋前後一致。
+
+## 2026-11-10 舊縮圖 helper
+
+- `20261110_retire_legacy_ledger_thumbnail_backfill.sql`：正式環境手動退役
+  `backfill_my_ledger_thumbnail(text,uuid,text,text)`。
+- `20261110_retired_ledger_thumbnail_backfill_snapshot.json`：保存刪除前的
+  定義、擁有者、ACL 與替代函式。
+- 對應 migration 為
+  `../migrations/20261110000100_retire_legacy_ledger_thumbnail_backfill.sql`，
+  避免新專案、分支或資料庫重建後再次留下舊 RPC。
+- 現行 App 使用
+  `upgrade_my_ledger_thumbnail(text,uuid,text,text,text)`，舊 helper 不再使用。
+- 正式環境已完成退役，且兩份縮圖 migration 都已登記為 applied。
+- `20261110_retired_ledger_thumbnail_backfill_verification.json` 保存退役後驗證。
+  既有 JPEG migration 重新建立新版 helper 時將來源換行由 CRLF 正規化為 LF，
+  因此原始函式雜湊不同；函式內容、擁有者與 ACL 等價，RLS、trigger 與角色設定
+  前後一致。
+
 ## 安全原則
 
 1. 每次執行前重新核對正式環境；曾經無依賴不代表日後永遠無依賴。

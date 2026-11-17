@@ -1,0 +1,65 @@
+{
+  "verified_on": "2026-11-10",
+  "project_ref": "ccktdpycnferbrjrdtkp",
+  "project_name": "life-pilot-2025",
+  "environment": "production",
+  "removed": {
+    "public.backfill_my_ledger_thumbnail(text,uuid,text,text)": true
+  },
+  "replacement": {
+    "signature": "public.upgrade_my_ledger_thumbnail(text,uuid,text,text,text)",
+    "present": true,
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres",
+      "service_role=X/postgres"
+    ],
+    "definition_matches_migration": true
+  },
+  "before": {
+    "remaining_functions": {
+      "count": 206,
+      "raw_hash": "d94082eaf045326c3845bb451b4fcd73"
+    },
+    "policies": {
+      "count": 125,
+      "hash": "a67077dceccea502460f903a96037356"
+    },
+    "triggers": {
+      "count": 83,
+      "hash": "30bd7ed933b88a27c4a2802f1010404e"
+    },
+    "role_settings": {
+      "count": 15,
+      "hash": "8a225e73204fe5492101419e441bb5b7"
+    }
+  },
+  "after_migration_sync": {
+    "remaining_functions": {
+      "count": 206,
+      "raw_hash": "3cd8295259fd09a5becc71d44c5952ae"
+    },
+    "policies": {
+      "count": 125,
+      "hash": "a67077dceccea502460f903a96037356"
+    },
+    "triggers": {
+      "count": 83,
+      "hash": "30bd7ed933b88a27c4a2802f1010404e"
+    },
+    "role_settings": {
+      "count": 15,
+      "hash": "8a225e73204fe5492101419e441bb5b7"
+    }
+  },
+  "migration_history": {
+    "20261106000100": "applied",
+    "20261110000100": "applied"
+  },
+  "notes": [
+    "The existing JPEG thumbnail migration was not previously recorded remotely, so both thumbnail migrations were applied in order.",
+    "The raw function hash changed because the replacement function was recreated from the LF migration source instead of the prior CRLF source.",
+    "The replacement function body, owner and ACL remain equivalent; RLS policies, triggers and role settings are unchanged."
+  ]
+}
