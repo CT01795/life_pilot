@@ -166,6 +166,8 @@ class _DelayedPointDetailService extends ServicePointRecord {
 }
 
 class _DelayedEventService extends ServiceEvent {
+  @override
+  bool get usesMemoryInitialWindowRpc => false;
   final response = Completer<List<EventItem>?>();
 
   @override

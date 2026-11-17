@@ -8,7 +8,8 @@ import 'package:life_pilot/utils/value_parser.dart';
 class ModelFeedback {
   final int id;
   final String subject;
-  final String content;
+  String content;
+  bool contentLoaded;
   final List<String>? cc;
   List<String>? screenshot; // base64
   bool screenshotsLoaded;
@@ -26,6 +27,7 @@ class ModelFeedback {
     required this.id,
     required this.subject,
     required this.content,
+    this.contentLoaded = true,
     this.cc,
     this.screenshot,
     this.screenshotsLoaded = true,
@@ -43,6 +45,7 @@ class ModelFeedback {
       id: parseIntValue(map[Fields.id]),
       subject: parseStringValue(map['subject']),
       content: parseStringValue(map['content']),
+      contentLoaded: map['content_loaded'] != false,
       cc: (map['cc'] as List<dynamic>?)?.map(parseStringValue).toList(),
       screenshot: (map['screenshot'] as List<dynamic>?)
           ?.map(parseStringValue)
@@ -78,6 +81,8 @@ class ModelFeedback {
         id: id,
         subject: subject,
         content: content,
+        contentLoaded: contentLoaded,
+        screenshotsLoaded: screenshotsLoaded,
         cc: cc,
         screenshot: screenshot,
         screenshotDecoder: _screenshotDecoder,

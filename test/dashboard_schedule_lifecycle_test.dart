@@ -58,6 +58,10 @@ void main() {
         'core' => model.refreshCore(account: 'user'),
         _ => model.refreshTodaySchedule(account: 'user'),
       };
+      Future<void> waitForScheduleStart() async {
+        if (entry != 'schedule') await Future<void>.delayed(Duration.zero);
+      }
+
       setUp(() {
         repository = _Repository();
         locale = ProviderLocale(locale: const Locale('en'));
@@ -73,6 +77,7 @@ void main() {
 
       test('older schedule cannot overwrite the latest refresh', () async {
         final old = load();
+        await waitForScheduleStart();
         final fresh = model.refreshTodaySchedule(account: 'user');
         repository.schedules[1].complete([
           CalendarEvent(id: 'new', name: 'new'),
@@ -87,6 +92,7 @@ void main() {
 
       test('wrong-account calls cannot invalidate an active request', () async {
         final pending = load();
+        await waitForScheduleStart();
         await model.refreshAll(account: 'wrong');
         await model.refreshCore(account: 'wrong');
         expect(repository.schedules.length, 1);
@@ -99,6 +105,7 @@ void main() {
 
       test('confirmed completion is not undone by a stale response', () async {
         final old = load();
+        await waitForScheduleStart();
         await model.completeEvent(id: 'done', account: 'user');
         repository.schedules.single.complete([
           CalendarEvent(id: 'done', name: 'done'),
@@ -109,6 +116,7 @@ void main() {
 
       test('new calendar item survives a pending old response', () async {
         final old = load();
+        await waitForScheduleStart();
         final now = DateTime(2026, 10, 20, 12);
         model.addUpcomingEvent(
           CalendarEvent(id: 'added', name: 'added', startDate: now),
@@ -124,6 +132,7 @@ void main() {
           'old-account failure does not mark new sections as failed',
           () async {
             final old = load();
+            await waitForScheduleStart();
             model.switchAccount('new');
             repository.schedules.single.completeError(
               StateError('old request failed'),

@@ -34,57 +34,6 @@ void main() {
   });
   tearDown(() => client.dispose());
 
-  test('latest date fallback requests only one date without content', () async {
-    response = [
-      {'date': '2026-10-28T00:00:00Z'},
-    ];
-    final date = await ServiceStock(
-      predictionsRepository: repository,
-    ).getLatestDate();
-    expect(date, DateTime.utc(2026, 10, 28));
-    final request = requests.single;
-    expect(request.url.path, '/rest/v1/stock_predicted');
-    expect(request.url.queryParameters['select'], 'date');
-    expect(request.url.queryParameters['order'], 'date.desc.nullslast');
-    expect(request.url.queryParameters['limit'], '1');
-  });
-
-  test('unavailable latest date remains null without a second query', () async {
-    for (final value in [
-      [],
-      [
-        {'date': null},
-      ],
-      [
-        {'date': 'invalid'},
-      ],
-    ]) {
-      response = value;
-      final before = requests.length;
-      expect(await repository.readLatestDate(), isNull);
-      expect(requests.length, before + 1);
-    }
-  });
-
-  test(
-    'latest date failure propagates and a retry observes a new date',
-    () async {
-      final service = ServiceStock(predictionsRepository: repository);
-      status = 403;
-      response = {'code': '42501', 'message': 'permission denied'};
-      await expectLater(
-        service.getLatestDate(),
-        throwsA(isA<PostgrestException>()),
-      );
-      status = 200;
-      response = [
-        {'date': '2026-10-29T00:00:00Z'},
-      ];
-      expect(await service.getLatestDate(), DateTime.utc(2026, 10, 29));
-      expect(requests, hasLength(2));
-    },
-  );
-
   for (final day in [
     DateTime(2026, 10, 28, 23, 59),
     DateTime.utc(2028, 2, 29, 12),

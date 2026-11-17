@@ -148,37 +148,43 @@ void main() {
       );
     },
   );
-  test(
-    'historical chart reads thirteen boundaries, not every historical record',
-    () async {
-      response = {
-        'months': [...List.filled(11, 0), 5.25],
-        'opening': 100,
-        'today': -3.25,
-        'future': 20,
-        'has_history': true,
-      };
-      final now = DateTime(2026, 10, 1);
-      final rows = await ServiceRecordStatistics().read(
-        owner: 'one@example.com',
-        storage: DataStorageLocation.cloud,
-        accountId: '00000000-0000-0000-0000-000000000001',
-        kind: RecordStatisticsKind.accounting,
-        now: now,
-        currency: 'TWD',
-        history: true,
-      );
-      expect(requests, hasLength(1));
-      expect(rows.length, lessThanOrEqualTo(15));
-      final params = jsonDecode(requests.single.body) as Map;
-      expect(params['p_boundaries'], hasLength(13));
-      expect(params['p_currency'], 'TWD');
-      final result = ModelRecordStatistics.fromRows(rows, now: now);
-      expect(result.total, 125.25);
-      expect(result.today, -3.25);
-      expect(result.month, 5.25);
-    },
-  );
+  for (final history in [false, true]) {
+    test(
+      'cloud chart history=$history reads buckets, not raw detail',
+      () async {
+        response = {
+          'months': [...List.filled(11, 0), 5.25],
+          'opening': 100,
+          'today': -3.25,
+          'future': 20,
+          'has_history': true,
+        };
+        final now = DateTime(2026, 10, 1);
+        final rows = await ServiceRecordStatistics().read(
+          owner: 'one@example.com',
+          storage: DataStorageLocation.cloud,
+          accountId: '00000000-0000-0000-0000-000000000001',
+          kind: RecordStatisticsKind.accounting,
+          now: now,
+          currency: 'TWD',
+          history: history,
+        );
+        expect(requests, hasLength(1));
+        expect(
+          requests.single.url.pathSegments.last,
+          'get_my_record_statistics',
+        );
+        expect(rows.length, lessThanOrEqualTo(15));
+        final params = jsonDecode(requests.single.body) as Map;
+        expect(params['p_boundaries'], hasLength(13));
+        expect(params['p_currency'], 'TWD');
+        final result = ModelRecordStatistics.fromRows(rows, now: now);
+        expect(result.total, 125.25);
+        expect(result.today, -3.25);
+        expect(result.month, 5.25);
+      },
+    );
+  }
   test(
     'performance first page includes totals; next page requests details only',
     () async {

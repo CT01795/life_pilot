@@ -27,6 +27,35 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   int _revision = 0;
   final Set<int> _updating = {};
   final _imageLoads = <int, Future<void>>{};
+  final _contentLoads = <int, Future<void>>{};
+
+  Future<void> loadContent(ModelFeedback feedback) {
+    if (!canReadScreenshots(feedback)) {
+      return Future.error(StateError('Feedback request changed'));
+    }
+    if (feedback.contentLoaded) return Future.value();
+    final active = _contentLoads[feedback.id];
+    if (active != null) return active;
+    final revision = _revision;
+    late Future<void> request;
+    request =
+        Future<void>.sync(() async {
+          final content = await _service
+              .loadContent(feedback.id)
+              .timeout(requestTimeout);
+          if (!_active(revision) || !canReadScreenshots(feedback)) {
+            throw StateError('Feedback request changed');
+          }
+          feedback.content = content;
+          feedback.contentLoaded = true;
+        }).whenComplete(() {
+          if (identical(_contentLoads[feedback.id], request)) {
+            _contentLoads.remove(feedback.id);
+          }
+        });
+    _contentLoads[feedback.id] = request;
+    return request;
+  }
 
   /// A retained dialog must not load a row from a previous account or list.
   bool canReadScreenshots(ModelFeedback feedback) =>
@@ -77,6 +106,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     _cursor = null;
     _updating.clear();
     _imageLoads.clear();
+    _contentLoads.clear();
     isLoading = false;
     isLoadingMore = false;
     hasMore = false;

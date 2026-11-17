@@ -29,6 +29,8 @@ class _Auth extends ControllerAuth {
 }
 
 class _Service extends ServiceEvent {
+  @override
+  bool get usesMemoryInitialWindowRpc => false;
   List<EventItem> rows = [
     EventItem(id: 'recent', name: 'Recent', startDate: DateTime.now()),
   ];

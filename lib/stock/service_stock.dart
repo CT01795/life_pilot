@@ -554,8 +554,6 @@ class ServiceStock {
     return tryParseDateTimeValue(result["date"]);
   }
 
-  Future<DateTime?> getLatestDate() => _predictionsRepository.readLatestDate();
-
   Future<List<ModelStock>> getSimpleStrategy(String level) async {
     try {
       // 1️⃣ 找最新日期

@@ -104,9 +104,15 @@ void main() {
         )) {
           body ??= List.generate(51, (i) => summary(i + 1));
         } else {
+          final rpc = request.url.path.endsWith('get_feedback_summary_page');
+          final requestBody = rpc && request.body.isNotEmpty
+              ? jsonDecode(request.body) as Map<String, dynamic>
+              : const <String, dynamic>{};
           final filter = request.url.queryParameters['or'] ?? '';
           final match = RegExp(r'id\.lt\.(\d+)').firstMatch(filter);
-          final before = match == null ? 121 : int.parse(match[1]!);
+          final before =
+              requestBody['p_before_id'] as int? ??
+              (match == null ? 121 : int.parse(match[1]!));
           body ??= [
             for (var i = before - 1; i > 0 && i >= before - 51; i--)
               feedback(i),
@@ -138,18 +144,13 @@ void main() {
       expect(page.rows, hasLength(50));
       expect(page.hasMore, isTrue);
       expect(page.cursor!.id, 71);
-      final q = requests.single.url.queryParameters;
-      expect(q['limit'], '51');
-      expect(q['select'], isNot(contains('screenshot')));
-      expect(q['select']!.split(','), isNot(contains('cc')));
-      expect(q['or'], contains('status.eq.pending'));
-      expect(q['or'], contains('status.eq.in_progress'));
-      expect(
-        q['or'],
-        contains('and(status.is.null,or(is_ok.eq.false,is_ok.is.null))'),
-      );
-      expect(q['order'], contains('created_at.desc.nullslast'));
-      expect(q['order'], contains('id.desc'));
+      final request = requests.single;
+      expect(request.url.path, endsWith('/rpc/get_feedback_summary_page'));
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(body['p_limit'], 51);
+      expect(body['p_statuses'], ['in_progress', 'pending']);
+      expect(body['p_before_created_at'], isNull);
+      expect(body['p_before_id'], isNull);
     },
   );
   test(
@@ -180,14 +181,10 @@ void main() {
         before: const FeedbackCursor(null, 3),
       );
       expect(page.cursor!.createdAt, isNull);
-      expect(
-        requests.single.url.queryParameters['or'],
-        contains('and(created_at.is.null,id.lt.3)'),
-      );
-      expect(
-        requests.single.url.queryParameters['or'],
-        contains('and(status.is.null,is_ok.eq.true)'),
-      );
+      final body = jsonDecode(requests.single.body) as Map<String, dynamic>;
+      expect(body['p_before_created_at'], isNull);
+      expect(body['p_before_id'], 3);
+      expect(body['p_statuses'], ['completed']);
     },
   );
   test(
@@ -411,7 +408,10 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(requests, hasLength(1));
-      expect(requests.single.url.queryParameters['limit'], '51');
+      expect(
+        (jsonDecode(requests.single.body) as Map<String, dynamic>)['p_limit'],
+        51,
+      );
       final loc = AppLocalizations.of(
         tester.element(find.byType(PageFeedbackAdmin)),
       )!;
@@ -423,7 +423,10 @@ void main() {
       await tester.tap(find.text(loc.clickHereToSeeMore));
       await tester.pumpAndSettle();
       expect(requests, hasLength(2));
-      expect(requests.last.url.queryParameters['or'], contains('id.lt.71'));
+      expect(
+        (jsonDecode(requests.last.body) as Map<String, dynamic>)['p_before_id'],
+        71,
+      );
     },
   );
   testWidgets(

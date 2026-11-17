@@ -213,8 +213,9 @@ class ControllerStock extends SafeChangeNotifier {
           .timeout(requestTimeout);
       if (_isDisposed || requestId != _dataRequestId) return;
       _useStocksIfAvailable(updated, requestId);
-      if (updated.isEmpty && stocks.isNotEmpty) {
-        _dashboardLoad = buildDashboard(selectedDate, requestId: requestId);
+      final dashboardDate = selectedDate;
+      if (updated.isEmpty && stocks.isNotEmpty && dashboardDate != null) {
+        _dashboardLoad = buildDashboard(dashboardDate, requestId: requestId);
       }
       if (_isDisposed || requestId != _dataRequestId) return;
       await _dashboardLoad;
@@ -310,16 +311,15 @@ class ControllerStock extends SafeChangeNotifier {
     }
   }
 
-  Future<void> buildDashboard(DateTime? date, {int? requestId}) async {
+  Future<void> buildDashboard(DateTime date, {int? requestId}) async {
     if (_isDisposed) return;
     requestId ??= _dataRequestId;
     final dashboardRequest = ++_dashboardRequestId;
-    date = date ?? await service.getLatestDate().timeout(requestTimeout);
     bool isCurrent() =>
         !_isDisposed &&
         requestId == _dataRequestId &&
         dashboardRequest == _dashboardRequestId;
-    if (!isCurrent() || date == null) {
+    if (!isCurrent()) {
       return;
     }
     // Publish a coherent loading snapshot once, before starting either read.

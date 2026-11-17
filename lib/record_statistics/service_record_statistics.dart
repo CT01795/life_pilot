@@ -2,11 +2,8 @@ import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics.dart';
 import 'package:life_pilot/record_statistics/model_local_record_statistics.dart';
-import 'package:life_pilot/record_statistics/model_record_statistics_query.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/value_parser.dart';
-import 'package:life_pilot/utils/paged_row_reader.dart';
 import 'package:life_pilot/record_statistics/model_record_statistics_buckets.dart';
 
 class ServiceRecordStatistics {
@@ -73,32 +70,16 @@ class ServiceRecordStatistics {
     required RecordStatisticsKind kind,
     String? currency,
   }) async {
-    final points = kind == RecordStatisticsKind.points;
-    if (storage == DataStorageLocation.local) {
-      final projection = await _readLocal(
-        owner: owner,
-        accountId: accountId,
-        kind: kind,
-        currency: currency,
-      );
-      return projection!.total;
+    if (storage != DataStorageLocation.local) {
+      throw StateError('Cloud totals are included in the statistics summary');
     }
-    if (supabase.auth.currentUser?.email?.toLowerCase() !=
-        owner.toLowerCase()) {
-      throw StateError('Account scope changed');
-    }
-    final field = points ? 'points' : 'balance';
-    final row = await supabase
-        .from(
-          points ? TableNames.pointRecordAccount : TableNames.accountingAccount,
-        )
-        .select(field)
-        .eq('id', accountId)
-        .eq('created_by', owner)
-        .eq('is_valid', true)
-        .maybeSingle();
-    if (row == null) throw StateError('Account not accessible');
-    return parseNumValue(row[field]);
+    final projection = await _readLocal(
+      owner: owner,
+      accountId: accountId,
+      kind: kind,
+      currency: currency,
+    );
+    return projection!.total;
   }
 
   Future<List<Map<String, dynamic>>> read({
@@ -126,79 +107,44 @@ class ServiceRecordStatistics {
       if (projection == null || shouldContinue?.call() == false) return [];
       return projection.rows(now: now, history: history);
     }
-    final projection = ModelRecordStatisticsQuery(
-      kind: kind,
-      now: now,
-      currency: currency,
-      history: history,
-    );
     final normalizedOwner = owner.toLowerCase();
-    if (history) {
-      final client = supabase;
-      if (client.auth.currentUser?.email?.toLowerCase() != normalizedOwner) {
-        throw StateError('Account scope changed');
-      }
-      final summary = await client.rpc(
-        'get_my_record_statistics',
-        params: {
-          'p_account_id': accountId,
-          'p_points': kind == RecordStatisticsKind.points,
-          'p_currency': currency,
-          'p_boundaries': List.generate(
-            13,
-            (i) => DateTime(
-              now.year,
-              now.month - 11 + i,
-            ).toUtc().toIso8601String(),
-          ),
-          'p_day_start': DateTime(
-            now.year,
-            now.month,
-            now.day,
-          ).toUtc().toIso8601String(),
-          'p_day_end': DateTime(
-            now.year,
-            now.month,
-            now.day + 1,
-          ).toUtc().toIso8601String(),
-        },
-      );
-      if (shouldContinue?.call() == false) return [];
-      if (client.auth.currentUser?.email?.toLowerCase() != normalizedOwner) {
-        throw StateError('Account scope changed');
-      }
-      if (summary is! Map) {
-        throw const FormatException('Invalid statistics summary');
-      }
-      return ModelRecordStatisticsBuckets.toRows(
-        Map<String, dynamic>.from(summary),
-        now,
-      );
+    final client = supabase;
+    if (client.auth.currentUser?.email?.toLowerCase() != normalizedOwner) {
+      throw StateError('Account scope changed');
     }
-    return readAllPagedRows(
-      shouldContinue: shouldContinue,
-      fetch: (offset, limit) async {
-        if (supabase.auth.currentUser?.email?.toLowerCase() !=
-            normalizedOwner) {
-          throw StateError('Account scope changed');
-        }
-        var query = supabase
-            .from(projection.tableName)
-            .select(projection.columns)
-            .eq('account_id', accountId);
-        if (projection.currency != null) {
-          query = query.eq('currency', projection.currency!);
-        }
-        if (projection.startUtc != null) {
-          query = query
-              .gte('date', projection.startUtc!)
-              .lt('date', projection.endUtc!);
-        }
-        return query
-            .order('date')
-            .order('id')
-            .range(offset, offset + limit - 1);
+    final summary = await client.rpc(
+      'get_my_record_statistics',
+      params: {
+        'p_account_id': accountId,
+        'p_points': kind == RecordStatisticsKind.points,
+        'p_currency': currency,
+        'p_boundaries': List.generate(
+          13,
+          (i) =>
+              DateTime(now.year, now.month - 11 + i).toUtc().toIso8601String(),
+        ),
+        'p_day_start': DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).toUtc().toIso8601String(),
+        'p_day_end': DateTime(
+          now.year,
+          now.month,
+          now.day + 1,
+        ).toUtc().toIso8601String(),
       },
+    );
+    if (shouldContinue?.call() == false) return [];
+    if (client.auth.currentUser?.email?.toLowerCase() != normalizedOwner) {
+      throw StateError('Account scope changed');
+    }
+    if (summary is! Map) {
+      throw const FormatException('Invalid statistics summary');
+    }
+    return ModelRecordStatisticsBuckets.toRows(
+      Map<String, dynamic>.from(summary),
+      now,
     );
   }
 }

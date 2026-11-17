@@ -215,7 +215,7 @@ void main() {
   );
 
   test(
-    'full refresh starts today schedule while settings are loading',
+    'full refresh reuses dashboard bootstrap before reading today schedule',
     () async {
       final repository = _ParallelInitialLoadRepository();
       final model = _model(repository)..switchAccount('user');
@@ -223,10 +223,11 @@ void main() {
       final refresh = model.refreshAll(account: 'user');
       await Future<void>.delayed(Duration.zero);
 
-      expect(repository.todayEventsStarted, isTrue);
+      expect(repository.todayEventsStarted, isFalse);
 
       repository.setting.complete(_setting());
       await refresh;
+      expect(repository.todayEventsStarted, isTrue);
     },
   );
 

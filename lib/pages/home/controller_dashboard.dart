@@ -423,6 +423,9 @@ class ControllerDashboard extends SafeChangeNotifier {
 
     try {
       if (!_isCurrentRequest(account, generation)) return;
+      final setting = await _loadSettings(account, generation);
+      if (!_isCurrentRequest(account, generation)) return;
+
       final todayEventsFuture =
           _loadSection(
             DashboardSection.todaySchedule,
@@ -438,8 +441,6 @@ class ControllerDashboard extends SafeChangeNotifier {
             }
             return todayEvents;
           });
-      final setting = await _loadSettings(account, generation);
-      if (!_isCurrentRequest(account, generation)) return;
 
       final recommendEventsFuture =
           _loadSection(
@@ -545,6 +546,9 @@ class ControllerDashboard extends SafeChangeNotifier {
 
     try {
       if (!_isCurrentRequest(account, generation)) return;
+      final setting = await _loadSettings(account, generation);
+      if (!_isCurrentRequest(account, generation)) return;
+
       final todayEventsFuture =
           _loadSection(
             DashboardSection.todaySchedule,
@@ -560,8 +564,6 @@ class ControllerDashboard extends SafeChangeNotifier {
             }
             return todayEvents;
           });
-      final setting = await _loadSettings(account, generation);
-      if (!_isCurrentRequest(account, generation)) return;
 
       final accountingFuture =
           _loadSection(

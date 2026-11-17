@@ -9,6 +9,7 @@ import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/model_event_page.dart';
 import 'package:life_pilot/event/model_event_load_policy.dart';
+import 'package:life_pilot/event/model_memory_initial_window.dart';
 import 'package:life_pilot/event/model_event_preference.dart';
 import 'package:life_pilot/event/model_event_view_cache.dart';
 import 'package:life_pilot/event/public_event_refresh.dart';
@@ -607,25 +608,43 @@ class ControllerEvent extends SafeChangeNotifier {
       _memoryLoadedEndDate = isMemoryTrace
           ? DateTime(today.year + 2, today.month, today.day)
           : null;
-      final list = await _serviceEvent.getEvents(
-        tableName: _tableName,
-        inputUser: auth.currentAccount,
-        storageLocation: auth.preferredStorage,
-        dateS: isMemoryTrace ? memoryStart : null,
-        dateE: isMemoryTrace ? _memoryLoadedEndDate : null,
-        limit: usesCloudPagination ? _cloudPageSize + 1 : null,
-        onPartialEvents: isMemoryTrace ? publishMemoryPreview : null,
-        shouldContinue: () => _isCurrentEventLoad(generation, revision),
-      );
+      ModelMemoryInitialWindow? initialMemoryWindow;
+      final list =
+          isMemoryTrace &&
+              usesCloudPagination &&
+              _serviceEvent.usesMemoryInitialWindowRpc
+          ? (initialMemoryWindow = await _serviceEvent.getInitialMemoryWindow(
+              from: memoryStart,
+              to: _memoryLoadedEndDate!,
+              limit: _cloudPageSize,
+            )).events
+          : await _serviceEvent.getEvents(
+              tableName: _tableName,
+              inputUser: auth.currentAccount,
+              storageLocation: auth.preferredStorage,
+              dateS: isMemoryTrace ? memoryStart : null,
+              dateE: isMemoryTrace ? _memoryLoadedEndDate : null,
+              limit: usesCloudPagination ? _cloudPageSize + 1 : null,
+              onPartialEvents: isMemoryTrace ? publishMemoryPreview : null,
+              shouldContinue: () => _isCurrentEventLoad(generation, revision),
+            );
       if (!_isCurrentEventLoad(generation, revision)) return;
       var loadedEvents = list ?? [];
-      if (usesCloudPagination) {
+      if (initialMemoryWindow != null) {
+        _hasMoreEvents = initialMemoryWindow.hasPageMore;
+        _nextCloudOffset = loadedEvents.length;
+        _hasMoreMemory = initialMemoryWindow.hasMore;
+        _memoryLoadedStartDate = initialMemoryWindow.windowStart;
+        _memoryLoadedEndDate = initialMemoryWindow.windowEnd;
+      } else if (usesCloudPagination) {
         loadedEvents = _acceptCloudPage(loadedEvents);
       } else {
         _hasMoreEvents = false;
         _nextCloudOffset = 0;
       }
-      if (isMemoryTrace && loadedEvents.isEmpty) {
+      if (isMemoryTrace &&
+          loadedEvents.isEmpty &&
+          initialMemoryWindow == null) {
         final latestOlder = await _serviceEvent.latestEventDateBefore(
           tableName: _tableName,
           before: memoryStart,
@@ -665,7 +684,8 @@ class ControllerEvent extends SafeChangeNotifier {
       _sortRecommendedContent();
       if (isMemoryTrace) {
         _modelEvent.sortMemoryEvents();
-        _memoryLoadedStartDate = memoryStart;
+        _memoryLoadedStartDate =
+            initialMemoryWindow?.windowStart ?? memoryStart;
         if (loadedEvents.isNotEmpty &&
             loadedEvents.every(
               (event) =>
@@ -678,7 +698,9 @@ class ControllerEvent extends SafeChangeNotifier {
                 .reduce((left, right) => left.isBefore(right) ? left : right),
           );
         }
-        if (usesCloudPagination && _hasMoreEvents) {
+        if (initialMemoryWindow != null) {
+          _hasMoreMemory = initialMemoryWindow.hasMore;
+        } else if (usesCloudPagination && _hasMoreEvents) {
           _hasMoreMemory = true;
         } else {
           // The content is ready. Publish it before this optional metadata query.

@@ -2,7 +2,6 @@ import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/stock/model_stock_predictions.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// The newest prediction snapshot and its date are read atomically in one
@@ -11,18 +10,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class RepositoryStockPredictions {
   RepositoryStockPredictions({SupabaseClient? client}) : _client = client;
   final SupabaseClient? _client;
-
-  /// Fallback for callers that need only the date, not the prediction payload.
-  /// Normal initial loading still uses readLatest() in a single request.
-  Future<DateTime?> readLatestDate() async {
-    final rows = await (_client ?? supabase)
-        .from(TableNames.stockPredicted)
-        .select('date')
-        .order('date', ascending: false)
-        .limit(1);
-    if (rows.isEmpty) return null;
-    return tryParseDateTimeValue(rows.first['date']);
-  }
 
   Future<List<ModelStock>> readLatest() async {
     final rows = await (_client ?? supabase)

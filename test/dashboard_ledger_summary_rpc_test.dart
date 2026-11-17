@@ -36,6 +36,16 @@ void main() {
             },
             'points': {'total': 50, 'today_total': 5, 'records': []},
             'shared_ledgers': [],
+            'today_events': [
+              {
+                'id': 'today',
+                'name': 'Today event',
+                'start_date': DateTime.now().toUtc().toIso8601String(),
+                'is_completed': false,
+                'account': 'person@example.com',
+                'is_shared': false,
+              },
+            ],
           }),
           200,
           headers: {'content-type': 'application/json'},
@@ -54,10 +64,12 @@ void main() {
       accountId: 'accounting-id',
     );
     final points = await repository.loadPointSummary(accountId: 'point-id');
+    final today = await repository.loadTodayEvents('person@example.com');
 
     expect(setting.accountingAccountName, '現金');
     expect(accounting.total, 120);
     expect(points.total, 50);
+    expect(today.single.id, 'today');
     expect(requests, hasLength(1));
     expect(
       requests.single.url.path,

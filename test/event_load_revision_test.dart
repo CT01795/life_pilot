@@ -34,6 +34,8 @@ class _Read {
 }
 
 class _Service extends ServiceEvent {
+  @override
+  bool get usesMemoryInitialWindowRpc => false;
   final reads = <_Read>[];
   int olderProbes = 0;
   Completer<DateTime?>? pendingOlder;

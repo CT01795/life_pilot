@@ -32,34 +32,39 @@ class ServiceFeedback {
         before?.id,
       ),
       () async {
-        final statusFilters = [
-          for (final status in selected) 'status.eq.$status',
-          if (statuses.contains('pending'))
-            'and(status.is.null,or(is_ok.eq.false,is_ok.is.null))',
-          if (statuses.contains('completed'))
-            'and(status.is.null,is_ok.eq.true)',
-        ];
-        final filters = ['or(${statusFilters.join(',')})'];
-        if (before != null) {
-          final date = before.createdAt?.toUtc().toIso8601String();
-          filters.add(
-            date == null
-                ? 'and(created_at.is.null,id.lt.${before.id})'
-                : 'or(created_at.lt.$date,and(created_at.eq.$date,id.lt.${before.id}),created_at.is.null)',
-          );
+        final result = await client.rpc(
+          'get_feedback_summary_page',
+          params: {
+            'p_statuses': selected,
+            'p_before_created_at': before?.createdAt?.toUtc().toIso8601String(),
+            'p_before_id': before?.id,
+            'p_limit': FeedbackPage.size + 1,
+          },
+        );
+        if (result is! List) {
+          throw const FormatException('Invalid feedback summary page');
         }
-        final rows = await client
-            .from(TableNames.feedback)
-            .select(
-              'id,subject,content,created_by,created_at,is_ok,deal_by,deal_at,status',
-            )
-            .or('and(${filters.join(',')})')
-            .order('created_at', ascending: false, nullsFirst: false)
-            .order('id', ascending: false)
-            .limit(FeedbackPage.size + 1);
-        return FeedbackPage.fromRows(rows);
+        return FeedbackPage.fromRows(
+          result.map((row) => Map<String, dynamic>.from(row as Map)).toList(),
+        );
       },
     );
+  }
+
+  Future<String> loadContent(int id) async {
+    final client = supabase;
+    final owner = client.auth.currentUser?.id;
+    if (owner == null) throw StateError('Authentication required');
+    final row = await client
+        .from(TableNames.feedback)
+        .select('content')
+        .eq(Fields.id, id)
+        .maybeSingle();
+    if (client.auth.currentUser?.id != owner) {
+      throw StateError('Feedback account changed');
+    }
+    if (row == null) throw StateError('Feedback no longer visible');
+    return parseStringValue(row['content']);
   }
 
   Future<void> sendFeedback({

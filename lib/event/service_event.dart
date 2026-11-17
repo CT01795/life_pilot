@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/event/event_save_exception.dart';
 import 'package:life_pilot/event/event_delete_exception.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/model_memory_initial_window.dart';
 import 'package:life_pilot/event/model_event_load_policy.dart';
 import 'package:life_pilot/event/model_local_event_query.dart';
 import 'package:life_pilot/utils/api.dart';
@@ -23,6 +24,32 @@ import 'package:life_pilot/utils/repository_cloud_gateway.dart';
 import 'package:life_pilot/utils/repository_event_cloud_operations.dart';
 
 class ServiceEvent {
+  /// Tests with deterministic in-memory services can disable the production
+  /// RPC without creating a database client. App instances always use it.
+  bool get usesMemoryInitialWindowRpc => true;
+
+  Future<ModelMemoryInitialWindow> getInitialMemoryWindow({
+    required DateTime from,
+    required DateTime to,
+    required int limit,
+  }) async {
+    final result = await supabase.rpc(
+      'get_my_memory_initial_window',
+      params: {
+        'p_from': from.formatDateString(),
+        'p_to': to.formatDateString(),
+        'p_limit': limit,
+      },
+    );
+    if (result is! Map) {
+      throw const FormatException('Invalid memory initial window response');
+    }
+    return ModelMemoryInitialWindow.fromJson(
+      Map<String, dynamic>.from(result),
+      _decodeEventRow,
+    );
+  }
+
   ServiceEvent({RepositoryEventCloudOperations? cloudOperations})
     : _cloudOperations = cloudOperations ?? RepositoryEventCloudOperations();
 

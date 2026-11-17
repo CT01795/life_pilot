@@ -18,10 +18,15 @@ class _Auth extends ControllerAuth {
   }
 }
 
-Map<String, dynamic> row(int id, {String status = 'pending'}) => {
+Map<String, dynamic> row(
+  int id, {
+  String status = 'pending',
+  bool contentLoaded = true,
+}) => {
   'id': id,
   'subject': 'Feedback $id',
   'content': 'Content',
+  'content_loaded': contentLoaded,
   'created_at': '2026-11-01T00:00:00Z',
   'status': status,
 };
@@ -29,7 +34,7 @@ Map<String, dynamic> row(int id, {String status = 'pending'}) => {
 class _Service extends ServiceFeedback {
   List<Map<String, dynamic>> rows = [row(1)];
   bool more = false, failLoad = false, failUpdate = false, failImages = false;
-  int loads = 0, updates = 0, imageReads = 0;
+  int loads = 0, updates = 0, imageReads = 0, contentReads = 0;
   final cursors = <FeedbackCursor?>[];
   final filters = <Set<String>>[];
   Completer<FeedbackPage>? pending;
@@ -61,6 +66,12 @@ class _Service extends ServiceFeedback {
     imageReads++;
     if (failImages) throw StateError('image failed');
     return images?.future ?? ['encoded'];
+  }
+
+  @override
+  Future<String> loadContent(int id) async {
+    contentReads++;
+    return 'Complete feedback content';
   }
 }
 
@@ -311,6 +322,18 @@ void main() {
     await controller.loadScreenshots(item);
     expect(service.imageReads, 2);
     expect(item.screenshot, ['encoded']);
+  });
+  test('summary content is expanded only when the record is opened', () async {
+    service.rows = [row(1, contentLoaded: false)];
+    await controller.loadFeedback();
+    final item = controller.feedbackList.single;
+    expect(item.contentLoaded, isFalse);
+    expect(service.contentReads, 0);
+    await controller.loadContent(item);
+    await controller.loadContent(item);
+    expect(service.contentReads, 1);
+    expect(item.content, 'Complete feedback content');
+    expect(item.contentLoaded, isTrue);
   });
   test('late private screenshots are discarded after account change', () async {
     await controller.loadFeedback();

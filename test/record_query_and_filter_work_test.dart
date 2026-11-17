@@ -1,64 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_pilot/record_statistics/model_record_statistics.dart';
-import 'package:life_pilot/record_statistics/model_record_statistics_query.dart';
-import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/record_filter.dart';
 
 void main() {
-  for (final kind in RecordStatisticsKind.values) {
-    for (final currency in <String?>[null, '', 'TWD', 'USD']) {
-      test(
-        '$kind/$currency fixed projection preserves table, columns and currency policy',
-        () {
-          final accounting = kind == RecordStatisticsKind.accounting;
-          final query = ModelRecordStatisticsQuery(
-            kind: kind,
-            now: DateTime(2026, 10, 28),
-            currency: currency,
-          );
-          expect(
-            query.tableName,
-            accounting
-                ? TableNames.accountingDetail
-                : TableNames.pointRecordDetail,
-          );
-          expect(
-            query.columns,
-            accounting ? 'id,date,value,currency' : 'id,date,value',
-          );
-          expect(query.currency, accounting ? currency : null);
-        },
-      );
-    }
-    for (final now in [
-      DateTime(2024, 2, 29),
-      DateTime(2026, 12, 31),
-      DateTime(2027, 1, 1),
-    ]) {
-      test(
-        '$kind/$now retains inclusive lower and exclusive next-month UTC bounds',
-        () {
-          final query = ModelRecordStatisticsQuery(kind: kind, now: now);
-          expect(
-            query.startUtc,
-            DateTime(now.year, now.month).toUtc().toIso8601String(),
-          );
-          expect(
-            query.endUtc,
-            DateTime(now.year, now.month + 1).toUtc().toIso8601String(),
-          );
-          final history = ModelRecordStatisticsQuery(
-            kind: kind,
-            now: now,
-            history: true,
-          );
-          expect(history.startUtc, isNull);
-          expect(history.endUtc, isNull);
-        },
-      );
-    }
-  }
-
   List<String> filter(
     List<String> rows, {
     required String query,

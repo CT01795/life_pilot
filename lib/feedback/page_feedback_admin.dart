@@ -195,6 +195,19 @@ class PageFeedbackAdmin extends StatelessWidget {
                                 ? null
                                 : SizedBox(width: 180, child: statusDropdown),
                             onTap: () async {
+                              try {
+                                await controller.loadContent(feedback);
+                              } catch (_) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(loc.dashboardLoadFailed),
+                                    ),
+                                  );
+                                }
+                                return;
+                              }
+                              if (!context.mounted) return;
                               showDialog(
                                 context: context,
                                 builder: (_) => AlertDialog(

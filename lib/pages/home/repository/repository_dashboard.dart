@@ -10,14 +10,21 @@ import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
 import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/in_flight_read_pool.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/service/network_availability.dart';
 
 class DashboardRepository {
+  static final _recommendationCityReads =
+      InFlightReadPool<
+        String,
+        ({List<DashboardCity> events, List<DashboardCity> places})
+      >();
   ({String accountId, AccountingDashboardSummary summary})?
   _bootstrapAccounting;
   ({String accountId, PointDashboardSummary summary})? _bootstrapPoints;
+  List<CalendarEvent>? _bootstrapTodayEvents;
   List<Map<String, dynamic>> _bootstrapSharedLedgers = const [];
 
   List<Map<String, dynamic>> takeBootstrapSharedLedgers() {
@@ -42,6 +49,11 @@ class DashboardRepository {
   }
 
   Future<List<CalendarEvent>> loadTodayEvents(String account) async {
+    final bootstrap = _bootstrapTodayEvents;
+    if (bootstrap != null) {
+      _bootstrapTodayEvents = null;
+      return bootstrap;
+    }
     final query = ModelDashboardScheduleQuery(DateTime.now());
     final localOwner = _localOwner;
     if (localOwner != null && await _storesLocally) {
@@ -118,6 +130,7 @@ class DashboardRepository {
   }) async {
     _bootstrapAccounting = null;
     _bootstrapPoints = null;
+    _bootstrapTodayEvents = null;
     _bootstrapSharedLedgers = const [];
     if (await _storesLocally) {
       final row = await LocalDataStore.instance.readOnlyRow(
@@ -152,12 +165,18 @@ class DashboardRepository {
     );
     if (result is! Map ||
         result['setting'] is! Map ||
+        result['today_events'] is! List ||
         result['shared_ledgers'] is! List) {
       throw const FormatException('Invalid dashboard bootstrap response');
     }
     _bootstrapSharedLedgers = List<Map<String, dynamic>>.unmodifiable(
       (result['shared_ledgers'] as List).map(
         (row) => Map<String, dynamic>.unmodifiable(row as Map),
+      ),
+    );
+    _bootstrapTodayEvents = ModelDashboardScheduleQuery(now).decodeRows(
+      (result['today_events'] as List).map(
+        (row) => Map<String, dynamic>.from(row as Map),
       ),
     );
     final setting = DashboardSetting.fromJson(
@@ -228,10 +247,7 @@ class DashboardRepository {
   }
 
   Future<List<DashboardCity>> loadEventCities() async {
-    await _requireNetworkForLocalCloudContent();
-    final result = await supabase.rpc('get_event_city_counts');
-
-    return (result as List).map((e) => DashboardCity.fromJson(e)).toList();
+    return (await loadRecommendationCityCounts()).events;
   }
 
   Future<List<RecommendedEvent>> loadRecommendEvents(String city) async {
@@ -247,23 +263,27 @@ class DashboardRepository {
   }
 
   Future<List<DashboardCity>> loadPlaceCities() async {
-    await _requireNetworkForLocalCloudContent();
-    final result = await supabase.rpc('get_place_city_counts');
-
-    return (result as List).map((e) => DashboardCity.fromJson(e)).toList();
+    return (await loadRecommendationCityCounts()).places;
   }
 
   Future<({List<DashboardCity> events, List<DashboardCity> places})>
   loadRecommendationCityCounts() async {
     await _requireNetworkForLocalCloudContent();
-    final result = await supabase.rpc('get_home_recommendation_city_counts');
-    if (result is! Map) {
-      throw const FormatException('Invalid recommendation city counts');
-    }
-    List<DashboardCity> decode(Object? value) => (value as List? ?? const [])
-        .map((row) => DashboardCity.fromJson(Map<String, dynamic>.from(row)))
-        .toList(growable: false);
-    return (events: decode(result['events']), places: decode(result['places']));
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) throw StateError('Authentication required');
+    return _recommendationCityReads.read(userId, () async {
+      final result = await supabase.rpc('get_home_recommendation_city_counts');
+      if (result is! Map) {
+        throw const FormatException('Invalid recommendation city counts');
+      }
+      List<DashboardCity> decode(Object? value) => (value as List? ?? const [])
+          .map((row) => DashboardCity.fromJson(Map<String, dynamic>.from(row)))
+          .toList(growable: false);
+      return (
+        events: decode(result['events']),
+        places: decode(result['places']),
+      );
+    });
   }
 
   Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async {
