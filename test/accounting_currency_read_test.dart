@@ -28,6 +28,7 @@ class _Service extends ServiceAccounting {
   Future<List<ModelAccountingAccount>> fetchAccounts({
     required String user,
     String? category,
+    String? searchQuery,
     int? projectLimit,
     int? offset,
     int? limit,

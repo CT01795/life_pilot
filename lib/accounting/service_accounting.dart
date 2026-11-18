@@ -116,6 +116,7 @@ class ServiceAccounting {
   Future<List<ModelAccountingAccount>> fetchAccounts({
     required String user,
     String? category, // null = all categories
+    String? searchQuery,
     int? projectLimit,
     int? offset,
     int? limit,
@@ -123,13 +124,18 @@ class ServiceAccounting {
     try {
       if (await _storesLocally) {
         final owner = _localOwner!;
+        final normalizedSearch = searchQuery?.trim().toLowerCase() ?? '';
         final accountRows = offset != null && limit != null
             ? await LocalDataStore.instance.readOnlyMatchingPage(
                 owner: owner,
                 resource: TableNames.accountingAccount,
                 matches: (row) =>
                     row[Fields.isValid] == true &&
-                    (category == null || row['category'] == category),
+                    (category == null || row['category'] == category) &&
+                    (normalizedSearch.isEmpty ||
+                        parseStringValue(
+                          row[Fields.account],
+                        ).toLowerCase().contains(normalizedSearch)),
                 offset: offset,
                 limit: limit,
               )
@@ -185,6 +191,10 @@ class ServiceAccounting {
             .eq(Fields.isValid, true);
         if (category != null) {
           query = query.eq('category', category);
+        }
+        final normalizedSearch = searchQuery?.trim() ?? '';
+        if (normalizedSearch.isNotEmpty) {
+          query = query.ilike(Fields.account, '%$normalizedSearch%');
         }
         final ordered = query.order(Fields.account, ascending: true);
         list = offset != null && limit != null

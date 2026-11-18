@@ -129,4 +129,45 @@ void main() {
       isTrue,
     );
   });
+
+  test('home recommendations use one combined RPC', () async {
+    final requests = <http.Request>[];
+    final client = SupabaseClient(
+      'https://example.supabase.co',
+      'test-key',
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        return http.Response(
+          jsonEncode({
+            'events': [
+              {'id': 'event', 'name': 'Event'},
+            ],
+            'places': [
+              {'id': 'place', 'name': 'Place'},
+            ],
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+          request: request,
+        );
+      }),
+    );
+    addTearDown(client.dispose);
+    supabase = client;
+
+    final result = await SupabaseDashboardRepository().loadRecommendations(
+      eventCity: '台北',
+      placeCity: '台中',
+    );
+
+    expect(result.events.single.id, 'event');
+    expect(result.places.single.id, 'place');
+    expect(requests, hasLength(1));
+    expect(requests.single.url.path, endsWith('/rpc/get_home_recommendations'));
+    expect(jsonDecode(requests.single.body), {
+      'p_event_city': '台北',
+      'p_place_city': '台中',
+      'p_limit': 5,
+    });
+  });
 }

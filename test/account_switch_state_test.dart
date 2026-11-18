@@ -108,6 +108,7 @@ class _DelayedAccountingService extends ServiceAccounting {
   Future<List<ModelAccountingAccount>> fetchAccounts({
     required String user,
     String? category,
+    String? searchQuery,
     int? projectLimit,
     int? offset,
     int? limit,
@@ -121,6 +122,7 @@ class _DelayedPointService extends ServicePointRecord {
   Future<List<ModelPointRecordAccount>> fetchAccounts({
     required String user,
     String? category,
+    String? searchQuery,
     int? projectLimit,
     int? offset,
     int? limit,

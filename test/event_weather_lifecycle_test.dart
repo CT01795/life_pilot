@@ -239,23 +239,20 @@ void main() {
     expect(weather.calls, isEmpty);
   });
 
-  test(
-    'service stops later locations when scope changes during the first request',
-    () async {
-      final weather = _BatchWeather();
-      var current = true;
-      final pending = weather.preloadWeather(
-        [view('a'), view('b')],
-        tableName: TableNames.recommendPlaces,
-        shouldContinue: () => current,
-      );
-      expect(weather.calls, ['a']);
-      current = false;
-      weather.first.complete(null);
-      expect(await pending, isTrue);
-      expect(weather.calls, ['a']);
-    },
-  );
+  test('service stops the next bounded batch when scope changes', () async {
+    final weather = _BatchWeather();
+    var current = true;
+    final pending = weather.preloadWeather(
+      [view('a'), view('b'), view('c'), view('d')],
+      tableName: TableNames.recommendPlaces,
+      shouldContinue: () => current,
+    );
+    expect(weather.calls, ['a', 'b', 'c']);
+    current = false;
+    weather.first.complete(null);
+    expect(await pending, isTrue);
+    expect(weather.calls, ['a', 'b', 'c']);
+  });
 
   test(
     'service without a lifecycle guard still processes all locations',

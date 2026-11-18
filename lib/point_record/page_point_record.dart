@@ -19,6 +19,7 @@ import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
 import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
+import 'package:life_pilot/utils/widgets/widgets_account_search_field.dart';
 
 class PagePointRecord extends StatelessWidget {
   const PagePointRecord({super.key});
@@ -62,6 +63,8 @@ class _PagePointRecordBody extends StatefulWidget {
 class _PagePointRecordState extends State<_PagePointRecordBody>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final TextEditingController _accountSearchController =
+      TextEditingController();
   bool _didLoadInitialData = false;
 
   @override
@@ -90,6 +93,7 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
 
   @override
   void dispose() {
+    _accountSearchController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -142,6 +146,12 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
     return Consumer<ControllerPointRecordList>(
       builder: (context, controller, _) => Column(
         children: [
+          WidgetsAccountSearchField(
+            controller: _accountSearchController,
+            hintText: AppLocalizations.of(context)!.accountName,
+            onChanged: controller.updateSearchQueryDebounced,
+            onClear: () => controller.applySearchQuery(''),
+          ),
           if (controller.loadError != null)
             WidgetsLoadError(onRetry: () => controller.loadAccounts()),
           Expanded(child: _buildAccountList()),
@@ -153,7 +163,11 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
   Widget _buildAccountList() {
     final scope = context.watch<ModelAuthView?>()?.dataScope;
     final owner = scope?.account;
-    final showShares = owner != null && scope?.storage.name == 'cloud';
+    final listController = context.read<ControllerPointRecordList>();
+    final showShares =
+        owner != null &&
+        scope?.storage.name == 'cloud' &&
+        listController.searchQuery.isEmpty;
     return Selector<ControllerPointRecordList, bool>(
       selector: (_, c) => c.isLoading,
       builder: (context, isLoading, _) {

@@ -31,6 +31,7 @@ class _Accounting extends ServiceAccounting {
   Future<List<ModelAccountingAccount>> fetchAccounts({
     required String user,
     String? category,
+    String? searchQuery,
     int? projectLimit,
     int? offset,
     int? limit,
@@ -52,6 +53,7 @@ class _Points extends ServicePointRecord {
   Future<List<ModelPointRecordAccount>> fetchAccounts({
     required String user,
     String? category,
+    String? searchQuery,
     int? projectLimit,
     int? offset,
     int? limit,

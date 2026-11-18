@@ -231,22 +231,25 @@ void main() {
     },
   );
 
-  test('full refresh publishes each section independently', () async {
+  test('full refresh shares one recommendation result', () async {
     final repository = _ProgressiveFullRepository();
     final model = _model(repository)..switchAccount('user');
 
     final refresh = model.refreshAll(account: 'user');
     await Future<void>.delayed(Duration.zero);
+    repository.accounting.complete(const AccountingDashboardSummary.empty());
     repository.recommendEvents.complete([_event('Event first')]);
     await Future<void>.delayed(Duration.zero);
 
-    expect(model.state.recommendEvents.single.name, 'Event first');
+    expect(model.state.recommendEvents, isEmpty);
     expect(model.state.recommendPlaces, isEmpty);
     expect(model.state.todayIncomeExpense, isEmpty);
     expect(model.state.todayPoints, isEmpty);
 
     repository.recommendPlaces.complete([]);
-    repository.accounting.complete(const AccountingDashboardSummary.empty());
+    await Future<void>.delayed(Duration.zero);
+    expect(model.state.recommendEvents.single.name, 'Event first');
+    expect(model.state.recommendPlaces, isEmpty);
     repository.points.complete(const PointDashboardSummary.empty());
     await refresh;
   });
@@ -288,31 +291,29 @@ void main() {
     final repository = _CityCacheRepository();
     final model = _model(repository)..switchAccount('user');
 
-    await model.loadEventCities('user');
-    await model.loadEventCities('user');
-    await model.loadPlaceCities('user');
-    await model.loadPlaceCities('user');
+    await model.loadRecommendationCities('user');
+    await model.loadRecommendationCities('user');
 
-    expect(repository.eventCalls, 1);
-    expect(repository.placeCalls, 1);
+    expect(repository.calls, 1);
 
-    await model.loadEventCities('user', forceRefresh: true);
-    await model.loadPlaceCities('user', forceRefresh: true);
+    await model.loadRecommendationCities('user', forceRefresh: true);
 
-    expect(repository.eventCalls, 2);
-    expect(repository.placeCalls, 2);
+    expect(repository.calls, 2);
   });
 
   test('city requests in progress are shared by concurrent callers', () async {
     final repository = _PendingCityRepository();
     final model = _model(repository)..switchAccount('user');
 
-    final first = model.loadEventCities('user');
-    final second = model.loadEventCities('user');
+    final first = model.loadRecommendationCities('user');
+    final second = model.loadRecommendationCities('user');
     await Future<void>.delayed(Duration.zero);
 
-    expect(repository.eventCalls, 1);
-    repository.events.complete([]);
+    expect(repository.calls, 1);
+    repository.result.complete((
+      events: const <DashboardCity>[],
+      places: const <DashboardCity>[],
+    ));
     await Future.wait([first, second]);
   });
 
@@ -320,16 +321,22 @@ void main() {
     final repository = _AccountCityRepository();
     final model = _model(repository)..switchAccount('first-user');
 
-    final oldRequest = model.loadEventCities('first-user');
+    final oldRequest = model.loadRecommendationCities('first-user');
     await Future<void>.delayed(Duration.zero);
     model.switchAccount('second-user');
-    final newRequest = model.loadEventCities('second-user');
+    final newRequest = model.loadRecommendationCities('second-user');
 
-    repository.firstEvents.complete([]);
-    repository.secondEvents.complete([]);
+    repository.first.complete((
+      events: const <DashboardCity>[],
+      places: const <DashboardCity>[],
+    ));
+    repository.second.complete((
+      events: const <DashboardCity>[],
+      places: const <DashboardCity>[],
+    ));
     await Future.wait([oldRequest, newRequest]);
 
-    expect(repository.eventCalls, 2);
+    expect(repository.calls, 2);
   });
 
   test(
@@ -699,42 +706,41 @@ class _ClearSelectionRepository extends DashboardRepository {
 }
 
 class _CityCacheRepository extends DashboardRepository {
-  int eventCalls = 0;
-  int placeCalls = 0;
+  int calls = 0;
 
   @override
-  Future<List<DashboardCity>> loadEventCities() async {
-    eventCalls++;
-    return [];
-  }
-
-  @override
-  Future<List<DashboardCity>> loadPlaceCities() async {
-    placeCalls++;
-    return [];
+  Future<({List<DashboardCity> events, List<DashboardCity> places})>
+  loadRecommendationCityCounts() async {
+    calls++;
+    return (events: const <DashboardCity>[], places: const <DashboardCity>[]);
   }
 }
 
 class _PendingCityRepository extends DashboardRepository {
-  final events = Completer<List<DashboardCity>>();
-  int eventCalls = 0;
+  final result =
+      Completer<({List<DashboardCity> events, List<DashboardCity> places})>();
+  int calls = 0;
 
   @override
-  Future<List<DashboardCity>> loadEventCities() {
-    eventCalls++;
-    return events.future;
+  Future<({List<DashboardCity> events, List<DashboardCity> places})>
+  loadRecommendationCityCounts() {
+    calls++;
+    return result.future;
   }
 }
 
 class _AccountCityRepository extends DashboardRepository {
-  final firstEvents = Completer<List<DashboardCity>>();
-  final secondEvents = Completer<List<DashboardCity>>();
-  int eventCalls = 0;
+  final first =
+      Completer<({List<DashboardCity> events, List<DashboardCity> places})>();
+  final second =
+      Completer<({List<DashboardCity> events, List<DashboardCity> places})>();
+  int calls = 0;
 
   @override
-  Future<List<DashboardCity>> loadEventCities() {
-    eventCalls++;
-    return eventCalls == 1 ? firstEvents.future : secondEvents.future;
+  Future<({List<DashboardCity> events, List<DashboardCity> places})>
+  loadRecommendationCityCounts() {
+    calls++;
+    return calls == 1 ? first.future : second.future;
   }
 }
 

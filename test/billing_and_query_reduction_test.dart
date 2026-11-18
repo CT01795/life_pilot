@@ -244,13 +244,12 @@ void main() {
         statuses: {'pending', 'in_progress'},
       );
       expect(
-        requests.single.url.queryParameters['select'],
-        isNot(contains('screenshot')),
+        requests.single.url.path,
+        endsWith('/rpc/get_feedback_summary_page'),
       );
-      expect(
-        requests.single.url.queryParameters['select']!.split(','),
-        isNot(contains('cc')),
-      );
+      final summaryRequest = jsonDecode(requests.single.body) as Map;
+      expect(summaryRequest.keys, isNot(contains('screenshot')));
+      expect(summaryRequest.keys, isNot(contains('cc')));
       response = {
         'screenshot': ['encoded-image'],
       };

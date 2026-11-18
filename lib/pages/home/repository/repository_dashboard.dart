@@ -246,10 +246,6 @@ class DashboardRepository {
     });
   }
 
-  Future<List<DashboardCity>> loadEventCities() async {
-    return (await loadRecommendationCityCounts()).events;
-  }
-
   Future<List<RecommendedEvent>> loadRecommendEvents(String city) async {
     await _requireNetworkForLocalCloudContent();
     final result = await supabase.rpc(
@@ -262,8 +258,22 @@ class DashboardRepository {
     );
   }
 
-  Future<List<DashboardCity>> loadPlaceCities() async {
-    return (await loadRecommendationCityCounts()).places;
+  /// Default composition keeps deterministic test repositories and custom
+  /// repositories source-compatible. The production Supabase repository
+  /// overrides this with one RPC.
+  Future<({List<RecommendedEvent> events, List<RecommendedPlace> places})>
+  loadRecommendations({
+    required String eventCity,
+    required String placeCity,
+  }) async {
+    final results = await Future.wait([
+      loadRecommendEvents(eventCity),
+      loadRecommendPlaces(placeCity),
+    ]);
+    return (
+      events: results[0] as List<RecommendedEvent>,
+      places: results[1] as List<RecommendedPlace>,
+    );
   }
 
   Future<({List<DashboardCity> events, List<DashboardCity> places})>
@@ -439,5 +449,44 @@ class DashboardRepository {
       currency: currency,
     );
     return ModelDashboardDetailProjection(summary.rows, summary.total);
+  }
+}
+
+/// Production repository that combines the two recommendation sections into
+/// one authenticated database request. Independent section refreshes continue
+/// to use the single-section methods inherited above.
+class SupabaseDashboardRepository extends DashboardRepository {
+  @override
+  Future<({List<RecommendedEvent> events, List<RecommendedPlace> places})>
+  loadRecommendations({
+    required String eventCity,
+    required String placeCity,
+  }) async {
+    await _requireNetworkForLocalCloudContent();
+    final result = await supabase.rpc(
+      'get_home_recommendations',
+      params: {
+        'p_event_city': eventCity,
+        'p_place_city': placeCity,
+        'p_limit': 5,
+      },
+    );
+    if (result is! Map ||
+        result['events'] is! List ||
+        result['places'] is! List) {
+      throw const FormatException('Invalid home recommendations');
+    }
+    return (
+      events: ModelDashboardRecommendations.events(
+        (result['events'] as List)
+            .map((row) => Map<String, dynamic>.from(row as Map))
+            .toList(growable: false),
+      ),
+      places: ModelDashboardRecommendations.places(
+        (result['places'] as List)
+            .map((row) => Map<String, dynamic>.from(row as Map))
+            .toList(growable: false),
+      ),
+    );
   }
 }

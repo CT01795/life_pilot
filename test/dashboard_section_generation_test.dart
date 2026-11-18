@@ -236,10 +236,16 @@ void main() {
         repository.target = section;
         final pending = controller.refreshAll(account: 'user');
         await Future<void>.delayed(Duration.zero);
+        final recommendation =
+            section == DashboardSection.recommendEvents ||
+            section == DashboardSection.recommendPlaces;
         for (final other in DashboardSection.values) {
           expect(
             controller.isLoading(other),
-            other == section,
+            recommendation
+                ? other == DashboardSection.recommendEvents ||
+                      other == DashboardSection.recommendPlaces
+                : other == section,
             reason: '$other',
           );
         }
@@ -300,8 +306,7 @@ void main() {
     await second;
     repository.settings.first.complete(_setting());
     await first;
-    expect(repository.calls[DashboardSection.todaySchedule], 2);
-    for (final section in DashboardSection.values.skip(1)) {
+    for (final section in DashboardSection.values) {
       expect(repository.calls[section], 1, reason: '$section');
     }
     expect(controller.loading, false);

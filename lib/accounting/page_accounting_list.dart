@@ -18,6 +18,7 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
 import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
+import 'package:life_pilot/utils/widgets/widgets_account_search_field.dart';
 
 class PageAccountingList extends StatefulWidget {
   const PageAccountingList({super.key});
@@ -29,6 +30,8 @@ class PageAccountingList extends StatefulWidget {
 class _PageAccountingListState extends State<PageAccountingList>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final TextEditingController _accountSearchController =
+      TextEditingController();
   bool _didLoadInitialData = false;
 
   @override
@@ -56,6 +59,7 @@ class _PageAccountingListState extends State<PageAccountingList>
 
   @override
   void dispose() {
+    _accountSearchController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -110,6 +114,12 @@ class _PageAccountingListState extends State<PageAccountingList>
     return Consumer<ControllerAccountingList>(
       builder: (context, controller, _) => Column(
         children: [
+          WidgetsAccountSearchField(
+            controller: _accountSearchController,
+            hintText: AppLocalizations.of(context)!.accountName,
+            onChanged: controller.updateSearchQueryDebounced,
+            onClear: () => controller.applySearchQuery(''),
+          ),
           if (controller.loadError != null)
             WidgetsLoadError(onRetry: () => controller.loadAccounts()),
           Expanded(child: _buildAccountList()),
@@ -121,7 +131,11 @@ class _PageAccountingListState extends State<PageAccountingList>
   Widget _buildAccountList() {
     final scope = context.watch<ModelAuthView?>()?.dataScope;
     final owner = scope?.account;
-    final showShares = owner != null && scope?.storage.name == 'cloud';
+    final listController = context.read<ControllerAccountingList>();
+    final showShares =
+        owner != null &&
+        scope?.storage.name == 'cloud' &&
+        listController.searchQuery.isEmpty;
     return Selector<ControllerAccountingList, bool>(
       selector: (_, c) => c.isLoading,
       builder: (context, isLoading, _) {

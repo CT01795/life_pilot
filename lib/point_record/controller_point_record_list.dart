@@ -19,7 +19,9 @@ class ControllerPointRecordList extends SafeChangeNotifier {
   int _accountGeneration = 0;
   int _listRequest = 0;
   String? _loadingCategory;
+  String? _loadingSearchQuery;
   Future<void>? _loadFuture;
+  Timer? _searchDebounce;
   final _accountRefreshes = <String, Object>{};
 
   String? _currentCategory;
@@ -50,6 +52,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     auth?.removeListener(_onAuthChanged);
     super.dispose();
   }
@@ -62,6 +65,25 @@ class ControllerPointRecordList extends SafeChangeNotifier {
       );
 
   List<ModelPointRecordAccount> accounts = [];
+  String searchQuery = '';
+
+  void updateSearchQueryDebounced(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 280),
+      () => applySearchQuery(value),
+    );
+  }
+
+  Future<void> applySearchQuery(String value) async {
+    _searchDebounce?.cancel();
+    _searchDebounce = null;
+    final normalized = value.trim();
+    if (normalized == searchQuery) return;
+    searchQuery = normalized;
+    await loadAccounts();
+  }
+
   bool isLoading = false;
   bool isLoadingMore = false;
   bool hasMore = false;
@@ -115,13 +137,17 @@ class ControllerPointRecordList extends SafeChangeNotifier {
   Future<void> loadAccounts({String? inputCategory}) {
     if (notifierDisposed) return Future.value();
     final requestedCategory = inputCategory ?? category;
-    if (isLoading && _loadingCategory == requestedCategory) {
+    final requestedSearchQuery = searchQuery;
+    if (isLoading &&
+        _loadingCategory == requestedCategory &&
+        _loadingSearchQuery == requestedSearchQuery) {
       return _loadFuture ?? Future.value();
     }
     final request = ++_listRequest;
     final generation = _accountGeneration;
     final user = auth?.currentAccount ?? '';
     _loadingCategory = requestedCategory;
+    _loadingSearchQuery = requestedSearchQuery;
     isLoading = true;
     hasRequestedMore = false;
     isLoadingMore = false;
@@ -132,7 +158,13 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     // Publish before invoking the service or listeners; either can re-enter.
     _loadFuture = future;
     unawaited(
-      _loadAccounts(user, requestedCategory, generation, request).then<void>(
+      _loadAccounts(
+        user,
+        requestedCategory,
+        requestedSearchQuery,
+        generation,
+        request,
+      ).then<void>(
         (_) => completion.complete(),
         onError: (Object error, StackTrace stack) =>
             completion.completeError(error, stack),
@@ -145,6 +177,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
   Future<void> _loadAccounts(
     String user,
     String requestedCategory,
+    String requestedSearchQuery,
     int generation,
     int request,
   ) async {
@@ -155,6 +188,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
           .fetchAccounts(
             user: user,
             category: requestedCategory,
+            searchQuery: requestedSearchQuery,
             offset: 0,
             limit: accountPageSize + 1,
           )
@@ -168,6 +202,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
       if (_isCurrent(generation) && request == _listRequest) {
         isLoading = false;
         _loadingCategory = null;
+        _loadingSearchQuery = null;
         _loadFuture = null;
         notifyListeners();
       }
@@ -187,6 +222,9 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     _listRequest++;
     _loadFuture = null;
     _loadingCategory = null;
+    _loadingSearchQuery = null;
+    _searchDebounce?.cancel();
+    _searchDebounce = null;
     isLoading = false;
     accounts = [];
     hasMore = false;
@@ -228,6 +266,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     final generation = _accountGeneration;
     final request = _listRequest;
     final selectedCategory = category;
+    final selectedSearchQuery = searchQuery;
     final user = auth?.currentAccount ?? '';
     isLoadingMore = true;
     hasRequestedMore = true;
@@ -238,6 +277,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
           .fetchAccounts(
             user: user,
             category: selectedCategory,
+            searchQuery: selectedSearchQuery,
             offset: accounts.length,
             limit: accountPageSize + 1,
           )

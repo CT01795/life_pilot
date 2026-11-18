@@ -38,12 +38,19 @@ class _Requests {
   int creates = 0;
   final refreshed = <String>[];
   final categories = <String>[];
+  final searches = <String?>[];
   final pending = <Completer<List<String>>>[];
   bool immediate = false;
   List<String>? allRows;
   void Function()? onFetch;
-  Future<List<String>> fetch(String? category, {int? offset, int? limit}) {
+  Future<List<String>> fetch(
+    String? category, {
+    String? searchQuery,
+    int? offset,
+    int? limit,
+  }) {
     categories.add(category!);
+    searches.add(searchQuery);
     onFetch?.call();
     if (allRows case final rows?) {
       final start = offset ?? 0;
@@ -78,19 +85,26 @@ class _Accounting extends ServiceAccounting {
   Future<List<ModelAccountingAccount>> fetchAccounts({
     required String user,
     String? category,
+    String? searchQuery,
     int? projectLimit,
     int? offset,
     int? limit,
-  }) async => (await requests.fetch(category, offset: offset, limit: limit))
-      .map(
-        (id) => ModelAccountingAccount(
-          id: id,
-          accountName: id,
-          category: category!,
-          currency: 'TWD',
-        ),
-      )
-      .toList();
+  }) async =>
+      (await requests.fetch(
+            category,
+            searchQuery: searchQuery,
+            offset: offset,
+            limit: limit,
+          ))
+          .map(
+            (id) => ModelAccountingAccount(
+              id: id,
+              accountName: id,
+              category: category!,
+              currency: 'TWD',
+            ),
+          )
+          .toList();
   @override
   Future<ModelAccountingAccount?> findAccountByEventId({
     required String eventId,
@@ -135,18 +149,25 @@ class _Points extends ServicePointRecord {
   Future<List<ModelPointRecordAccount>> fetchAccounts({
     required String user,
     String? category,
+    String? searchQuery,
     int? projectLimit,
     int? offset,
     int? limit,
-  }) async => (await requests.fetch(category, offset: offset, limit: limit))
-      .map(
-        (id) => ModelPointRecordAccount(
-          id: id,
-          accountName: id,
-          category: category!,
-        ),
-      )
-      .toList();
+  }) async =>
+      (await requests.fetch(
+            category,
+            searchQuery: searchQuery,
+            offset: offset,
+            limit: limit,
+          ))
+          .map(
+            (id) => ModelPointRecordAccount(
+              id: id,
+              accountName: id,
+              category: category!,
+            ),
+          )
+          .toList();
   @override
   Future<ModelPointRecordAccount?> findAccountByEventId({
     required String eventId,
@@ -177,6 +198,7 @@ class _Harness {
       load = c.loadAccounts,
       loadMore = c.loadMoreAccounts,
       select = c.setCategory,
+      search = c.applySearchQuery,
       ids = (() => c.accounts.map((a) => a.id).toList()),
       loading = (() => c.isLoading),
       hasMore = (() => c.hasMore),
@@ -186,6 +208,7 @@ class _Harness {
       load = c.loadAccounts,
       loadMore = c.loadMoreAccounts,
       select = c.setCategory,
+      search = c.applySearchQuery,
       ids = (() => c.accounts.map((a) => a.id).toList()),
       loading = (() => c.isLoading),
       hasMore = (() => c.hasMore),
@@ -194,6 +217,7 @@ class _Harness {
   final Future<void> Function({String? inputCategory}) load;
   final Future<void> Function() loadMore;
   final Future<void> Function(String) select;
+  final Future<void> Function(String) search;
   final List<String> Function() ids;
   final bool Function() loading;
   final bool Function() hasMore;
@@ -479,6 +503,20 @@ void main() {
         expect(h.ids(), isEmpty);
         expect(h.loading(), isFalse);
       });
+
+      test(
+        'search is applied before paging and clearing restarts the list',
+        () async {
+          requests.immediate = true;
+          await h.search('  family  ');
+          await h.loadMore();
+          expect(requests.searches, everyElement('family'));
+
+          requests.searches.clear();
+          await h.search('');
+          expect(requests.searches, ['']);
+        },
+      );
 
       test('disposal prevents late data mutation', () async {
         final pending = h.load();

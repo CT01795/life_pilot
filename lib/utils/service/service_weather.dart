@@ -13,14 +13,15 @@ import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/repository_external_cache.dart';
 import 'package:life_pilot/utils/repository_session_reads.dart';
 
-class _WeatherResult {
-  final List<EventWeather> data;
-  final DateTime expiresAt;
-
-  const _WeatherResult({required this.data, required this.expiresAt});
-}
+typedef WeatherLoadResult = ({List<EventWeather> data, DateTime expiresAt});
+typedef WeatherLoader = Future<WeatherLoadResult?> Function(EventViewModel);
 
 class ServiceWeather {
+  static const int preloadConcurrency = 3;
+  ServiceWeather({WeatherLoader? weatherLoader})
+    : _weatherLoader = weatherLoader;
+
+  final WeatherLoader? _weatherLoader;
   final cacheStore = WeatherCacheStore.I;
 
   List<EventWeather>? getForecast({required String locationDisplay}) {
@@ -44,9 +45,6 @@ class ServiceWeather {
     required String tableName,
   }) async {
     if (!hasLocation || locationDisplay.isEmpty) return null;
-    if (cacheStore.loading.contains(event.locationDisplay)) {
-      return _getValidCache(event.locationDisplay)?.data;
-    }
     if (tableName != TableNames.recommendPlaces &&
         !ModelWeatherForecastWindow(
           DateTime.now(),
@@ -56,13 +54,23 @@ class ServiceWeather {
 
     final cache = _getValidCache(event.locationDisplay);
     if (cache != null) return cache.data;
+    final active = cacheStore.loading[event.locationDisplay];
+    if (active != null) return active;
 
-    cacheStore.loading.add(event.locationDisplay);
+    late Future<List<EventWeather>?> request;
+    request = _loadAndCacheWeather(event).whenComplete(() {
+      if (identical(cacheStore.loading[event.locationDisplay], request)) {
+        cacheStore.loading.remove(event.locationDisplay);
+      }
+    });
+    cacheStore.loading[event.locationDisplay] = request;
+    return request;
+  }
 
+  Future<List<EventWeather>?> _loadAndCacheWeather(EventViewModel event) async {
     try {
       final result = await _getWeather(event: event);
       if (result == null) return null;
-
       cacheStore.cache[event.locationDisplay] = WeatherCache(
         data: result.data,
         expiresAt: result.expiresAt,
@@ -72,13 +80,15 @@ class ServiceWeather {
       logger.e('loadWeather failed for ${event.id}: $e\n$st');
       cacheStore.cache.remove(event.locationDisplay);
       return null;
-    } finally {
-      cacheStore.loading.remove(event.locationDisplay);
     }
   }
 
-  Future<_WeatherResult?> _getWeather({required EventViewModel event}) async {
+  Future<WeatherLoadResult?> _getWeather({
+    required EventViewModel event,
+  }) async {
     try {
+      final injected = _weatherLoader;
+      if (injected != null) return await injected(event);
       event = await ClusterItem.getLatLngFromAddressView(event);
       if (event.lat == null || event.lng == null) {
         return null;
@@ -123,7 +133,7 @@ class ServiceWeather {
           .whereType<Map<String, dynamic>>()
           .map(EventWeather.fromJson)
           .toList();
-      return _WeatherResult(data: data, expiresAt: expiresAt);
+      return (data: data, expiresAt: expiresAt);
     } catch (ex, stacktrace) {
       logger.e("getWeather error", error: ex, stackTrace: stacktrace);
       rethrow;
@@ -138,6 +148,14 @@ class ServiceWeather {
     var requested = false;
     final window = ModelWeatherForecastWindow(DateTime.now());
     final attemptedLocations = <String>{};
+    final pending = <Future<List<EventWeather>?>>[];
+
+    Future<void> flushPending() async {
+      if (pending.isEmpty) return;
+      await Future.wait(pending);
+      pending.clear();
+    }
+
     for (final e in events) {
       // In-flight HTTP work may finish, but a stale owner must not start the
       // remaining locations in its batch.
@@ -152,16 +170,20 @@ class ServiceWeather {
       // lookup for every card in this batch; a later batch may retry normally.
       if (!attemptedLocations.add(e.locationDisplay)) continue;
 
-      await loadWeather(
-        event: e,
-        hasLocation: e.hasLocation,
-        locationDisplay: e.locationDisplay,
-        startDate: e.startDate,
-        endDate: e.endDate,
-        tableName: tableName,
+      pending.add(
+        loadWeather(
+          event: e,
+          hasLocation: e.hasLocation,
+          locationDisplay: e.locationDisplay,
+          startDate: e.startDate,
+          endDate: e.endDate,
+          tableName: tableName,
+        ),
       );
       requested = true;
+      if (pending.length >= preloadConcurrency) await flushPending();
     }
+    await flushPending();
     return requested;
   }
 }

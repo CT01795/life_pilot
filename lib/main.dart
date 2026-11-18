@@ -61,7 +61,7 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (context) => ControllerDashboard(
-            repository: DashboardRepository(),
+            repository: SupabaseDashboardRepository(),
             localeProvider: context.read<ProviderLocale>(),
           ),
         ),

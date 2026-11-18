@@ -6,6 +6,8 @@ import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_upcoming_schedule.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
+import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
+import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_state.dart';
@@ -206,13 +208,11 @@ class ControllerDashboard extends SafeChangeNotifier {
 
   List<DashboardCity> _eventCities = [];
   bool _eventCitiesLoaded = false;
-  RefreshRequestCoordinator _eventCityRequests = RefreshRequestCoordinator();
 
   List<DashboardCity> get eventCities => _eventCities;
 
   List<DashboardCity> _placeCities = [];
   bool _placeCitiesLoaded = false;
-  RefreshRequestCoordinator _placeCityRequests = RefreshRequestCoordinator();
   RefreshRequestCoordinator _allCityRequests = RefreshRequestCoordinator();
 
   List<DashboardCity> get placeCities => _placeCities;
@@ -240,8 +240,6 @@ class ControllerDashboard extends SafeChangeNotifier {
     _placeCities = [];
     _eventCitiesLoaded = false;
     _placeCitiesLoaded = false;
-    _eventCityRequests = RefreshRequestCoordinator();
-    _placeCityRequests = RefreshRequestCoordinator();
     _allCityRequests = RefreshRequestCoordinator();
     _sectionLoadingCounts.clear();
     _failedSections.clear();
@@ -305,74 +303,6 @@ class ControllerDashboard extends SafeChangeNotifier {
       notifyListeners();
     }
     return setting;
-  }
-
-  Future<void> loadEventCities(
-    String account, {
-    bool forceRefresh = false,
-  }) async {
-    final generation = _accountGeneration;
-    if (!_isCurrentRequest(account, generation)) return;
-    if (_eventCitiesLoaded && !forceRefresh && !_eventCityRequests.isRunning) {
-      return;
-    }
-    await _eventCityRequests.run(
-      () => _loadEventCities(account, generation),
-      force: forceRefresh,
-    );
-  }
-
-  Future<void> _loadEventCities(String account, int generation) async {
-    if (!_isCurrentRequest(account, generation)) return;
-    List<DashboardCity> eventCities;
-    try {
-      eventCities = await repository.loadEventCities();
-    } catch (error, stackTrace) {
-      logger.e(
-        'Could not load recommended event cities.',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      return;
-    }
-    if (!_isCurrentRequest(account, generation)) return;
-    _eventCities = eventCities;
-    _eventCitiesLoaded = true;
-    notifyListeners();
-  }
-
-  Future<void> loadPlaceCities(
-    String account, {
-    bool forceRefresh = false,
-  }) async {
-    final generation = _accountGeneration;
-    if (!_isCurrentRequest(account, generation)) return;
-    if (_placeCitiesLoaded && !forceRefresh && !_placeCityRequests.isRunning) {
-      return;
-    }
-    await _placeCityRequests.run(
-      () => _loadPlaceCities(account, generation),
-      force: forceRefresh,
-    );
-  }
-
-  Future<void> _loadPlaceCities(String account, int generation) async {
-    if (!_isCurrentRequest(account, generation)) return;
-    List<DashboardCity> placeCities;
-    try {
-      placeCities = await repository.loadPlaceCities();
-    } catch (error, stackTrace) {
-      logger.e(
-        'Could not load recommended place cities.',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      return;
-    }
-    if (!_isCurrentRequest(account, generation)) return;
-    _placeCities = placeCities;
-    _placeCitiesLoaded = true;
-    notifyListeners();
   }
 
   Future<void> loadRecommendationCities(
@@ -442,11 +372,20 @@ class ControllerDashboard extends SafeChangeNotifier {
             return todayEvents;
           });
 
+      Future<({List<RecommendedEvent> events, List<RecommendedPlace> places})>?
+      recommendationRead;
+      Future<({List<RecommendedEvent> events, List<RecommendedPlace> places})>
+      recommendations() =>
+          recommendationRead ??= repository.loadRecommendations(
+            eventCity: setting.recommendEventCity,
+            placeCity: setting.recommendPlaceCity,
+          );
+
       final recommendEventsFuture =
           _loadSection(
             DashboardSection.recommendEvents,
             recommendEventRequest,
-            () => repository.loadRecommendEvents(setting.recommendEventCity),
+            () async => (await recommendations()).events,
             pendingSections: pendingSections,
           ).then((events) {
             if (!_isCurrentRequest(account, generation)) return;
@@ -460,7 +399,7 @@ class ControllerDashboard extends SafeChangeNotifier {
           _loadSection(
             DashboardSection.recommendPlaces,
             recommendPlaceRequest,
-            () => repository.loadRecommendPlaces(setting.recommendPlaceCity),
+            () async => (await recommendations()).places,
             pendingSections: pendingSections,
           ).then((places) {
             if (!_isCurrentRequest(account, generation)) return;

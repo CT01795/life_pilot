@@ -83,7 +83,7 @@ class _PageHomeState extends State<PageHome> {
       return _recommendEventsLoad;
     }
     final operation = Future.wait<void>([
-      dashboard.loadEventCities(account, forceRefresh: forceRefresh),
+      dashboard.loadRecommendationCities(account, forceRefresh: forceRefresh),
       dashboard.retrySection(
         section: DashboardSection.recommendEvents,
         account: account,
@@ -108,7 +108,7 @@ class _PageHomeState extends State<PageHome> {
       return _recommendPlacesLoad;
     }
     final operation = Future.wait<void>([
-      dashboard.loadPlaceCities(account, forceRefresh: forceRefresh),
+      dashboard.loadRecommendationCities(account, forceRefresh: forceRefresh),
       dashboard.retrySection(
         section: DashboardSection.recommendPlaces,
         account: account,

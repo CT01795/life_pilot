@@ -5,5 +5,5 @@ class WeatherCacheStore {
   WeatherCacheStore._();
 
   final Map<String, WeatherCache> cache = {};
-  final Set<String> loading = {};
+  final Map<String, Future<List<EventWeather>?>> loading = {};
 }

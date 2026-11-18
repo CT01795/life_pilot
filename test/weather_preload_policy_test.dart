@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:async';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
@@ -18,6 +19,27 @@ class _Weather extends ServiceWeather {
   }) async {
     calls.add(locationDisplay);
     // No result simulates geocoding/weather failure without using the network.
+    return null;
+  }
+}
+
+class _ConcurrentWeather extends ServiceWeather {
+  int active = 0;
+  int maximumActive = 0;
+
+  @override
+  Future<List<EventWeather>?> loadWeather({
+    required EventViewModel event,
+    required bool hasLocation,
+    required String locationDisplay,
+    required DateTime? startDate,
+    required DateTime? endDate,
+    required String tableName,
+  }) async {
+    active++;
+    maximumActive = maximumActive < active ? active : maximumActive;
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    active--;
     return null;
   }
 }
@@ -74,6 +96,18 @@ void main() {
       view('b', start: today, location: 'Kaohsiung'),
     ], tableName: TableNames.recommendEvents);
     expect(weather.calls, ['Taipei', 'Kaohsiung']);
+  });
+  test('preload runs a bounded number of locations concurrently', () async {
+    final concurrent = _ConcurrentWeather();
+    await concurrent.preloadWeather(
+      List.generate(
+        8,
+        (index) => view('$index', start: today, location: 'location-$index'),
+      ),
+      tableName: TableNames.recommendEvents,
+    );
+    expect(concurrent.maximumActive, ServiceWeather.preloadConcurrency);
+    expect(concurrent.active, 0);
   });
   test('later batches can retry a failed location', () async {
     for (var i = 0; i < 2; i++) {
@@ -174,4 +208,42 @@ void main() {
       expect(weather.calls, ['Taipei']);
     },
   );
+
+  test('concurrent direct reads share one in-flight weather request', () async {
+    final pending = Completer<WeatherLoadResult?>();
+    var calls = 0;
+    final service = ServiceWeather(
+      weatherLoader: (event) {
+        calls++;
+        return pending.future;
+      },
+    );
+    final event = view('same', start: today);
+
+    final first = service.loadWeather(
+      event: event,
+      hasLocation: true,
+      locationDisplay: 'Taipei',
+      startDate: today,
+      endDate: null,
+      tableName: TableNames.recommendEvents,
+    );
+    final second = service.loadWeather(
+      event: event,
+      hasLocation: true,
+      locationDisplay: 'Taipei',
+      startDate: today,
+      endDate: null,
+      tableName: TableNames.recommendEvents,
+    );
+
+    expect(calls, 1);
+    pending.complete((
+      data: const <EventWeather>[],
+      expiresAt: DateTime.now().add(const Duration(hours: 1)),
+    ));
+    expect(await first, isEmpty);
+    expect(await second, isEmpty);
+    expect(store.loading, isEmpty);
+  });
 }
