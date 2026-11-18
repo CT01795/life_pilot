@@ -28,6 +28,7 @@ class ServiceEvent {
     required DateTime from,
     required DateTime to,
     required int limit,
+    int offset = 0,
     bool expandFallback = false,
   }) async {
     final result = await supabase.rpc(
@@ -36,6 +37,7 @@ class ServiceEvent {
         'p_from': from.formatDateString(),
         'p_to': to.formatDateString(),
         'p_limit': limit,
+        'p_offset': offset,
         'p_expand_fallback': expandFallback,
       },
     );

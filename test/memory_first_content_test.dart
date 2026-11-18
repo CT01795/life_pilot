@@ -49,6 +49,7 @@ class _Service extends ServiceEvent {
     required DateTime from,
     required DateTime to,
     required int limit,
+    int offset = 0,
     bool expandFallback = false,
   }) async {
     final allEvents =
@@ -57,6 +58,7 @@ class _Service extends ServiceEvent {
           dateS: from,
           dateE: to,
           limit: limit,
+          offset: offset,
         ) ??
         const [];
     bool isInWindow(EventItem event) {
@@ -78,8 +80,8 @@ class _Service extends ServiceEvent {
     final start = latest ?? from;
     return ModelMemoryInitialWindow(
       events: events,
-      hasPageMore: sourceWindowEvents.length > limit,
-      hasMore: sourceWindowEvents.length > limit,
+      hasPageMore: sourceWindowEvents.length > offset + limit,
+      hasMore: sourceWindowEvents.length > offset + limit,
       windowStart: start,
       windowEnd: latest ?? to,
     );
@@ -506,7 +508,7 @@ void main() {
       expect(service.windows.last.end, firstWindow.end);
       expect(controller.hasMoreMemory, true);
       await controller.loadMoreMemoryEvents();
-      expect(service.windows.map((window) => window.offset), [0, 12, 24, 0]);
+      expect(service.windows.map((window) => window.offset), [0, 12, 24]);
       expect(
         controller.getFilteredEvents(loc).map((event) => event.id).toSet(),
         service.rows.map((event) => event.id).toSet(),

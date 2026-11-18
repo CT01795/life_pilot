@@ -843,22 +843,19 @@ class ControllerEvent extends SafeChangeNotifier {
     try {
       if (!_isCurrentEventLoad(generation, revision)) return;
       if (usesCloudPagination && _hasMoreEvents) {
-        var nextPage =
-            await _serviceEvent.getEvents(
-              tableName: _tableName,
-              inputUser: auth.currentAccount,
-              storageLocation: auth.preferredStorage,
-              dateS: loadedStart,
-              dateE: _memoryLoadedEndDate,
-              limit: _cloudPageSize + 1,
-              offset: _nextCloudOffset,
-              shouldContinue: () => _isCurrentEventLoad(generation, revision),
-            ) ??
-            [];
+        final nextWindow = await _serviceEvent.getMemoryWindow(
+          from: loadedStart,
+          to: _memoryLoadedEndDate ?? loadedStart,
+          limit: _cloudPageSize,
+          offset: _nextCloudOffset,
+        );
         if (!_isCurrentEventLoad(generation, revision)) return;
-        nextPage = _acceptCloudPage(nextPage, offset: _nextCloudOffset);
-        _modelEvent.appendMemoryEvents(nextPage);
+        _modelEvent.appendMemoryEvents(nextWindow.events);
+        _hasMoreEvents = nextWindow.hasPageMore;
+        _nextCloudOffset += nextWindow.events.length;
+        _hasMoreMemory = nextWindow.hasMore;
         if (_hasMoreEvents) return;
+        if (!_hasMoreMemory) return;
       }
       if (usesCloudPagination) {
         final rangeEnd = DateTimeFormatter.dateOnly(

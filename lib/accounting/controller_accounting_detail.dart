@@ -153,6 +153,9 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
         type: currentType,
         dateFrom: window.start,
         dateTo: window.end,
+        // Reserved balance rows are pinned on the first page. Requesting them
+        // again makes a later page look empty after ID deduplication.
+        includeReservedRecords: false,
       );
       if (!_isCurrent(generation, request)) return;
       todayRecords = [...todayRecords, ...page.rows];

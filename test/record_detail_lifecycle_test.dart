@@ -29,6 +29,7 @@ class _Auth extends ControllerAuth {
 
 class _Accounting extends ServiceAccounting {
   final requests = <Completer<ModelRecordHistoryPage<ModelAccountingDetail>>>[];
+  final includeReserved = <bool>[];
 
   @override
   Future<ModelRecordHistoryPage<ModelAccountingDetail>> fetchRecordsPage({
@@ -39,6 +40,7 @@ class _Accounting extends ServiceAccounting {
     bool includeLatestFallback = false,
     bool includeReservedRecords = true,
   }) {
+    includeReserved.add(includeReservedRecords);
     final request = Completer<ModelRecordHistoryPage<ModelAccountingDetail>>();
     requests.add(request);
     return request.future;
@@ -48,6 +50,7 @@ class _Accounting extends ServiceAccounting {
 class _Points extends ServicePointRecord {
   final requests =
       <Completer<ModelRecordHistoryPage<ModelPointRecordDetail>>>[];
+  final includeReserved = <bool>[];
 
   @override
   Future<ModelRecordHistoryPage<ModelPointRecordDetail>> fetchRecordsPage({
@@ -58,6 +61,7 @@ class _Points extends ServicePointRecord {
     bool includeLatestFallback = false,
     bool includeReservedRecords = true,
   }) {
+    includeReserved.add(includeReservedRecords);
     final request = Completer<ModelRecordHistoryPage<ModelPointRecordDetail>>();
     requests.add(request);
     return request.future;
@@ -132,6 +136,7 @@ void main() {
       await more;
       expect(controller.todayRecords.map((row) => row.id), ['new', 'old']);
       expect(controller.hasMore, isFalse);
+      expect(service.includeReserved, [true, false]);
     },
   );
 
@@ -170,6 +175,7 @@ void main() {
     await more;
     expect(controller.todayRecords.map((row) => row.id), ['new', 'old']);
     expect(controller.hasMore, isFalse);
+    expect(service.includeReserved, [true, false]);
   });
 
   test('late accounting page is ignored after account switch', () async {

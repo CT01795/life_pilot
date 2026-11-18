@@ -43,6 +43,7 @@ class _Service extends ServiceEvent {
     required DateTime from,
     required DateTime to,
     required int limit,
+    int offset = 0,
     bool expandFallback = false,
   }) async {
     final events =
@@ -51,6 +52,7 @@ class _Service extends ServiceEvent {
           dateS: from,
           dateE: to,
           limit: limit,
+          offset: offset,
         ) ??
         const [];
     return ModelMemoryInitialWindow(

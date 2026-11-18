@@ -54,6 +54,7 @@ void main() {
         'p_from': '2026-10-01',
         'p_to': '2026-10-30',
         'p_limit': 12,
+        'p_offset': 0,
         'p_expand_fallback': true,
       });
       expect(result.events.single.id, 'memory-1');
@@ -87,6 +88,12 @@ void main() {
       contains('drop function if exists public.get_my_memory_initial_window'),
     );
     expect(sql, contains("notify pgrst, 'reload schema'"));
+
+    final paginationSql = File(
+      'supabase/migrations/20261118000700_memory_window_pagination.sql',
+    ).readAsStringSync();
+    expect(paginationSql, contains('p_offset integer default 0'));
+    expect(paginationSql, contains('offset v_offset'));
   });
 
   test('app uses combined reads and no name-only dashboard fallback', () {

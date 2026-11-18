@@ -101,6 +101,7 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
         dateFrom: window.start,
         dateTo: window.end,
         includeLatestFallback: true,
+        includeReservedRecords: true,
       );
       if (!_isCurrent(generation, request)) return;
       todayRecords = page.rows;
@@ -142,6 +143,8 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
         type: currentType,
         dateFrom: window.start,
         dateTo: window.end,
+        // Reserved point rows are already present on the first page.
+        includeReservedRecords: false,
       );
       if (!_isCurrent(generation, request)) return;
       todayRecords = [...todayRecords, ...page.rows];

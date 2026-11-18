@@ -174,6 +174,7 @@ class _DelayedEventService extends ServiceEvent {
     required DateTime from,
     required DateTime to,
     required int limit,
+    int offset = 0,
     bool expandFallback = false,
   }) async => ModelMemoryInitialWindow(
     events: await response.future ?? const [],
