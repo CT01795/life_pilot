@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:life_pilot/accounting/model_ledger_account_option.dart';
 import 'package:life_pilot/utils/model_local_account_list.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
 
@@ -28,11 +29,11 @@ void main() {
       _account('other', category: 'unknown'),
     ];
     expect(
-      ModelLocalAccountList.selectAccounts(
-        accounts: accounts,
+      ModelLedgerAccountOption.selectLocal(
+        accounts,
         projectLimit: 2,
-      ).map((row) => row['id']),
-      ['personal-2', 'personal-1', 'new', 'middle'],
+      ).map((option) => option.id),
+      ['personal-1', 'personal-2', 'new', 'middle'],
     );
     expect(
       ModelLocalAccountList.selectAccounts(
@@ -70,10 +71,9 @@ void main() {
 
   test('negative project limit keeps the existing rejection rule', () {
     expect(
-      () => ModelLocalAccountList.selectAccounts(
-        accounts: [_account('a')],
-        projectLimit: -1,
-      ),
+      () => ModelLedgerAccountOption.selectLocal([
+        _account('a'),
+      ], projectLimit: -1),
       throwsArgumentError,
     );
   });

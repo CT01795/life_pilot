@@ -49,7 +49,6 @@ class _Accounting extends ServiceAccounting {
     required String user,
     String? category,
     String? searchQuery,
-    int? projectLimit,
     int? offset,
     int? limit,
   }) {
@@ -79,7 +78,6 @@ class _Points extends ServicePointRecord {
     required String user,
     String? category,
     String? searchQuery,
-    int? projectLimit,
     int? offset,
     int? limit,
   }) {

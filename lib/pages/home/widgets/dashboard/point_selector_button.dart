@@ -42,15 +42,14 @@ class PointSelectorButton extends StatelessWidget {
           : '${shared.name} · ${loc.ledgerSharedAccount}',
       accountPageLabel: loc.pointsRecord,
       loadAccounts: () async {
-        final accounts = await context.read<ServicePointRecord>().fetchAccounts(
-          user: auth.account ?? '',
-          projectLimit: 2,
-        );
+        final accounts = await context
+            .read<ServicePointRecord>()
+            .fetchAccountOptions(user: auth.account ?? '');
         return accounts
             .map(
               (account) => DashboardAccountOption(
                 id: account.id,
-                name: account.accountName,
+                name: account.name,
                 category: account.category,
               ),
             )

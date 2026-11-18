@@ -1,5 +1,4 @@
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 
@@ -8,9 +7,8 @@ class ModelLocalAccountList {
   static List<RecordRow> selectAccounts({
     required Iterable<RecordRow> accounts,
     String? category,
-    int? projectLimit,
   }) => List<RecordRow>.unmodifiable(
-    _selectAccounts(accounts, category: category, projectLimit: projectLimit),
+    _selectAccounts(accounts, category: category),
   );
 
   static ModelLocalAccountList fromIndexedTotals({
@@ -52,7 +50,6 @@ class ModelLocalAccountList {
   static List<RecordRow> _selectAccounts(
     Iterable<RecordRow> accounts, {
     required String? category,
-    required int? projectLimit,
   }) {
     var rows = accounts
         .where(
@@ -62,21 +59,6 @@ class ModelLocalAccountList {
                   parseStringValue(row['category']) == category),
         )
         .toList();
-    if (category == null && projectLimit != null) {
-      final personal = rows.where(
-        (r) => r['category'] == AccountCategory.personal.name,
-      );
-      final projects =
-          rows
-              .where((r) => r['category'] == AccountCategory.project.name)
-              .toList()
-            ..sort(
-              (a, b) => parseStringValue(
-                b[Fields.createdAt],
-              ).compareTo(parseStringValue(a[Fields.createdAt])),
-            );
-      rows = [...personal, ...projects.take(projectLimit)];
-    }
     return rows;
   }
 }

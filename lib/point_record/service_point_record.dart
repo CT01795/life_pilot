@@ -6,6 +6,8 @@ import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/accounting/repository_account_image.dart';
 import 'package:life_pilot/accounting/repository_ledger_account_lookup.dart';
+import 'package:life_pilot/accounting/model_ledger_account_option.dart';
+import 'package:life_pilot/accounting/repository_ledger_account_options.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
@@ -116,7 +118,6 @@ class ServicePointRecord {
     required String user,
     String? category, // null = all categories
     String? searchQuery,
-    int? projectLimit,
     int? offset,
     int? limit,
   }) async {
@@ -145,7 +146,6 @@ class ServicePointRecord {
         final selected = ModelLocalAccountList.selectAccounts(
           accounts: accountRows,
           category: category,
-          projectLimit: projectLimit,
         );
         final totals = await LocalDataStore.instance.ledgerTotals(
           owner: owner,
@@ -170,34 +170,22 @@ class ServicePointRecord {
             .toList();
       }
       const columns = 'id,account,category,points';
-      final List<dynamic> list;
-      if (category == null && projectLimit != null) {
-        final response = await supabase.rpc(
-          'get_my_ledger_account_options',
-          params: {'p_kind': 'points', 'p_project_limit': projectLimit},
-        );
-        if (response is! List) {
-          throw const FormatException('Invalid point account options');
-        }
-        list = List<dynamic>.from(response);
-      } else {
-        var query = supabase
-            .from(TableNames.pointRecordAccount)
-            .select(columns)
-            .eq(Fields.createdBy, user)
-            .eq(Fields.isValid, true);
-        if (category != null) {
-          query = query.eq('category', category);
-        }
-        final normalizedSearch = searchQuery?.trim() ?? '';
-        if (normalizedSearch.isNotEmpty) {
-          query = query.ilike(Fields.account, '%$normalizedSearch%');
-        }
-        final ordered = query.order(Fields.account, ascending: true);
-        list = offset != null && limit != null
-            ? await ordered.range(offset, offset + limit - 1)
-            : await ordered;
+      var query = supabase
+          .from(TableNames.pointRecordAccount)
+          .select(columns)
+          .eq(Fields.createdBy, user)
+          .eq(Fields.isValid, true);
+      if (category != null) {
+        query = query.eq('category', category);
       }
+      final normalizedSearch = searchQuery?.trim() ?? '';
+      if (normalizedSearch.isNotEmpty) {
+        query = query.ilike(Fields.account, '%$normalizedSearch%');
+      }
+      final ordered = query.order(Fields.account, ascending: true);
+      final list = offset != null && limit != null
+          ? await ordered.range(offset, offset + limit - 1)
+          : await ordered;
 
       return list.map((row) => ModelPointRecordAccount.fromRow(row)).toList();
     } on Exception catch (exception) {
@@ -205,6 +193,13 @@ class ServicePointRecord {
       rethrow;
     }
   }
+
+  Future<List<ModelLedgerAccountOption>> fetchAccountOptions({
+    required String user,
+    int projectLimit = 2,
+  }) => RepositoryLedgerAccountOptions(
+    supabase,
+  ).read(kind: 'points', expectedEmail: user, projectLimit: projectLimit);
 
   Future<ModelPointRecordAccount> createAccount({
     required String name,

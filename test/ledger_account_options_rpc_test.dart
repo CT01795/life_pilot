@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('account and point option lists use one combined RPC', () {
+  test('dashboard account selectors use lightweight option services', () {
     final accounting = File(
       'lib/accounting/service_accounting.dart',
     ).readAsStringSync();
@@ -11,17 +11,24 @@ void main() {
       'lib/point_record/service_point_record.dart',
     ).readAsStringSync();
 
+    final accountSelector = File(
+      'lib/pages/home/widgets/dashboard/account_selector_button.dart',
+    ).readAsStringSync();
+    final pointSelector = File(
+      'lib/pages/home/widgets/dashboard/point_selector_button.dart',
+    ).readAsStringSync();
+
+    expect(accountSelector, contains('.fetchAccountOptions('));
+    expect(pointSelector, contains('.fetchAccountOptions('));
     for (final source in [accounting, points]) {
-      expect(source, contains("'get_my_ledger_account_options'"));
-      expect(source, isNot(contains('final responses = await Future.wait')));
+      expect(source, isNot(contains('int? projectLimit')));
+      expect(source, isNot(contains("'get_my_ledger_account_options'")));
     }
-    expect(accounting, contains("'p_kind': 'accounting'"));
-    expect(points, contains("'p_kind': 'points'"));
   });
 
-  test('combined account option RPC is authenticated and bounded', () {
+  test('combined account option RPC is authenticated, bounded and light', () {
     final sql = File(
-      'supabase/migrations/20261111000800_ledger_account_options.sql',
+      'supabase/migrations/20261118000500_lightweight_ledger_account_options.sql',
     ).readAsStringSync();
 
     expect(sql, contains("p_kind not in ('accounting', 'points')"));
@@ -30,5 +37,9 @@ void main() {
     expect(sql, contains('recent.position <= v_limit'));
     expect(sql, contains('to authenticated, service_role'));
     expect(sql, contains("notify pgrst, 'reload schema'"));
+    expect(sql, isNot(contains("'balance',")));
+    expect(sql, isNot(contains("'points',")));
+    expect(sql, isNot(contains("'main_currency',")));
+    expect(sql, isNot(contains("'exchange_rate',")));
   });
 }
