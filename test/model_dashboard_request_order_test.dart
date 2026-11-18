@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'support/dashboard_recommendation_test_mixin.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
@@ -414,7 +416,8 @@ DashboardSetting _setting() => DashboardSetting(
   pointAccountId: 'point-account',
 );
 
-class _RecommendationOrderRepository extends DashboardRepository {
+class _RecommendationOrderRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   final firstEvents = Completer<List<RecommendedEvent>>();
   final secondEvents = Completer<List<RecommendedEvent>>();
   int _eventCalls = 0;
@@ -431,7 +434,8 @@ class _RecommendationOrderRepository extends DashboardRepository {
   }
 }
 
-class _RefreshOrderRepository extends DashboardRepository {
+class _RefreshOrderRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   final oldAccounting = Completer<List<IncomeExpenseItem>>();
   int _accountingCalls = 0;
 
@@ -477,7 +481,8 @@ class _RefreshOrderRepository extends DashboardRepository {
   }) async => const PointDashboardSummary.empty();
 }
 
-class _AccountSwitchRepository extends DashboardRepository {
+class _AccountSwitchRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   final oldEvents = Completer<List<RecommendedEvent>>();
 
   @override
@@ -490,7 +495,8 @@ class _AccountSwitchRepository extends DashboardRepository {
       oldEvents.future;
 }
 
-class _SectionRefreshRepository extends DashboardRepository {
+class _SectionRefreshRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   int settingLoadCount = 0;
   String? eventCity;
   String? placeCity;
@@ -519,7 +525,8 @@ class _SectionRefreshRepository extends DashboardRepository {
   }
 }
 
-class _ParallelInitialLoadRepository extends DashboardRepository {
+class _ParallelInitialLoadRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   final setting = Completer<DashboardSetting>();
   bool todayEventsStarted = false;
 
@@ -550,7 +557,8 @@ class _ParallelInitialLoadRepository extends DashboardRepository {
   }) async => const PointDashboardSummary.empty();
 }
 
-class _ProgressiveFullRepository extends DashboardRepository {
+class _ProgressiveFullRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   final recommendEvents = Completer<List<RecommendedEvent>>();
   final recommendPlaces = Completer<List<RecommendedPlace>>();
   final accounting = Completer<AccountingDashboardSummary>();
@@ -582,7 +590,8 @@ class _ProgressiveFullRepository extends DashboardRepository {
       points.future;
 }
 
-class _CoreFirstRepository extends DashboardRepository {
+class _CoreFirstRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   int todayCalls = 0;
   int accountingCalls = 0;
   int pointCalls = 0;
@@ -629,7 +638,8 @@ class _CoreFirstRepository extends DashboardRepository {
   }
 }
 
-class _ProgressiveCoreRepository extends DashboardRepository {
+class _ProgressiveCoreRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   final todayEvents = Completer<List<CalendarEvent>>();
   final accounting = Completer<AccountingDashboardSummary>();
   final points = Completer<PointDashboardSummary>();
@@ -676,7 +686,8 @@ class _SettingsGateRepository extends _ProgressiveCoreRepository {
   }
 }
 
-class _ClearSelectionRepository extends DashboardRepository {
+class _ClearSelectionRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   DashboardSetting? savedSetting;
 
   @override
@@ -705,7 +716,8 @@ class _ClearSelectionRepository extends DashboardRepository {
   );
 }
 
-class _CityCacheRepository extends DashboardRepository {
+class _CityCacheRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   int calls = 0;
 
   @override
@@ -716,7 +728,8 @@ class _CityCacheRepository extends DashboardRepository {
   }
 }
 
-class _PendingCityRepository extends DashboardRepository {
+class _PendingCityRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   final result =
       Completer<({List<DashboardCity> events, List<DashboardCity> places})>();
   int calls = 0;
@@ -729,7 +742,8 @@ class _PendingCityRepository extends DashboardRepository {
   }
 }
 
-class _AccountCityRepository extends DashboardRepository {
+class _AccountCityRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   final first =
       Completer<({List<DashboardCity> events, List<DashboardCity> places})>();
   final second =
@@ -744,7 +758,8 @@ class _AccountCityRepository extends DashboardRepository {
   }
 }
 
-class _CompleteEventRepository extends DashboardRepository {
+class _CompleteEventRepository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   int eventLoads = 0;
   final List<String> completedIds = [];
 

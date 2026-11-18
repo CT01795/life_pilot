@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'support/dashboard_recommendation_test_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/pages/home/controller_dashboard.dart';
@@ -19,7 +20,8 @@ DashboardSetting _setting() => DashboardSetting(
   pointAccountId: 'points',
 );
 
-class _Repository extends DashboardRepository {
+class _Repository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   int settingsReads = 0;
   void Function()? onSettingsRead;
   DashboardSection? target;

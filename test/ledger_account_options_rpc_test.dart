@@ -18,23 +18,32 @@ void main() {
       'lib/pages/home/widgets/dashboard/point_selector_button.dart',
     ).readAsStringSync();
 
-    expect(accountSelector, contains('.fetchAccountOptions('));
-    expect(pointSelector, contains('.fetchAccountOptions('));
+    expect(accountSelector, contains('.fetchAccountOptionPage('));
+    expect(pointSelector, contains('.fetchAccountOptionPage('));
     for (final source in [accounting, points]) {
       expect(source, isNot(contains('int? projectLimit')));
       expect(source, isNot(contains("'get_my_ledger_account_options'")));
+      expect(source, contains('fetchAccountOptionPage'));
     }
   });
 
-  test('combined account option RPC is authenticated, bounded and light', () {
+  test('combined owned/shared account picker uses search and cursor', () {
     final sql = File(
-      'supabase/migrations/20261118000500_lightweight_ledger_account_options.sql',
+      'supabase/migrations/20261118000600_dashboard_ledger_picker.sql',
     ).readAsStringSync();
 
     expect(sql, contains("p_kind not in ('accounting', 'points')"));
     expect(sql, contains('auth.uid() is null'));
-    expect(sql, contains('lower(trim(a.created_by)) = v_email'));
-    expect(sql, contains('recent.position <= v_limit'));
+    expect(sql, contains('p_cursor jsonb'));
+    expect(sql, contains('p_search text'));
+    expect(sql, contains('p_selected_id text'));
+    expect(sql, contains('public.ledger_read_shares'));
+    expect(sql, contains("'shared_kind', s.kind"));
+    expect(sql, contains('(f.sort_group, f.sort_name, f.sort_id)'));
+    expect(
+      sql,
+      contains('drop function if exists public.get_my_ledger_account_options'),
+    );
     expect(sql, contains('to authenticated, service_role'));
     expect(sql, contains("notify pgrst, 'reload schema'"));
     expect(sql, isNot(contains("'balance',")));

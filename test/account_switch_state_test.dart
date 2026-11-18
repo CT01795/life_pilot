@@ -21,6 +21,7 @@ import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/model_memory_initial_window.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
@@ -166,9 +167,21 @@ class _DelayedPointDetailService extends ServicePointRecord {
 }
 
 class _DelayedEventService extends ServiceEvent {
-  @override
-  bool get usesMemoryInitialWindowRpc => false;
   final response = Completer<List<EventItem>?>();
+
+  @override
+  Future<ModelMemoryInitialWindow> getMemoryWindow({
+    required DateTime from,
+    required DateTime to,
+    required int limit,
+    bool expandFallback = false,
+  }) async => ModelMemoryInitialWindow(
+    events: await response.future ?? const [],
+    hasPageMore: false,
+    hasMore: false,
+    windowStart: from,
+    windowEnd: to,
+  );
 
   @override
   Future<List<EventItem>?> getEvents({

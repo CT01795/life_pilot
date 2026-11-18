@@ -28,9 +28,6 @@ class AccountSelectorButton extends StatelessWidget {
     final auth = context.watch<ModelAuthView>();
 
     return DashboardAccountSelector(
-      sharedKind: auth.dataScope.storage.name == 'cloud'
-          ? LedgerKind.accounting
-          : null,
       onSharedChanged: (option) => dashboard.selectSharedLedger(
         points: false,
         selection: (id: option.id, name: option.name),
@@ -41,19 +38,30 @@ class AccountSelectorButton extends StatelessWidget {
           ? accountName
           : '${shared.name} · ${loc.ledgerSharedAccount}',
       accountPageLabel: loc.accountRecords,
-      loadAccounts: () async {
-        final accounts = await context
+      loadAccounts: ({required search, cursor, selectedId}) async {
+        final page = await context
             .read<ServiceAccounting>()
-            .fetchAccountOptions(user: auth.account ?? '');
-        return accounts
-            .map(
-              (account) => DashboardAccountOption(
-                id: account.id,
-                name: account.name,
-                category: account.category,
-              ),
-            )
-            .toList(growable: false);
+            .fetchAccountOptionPage(
+              user: auth.account ?? '',
+              search: search,
+              cursor: cursor,
+              selectedId: selectedId,
+            );
+        return DashboardAccountOptionPage(
+          rows: page.rows
+              .map(
+                (account) => DashboardAccountOption(
+                  id: account.id,
+                  name: account.name,
+                  category: account.category,
+                  sharedKind: account.sharedKind == 'accounting'
+                      ? LedgerKind.accounting
+                      : null,
+                ),
+              )
+              .toList(growable: false),
+          nextCursor: page.nextCursor,
+        );
       },
       onChanged: (selected) async {
         final user = auth.account;

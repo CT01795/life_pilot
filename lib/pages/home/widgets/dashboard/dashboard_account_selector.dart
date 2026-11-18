@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:life_pilot/utils/widgets/widgets_load_more.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/accounting/service_ledger_sharing.dart';
@@ -17,6 +19,16 @@ class DashboardAccountOption {
   final LedgerKind? sharedKind;
 }
 
+class DashboardAccountOptionPage {
+  const DashboardAccountOptionPage({
+    required this.rows,
+    required this.nextCursor,
+  });
+
+  final List<DashboardAccountOption> rows;
+  final Map<String, dynamic>? nextCursor;
+}
+
 class _DashboardAccountSelection {
   const _DashboardAccountSelection.account(this.account) : shouldClear = false;
 
@@ -27,7 +39,11 @@ class _DashboardAccountSelection {
 }
 
 typedef DashboardAccountLoader =
-    Future<List<DashboardAccountOption>> Function();
+    Future<DashboardAccountOptionPage> Function({
+      required String search,
+      Map<String, dynamic>? cursor,
+      String? selectedId,
+    });
 typedef DashboardAccountChanged =
     Future<void> Function(DashboardAccountOption? account);
 
@@ -45,7 +61,6 @@ class DashboardAccountSelector extends StatefulWidget {
     required this.onChanged,
     required this.onOpenAccountPage,
     required this.accountPageLabel,
-    this.sharedKind,
     this.onSharedChanged,
   });
 
@@ -56,7 +71,6 @@ class DashboardAccountSelector extends StatefulWidget {
   final DashboardAccountChanged onChanged;
   final VoidCallback onOpenAccountPage;
   final String accountPageLabel;
-  final LedgerKind? sharedKind;
   final Future<void> Function(DashboardAccountOption)? onSharedChanged;
 
   @override
@@ -65,7 +79,6 @@ class DashboardAccountSelector extends StatefulWidget {
 }
 
 class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
-  static const _sharedPageSize = 12;
   bool _isLoading = false;
 
   @override
@@ -97,8 +110,11 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
   Future<void> _selectAccount(AppLocalizations loc) async {
     setState(() => _isLoading = true);
     try {
-      final shared = _loadSharedAccounts();
-      final accounts = [...await widget.loadAccounts(), ...await shared];
+      final firstPage = await widget.loadAccounts(
+        search: '',
+        selectedId: widget.selectedAccountId,
+      );
+      final accounts = firstPage.rows.toList(growable: true);
       if (!mounted) return;
 
       if (accounts.isEmpty) {
@@ -109,7 +125,7 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
       final selection = await _showAccountDialog(
         loc,
         accounts,
-        sharedCount: accounts.where((a) => a.sharedKind != null).length,
+        initialCursor: firstPage.nextCursor,
       );
       if (!mounted || selection == null) return;
 
@@ -142,33 +158,6 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
     }
   }
 
-  Future<List<DashboardAccountOption>> _loadSharedAccounts([
-    int offset = 0,
-  ]) async {
-    final kind = widget.sharedKind;
-    if (kind == null) return const [];
-    try {
-      return (await ServiceLedgerSharing().receivedKindPage(
-            kind,
-            offset,
-            limit: _sharedPageSize,
-          ))
-          .map(
-            (row) => DashboardAccountOption(
-              id: row['share_id'] as String,
-              name: row['account_name'] as String? ?? '',
-              category: '',
-              sharedKind: kind,
-            ),
-          )
-          .toList(growable: false);
-    } catch (_) {
-      if (offset != 0) rethrow;
-      // Local/owned account selection remains available if cloud reads fail.
-      return const [];
-    }
-  }
-
   Future<void> _showEmptyAccountDialog(AppLocalizations loc) =>
       showDialog<void>(
         context: context,
@@ -193,12 +182,15 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
   Future<_DashboardAccountSelection?> _showAccountDialog(
     AppLocalizations loc,
     List<DashboardAccountOption> accounts, {
-    required int sharedCount,
-  }) {
-    var offset = sharedCount;
-    var hasMore = sharedCount == _sharedPageSize;
+    required Map<String, dynamic>? initialCursor,
+  }) async {
+    var cursor = initialCursor;
     var loadingMore = false;
-    return showDialog<_DashboardAccountSelection>(
+    var search = '';
+    var searchRevision = 0;
+    Timer? debounce;
+    final searchController = TextEditingController();
+    final result = await showDialog<_DashboardAccountSelection>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, update) {
@@ -219,71 +211,136 @@ class _DashboardAccountSelectorState extends State<DashboardAccountSelector> {
                 dialogContext,
               ).width.clamp(0, 420).toDouble(),
               height: contentHeight,
-              child: ListView.separated(
-                itemCount: itemCount,
-                separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (_, index) {
-                  if (index == accountCount) {
-                    return WidgetsLoadMore(
-                      hasMore: hasMore,
-                      loading: loadingMore,
-                      count: accounts.length,
-                      scope: widget.selectedAccountId,
-                      onLoadMore: () async {
-                        update(() => loadingMore = true);
-                        try {
-                          final page = await _loadSharedAccounts(offset);
-                          if (!dialogContext.mounted) return;
-                          update(() {
-                            accounts.addAll(page);
-                            offset += page.length;
-                            hasMore = page.length == _sharedPageSize;
-                          });
-                        } catch (_) {
-                          if (mounted && dialogContext.mounted) {
-                            _showMessage(loc.accountListLoadFailed);
+              child: Column(
+                children: [
+                  TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      hintText: loc.search,
+                    ),
+                    onChanged: (value) {
+                      debounce?.cancel();
+                      final revision = ++searchRevision;
+                      debounce = Timer(
+                        const Duration(milliseconds: 300),
+                        () async {
+                          search = value.trim();
+                          update(() => loadingMore = true);
+                          try {
+                            final page = await widget.loadAccounts(
+                              search: search,
+                              selectedId: widget.selectedAccountId,
+                            );
+                            if (!dialogContext.mounted ||
+                                revision != searchRevision) {
+                              return;
+                            }
+                            update(() {
+                              accounts
+                                ..clear()
+                                ..addAll(page.rows);
+                              cursor = page.nextCursor;
+                            });
+                          } catch (_) {
+                            if (dialogContext.mounted) {
+                              _showMessage(loc.accountListLoadFailed);
+                            }
+                          } finally {
+                            if (dialogContext.mounted &&
+                                revision == searchRevision) {
+                              update(() => loadingMore = false);
+                            }
                           }
-                          rethrow;
-                        } finally {
-                          if (dialogContext.mounted) {
-                            update(() => loadingMore = false);
-                          }
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: itemCount,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (_, index) {
+                        if (index == accountCount) {
+                          return WidgetsLoadMore(
+                            hasMore: cursor != null,
+                            loading: loadingMore,
+                            count: accounts.length,
+                            scope: widget.selectedAccountId,
+                            onLoadMore: () async {
+                              update(() => loadingMore = true);
+                              try {
+                                final page = await widget.loadAccounts(
+                                  search: search,
+                                  cursor: cursor,
+                                  selectedId: widget.selectedAccountId,
+                                );
+                                if (!dialogContext.mounted) return;
+                                update(() {
+                                  accounts.addAll(
+                                    page.rows.where(
+                                      (row) => !accounts.any(
+                                        (existing) =>
+                                            existing.id == row.id &&
+                                            existing.sharedKind ==
+                                                row.sharedKind,
+                                      ),
+                                    ),
+                                  );
+                                  cursor = page.nextCursor;
+                                });
+                              } catch (_) {
+                                if (mounted && dialogContext.mounted) {
+                                  _showMessage(loc.accountListLoadFailed);
+                                }
+                                rethrow;
+                              } finally {
+                                if (dialogContext.mounted) {
+                                  update(() => loadingMore = false);
+                                }
+                              }
+                            },
+                          );
                         }
-                      },
-                    );
-                  }
-                  if (hasClearOption && index == 0) {
-                    return ListTile(
-                      leading: const Icon(Icons.clear),
-                      title: Text(loc.clear),
-                      onTap: () => Navigator.pop(
-                        dialogContext,
-                        const _DashboardAccountSelection.clear(),
-                      ),
-                    );
-                  }
+                        if (hasClearOption && index == 0) {
+                          return ListTile(
+                            leading: const Icon(Icons.clear),
+                            title: Text(loc.clear),
+                            onTap: () => Navigator.pop(
+                              dialogContext,
+                              const _DashboardAccountSelection.clear(),
+                            ),
+                          );
+                        }
 
-                  final accountIndex = index - (hasClearOption ? 1 : 0);
-                  final account = accounts[accountIndex];
-                  return ListTile(
-                    title: Text(account.name),
-                    subtitle: Text(
-                      account.sharedKind == null
-                          ? _categoryLabel(loc, account.category)
-                          : loc.ledgerSharedAccount,
+                        final accountIndex = index - (hasClearOption ? 1 : 0);
+                        final account = accounts[accountIndex];
+                        return ListTile(
+                          title: Text(account.name),
+                          subtitle: Text(
+                            account.sharedKind == null
+                                ? _categoryLabel(loc, account.category)
+                                : loc.ledgerSharedAccount,
+                          ),
+                          onTap: () => Navigator.pop(
+                            dialogContext,
+                            _DashboardAccountSelection.account(account),
+                          ),
+                        );
+                      },
                     ),
-                    onTap: () => Navigator.pop(
-                      dialogContext,
-                      _DashboardAccountSelection.account(account),
-                    ),
-                  );
-                },
+                  ),
+                ],
               ),
             ),
           );
         },
       ),
     );
+    debounce?.cancel();
+    searchController.dispose();
+    return result;
   }
 
   String _categoryLabel(AppLocalizations loc, String category) =>

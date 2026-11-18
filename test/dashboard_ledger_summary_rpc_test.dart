@@ -155,7 +155,7 @@ void main() {
     addTearDown(client.dispose);
     supabase = client;
 
-    final result = await SupabaseDashboardRepository().loadRecommendations(
+    final result = await DashboardRepository().loadRecommendations(
       eventCity: '台北',
       placeCity: '台中',
     );

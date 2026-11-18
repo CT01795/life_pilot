@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'support/dashboard_recommendation_test_mixin.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/pages/home/controller_dashboard.dart';
@@ -7,7 +9,8 @@ import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 
-class _Repository extends DashboardRepository {
+class _Repository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   final writes = <({String id, String account, Completer<void> done})>[];
   void Function()? onWrite;
   @override

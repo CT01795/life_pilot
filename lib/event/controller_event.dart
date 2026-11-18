@@ -609,10 +609,7 @@ class ControllerEvent extends SafeChangeNotifier {
           ? DateTime(today.year + 2, today.month, today.day)
           : null;
       ModelMemoryInitialWindow? initialMemoryWindow;
-      final list =
-          isMemoryTrace &&
-              usesCloudPagination &&
-              _serviceEvent.usesMemoryInitialWindowRpc
+      final list = isMemoryTrace && usesCloudPagination
           ? (initialMemoryWindow = await _serviceEvent.getMemoryWindow(
               from: memoryStart,
               to: _memoryLoadedEndDate!,
@@ -863,7 +860,7 @@ class ControllerEvent extends SafeChangeNotifier {
         _modelEvent.appendMemoryEvents(nextPage);
         if (_hasMoreEvents) return;
       }
-      if (usesCloudPagination && _serviceEvent.usesMemoryInitialWindowRpc) {
+      if (usesCloudPagination) {
         final rangeEnd = DateTimeFormatter.dateOnly(
           loadedStart.subtract(const Duration(days: 1)),
         );

@@ -6,6 +6,7 @@ import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/model_event_load_policy.dart';
+import 'package:life_pilot/event/model_memory_initial_window.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/l10n/app_localizations_en.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
@@ -34,11 +35,33 @@ class _Read {
 }
 
 class _Service extends ServiceEvent {
-  @override
-  bool get usesMemoryInitialWindowRpc => false;
   final reads = <_Read>[];
   int olderProbes = 0;
   Completer<DateTime?>? pendingOlder;
+  @override
+  Future<ModelMemoryInitialWindow> getMemoryWindow({
+    required DateTime from,
+    required DateTime to,
+    required int limit,
+    bool expandFallback = false,
+  }) async {
+    final events =
+        await getEvents(
+          tableName: TableNames.memoryTrace,
+          dateS: from,
+          dateE: to,
+          limit: limit,
+        ) ??
+        const [];
+    return ModelMemoryInitialWindow(
+      events: events,
+      hasPageMore: false,
+      hasMore: false,
+      windowStart: from,
+      windowEnd: to,
+    );
+  }
+
   @override
   Future<List<EventItem>?> getEvents({
     required String tableName,
@@ -85,7 +108,6 @@ void main() {
   for (final table in [
     TableNames.recommendEvents,
     TableNames.recommendPlaces,
-    TableNames.memoryTrace,
   ]) {
     group(table, () {
       late _Auth auth;

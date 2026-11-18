@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'support/dashboard_recommendation_test_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
@@ -11,7 +12,8 @@ import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 
-class _Repository extends DashboardRepository {
+class _Repository extends DashboardRepository
+    with DashboardRecommendationTestMixin {
   final schedules = <Completer<List<CalendarEvent>>>[];
   @override
   Future<List<CalendarEvent>> loadTodayEvents(String account) {

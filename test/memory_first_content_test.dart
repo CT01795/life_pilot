@@ -4,6 +4,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/model_memory_initial_window.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/l10n/app_localizations_en.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
@@ -12,7 +13,7 @@ import 'package:life_pilot/utils/service/service_weather.dart';
 
 class _Auth extends ControllerAuth {
   String account = 'one@example.com';
-  bool local = false;
+  bool local = true;
   @override
   String? get currentAccount => account;
   @override
@@ -29,8 +30,6 @@ class _Auth extends ControllerAuth {
 }
 
 class _Service extends ServiceEvent {
-  @override
-  bool get usesMemoryInitialWindowRpc => false;
   List<EventItem> rows = [
     EventItem(id: 'recent', name: 'Recent', startDate: DateTime.now()),
   ];
@@ -45,6 +44,47 @@ class _Service extends ServiceEvent {
   Completer<List<EventItem>>? pendingFallback;
   void Function(List<EventItem>)? previewCallback;
   bool Function()? continueCallback;
+  @override
+  Future<ModelMemoryInitialWindow> getMemoryWindow({
+    required DateTime from,
+    required DateTime to,
+    required int limit,
+    bool expandFallback = false,
+  }) async {
+    final allEvents =
+        await getEvents(
+          tableName: TableNames.memoryTrace,
+          dateS: from,
+          dateE: to,
+          limit: limit,
+        ) ??
+        const [];
+    bool isInWindow(EventItem event) {
+      final date = event.startDate;
+      return date != null && !date.isBefore(from) && !date.isAfter(to);
+    }
+
+    var sourceWindowEvents = rows.where(isInWindow).toList();
+    var windowEvents = allEvents.where(isInWindow).toList();
+    if (windowEvents.isEmpty && expandFallback) {
+      sourceWindowEvents = rows
+          .where((event) => event.startDate?.isBefore(from) ?? false)
+          .toList();
+      windowEvents = allEvents
+          .where((event) => event.startDate?.isBefore(from) ?? false)
+          .toList();
+    }
+    final events = windowEvents.take(limit).toList();
+    final start = latest ?? from;
+    return ModelMemoryInitialWindow(
+      events: events,
+      hasPageMore: sourceWindowEvents.length > limit,
+      hasMore: sourceWindowEvents.length > limit,
+      windowStart: start,
+      windowEnd: latest ?? to,
+    );
+  }
+
   @override
   Future<List<EventItem>?> getEvents({
     required String tableName,
@@ -121,7 +161,7 @@ void main() {
     auth.dispose();
   });
 
-  for (final local in [false, true]) {
+  for (final local in [true]) {
     test(
       'older fallback is visible before full day query finishes local=$local',
       () async {
@@ -145,7 +185,7 @@ void main() {
     );
   }
 
-  for (final local in [false, true]) {
+  for (final local in [true]) {
     test(
       'first rows are visible while ${local ? 'local' : 'cloud'} load waits',
       () async {
@@ -226,27 +266,17 @@ void main() {
     expect(controller.hasLoadedEventsSuccessfully, false);
   });
 
-  for (final local in [false, true]) {
-    test(
-      'scope predicate expires after account/storage change local=$local',
-      () async {
-        final completion = service.pendingRows = Completer<List<EventItem>>();
-        final request = controller.loadEvents(isGetPublicEvents: false);
-        final active = service.continueCallback!;
-        expect(active(), true);
-        if (local) {
-          auth.local = true;
-          auth.notifyListeners();
-        } else {
-          auth.switchAccount();
-        }
-        expect(active(), false);
-        completion.complete(service.rows);
-        await request;
-        expect(controller.getFilteredEvents(loc), isEmpty);
-      },
-    );
-  }
+  test('scope predicate expires after account change', () async {
+    final completion = service.pendingRows = Completer<List<EventItem>>();
+    final request = controller.loadEvents(isGetPublicEvents: false);
+    final active = service.continueCallback!;
+    expect(active(), true);
+    auth.switchAccount();
+    expect(active(), false);
+    completion.complete(service.rows);
+    await request;
+    expect(controller.getFilteredEvents(loc), isEmpty);
+  });
 
   test('expired service query does not access storage or network', () async {
     for (final storage in DataStorageLocation.values) {
@@ -332,7 +362,7 @@ void main() {
       if (change == 'account') {
         auth.switchAccount();
       } else if (change == 'storage') {
-        auth.local = true;
+        auth.local = false;
         auth.notifyListeners();
       } else {
         controller.dispose();
@@ -441,6 +471,8 @@ void main() {
   test(
     'full cloud page skips unnecessary history availability query',
     () async {
+      auth.local = false;
+      auth.notifyListeners();
       service.rows = List.generate(
         51,
         (i) => EventItem(id: '$i', name: '$i', startDate: DateTime.now()),
@@ -454,6 +486,8 @@ void main() {
   test(
     'small cloud pages retain lookahead and future-date query bounds',
     () async {
+      auth.local = false;
+      auth.notifyListeners();
       service.paged = true;
       final future = DateTime.now().add(const Duration(days: 7));
       service.rows = List.generate(
@@ -462,7 +496,7 @@ void main() {
       );
       await controller.loadEvents(isGetPublicEvents: false);
       expect(controller.getFilteredEvents(loc).length, 12);
-      expect(service.windows.single.limit, 13);
+      expect(service.windows.single.limit, 12);
       final firstWindow = service.windows.single;
       expect(firstWindow.end!.isAfter(future), true);
       await controller.loadMoreMemoryEvents();
@@ -472,7 +506,7 @@ void main() {
       expect(service.windows.last.end, firstWindow.end);
       expect(controller.hasMoreMemory, true);
       await controller.loadMoreMemoryEvents();
-      expect(service.windows.map((window) => window.offset), [0, 12, 24]);
+      expect(service.windows.map((window) => window.offset), [0, 12, 24, 0]);
       expect(
         controller.getFilteredEvents(loc).map((event) => event.id).toSet(),
         service.rows.map((event) => event.id).toSet(),

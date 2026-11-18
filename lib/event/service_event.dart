@@ -24,10 +24,6 @@ import 'package:life_pilot/utils/repository_cloud_gateway.dart';
 import 'package:life_pilot/utils/repository_event_cloud_operations.dart';
 
 class ServiceEvent {
-  /// Tests with deterministic in-memory services can disable the production
-  /// RPC without creating a database client. App instances always use it.
-  bool get usesMemoryInitialWindowRpc => true;
-
   Future<ModelMemoryInitialWindow> getMemoryWindow({
     required DateTime from,
     required DateTime to,

@@ -194,12 +194,20 @@ class ServicePointRecord {
     }
   }
 
-  Future<List<ModelLedgerAccountOption>> fetchAccountOptions({
+  Future<ModelLedgerAccountOptionPage> fetchAccountOptionPage({
     required String user,
-    int projectLimit = 2,
-  }) => RepositoryLedgerAccountOptions(
-    supabase,
-  ).read(kind: 'points', expectedEmail: user, projectLimit: projectLimit);
+    String search = '',
+    Map<String, dynamic>? cursor,
+    String? selectedId,
+    int limit = 20,
+  }) => RepositoryLedgerAccountOptions(supabase).readPage(
+    kind: 'points',
+    expectedEmail: user,
+    search: search,
+    cursor: cursor,
+    selectedId: selectedId,
+    limit: limit,
+  );
 
   Future<ModelPointRecordAccount> createAccount({
     required String name,
