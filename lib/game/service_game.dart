@@ -970,28 +970,19 @@ class ServiceGame {
   }) async {
     if (await _storesLocally) return null;
     final randomKey = Random.secure().nextDouble();
-    var rows = await supabase
-        .from(_questionTableForGame(gameName))
-        .select('question, answer')
-        .eq('owner_id', AuthConstants.systemQuestionBankOwnerId)
-        .eq('group', group)
-        .eq('is_active', true)
-        .gte('rand_key', randomKey)
-        .order('rand_key')
-        .limit(1);
-    if (rows.isEmpty) {
-      rows = await supabase
-          .from(_questionTableForGame(gameName))
-          .select('question, answer')
-          .eq('owner_id', AuthConstants.systemQuestionBankOwnerId)
-          .eq('group', group)
-          .eq('is_active', true)
-          .lt('rand_key', randomKey)
-          .order('rand_key')
-          .limit(1);
+    final response = await supabase.rpc(
+      'get_admin_question_hint',
+      params: {
+        'p_table_name': _questionTableForGame(gameName),
+        'p_group': group,
+        'p_random_key': randomKey,
+      },
+    );
+    if (response == null) return null;
+    if (response is! Map) {
+      throw const FormatException('Invalid admin question hint');
     }
-    if (rows.isEmpty) return null;
-    final row = rows.first;
+    final row = Map<String, dynamic>.from(response);
     return GameQuestionHint(
       question: parseStringValue(row['question']),
       answer: parseStringValue(row['answer']),

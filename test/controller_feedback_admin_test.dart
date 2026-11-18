@@ -62,16 +62,19 @@ class _Service extends ServiceFeedback {
   }
 
   @override
-  Future<List<String>> loadScreenshots(int id) async {
+  Future<List<String>> downloadScreenshots(List<String> paths) async {
     imageReads++;
     if (failImages) throw StateError('image failed');
     return images?.future ?? ['encoded'];
   }
 
   @override
-  Future<String> loadContent(int id) async {
+  Future<FeedbackDetail> loadDetail(int id) async {
     contentReads++;
-    return 'Complete feedback content';
+    return const FeedbackDetail(
+      content: 'Complete feedback content',
+      screenshotPaths: ['owner/image.png'],
+    );
   }
 }
 
@@ -333,6 +336,7 @@ void main() {
     await controller.loadContent(item);
     expect(service.contentReads, 1);
     expect(item.content, 'Complete feedback content');
+    expect(item.screenshotPaths, ['owner/image.png']);
     expect(item.contentLoaded, isTrue);
   });
   test('late private screenshots are discarded after account change', () async {

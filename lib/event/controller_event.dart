@@ -613,7 +613,7 @@ class ControllerEvent extends SafeChangeNotifier {
           isMemoryTrace &&
               usesCloudPagination &&
               _serviceEvent.usesMemoryInitialWindowRpc
-          ? (initialMemoryWindow = await _serviceEvent.getInitialMemoryWindow(
+          ? (initialMemoryWindow = await _serviceEvent.getMemoryWindow(
               from: memoryStart,
               to: _memoryLoadedEndDate!,
               limit: _cloudPageSize,
@@ -862,6 +862,26 @@ class ControllerEvent extends SafeChangeNotifier {
         nextPage = _acceptCloudPage(nextPage, offset: _nextCloudOffset);
         _modelEvent.appendMemoryEvents(nextPage);
         if (_hasMoreEvents) return;
+      }
+      if (usesCloudPagination && _serviceEvent.usesMemoryInitialWindowRpc) {
+        final rangeEnd = DateTimeFormatter.dateOnly(
+          loadedStart.subtract(const Duration(days: 1)),
+        );
+        final rangeStart = rangeEnd.subtract(const Duration(days: 29));
+        final window = await _serviceEvent.getMemoryWindow(
+          from: rangeStart,
+          to: rangeEnd,
+          limit: _cloudPageSize,
+          expandFallback: true,
+        );
+        if (!_isCurrentEventLoad(generation, revision)) return;
+        _modelEvent.appendMemoryEvents(window.events);
+        _hasMoreEvents = window.hasPageMore;
+        _nextCloudOffset = window.events.length;
+        _hasMoreMemory = window.hasMore;
+        _memoryLoadedStartDate = window.windowStart;
+        _memoryLoadedEndDate = window.windowEnd;
+        return;
       }
       final latestOlder = await _serviceEvent.latestEventDateBefore(
         tableName: _tableName,

@@ -45,11 +45,17 @@ class _Service extends ServiceFeedback {
   }
 
   @override
-  Future<List<String>> loadScreenshots(int id) async {
+  Future<List<String>> downloadScreenshots(List<String> paths) async {
     images++;
     if (fail) throw StateError('offline');
     return gate?.future ?? [];
   }
+
+  @override
+  Future<FeedbackDetail> loadDetail(int id) async => const FeedbackDetail(
+    content: 'Full feedback text',
+    screenshotPaths: ['owner/image.png'],
+  );
 }
 
 void main() {

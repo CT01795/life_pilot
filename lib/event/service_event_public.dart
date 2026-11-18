@@ -152,25 +152,38 @@ class ServiceEventPublic {
     }
   }
 
-  Future<bool> checkIfUrlExists(String url, DateTime today) async {
-    try {
-      final response = await supabase
-          .from(TableNames.recommendEventUrl)
-          .select('master_url')
-          .eq('master_url', url)
-          .eq('start_date', today.toUtc().toIso8601String())
-          .limit(1)
-          .maybeSingle();
-
-      return response != null;
-    } catch (e, st) {
-      logger.e('checkIfUrlExists failed $e\n$st');
-      return false;
+  Future<Set<String>> _missingSourceUrls(
+    Iterable<String> urls,
+    DateTime today,
+  ) async {
+    final unique = urls.toSet().toList(growable: false);
+    if (unique.isEmpty) return const {};
+    final response = await supabase.rpc(
+      'get_missing_public_event_sources',
+      params: {
+        'p_urls': unique,
+        'p_start_date': today.toUtc().toIso8601String().split('T').first,
+      },
+    );
+    if (response is! List) {
+      throw const FormatException('Invalid public event source response');
     }
+    return response
+        .map(parseStringValue)
+        .where((url) => url.isNotEmpty)
+        .toSet();
   }
 
-  Future<bool> checkEventsUrl(String url, DateTime today) async {
-    final shouldRun = !await checkIfUrlExists(url, today);
+  Future<bool> _shouldRefreshSource(
+    String url,
+    DateTime today,
+    Map<String, bool> decisions,
+  ) async {
+    var shouldRun = decisions[url];
+    if (shouldRun == null) {
+      shouldRun = (await _missingSourceUrls([url], today)).contains(url);
+      decisions[url] = shouldRun;
+    }
     if (shouldRun) _refreshAttemptedSources++;
     return shouldRun;
   }
@@ -616,10 +629,62 @@ class ServiceEventPublic {
     final importKeys = RepositoryImportDeletionKeys(supabase);
     Set<String> dbNameDateSet = <String>{};
     DateTime today = DateUtils.dateOnly(DateTime.now());
+    const strolltimesWeekendUrl = 'https://strolltimes.com/weekend.json';
+    const strolltimesEventsUrl = 'https://strolltimes.com/events-data.csv';
+    const cloudCultureCategories = <int, String>{
+      1: '音樂',
+      2: '戲劇',
+      3: '舞蹈',
+      4: '親子',
+      5: '獨立音樂',
+      6: '展覽',
+      7: '講座',
+      8: '電影',
+      11: '綜藝',
+      13: '競賽',
+      14: '徵選',
+      15: '其他',
+      17: '演唱會',
+      19: '研習課程',
+      200: '閱讀',
+    };
+    const accupassUrl =
+        'https://www.accupass.com/search?p=free&q=活動&s=latest&t=none';
+    const ntpcUrl = 'https://www.ntpc.gov.tw/ch/home.jsp';
+    const taipeiOpenDataUrl =
+        'https://cultureexpress.taipei/OpenData/Event/C000003';
+    const mocTypes = ['B2', 'I7', 'I8'];
+    final formatToday = DateFormat('yyyy-MM-dd').format(today);
+    String cloudCultureUrl(int category) =>
+        'https://cloud.culture.tw/frontsite/trans/SearchShowAction.do?method=doFindTypeJ&category=$category';
+    String paperWindmillUrl(int page) =>
+        'https://www.paperwindmill.com.tw/zh-tw/paper/schedule?page=$page';
+    String taiwanNetUrl(int page) =>
+        'https://www.taiwan.net.tw/m1.aspx?sNo=0001019&page=$page';
+    String mocUrl(String type) =>
+        'https://event.moc.gov.tw/sp.asp?xdurl=ccEvent2016/eventSearchList.asp&ev_char1=$type&ev_start=$formatToday&action=query&ctNode=676&mp=1&pageSize=100';
+    final sourceUrls = <String>{
+      strolltimesWeekendUrl,
+      strolltimesEventsUrl,
+      for (final category in cloudCultureCategories.keys)
+        cloudCultureUrl(category),
+      accupassUrl,
+      for (var page = 1; page <= 2; page++) paperWindmillUrl(page),
+      for (var page = 1; page <= 100; page++) taiwanNetUrl(page),
+      ntpcUrl,
+      taipeiOpenDataUrl,
+      for (final type in mocTypes) mocUrl(type),
+    };
+    final missingUrls = await _missingSourceUrls(sourceUrls, today);
+    final sourceDecisions = <String, bool>{
+      for (final url in sourceUrls) url: missingUrls.contains(url),
+    };
     //==================================== 取得外部資源事件 strolltimes.com/weekend ====================================
-    String strolltimesWeekendUrl =
-        "https://strolltimes.com/weekend.json"; //https://news.strolltimes.com/events/weekend/"; //'https://strolltimes.com/weekend-events/';
-    if (await checkEventsUrl(strolltimesWeekendUrl, today)) {
+    if (await _shouldRefreshSource(
+      strolltimesWeekendUrl,
+      today,
+      sourceDecisions,
+    )) {
       try {
         List<EventItem> strolltimesList =
             await fetchPageEventsStrolltimes(
@@ -642,8 +707,11 @@ class ServiceEventPublic {
       }
     }
     //==================================== 取得外部資源事件 strolltimes.com/events-data ====================================
-    String strolltimesEventsUrl = "https://strolltimes.com/events-data.csv";
-    if (await checkEventsUrl(strolltimesEventsUrl, today)) {
+    if (await _shouldRefreshSource(
+      strolltimesEventsUrl,
+      today,
+      sourceDecisions,
+    )) {
       try {
         final res = await _http.get(Uri.parse(strolltimesEventsUrl));
         if (res.statusCode == 200) {
@@ -667,32 +735,14 @@ class ServiceEventPublic {
       }
     }
     //==================================== 取得外部資源事件 cloud.culture.tw ====================================
-    Map<int, String> tmpMap = {
-      1: "音樂",
-      2: "戲劇",
-      3: "舞蹈",
-      4: "親子",
-      5: "獨立音樂",
-      6: "展覽",
-      7: "講座",
-      8: "電影",
-      11: "綜藝",
-      13: "競賽",
-      14: "徵選",
-      15: "其他",
-      17: "演唱會",
-      19: "研習課程",
-      200: "閱讀",
-    };
-    for (int i in tmpMap.keys) {
-      final cloudCultureUrl =
-          'https://cloud.culture.tw/frontsite/trans/SearchShowAction.do?method=doFindTypeJ&category=$i';
+    for (int i in cloudCultureCategories.keys) {
+      final sourceUrl = cloudCultureUrl(i);
 
-      if (await checkEventsUrl(cloudCultureUrl, today)) {
+      if (await _shouldRefreshSource(sourceUrl, today, sourceDecisions)) {
         try {
           List<EventItem> cloudCultureList =
               await fetchPageEventsCloudCulture(
-                cloudCultureUrl,
+                sourceUrl,
                 today,
                 Source.cloudCulture,
               ) ??
@@ -703,20 +753,17 @@ class ServiceEventPublic {
             cloudCultureList,
             importKeys,
             dbNameDateSet,
-            cloudCultureUrl,
+            sourceUrl,
             today,
           );
         } on Exception catch (ex) {
-          _recordSourceFailure(cloudCultureUrl, ex);
+          _recordSourceFailure(sourceUrl, ex);
         }
       }
     }
 
     //==================================== 取得 ACCUPASS 活動 ====================================
-    String accupassUrl =
-        "https://www.accupass.com/search?p=free&q=活動&s=latest&t=none";
-
-    if (await checkEventsUrl(accupassUrl, today)) {
+    if (await _shouldRefreshSource(accupassUrl, today, sourceDecisions)) {
       try {
         List<EventItem> accupassList =
             await fetchPageEventsAccupass(
@@ -740,13 +787,12 @@ class ServiceEventPublic {
 
     //==================================== 取得紙風車活動 ====================================/"https://www.paperwindmill.com.tw/paper/";
     for (int i = 1; i <= 2; i++) {
-      String paperWindmillUrl =
-          "https://www.paperwindmill.com.tw/zh-tw/paper/schedule?page=$i";
-      if (await checkEventsUrl(paperWindmillUrl, today)) {
+      final sourceUrl = paperWindmillUrl(i);
+      if (await _shouldRefreshSource(sourceUrl, today, sourceDecisions)) {
         try {
           List<EventItem> paperWindmillList =
               await fetchPageEventsPaperWindmill(
-                paperWindmillUrl,
+                sourceUrl,
                 today,
                 Source.paperwindmill,
               ) ??
@@ -756,11 +802,11 @@ class ServiceEventPublic {
             paperWindmillList,
             importKeys,
             dbNameDateSet,
-            paperWindmillUrl,
+            sourceUrl,
             today,
           );
         } catch (ex) {
-          _recordSourceFailure(paperWindmillUrl, ex);
+          _recordSourceFailure(sourceUrl, ex);
         }
       }
     }
@@ -769,14 +815,13 @@ class ServiceEventPublic {
     bool isBreakTime = false;
     int pageIndex = 1;
     while (!isBreakTime) {
-      String taiwanNetUrl =
-          "https://www.taiwan.net.tw/m1.aspx?sNo=0001019&page=$pageIndex";
+      final sourceUrl = taiwanNetUrl(pageIndex);
 
-      if (await checkEventsUrl(taiwanNetUrl, today)) {
+      if (await _shouldRefreshSource(sourceUrl, today, sourceDecisions)) {
         try {
           List<EventItem> taiwanNetList =
               await fetchPageEventsTaiwanNet(
-                taiwanNetUrl,
+                sourceUrl,
                 today,
                 Source.taiwanNet,
               ) ??
@@ -786,13 +831,13 @@ class ServiceEventPublic {
             taiwanNetList,
             importKeys,
             dbNameDateSet,
-            taiwanNetUrl,
+            sourceUrl,
             today,
           );
           pageIndex = pageIndex + 1;
           isBreakTime = taiwanNetList.isEmpty && pageIndex >= 15;
         } catch (ex) {
-          _recordSourceFailure(taiwanNetUrl, ex);
+          _recordSourceFailure(sourceUrl, ex);
           isBreakTime = true;
         }
       } else {
@@ -801,9 +846,7 @@ class ServiceEventPublic {
       }
     }
     //==================================== 取得新北市政府活動 ====================================
-    String ntpcUrl = "https://www.ntpc.gov.tw/ch/home.jsp";
-
-    if (await checkEventsUrl(ntpcUrl, today)) {
+    if (await _shouldRefreshSource(ntpcUrl, today, sourceDecisions)) {
       try {
         List<EventItem> ntpcList =
             await fetchPageEventsNtpc(ntpcUrl, today, Source.ntpc) ?? [];
@@ -821,10 +864,7 @@ class ServiceEventPublic {
     }
 
     //==================================== 取得台北市文化快遞資訊 ====================================
-    String taipeiOpenDataUrl =
-        "https://cultureexpress.taipei/OpenData/Event/C000003";
-
-    if (await checkEventsUrl(taipeiOpenDataUrl, today)) {
+    if (await _shouldRefreshSource(taipeiOpenDataUrl, today, sourceDecisions)) {
       try {
         List<EventItem> taipeiOpenDataList =
             await fetchPageEventsTaipeiOpenData(
@@ -847,12 +887,9 @@ class ServiceEventPublic {
     }
 
     //==================================== 取得文化部活動 ====================================
-    final types = ["B2", "I7", "I8"];
-    final formatToday = DateFormat("yyyy-MM-dd").format(today);
-    for (String tmpType in types) {
-      String moclUrl =
-          "https://event.moc.gov.tw/sp.asp?xdurl=ccEvent2016/eventSearchList.asp&ev_char1=$tmpType&ev_start=$formatToday&action=query&ctNode=676&mp=1&pageSize=100";
-      if (await checkEventsUrl(moclUrl, today)) {
+    for (String tmpType in mocTypes) {
+      final moclUrl = mocUrl(tmpType);
+      if (await _shouldRefreshSource(moclUrl, today, sourceDecisions)) {
         try {
           List<EventItem> moclUrlList =
               await fetchPageEventsMoc(moclUrl, today, Source.mocGov) ?? [];

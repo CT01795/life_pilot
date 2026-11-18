@@ -12,6 +12,7 @@ class ModelFeedback {
   bool contentLoaded;
   final List<String>? cc;
   List<String>? screenshot; // base64
+  List<String>? screenshotPaths;
   bool screenshotsLoaded;
   final String? createdBy;
   final DateTime createdAt;
@@ -30,6 +31,7 @@ class ModelFeedback {
     this.contentLoaded = true,
     this.cc,
     this.screenshot,
+    this.screenshotPaths,
     this.screenshotsLoaded = true,
     this.createdBy,
     required this.createdAt,
@@ -85,6 +87,7 @@ class ModelFeedback {
         screenshotsLoaded: screenshotsLoaded,
         cc: cc,
         screenshot: screenshot,
+        screenshotPaths: screenshotPaths,
         screenshotDecoder: _screenshotDecoder,
         createdBy: createdBy,
         createdAt: createdAt,
@@ -123,4 +126,11 @@ class ModelFeedback {
   static Uint8List _decodeBase64(String s) => base64Decode(s);
   static Future<Uint8List> _decodeOffThread(String source) =>
       compute(_decodeBase64, source);
+}
+
+class FeedbackDetail {
+  const FeedbackDetail({required this.content, required this.screenshotPaths});
+
+  final String content;
+  final List<String> screenshotPaths;
 }

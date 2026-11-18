@@ -65,7 +65,9 @@ void main() {
     );
     supabase = client;
 
-    final pending = ServiceFeedback().loadScreenshots(1);
+    final pending = ServiceFeedback().downloadScreenshots(
+      List.generate(5, (index) => 'owner/$index.png'),
+    );
     await firstBatchStarted.future.timeout(const Duration(seconds: 2));
     expect(downloads, 3);
     expect(maximum, 3);

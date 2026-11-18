@@ -250,11 +250,14 @@ void main() {
       final summaryRequest = jsonDecode(requests.single.body) as Map;
       expect(summaryRequest.keys, isNot(contains('screenshot')));
       expect(summaryRequest.keys, isNot(contains('cc')));
-      response = {
-        'screenshot': ['encoded-image'],
-      };
-      expect(await ServiceFeedback().loadScreenshots(3), isEmpty);
-      expect(requests.last.url.queryParameters['select'], 'screenshot_paths');
+      response = {'content': 'Full feedback', 'screenshot_paths': <String>[]};
+      final detail = await ServiceFeedback().loadDetail(3);
+      expect(detail.content, 'Full feedback');
+      expect(detail.screenshotPaths, isEmpty);
+      expect(
+        requests.last.url.queryParameters['select'],
+        'content,screenshot_paths',
+      );
       expect(requests.last.url.queryParameters['id'], 'eq.3');
     },
   );

@@ -21,8 +21,6 @@ import 'package:life_pilot/local_storage/repository_local_record_editor.dart';
 import 'package:life_pilot/local_storage/repository_local_account_summary.dart';
 
 class ServiceAccounting {
-  static const _accountModelColumns =
-      'id,account,category,master_graph_url,balance,main_currency,exchange_rate';
   final _localAccountSummary = RepositoryLocalAccountSummary();
   final _localEventAccounts = RepositoryLocalEventAccount();
   final _localHistory = RepositoryLocalRecordHistory();
@@ -257,46 +255,20 @@ class ServiceAccounting {
           exchangeRate: null,
         );
       }
-      // 1. 查詢是否已存在
-      final exist = await supabase
-          .from(TableNames.accountingAccount)
-          .select('id,is_valid')
-          .eq(Fields.createdBy, user)
-          .eq(Fields.account, name)
-          .eq('category', category)
-          .maybeSingle();
-
-      Map<String, dynamic> result;
-
-      if (exist != null) {
-        // 2. 已存在但無效 -> 恢復
-        if (exist[Fields.isValid] != true) {
-          result = await supabase
-              .from(TableNames.accountingAccount)
-              .update({Fields.isValid: true})
-              .eq(Fields.id, exist[Fields.id])
-              .select(_accountModelColumns)
-              .single();
-        } else {
-          throw Exception('Account already exists');
-        }
-      } else {
-        // 3. 新增
-        result = await supabase
-            .from(TableNames.accountingAccount)
-            .insert({
-              Fields.id: eventId ?? const Uuid().v4(),
-              Fields.account: name,
-              Fields.createdBy: user,
-              'category': category,
-              'main_currency': currency,
-              'balance': 0,
-              'exchange_rate': null,
-              Fields.isValid: true,
-            })
-            .select(_accountModelColumns)
-            .single();
+      final response = await supabase.rpc(
+        'create_or_restore_my_ledger_account',
+        params: {
+          'p_kind': 'accounting',
+          'p_account_id': eventId ?? const Uuid().v4(),
+          'p_name': name,
+          'p_category': category,
+          'p_currency': currency,
+        },
+      );
+      if (response is! Map) {
+        throw const FormatException('Invalid accounting account response');
       }
+      final result = Map<String, dynamic>.from(response);
 
       final bytes = parseMasterGraph(result['master_graph_url']);
 

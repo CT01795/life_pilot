@@ -40,13 +40,14 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     late Future<void> request;
     request =
         Future<void>.sync(() async {
-          final content = await _service
-              .loadContent(feedback.id)
+          final detail = await _service
+              .loadDetail(feedback.id)
               .timeout(requestTimeout);
           if (!_active(revision) || !canReadScreenshots(feedback)) {
             throw StateError('Feedback request changed');
           }
-          feedback.content = content;
+          feedback.content = detail.content;
+          feedback.screenshotPaths = detail.screenshotPaths;
           feedback.contentLoaded = true;
         }).whenComplete(() {
           if (identical(_contentLoads[feedback.id], request)) {
@@ -73,8 +74,11 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
     late Future<void> request;
     request =
         Future<void>.sync(() async {
+          if (feedback.screenshotPaths == null) {
+            await loadContent(feedback);
+          }
           final images = await _service
-              .loadScreenshots(feedback.id)
+              .downloadScreenshots(feedback.screenshotPaths ?? const [])
               .timeout(requestTimeout);
           if (!_active(revision) || !canReadScreenshots(feedback)) {
             throw StateError('Feedback request changed');

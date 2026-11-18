@@ -120,15 +120,14 @@ Future<void> openHomeAccountingDetails(BuildContext context) async {
   final auth = context.read<ModelAuthView>();
   final scope = _HomeRecordScope(auth, dashboard, points: false);
   final accountId = dashboard.setting.accountingAccountId;
-  final accountName = dashboard.setting.accountingAccountName;
   final user = auth.account;
-  if ((accountId == null && accountName == null) || user == null) return;
+  if (accountId == null || user == null) return;
   final service = context.read<ServiceAccounting>();
-  final accounts = await service.fetchAccounts(user: user);
+  final account = await service.fetchAccountById(
+    user: user,
+    accountId: accountId,
+  );
   if (!context.mounted || !scope.isCurrent) return;
-  final account = accounts
-      .where((item) => item.id == accountId || item.accountName == accountName)
-      .firstOrNull;
   if (account == null) return;
   await Navigator.of(context).push<bool>(
     MaterialPageRoute(
@@ -205,15 +204,14 @@ Future<void> openHomePointDetails(BuildContext context) async {
   final auth = context.read<ModelAuthView>();
   final scope = _HomeRecordScope(auth, dashboard, points: true);
   final accountId = dashboard.setting.pointAccountId;
-  final accountName = dashboard.setting.pointAccountName;
   final user = auth.account;
-  if ((accountId == null && accountName == null) || user == null) return;
+  if (accountId == null || user == null) return;
   final service = context.read<ServicePointRecord>();
-  final accounts = await service.fetchAccounts(user: user);
+  final account = await service.fetchAccountById(
+    user: user,
+    accountId: accountId,
+  );
   if (!context.mounted || !scope.isCurrent) return;
-  final account = accounts
-      .where((item) => item.id == accountId || item.accountName == accountName)
-      .firstOrNull;
   if (account == null) return;
   await Navigator.of(context).push<bool>(
     MaterialPageRoute(

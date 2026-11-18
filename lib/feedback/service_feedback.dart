@@ -51,20 +51,27 @@ class ServiceFeedback {
     );
   }
 
-  Future<String> loadContent(int id) async {
+  Future<FeedbackDetail> loadDetail(int id) async {
     final client = supabase;
     final owner = client.auth.currentUser?.id;
     if (owner == null) throw StateError('Authentication required');
     final row = await client
         .from(TableNames.feedback)
-        .select('content')
+        .select('content,screenshot_paths')
         .eq(Fields.id, id)
         .maybeSingle();
     if (client.auth.currentUser?.id != owner) {
       throw StateError('Feedback account changed');
     }
     if (row == null) throw StateError('Feedback no longer visible');
-    return parseStringValue(row['content']);
+    return FeedbackDetail(
+      content: parseStringValue(row['content']),
+      screenshotPaths: List.unmodifiable(
+        (row['screenshot_paths'] as List? ?? const [])
+            .map(parseStringValue)
+            .where((path) => path.isNotEmpty),
+      ),
+    );
   }
 
   Future<void> sendFeedback({
@@ -113,52 +120,30 @@ class ServiceFeedback {
     }
   }
 
-  Future<List<String>> loadScreenshots(int id) async {
-    return RepositorySessionReads(
-      supabase,
-    ).read('feedback', ('images', id), () => _loadScreenshots(id));
-  }
-
-  Future<List<String>> _loadScreenshots(int id) async {
+  Future<List<String>> downloadScreenshots(List<String> paths) async {
+    if (paths.isEmpty) return const [];
     final client = supabase;
     final owner = client.auth.currentUser?.id;
     if (owner == null) throw StateError('Authentication required');
-    final row = await client
-        .from(TableNames.feedback)
-        .select('screenshot_paths')
-        .eq('id', id)
-        .maybeSingle();
-    if (client.auth.currentUser?.id != owner) {
-      throw StateError('Feedback account changed');
-    }
-    if (row == null) throw StateError('Feedback no longer visible');
-    final paths = (row['screenshot_paths'] as List? ?? const [])
-        .map(parseStringValue)
-        .where((path) => path.isNotEmpty)
-        .toList(growable: false);
-    if (paths.isNotEmpty) {
-      const concurrentDownloads = 3;
-      final images = <String>[];
-      for (
-        var offset = 0;
-        offset < paths.length;
-        offset += concurrentDownloads
-      ) {
-        final candidateEnd = offset + concurrentDownloads;
-        final end = candidateEnd < paths.length ? candidateEnd : paths.length;
-        images.addAll(
-          await Future.wait([
-            for (final path in paths.sublist(offset, end))
-              client.storage
-                  .from('feedback-screenshots')
-                  .download(path)
-                  .then(base64Encode),
-          ]),
-        );
+    const concurrentDownloads = 3;
+    final images = <String>[];
+    for (var offset = 0; offset < paths.length; offset += concurrentDownloads) {
+      final candidateEnd = offset + concurrentDownloads;
+      final end = candidateEnd < paths.length ? candidateEnd : paths.length;
+      images.addAll(
+        await Future.wait([
+          for (final path in paths.sublist(offset, end))
+            client.storage
+                .from('feedback-screenshots')
+                .download(path)
+                .then(base64Encode),
+        ]),
+      );
+      if (client.auth.currentUser?.id != owner) {
+        throw StateError('Feedback account changed');
       }
-      return List.unmodifiable(images);
     }
-    return const [];
+    return List.unmodifiable(images);
   }
 
   Future<void> updateFeedback({required ModelFeedback feedback}) async {

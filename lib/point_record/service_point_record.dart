@@ -21,8 +21,6 @@ import 'package:life_pilot/local_storage/repository_local_record_editor.dart';
 import 'package:life_pilot/local_storage/repository_local_account_summary.dart';
 
 class ServicePointRecord {
-  static const _accountModelColumns =
-      'id,account,category,master_graph_url,points';
   final _localAccountSummary = RepositoryLocalAccountSummary();
   final _localEventAccounts = RepositoryLocalEventAccount();
   final _localHistory = RepositoryLocalRecordHistory();
@@ -251,44 +249,20 @@ class ServicePointRecord {
           points: 0,
         );
       }
-      // 查詢是否已存在
-      final exist = await supabase
-          .from(TableNames.pointRecordAccount)
-          .select('id,is_valid')
-          .eq(Fields.createdBy, user)
-          .eq(Fields.account, name)
-          .eq('category', category)
-          .maybeSingle();
-
-      Map<String, dynamic> response;
-
-      if (exist != null) {
-        // 已存在但被刪除 -> 恢復
-        if (exist[Fields.isValid] != true) {
-          response = await supabase
-              .from(TableNames.pointRecordAccount)
-              .update({Fields.isValid: true})
-              .eq(Fields.id, exist[Fields.id])
-              .select(_accountModelColumns)
-              .single();
-        } else {
-          throw Exception('Account already exists');
-        }
-      } else {
-        // 新增帳戶
-        response = await supabase
-            .from(TableNames.pointRecordAccount)
-            .insert({
-              Fields.id: eventId ?? const Uuid().v4(),
-              Fields.account: name,
-              Fields.createdBy: user,
-              'category': category,
-              'points': 0,
-              Fields.isValid: true,
-            })
-            .select(_accountModelColumns)
-            .single();
+      final result = await supabase.rpc(
+        'create_or_restore_my_ledger_account',
+        params: {
+          'p_kind': 'points',
+          'p_account_id': eventId ?? const Uuid().v4(),
+          'p_name': name,
+          'p_category': category,
+          'p_currency': currency,
+        },
+      );
+      if (result is! Map) {
+        throw const FormatException('Invalid point account response');
       }
+      final response = Map<String, dynamic>.from(result);
 
       final bytes = parseMasterGraph(response['master_graph_url']);
       return ModelPointRecordAccount(

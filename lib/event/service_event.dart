@@ -28,21 +28,23 @@ class ServiceEvent {
   /// RPC without creating a database client. App instances always use it.
   bool get usesMemoryInitialWindowRpc => true;
 
-  Future<ModelMemoryInitialWindow> getInitialMemoryWindow({
+  Future<ModelMemoryInitialWindow> getMemoryWindow({
     required DateTime from,
     required DateTime to,
     required int limit,
+    bool expandFallback = false,
   }) async {
     final result = await supabase.rpc(
-      'get_my_memory_initial_window',
+      'get_my_memory_window',
       params: {
         'p_from': from.formatDateString(),
         'p_to': to.formatDateString(),
         'p_limit': limit,
+        'p_expand_fallback': expandFallback,
       },
     );
     if (result is! Map) {
-      throw const FormatException('Invalid memory initial window response');
+      throw const FormatException('Invalid memory window response');
     }
     return ModelMemoryInitialWindow.fromJson(
       Map<String, dynamic>.from(result),

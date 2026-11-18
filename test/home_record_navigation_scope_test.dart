@@ -31,11 +31,14 @@ class _Auth extends ControllerAuth {
 
 class _Accounting extends ServiceAccounting {
   final pending = Completer<List<ModelAccountingAccount>>();
+  int idReads = 0;
+  int listReads = 0;
   @override
   Future<ModelAccountingAccount?> fetchAccountById({
     required String user,
     required String accountId,
   }) async {
+    idReads++;
     expect(user, 'a@example.com');
     expect(accountId, 'selected');
     return (await pending.future).where((a) => a.id == accountId).firstOrNull;
@@ -50,6 +53,7 @@ class _Accounting extends ServiceAccounting {
     int? offset,
     int? limit,
   }) {
+    listReads++;
     expect(user, 'a@example.com');
     return pending.future;
   }
@@ -57,11 +61,14 @@ class _Accounting extends ServiceAccounting {
 
 class _Points extends ServicePointRecord {
   final pending = Completer<List<ModelPointRecordAccount>>();
+  int idReads = 0;
+  int listReads = 0;
   @override
   Future<ModelPointRecordAccount?> fetchAccountById({
     required String user,
     required String accountId,
   }) async {
+    idReads++;
     expect(user, 'a@example.com');
     expect(accountId, 'selected');
     return (await pending.future).where((a) => a.id == accountId).firstOrNull;
@@ -76,6 +83,7 @@ class _Points extends ServicePointRecord {
     int? offset,
     int? limit,
   }) {
+    listReads++;
     expect(user, 'a@example.com');
     return pending.future;
   }
@@ -295,9 +303,13 @@ void main() {
           if (isPoints) {
             expect((page as PagePointRecordDetail).account.id, 'selected');
             expect(page.returnAfterSubmit, quick);
+            expect(f.points.idReads, 1);
+            expect(f.points.listReads, 0);
           } else {
             expect((page as PageAccountingDetail).account.id, 'selected');
             expect(page.returnAfterSubmit, quick);
+            expect(f.accounting.idReads, 1);
+            expect(f.accounting.listReads, 0);
           }
           navigator.result.complete(true);
           await tester.pump();
