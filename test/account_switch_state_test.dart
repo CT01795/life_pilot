@@ -110,8 +110,8 @@ class _DelayedAccountingService extends ServiceAccounting {
     required String user,
     String? category,
     String? searchQuery,
-    int? offset,
-    int? limit,
+    required int offset,
+    required int limit,
   }) => response.future;
 }
 
@@ -123,8 +123,8 @@ class _DelayedPointService extends ServicePointRecord {
     required String user,
     String? category,
     String? searchQuery,
-    int? offset,
-    int? limit,
+    required int offset,
+    required int limit,
   }) => response.future;
 }
 

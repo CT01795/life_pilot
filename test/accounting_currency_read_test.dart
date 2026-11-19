@@ -29,8 +29,8 @@ class _Service extends ServiceAccounting {
     required String user,
     String? category,
     String? searchQuery,
-    int? offset,
-    int? limit,
+    required int offset,
+    required int limit,
   }) {
     listCalls++;
     final result = Completer<List<ModelAccountingAccount>>();

@@ -32,8 +32,8 @@ class _Accounting extends ServiceAccounting {
     required String user,
     String? category,
     String? searchQuery,
-    int? offset,
-    int? limit,
+    required int offset,
+    required int limit,
   }) async {
     if (fail) throw StateError('offline');
     return [
@@ -53,8 +53,8 @@ class _Points extends ServicePointRecord {
     required String user,
     String? category,
     String? searchQuery,
-    int? offset,
-    int? limit,
+    required int offset,
+    required int limit,
   }) async {
     if (fail) throw StateError('offline');
     return [

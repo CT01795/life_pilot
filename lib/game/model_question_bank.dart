@@ -53,6 +53,16 @@ class MyGameQuestionPage {
   final bool? hasMore;
 }
 
+class MyGameQuestionManagementPage {
+  const MyGameQuestionManagementPage({
+    required this.page,
+    required this.groups,
+  });
+
+  final MyGameQuestionPage page;
+  final List<String> groups;
+}
+
 class MySocialChoice {
   const MySocialChoice({
     required this.text,

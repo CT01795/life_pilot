@@ -206,6 +206,26 @@ class _FakeGameService extends ServiceGame {
       groups;
 
   @override
+  Future<MyGameQuestionManagementPage> fetchMyQuestionManagementPage({
+    required String gameName,
+    String keyword = '',
+    String? group,
+    String status = 'all',
+    int offset = 0,
+    int limit = 20,
+  }) async => MyGameQuestionManagementPage(
+    page: await fetchMyQuestions(
+      gameName: gameName,
+      keyword: keyword,
+      group: group,
+      status: status,
+      offset: offset,
+      limit: limit,
+    ),
+    groups: groups,
+  );
+
+  @override
   Future<MySocialQuestionPage> fetchMySocialQuestions({
     String keyword = '',
     String? category,

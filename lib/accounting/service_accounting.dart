@@ -117,31 +117,30 @@ class ServiceAccounting {
     required String user,
     String? category, // null = all categories
     String? searchQuery,
-    int? offset,
-    int? limit,
+    required int offset,
+    required int limit,
   }) async {
+    if (offset < 0) throw RangeError.value(offset, 'offset');
+    if (limit < 1 || limit > 100) {
+      throw RangeError.range(limit, 1, 100, 'limit');
+    }
     try {
       if (await _storesLocally) {
         final owner = _localOwner!;
         final normalizedSearch = searchQuery?.trim().toLowerCase() ?? '';
-        final accountRows = offset != null && limit != null
-            ? await LocalDataStore.instance.readOnlyMatchingPage(
-                owner: owner,
-                resource: TableNames.accountingAccount,
-                matches: (row) =>
-                    row[Fields.isValid] == true &&
-                    (category == null || row['category'] == category) &&
-                    (normalizedSearch.isEmpty ||
-                        parseStringValue(
-                          row[Fields.account],
-                        ).toLowerCase().contains(normalizedSearch)),
-                offset: offset,
-                limit: limit,
-              )
-            : await LocalDataStore.instance.readOnlyRows(
-                owner: owner,
-                resource: TableNames.accountingAccount,
-              );
+        final accountRows = await LocalDataStore.instance.readOnlyMatchingPage(
+          owner: owner,
+          resource: TableNames.accountingAccount,
+          matches: (row) =>
+              row[Fields.isValid] == true &&
+              (category == null || row['category'] == category) &&
+              (normalizedSearch.isEmpty ||
+                  parseStringValue(
+                    row[Fields.account],
+                  ).toLowerCase().contains(normalizedSearch)),
+          offset: offset,
+          limit: limit,
+        );
         final selected = ModelLocalAccountList.selectAccounts(
           accounts: accountRows,
           category: category,
@@ -184,9 +183,7 @@ class ServiceAccounting {
         query = query.ilike(Fields.account, '%$normalizedSearch%');
       }
       final ordered = query.order(Fields.account, ascending: true);
-      final list = offset != null && limit != null
-          ? await ordered.range(offset, offset + limit - 1)
-          : await ordered;
+      final list = await ordered.range(offset, offset + limit - 1);
 
       return list.map((row) => ModelAccountingAccount.fromRow(row)).toList();
     } on Exception catch (exception) {

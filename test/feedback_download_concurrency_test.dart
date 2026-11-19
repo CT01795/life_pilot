@@ -77,4 +77,52 @@ void main() {
     expect(downloads, 5);
     expect(maximum, 3);
   });
+
+  test('duplicate screenshot paths share one active storage read', () async {
+    var downloads = 0;
+    final client = SupabaseClient(
+      'https://example.supabase.co',
+      'key',
+      httpClient: MockClient((request) async {
+        if (request.url.path.contains(
+          '/storage/v1/object/feedback-screenshots/',
+        )) {
+          downloads++;
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          return http.Response.bytes(
+            [1, 2, 3],
+            200,
+            request: request,
+            headers: {'content-type': 'application/octet-stream'},
+          );
+        }
+        return http.Response('{}', 200, request: request);
+      }),
+    );
+    addTearDown(client.dispose);
+    await client.auth.setInitialSession(
+      jsonEncode({
+        'access_token': 'token',
+        'token_type': 'bearer',
+        'user': {
+          'id': 'owner',
+          'email': 'owner@example.com',
+          'app_metadata': {},
+          'user_metadata': {},
+          'aud': 'authenticated',
+          'created_at': '2026-01-01T00:00:00Z',
+        },
+      }),
+    );
+    supabase = client;
+
+    final images = await ServiceFeedback().downloadScreenshots([
+      'owner/a.png',
+      'owner/a.png',
+      'owner/b.png',
+    ]);
+
+    expect(images, hasLength(3));
+    expect(downloads, 2);
+  });
 }

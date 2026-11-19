@@ -66,12 +66,16 @@ void main() {
           if (points) {
             final accounts = await ServicePointRecord().fetchAccounts(
               user: 'one@example.com',
+              offset: 0,
+              limit: 20,
             );
             expect(accounts.single.points, 1234);
             expect(accounts.single.masterGraphUrl, null);
           } else {
             final accounts = await ServiceAccounting().fetchAccounts(
               user: 'one@example.com',
+              offset: 0,
+              limit: 20,
             );
             expect(accounts.single.balance, 23.4567);
             expect(accounts.single.currency, 'USD');
@@ -82,6 +86,25 @@ void main() {
             requests.single.queryParameters['select'],
             isNot(contains('master_graph_url')),
           );
+        },
+      );
+
+      test(
+        'account lists reject unbounded page sizes before a request',
+        () async {
+          final read = points
+              ? ServicePointRecord().fetchAccounts(
+                  user: 'one@example.com',
+                  offset: 0,
+                  limit: 101,
+                )
+              : ServiceAccounting().fetchAccounts(
+                  user: 'one@example.com',
+                  offset: 0,
+                  limit: 101,
+                );
+          await expectLater(read, throwsRangeError);
+          expect(requests, isEmpty);
         },
       );
 

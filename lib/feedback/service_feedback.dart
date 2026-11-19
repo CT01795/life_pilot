@@ -55,23 +55,25 @@ class ServiceFeedback {
     final client = supabase;
     final owner = client.auth.currentUser?.id;
     if (owner == null) throw StateError('Authentication required');
-    final row = await client
-        .from(TableNames.feedback)
-        .select('content,screenshot_paths')
-        .eq(Fields.id, id)
-        .maybeSingle();
-    if (client.auth.currentUser?.id != owner) {
-      throw StateError('Feedback account changed');
-    }
-    if (row == null) throw StateError('Feedback no longer visible');
-    return FeedbackDetail(
-      content: parseStringValue(row['content']),
-      screenshotPaths: List.unmodifiable(
-        (row['screenshot_paths'] as List? ?? const [])
-            .map(parseStringValue)
-            .where((path) => path.isNotEmpty),
-      ),
-    );
+    return RepositorySessionReads(client).read('feedback-detail', id, () async {
+      final row = await client
+          .from(TableNames.feedback)
+          .select('content,screenshot_paths')
+          .eq(Fields.id, id)
+          .maybeSingle();
+      if (client.auth.currentUser?.id != owner) {
+        throw StateError('Feedback account changed');
+      }
+      if (row == null) throw StateError('Feedback no longer visible');
+      return FeedbackDetail(
+        content: parseStringValue(row['content']),
+        screenshotPaths: List.unmodifiable(
+          (row['screenshot_paths'] as List? ?? const [])
+              .map(parseStringValue)
+              .where((path) => path.isNotEmpty),
+        ),
+      );
+    });
   }
 
   Future<void> sendFeedback({
@@ -125,6 +127,7 @@ class ServiceFeedback {
     final client = supabase;
     final owner = client.auth.currentUser?.id;
     if (owner == null) throw StateError('Authentication required');
+    final reads = RepositorySessionReads(client);
     const concurrentDownloads = 3;
     final images = <String>[];
     for (var offset = 0; offset < paths.length; offset += concurrentDownloads) {
@@ -133,10 +136,14 @@ class ServiceFeedback {
       images.addAll(
         await Future.wait([
           for (final path in paths.sublist(offset, end))
-            client.storage
-                .from('feedback-screenshots')
-                .download(path)
-                .then(base64Encode),
+            reads.read(
+              'feedback-screenshot',
+              path,
+              () => client.storage
+                  .from('feedback-screenshots')
+                  .download(path)
+                  .then(base64Encode),
+            ),
         ]),
       );
       if (client.auth.currentUser?.id != owner) {

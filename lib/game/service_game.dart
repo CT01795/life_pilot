@@ -891,6 +891,88 @@ class ServiceGame {
     );
   }
 
+  /// Loads the first management page and its filter groups in one cloud RPC.
+  /// Later pages use [fetchMyQuestions] so groups are not retransmitted.
+  Future<MyGameQuestionManagementPage> fetchMyQuestionManagementPage({
+    required String gameName,
+    String keyword = '',
+    String? group,
+    String status = 'all',
+    int offset = 0,
+    int limit = 20,
+  }) async {
+    if (supabase.auth.currentUser == null) {
+      throw StateError('User must be signed in');
+    }
+    if (offset < 0 || limit < 1 || limit > 100) {
+      throw ArgumentError('Invalid question page range');
+    }
+    if (await _storesLocally) {
+      final results = await Future.wait<Object>([
+        fetchMyQuestions(
+          gameName: gameName,
+          keyword: keyword,
+          group: group,
+          status: status,
+          offset: offset,
+          limit: limit,
+        ),
+        fetchMyQuestionGroupsForManagement(gameName: gameName),
+      ], eagerError: true);
+      return MyGameQuestionManagementPage(
+        page: results[0] as MyGameQuestionPage,
+        groups: results[1] as List<String>,
+      );
+    }
+
+    final response = await supabase.rpc(
+      'get_my_question_management_page',
+      params: {
+        'p_table_name': _questionTableForGame(gameName),
+        'p_game_name': gameName,
+        'p_keyword': keyword.trim(),
+        'p_group': group,
+        'p_status': status,
+        'p_offset': offset,
+        'p_limit': limit,
+      },
+    );
+    if (response is! Map) {
+      throw const FormatException('Invalid question management page');
+    }
+    final payload = Map<String, dynamic>.from(response);
+    final rawRows = payload['rows'];
+    final rawGroups = payload['groups'];
+    if (rawRows is! List || rawGroups is! List) {
+      throw const FormatException('Invalid question management page');
+    }
+    final rows = rawRows
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+    final reportedTotal = rows.isEmpty
+        ? 0
+        : tryParseIntValue(rows.first['total_count']);
+    if (reportedTotal == null || reportedTotal < offset + rows.length) {
+      throw const FormatException('Invalid question total count');
+    }
+    final groups = rawGroups
+        .map(parseStringValue)
+        .where(
+          (value) => value.isNotEmpty && _groupMatchesGame(gameName, value),
+        )
+        .toSet()
+        .toList()
+      ..sort();
+    return MyGameQuestionManagementPage(
+      page: MyGameQuestionPage(
+        questions: rows.map(MyGameQuestion.fromJson).toList(),
+        totalCount: reportedTotal,
+        hasMore: offset + rows.length < reportedTotal,
+      ),
+      groups: groups,
+    );
+  }
+
   Future<List<String>> fetchMyQuestionGroupsForManagement({
     required String gameName,
   }) async {

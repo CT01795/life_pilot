@@ -92,6 +92,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(service.offsets, [0, 20]);
       expect(service.groupCalls, 1);
+      expect(service.managementCalls, 1);
       await tester.scrollUntilVisible(
         find.text('Question39'),
         350,
@@ -129,6 +130,7 @@ class _TestAuth extends ControllerAuth {
 class _PagedQuestions extends ServiceGame {
   final offsets = <int>[];
   int groupCalls = 0;
+  int managementCalls = 0;
 
   @override
   Future<MyGameQuestionPage> fetchMyQuestions({
@@ -164,6 +166,29 @@ class _PagedQuestions extends ServiceGame {
   }) async {
     groupCalls++;
     return ['grammar'];
+  }
+
+  @override
+  Future<MyGameQuestionManagementPage> fetchMyQuestionManagementPage({
+    required String gameName,
+    String keyword = '',
+    String? group,
+    String status = 'all',
+    int offset = 0,
+    int limit = 20,
+  }) async {
+    managementCalls++;
+    return MyGameQuestionManagementPage(
+      page: await fetchMyQuestions(
+        gameName: gameName,
+        keyword: keyword,
+        group: group,
+        status: status,
+        offset: offset,
+        limit: limit,
+      ),
+      groups: await fetchMyQuestionGroupsForManagement(gameName: gameName),
+    );
   }
 }
 

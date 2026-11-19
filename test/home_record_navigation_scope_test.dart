@@ -49,8 +49,8 @@ class _Accounting extends ServiceAccounting {
     required String user,
     String? category,
     String? searchQuery,
-    int? offset,
-    int? limit,
+    required int offset,
+    required int limit,
   }) {
     listReads++;
     expect(user, 'a@example.com');
@@ -78,8 +78,8 @@ class _Points extends ServicePointRecord {
     required String user,
     String? category,
     String? searchQuery,
-    int? offset,
-    int? limit,
+    required int offset,
+    required int limit,
   }) {
     listReads++;
     expect(user, 'a@example.com');

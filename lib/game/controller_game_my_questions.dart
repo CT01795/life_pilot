@@ -177,27 +177,29 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
     required bool fetchGroups,
     required bool Function() isCurrent,
   }) async {
-    final results = await Future.wait<Object>([
-      Future<MyGameQuestionPage>.sync(
-        () => _service.fetchMyQuestions(
-          gameName: gameName,
-          keyword: query.keyword,
-          group: query.group,
-          status: query.status.name,
-          offset: offset,
-        ),
-      ),
-      fetchGroups
-          ? Future<List<String>>.sync(
-              () => _service.fetchMyQuestionGroupsForManagement(
-                gameName: gameName,
-              ),
-            )
-          : Future.value(_groups),
-    ], eagerError: true);
+    late MyGameQuestionPage page;
+    late List<String> groups;
+    if (fetchGroups) {
+      final result = await _service.fetchMyQuestionManagementPage(
+        gameName: gameName,
+        keyword: query.keyword,
+        group: query.group,
+        status: query.status.name,
+        offset: offset,
+      );
+      page = result.page;
+      groups = result.groups;
+    } else {
+      page = await _service.fetchMyQuestions(
+        gameName: gameName,
+        keyword: query.keyword,
+        group: query.group,
+        status: query.status.name,
+        offset: offset,
+      );
+      groups = _groups;
+    }
     if (!isCurrent()) return null;
-    var page = results[0] as MyGameQuestionPage;
-    final groups = results[1] as List<String>;
     var effectiveQuery = query;
     if (!append && query.group != null && !groups.contains(query.group)) {
       if (_query == query) _selectedGroup = null;

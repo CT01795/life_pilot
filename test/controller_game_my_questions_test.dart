@@ -796,6 +796,36 @@ class _QuestionService extends ServiceGame {
   }
 
   @override
+  Future<MyGameQuestionManagementPage> fetchMyQuestionManagementPage({
+    required String gameName,
+    String keyword = '',
+    String? group,
+    String status = 'all',
+    int offset = 0,
+    int limit = 20,
+  }) async {
+    final results = await Future.wait<Object>([
+      Future<MyGameQuestionPage>.sync(
+        () => fetchMyQuestions(
+          gameName: gameName,
+          keyword: keyword,
+          group: group,
+          status: status,
+          offset: offset,
+          limit: limit,
+        ),
+      ),
+      Future<List<String>>.sync(
+        () => fetchMyQuestionGroupsForManagement(gameName: gameName),
+      ),
+    ], eagerError: true);
+    return MyGameQuestionManagementPage(
+      page: results[0] as MyGameQuestionPage,
+      groups: results[1] as List<String>,
+    );
+  }
+
+  @override
   Future<void> deleteMyQuestion({
     required String gameName,
     required String questionId,
