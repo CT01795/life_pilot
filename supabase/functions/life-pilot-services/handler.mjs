@@ -168,6 +168,47 @@ export function createHandler({ env, fetchImpl = fetch, now = Date.now }) {
           return { payload, expires: new Date(now() + (row ? 180 : 7) * 86400000).toISOString() };
         });
       }
+      async function weather(lat, lng) {
+        if (!finite(lat) || !finite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+          fail(400, 'invalid_coordinates');
+        }
+        const key = await hash(`${coordinateBucket(lat)}:${coordinateBucket(lng)}`);
+        return cached('weather', key, async () => {
+          const url = new URL('https://api.openweathermap.org/data/2.5/forecast');
+          url.search = new URLSearchParams({
+            lat: String(lat), lon: String(lng),
+            appid: required('OPEN_WEATHER_API_KEY'), units: 'metric',
+          });
+          const data = await jsonFetch(url);
+          if (!Array.isArray(data?.list) || !integer(data?.city?.timezone, -64800, 64800)) {
+            fail(502, 'invalid_weather_response');
+          }
+          const items = data.list.map((r) => {
+            if (!integer(r.dt, 0, 100000000000) || !object(r.main) || !object(r.weather?.[0])) {
+              fail(502, 'invalid_weather_item');
+            }
+            const result = {
+              date: new Date(r.dt * 1000).toISOString(),
+              main: r.weather[0].main,
+              description: r.weather[0].description,
+              icon: r.weather[0].icon,
+            };
+            if (![result.main, result.description, result.icon].every((v) => typeof v === 'string')) {
+              fail(502, 'invalid_weather_item');
+            }
+            for (const field of ['temp', 'feels_like', 'temp_min', 'temp_max', 'pressure', 'sea_level', 'grnd_level']) {
+              result[field] = r.main[field] ?? (['sea_level', 'grnd_level'].includes(field) ? r.main.pressure : null);
+              if (!finite(result[field])) fail(502, 'invalid_weather_item');
+            }
+            return result;
+          });
+          const shift = data.city.timezone * 1000;
+          const expires = new Date(
+            (Math.floor((now() + shift) / 86400000) + 1) * 86400000 - shift,
+          ).toISOString();
+          return { payload: { items, expires_at: expires }, expires };
+        }, 300);
+      }
       if (method !== 'POST') fail(405, 'method_not_allowed');
       if (route === 'event/get_public_event_url_data') {
         if ((body.method ?? 'GET') !== 'GET' || body.data_type === 'audio') fail(400, 'public_event_method_not_allowed');
@@ -208,28 +249,24 @@ export function createHandler({ env, fetchImpl = fetch, now = Date.now }) {
         const result = await rpc('life_pilot_backfill_cached_map_coordinates', { p_table_name: body.table_name, p_offset: offset, p_limit: count });
         return respond({ ...result, stopped_reason: stopped ?? null });
       }
-      if (route === 'external/weather') {
-        if (!finite(body.lat) || !finite(body.lng) || Math.abs(body.lat) > 90 || Math.abs(body.lng) > 180) fail(400, 'invalid_coordinates');
-        const key = await hash(`${coordinateBucket(body.lat)}:${coordinateBucket(body.lng)}`);
-        return respond(await cached('weather', key, async () => {
-          const url = new URL('https://api.openweathermap.org/data/2.5/forecast');
-          url.search = new URLSearchParams({ lat: String(body.lat), lon: String(body.lng), appid: required('OPEN_WEATHER_API_KEY'), units: 'metric' });
-          const data = await jsonFetch(url);
-          if (!Array.isArray(data?.list) || !integer(data?.city?.timezone, -64800, 64800)) fail(502, 'invalid_weather_response');
-          const items = data.list.map((r) => {
-            if (!integer(r.dt, 0, 100000000000) || !object(r.main) || !object(r.weather?.[0])) fail(502, 'invalid_weather_item');
-            const result = { date: new Date(r.dt * 1000).toISOString(), main: r.weather[0].main, description: r.weather[0].description, icon: r.weather[0].icon };
-            if (![result.main, result.description, result.icon].every((v) => typeof v === 'string')) fail(502, 'invalid_weather_item');
-            for (const field of ['temp', 'feels_like', 'temp_min', 'temp_max', 'pressure', 'sea_level', 'grnd_level']) {
-              result[field] = r.main[field] ?? (['sea_level', 'grnd_level'].includes(field) ? r.main.pressure : null);
-              if (!finite(result[field])) fail(502, 'invalid_weather_item');
+      if (route === 'external/weather') return respond(await weather(body.lat, body.lng));
+      if (route === 'external/weather-batch') {
+        if (!Array.isArray(body.locations) || body.locations.length < 1 || body.locations.length > 8) {
+          fail(400, 'invalid_weather_batch');
+        }
+        const results = [];
+        for (let offset = 0; offset < body.locations.length; offset += 3) {
+          const chunk = body.locations.slice(offset, offset + 3);
+          results.push(...await Promise.all(chunk.map(async (location) => {
+            if (!object(location)) fail(400, 'invalid_weather_batch');
+            try { return await weather(location.lat, location.lng); }
+            catch (error) {
+              if (error instanceof ServiceFailure && [400, 429, 503].includes(error.status)) throw error;
+              return null;
             }
-            return result;
-          });
-          const shift = data.city.timezone * 1000;
-          const expires = new Date((Math.floor((now() + shift) / 86400000) + 1) * 86400000 - shift).toISOString();
-          return { payload: { items, expires_at: expires }, expires };
-        }, 300));
+          })));
+        }
+        return respond({ results });
       }
       if (route === 'external/holidays') {
         if (typeof body.start !== 'string' || typeof body.end !== 'string') fail(400, 'invalid_holiday_range');

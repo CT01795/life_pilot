@@ -265,20 +265,13 @@ class ControllerCalendar extends SafeChangeNotifier {
         weatherCandidates.add(view);
         if (seenLocations.length >= maxPreloadedLocations) break;
       }
-      final requested = await Future.wait(
-        weatherCandidates.map(
-          (event) => Future<bool>.sync(() {
-            if (!isCurrent()) return false;
-            return _serviceWeather.preloadWeather(
-              [event],
-              tableName: _tableName,
-              shouldContinue: isCurrent,
-            );
-          }),
-        ),
-        eagerError: true,
+      if (!isCurrent() || weatherCandidates.isEmpty) return;
+      final requested = await _serviceWeather.preloadWeatherBatch(
+        weatherCandidates,
+        tableName: _tableName,
+        shouldContinue: isCurrent,
       );
-      if (isCurrent() && requested.any((value) => value)) notifyListeners();
+      if (isCurrent() && requested) notifyListeners();
     } catch (error, stackTrace) {
       // Optional enrichment must not fail the month/day load or leak an
       // unhandled error from the unawaited month preload.

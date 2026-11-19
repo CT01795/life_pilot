@@ -195,6 +195,31 @@ test('weather validates provider rows and stores expiry at provider-local midnig
   assert.equal(save.body.p_payload.items.length,1);
 });
 
+test('weather batch resolves several locations in one function invocation', async () => {
+  const s=setup({ fetch:(url)=>url.hostname==='api.openweathermap.org'?json({
+    city:{timezone:0},list:[{
+      dt:1793581200,main:{temp:20,feels_like:19,temp_min:18,temp_max:21,pressure:1000},
+      weather:[{main:'Clouds',description:'cloudy',icon:'02d'}],
+    }],
+  }):undefined });
+  const r=await s.run('external/weather-batch',{locations:[
+    {lat:25,lng:121},{lat:22.6,lng:120.3},
+  ]});
+  assert.equal(r.response.status,200);
+  assert.equal(r.data.results.length,2);
+  assert.equal(r.data.results.every((result)=>result.items.length===1),true);
+  assert.equal(s.calls.filter((call)=>call.url.hostname==='api.openweathermap.org').length,2);
+});
+
+test('weather batch rejects oversized input before provider access', async () => {
+  const s=setup();
+  const r=await s.run('external/weather-batch',{locations:Array.from(
+    {length:9},()=>({lat:25,lng:121}),
+  )});
+  assert.equal(r.response.status,400);
+  assert.equal(s.calls.some((call)=>call.url.hostname==='api.openweathermap.org'),false);
+});
+
 test('malformed weather is not cached as a successful empty result', async () => {
   const s=setup({fetch:(url)=>url.hostname==='api.openweathermap.org'?json({list:[{}],city:{timezone:0}}):undefined});
   assert.equal((await s.run('external/weather',{lat:25,lng:121})).response.status,502);

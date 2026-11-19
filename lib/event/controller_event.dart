@@ -919,8 +919,15 @@ class ControllerEvent extends SafeChangeNotifier {
           before: rangeStart,
         );
       }
-    } catch (_) {
-      if (_isCurrentEventLoad(generation, revision)) rethrow;
+    } catch (error, stackTrace) {
+      if (_isCurrentEventLoad(generation, revision)) {
+        logger.e(
+          'Memory load-more failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        rethrow;
+      }
     } finally {
       if (_isCurrentEventLoad(generation, revision)) {
         _isLoadingMoreMemory = false;
@@ -1000,7 +1007,7 @@ class ControllerEvent extends SafeChangeNotifier {
     int generation,
   ) async {
     if (!_isCurrentDataScope(generation)) return;
-    final requested = await _serviceWeather.preloadWeather(
+    final requested = await _serviceWeather.preloadWeatherBatch(
       events,
       tableName: _tableName,
       shouldContinue: () => _isCurrentDataScope(generation),

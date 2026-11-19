@@ -68,19 +68,22 @@ class _Points extends ServicePointRecord {
   }
 }
 
-ModelAccountingDetail _accountingRow(String id, DateTime date) =>
-    ModelAccountingDetail(
-      id: id,
-      accountId: 'account',
-      createdAt: date,
-      date: date,
-      primaryCategory: 'food',
-      description: id,
-      type: 'balance',
-      value: 1,
-      currency: 'TWD',
-      balance: 2,
-    );
+ModelAccountingDetail _accountingRow(
+  String id,
+  DateTime date, {
+  String category = 'food',
+}) => ModelAccountingDetail(
+  id: id,
+  accountId: 'account',
+  createdAt: date,
+  date: date,
+  primaryCategory: category,
+  description: id,
+  type: 'balance',
+  value: 1,
+  currency: 'TWD',
+  balance: 2,
+);
 
 ModelPointRecordDetail _pointRow(String id, DateTime date) =>
     ModelPointRecordDetail(
@@ -137,6 +140,73 @@ void main() {
       expect(controller.todayRecords.map((row) => row.id), ['new', 'old']);
       expect(controller.hasMore, isFalse);
       expect(service.includeReserved, [true, false]);
+    },
+  );
+
+  test(
+    'one accounting load-more skips duplicate-only windows until a new row',
+    () async {
+      final auth = _Auth();
+      final service = _Accounting();
+      final controller = ControllerAccountingDetail(
+        service: service,
+        auth: auth,
+        accountId: 'account',
+      );
+      addTearDown(controller.dispose);
+      final recent = DateTime(2026, 7, 5);
+      final reservedDate = DateTime(2026, 2, 11);
+      final firstCursor = DateTime(2026, 7, 4);
+      final secondCursor = DateTime(2026, 7, 3);
+
+      final initial = controller.loadToday();
+      service.requests.single.complete(
+        ModelRecordHistoryPage(
+          rows: [
+            _accountingRow('recent', recent),
+            _accountingRow('reserved', reservedDate, category: 'reserved'),
+          ],
+          total: 10,
+          nextBefore: recent,
+          nextDate: firstCursor,
+        ),
+      );
+      await initial;
+      expect(controller.todayRecords.map((row) => row.id), [
+        'reserved',
+        'recent',
+      ]);
+
+      final more = controller.loadMore();
+      service.requests[1].complete(
+        ModelRecordHistoryPage(
+          rows: [
+            _accountingRow('reserved', reservedDate, category: 'reserved'),
+          ],
+          total: 10,
+          nextBefore: firstCursor,
+          nextDate: secondCursor,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(service.requests, hasLength(3));
+      service.requests[2].complete(
+        ModelRecordHistoryPage(
+          rows: [_accountingRow('older', secondCursor)],
+          total: 10,
+          nextBefore: secondCursor,
+          nextDate: null,
+        ),
+      );
+      await more;
+
+      expect(controller.todayRecords.map((row) => row.id), [
+        'reserved',
+        'recent',
+        'older',
+      ]);
+      expect(controller.hasMore, isFalse);
+      expect(service.includeReserved, [true, false, false]);
     },
   );
 

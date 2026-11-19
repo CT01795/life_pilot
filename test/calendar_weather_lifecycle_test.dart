@@ -30,18 +30,26 @@ class _Weather extends ServiceWeather {
   void Function()? onRequest;
   final requests =
       <
-        ({EventViewModel event, bool Function()? active, Completer<bool> done})
+        ({
+          List<EventViewModel> events,
+          bool Function()? active,
+          Completer<bool> done,
+        })
       >[];
   bool failSynchronously = false;
   @override
-  Future<bool> preloadWeather(
+  Future<bool> preloadWeatherBatch(
     List<EventViewModel> events, {
     required String tableName,
     bool Function()? shouldContinue,
   }) {
     if (failSynchronously) throw StateError('weather unavailable');
     final done = Completer<bool>();
-    requests.add((event: events.single, active: shouldContinue, done: done));
+    requests.add((
+      events: List.unmodifiable(events),
+      active: shouldContinue,
+      done: done,
+    ));
     onRequest?.call();
     return done.future;
   }
@@ -223,7 +231,9 @@ void main() {
         event('ongoing', today.subtract(const Duration(days: 2)), today),
       ]);
       await tester.pump();
-      expect(weather.requests.map((r) => r.event.id), ['ongoing']);
+      expect(weather.requests.single.events.map((event) => event.id), [
+        'ongoing',
+      ]);
       weather.requests.single.done.complete(false);
       await pending;
       await tester.pumpWidget(const SizedBox.shrink());
@@ -240,9 +250,12 @@ void main() {
       ...source,
     ]);
     await tester.pump();
-    expect(weather.requests.length, 8);
+    expect(weather.requests, hasLength(1));
     expect(
-      weather.requests.map((r) => r.event.locationDisplay).toSet().length,
+      weather.requests.single.events
+          .map((event) => event.locationDisplay)
+          .toSet()
+          .length,
       8,
     );
     for (final request in weather.requests) {
@@ -257,11 +270,9 @@ void main() {
     await mount(tester);
     final first = c.preloadWeatherForDay(rows(2));
     await tester.pump();
-    weather.requests.first.done.completeError(StateError('weather'));
+    weather.requests.single.done.completeError(StateError('weather'));
     await first;
     expect(weather.requests.every((r) => !r.active!()), isTrue);
-    weather.requests.last.done.completeError(StateError('late weather'));
-    await tester.pump();
     weather.failSynchronously = true;
     await c.preloadWeatherForDay(rows());
     expect(tester.takeException(), isNull);

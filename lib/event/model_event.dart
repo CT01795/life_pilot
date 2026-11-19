@@ -212,7 +212,11 @@ class ModelEvent {
     if (identical(_events, list)) {
       return;
     }
-    _events = list;
+    // The Model owns a mutable working copy. RPC result models may expose an
+    // unmodifiable snapshot so callers cannot accidentally alter pagination
+    // metadata, but later pages still need to append, sort, edit and remove
+    // records from the Model's collection.
+    _events = List<EventItem>.of(list, growable: true);
     _recommendedOrder = null;
     if (preserveSearchIndex) {
       _searchTextIndex.retainEvents(list);

@@ -117,6 +117,17 @@ void main() {
         expect(duplicate.reads, 0);
       });
 
+      test('a read-only first page still accepts later pages', () {
+        final first = _CountedEvent('first');
+        final next = _CountedEvent('next');
+        model.setProgressiveEvents(List<EventItem>.unmodifiable([first]));
+
+        append([next]);
+
+        model.updateSearchKeywords('needle');
+        expect(model.getFilteredEvents(loc), containsAll([first, next]));
+      });
+
       test('an explicit edit still invalidates appended search text', () {
         final existing = _CountedEvent('existing');
         model

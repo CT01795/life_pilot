@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -72,7 +71,11 @@ void main() {
         rejects,
       );
       await expectLater(
-        cache.holidays(year: 2026, language: 'zh', backend: unexpected),
+        cache.weatherBatch(locations: const [(lat: 25.0, lng: 121.0)]),
+        rejects,
+      );
+      await expectLater(
+        cache.holidayYears(years: const [2026], language: 'zh'),
         rejects,
       );
     });
@@ -105,94 +108,32 @@ void main() {
     expect(calls, 1);
   });
 
-  test(
-    'fresh holiday cache including empty years never wakes Render',
-    () async {
-      response = {'cached': true, 'fresh': true, 'items': []};
-      final value = await cache.holidays(
-        year: 2026,
-        language: 'ja',
-        backend: () => throw StateError('unnecessary provider request'),
-      );
-      expect(value['items'], isEmpty);
-      expect(jsonDecode(requests.single.body), {
-        'p_year': 2026,
-        'p_language': 'ja',
-      });
-    },
-  );
-
-  test(
-    'stale holidays display immediately and refresh without blocking',
-    () async {
-      response = {
+  test('holiday years use one ordered batch cache query', () async {
+    response = [
+      {'year': 2026, 'cached': true, 'fresh': true, 'items': []},
+      {
+        'year': 2027,
         'cached': true,
         'fresh': false,
         'items': [
-          {'date': '2026-01-01', 'summary': 'old'},
+          {'date': '2027-01-01', 'summary': 'New Year'},
         ],
-      };
-      final refresh = Completer<dynamic>();
-      dynamic updated;
-      var calls = 0;
-      final value = await cache.holidays(
-        year: 2026,
-        language: 'zh',
-        backend: () {
-          calls++;
-          return refresh.future;
-        },
-        onRefreshed: (data) => updated = data,
-      );
-      expect(value['items'].single['summary'], 'old');
-      expect(calls, 1);
-      expect(updated, isNull);
-      refresh.complete({
-        'items': [
-          {'date': '2026-01-01', 'summary': 'new'},
-        ],
-      });
-      await Future<void>.delayed(Duration.zero);
-      expect(updated['items'].single['summary'], 'new');
-    },
-  );
-
-  test(
-    'stale holiday backend failure keeps cached dates and is handled',
-    () async {
-      response = {
-        'cached': true,
-        'fresh': false,
-        'items': [
-          {'date': '2026-01-01', 'summary': 'cached'},
-        ],
-      };
-      final refresh = Completer<dynamic>();
-      final value = await cache.holidays(
-        year: 2026,
-        language: 'en',
-        backend: () => refresh.future,
-      );
-      refresh.completeError(StateError('Render is asleep'));
-      await Future<void>.delayed(Duration.zero);
-      expect(value['items'].single['summary'], 'cached');
-    },
-  );
-
-  test('missing holiday year awaits initial trusted provider fill', () async {
-    response = {'cached': false, 'fresh': false, 'items': []};
-    final refresh = Completer<dynamic>();
-    var finished = false;
-    final pending = cache
-        .holidays(year: 2026, language: 'ko', backend: () => refresh.future)
-        .then((value) {
-          finished = true;
-          return value;
-        });
-    await Future<void>.delayed(Duration.zero);
-    expect(finished, isFalse);
-    refresh.complete({'items': []});
-    expect((await pending)['items'], isEmpty);
+      },
+    ];
+    final value = await cache.holidayYears(
+      years: const [2026, 2027],
+      language: 'ja',
+    );
+    expect(value.map((row) => row['year']), [2026, 2027]);
+    expect(value.last['fresh'], isFalse);
+    expect(
+      requests.single.url.path,
+      endsWith('life_pilot_cached_holidays_batch'),
+    );
+    expect(jsonDecode(requests.single.body), {
+      'p_years': [2026, 2027],
+      'p_language': 'ja',
+    });
   });
 
   test('public event service status uses Supabase gateway', () async {

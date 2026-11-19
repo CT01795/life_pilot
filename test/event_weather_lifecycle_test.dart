@@ -34,7 +34,7 @@ class _QueuedWeather extends ServiceWeather {
   final pending = <Completer<bool>>[];
   final guards = <bool Function()?>[];
   @override
-  Future<bool> preloadWeather(
+  Future<bool> preloadWeatherBatch(
     List<EventViewModel> events, {
     required String tableName,
     bool Function()? shouldContinue,

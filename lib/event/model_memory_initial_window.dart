@@ -27,12 +27,19 @@ class ModelMemoryInitialWindow {
     if (windowStart == null || windowEnd == null) {
       throw const FormatException('Invalid memory initial window');
     }
+    final events = <EventItem>[];
+    for (final row in json['events'] as List? ?? const []) {
+      final eventJson = Map<String, dynamic>.from(row as Map);
+      try {
+        events.add(decode(eventJson));
+      } catch (error) {
+        throw FormatException(
+          'Invalid memory row ${eventJson['id'] ?? '(missing id)'}: $error',
+        );
+      }
+    }
     return ModelMemoryInitialWindow(
-      events: List.unmodifiable(
-        (json['events'] as List? ?? const []).map(
-          (row) => decode(Map<String, dynamic>.from(row as Map)),
-        ),
-      ),
+      events: List.unmodifiable(events),
       hasPageMore: json['has_page_more'] == true,
       hasMore: json['has_more'] == true,
       windowStart: windowStart,

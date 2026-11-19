@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:life_pilot/calendar/model_calendar_holidays.dart';
@@ -39,14 +40,11 @@ class ServiceCalendar {
       final endDate = DateTime(end.year, end.month, end.day);
       if (!endDate.isAfter(startDate)) return holidays;
 
-      final records = await loadHolidayYears(
+      final records = await _getHolidayYears(
         start: startDate,
         end: endDate,
-        loadYear: (year) => _getHolidayYear(
-          year: year,
-          languageCode: languageCode,
-          accessToken: accessToken,
-        ),
+        languageCode: languageCode,
+        accessToken: accessToken,
       );
       return ModelCalendarHolidays.project(
         records: records,
@@ -85,61 +83,123 @@ class ServiceCalendar {
     }
   }
 
-  static Future<List<CalendarHolidayRecord>> _getHolidayYear({
-    required int year,
+  static Future<List<CalendarHolidayRecord>> _getHolidayYears({
+    required DateTime start,
+    required DateTime end,
     required String languageCode,
     required String accessToken,
   }) async {
-    final cacheKey = '$languageCode:$year';
-    final request = _yearCache.putIfAbsent(
-      cacheKey,
-      () => _loadHolidayYear(
-        year: year,
+    final years = ModelCalendarHolidays.requiredYears(start, end);
+    final missing = [
+      for (final year in years)
+        if (!_yearCache.containsKey('$languageCode:$year')) year,
+    ];
+    Future<Map<int, List<CalendarHolidayRecord>>>? batch;
+    if (missing.isNotEmpty) {
+      batch = _loadHolidayYearBatch(
+        years: missing,
         languageCode: languageCode,
         accessToken: accessToken,
-      ),
-    );
-
+      );
+      for (final year in missing) {
+        _yearCache['$languageCode:$year'] = batch.then(
+          (rows) => rows[year] ?? const [],
+        );
+      }
+    }
     try {
-      return await request;
+      final rows = await Future.wait([
+        for (final year in years) _yearCache['$languageCode:$year']!,
+      ], eagerError: true);
+      return [for (final row in rows) ...row];
     } catch (_) {
-      if (identical(_yearCache[cacheKey], request)) {
-        _yearCache.remove(cacheKey);
+      if (batch != null) {
+        for (final year in missing) {
+          final key = '$languageCode:$year';
+          final request = _yearCache[key];
+          if (request != null) _yearCache.remove(key);
+        }
       }
       rethrow;
     }
   }
 
-  static Future<List<CalendarHolidayRecord>> _loadHolidayYear({
-    required int year,
+  static Future<Map<int, List<CalendarHolidayRecord>>> _loadHolidayYearBatch({
+    required List<int> years,
     required String languageCode,
     required String accessToken,
   }) async {
-    final yearStart = DateTime.utc(year, 1, 1);
-    final yearEnd = DateTime.utc(year + 1, 1, 1);
     final cacheDate = _cacheUtcDate;
-    final data = await RepositoryExternalCache().holidays(
-      year: year,
+    final cached = await RepositoryExternalCache().holidayYears(
+      years: years,
       language: languageCode,
-      backend: () => apiCloud.post('/external/holidays', {
-        'start': yearStart.toIso8601String(),
-        'end': yearEnd.toIso8601String(),
-        'language_code': languageCode,
-      }, bearerToken: accessToken),
-      onRefreshed: (data) {
-        if (cacheDate != _cacheUtcDate ||
-            data is! Map ||
-            data['items'] is! List) {
-          return;
-        }
-        _yearCache['$languageCode:$year'] = Future.value(
-          ModelCalendarHolidays.parseRows(data['items'] as List),
-        );
-      },
     );
-    final items = data is Map<String, dynamic> && data['items'] is List
-        ? data['items'] as List
-        : const [];
-    return ModelCalendarHolidays.parseRows(items);
+    final rows = <int, List<CalendarHolidayRecord>>{
+      for (final row in cached)
+        row['year'] as int: ModelCalendarHolidays.parseRows(
+          row['items'] as List,
+        ),
+    };
+    final allCached = cached.every((row) => row['cached'] == true);
+    final allFresh = cached.every((row) => row['fresh'] == true);
+    if (allCached) {
+      if (!allFresh) {
+        unawaited(() async {
+          try {
+            final refreshed = await _refreshHolidayYears(
+              years: years,
+              languageCode: languageCode,
+              accessToken: accessToken,
+            );
+            if (cacheDate != _cacheUtcDate) return;
+            for (final year in years) {
+              _yearCache['$languageCode:$year'] = Future.value(
+                refreshed[year] ?? const [],
+              );
+            }
+          } catch (error, stackTrace) {
+            logger.w(
+              'Holiday background refresh failed; keeping cached dates',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          }
+        }());
+      }
+      return rows;
+    }
+    return _refreshHolidayYears(
+      years: years,
+      languageCode: languageCode,
+      accessToken: accessToken,
+    );
+  }
+
+  static Future<Map<int, List<CalendarHolidayRecord>>> _refreshHolidayYears({
+    required List<int> years,
+    required String languageCode,
+    required String accessToken,
+  }) async {
+    final orderedYears = years.toSet().toList()..sort();
+    final start = DateTime.utc(orderedYears.first, 1, 1);
+    final end = DateTime.utc(orderedYears.last + 1, 1, 1);
+    final data = await apiCloud.post('/external/holidays', {
+      'start': start.toIso8601String(),
+      'end': end.toIso8601String(),
+      'language_code': languageCode,
+    }, bearerToken: accessToken);
+    if (data is! Map || data['items'] is! List) {
+      throw const FormatException('Invalid holiday refresh response');
+    }
+    final result = <int, List<CalendarHolidayRecord>>{
+      for (final year in orderedYears) year: [],
+    };
+    for (final record in ModelCalendarHolidays.parseRows(
+      data['items'] as List,
+    )) {
+      final year = record.date.year;
+      result[year]?.add(record);
+    }
+    return result;
   }
 }

@@ -21,6 +21,7 @@ class ModelRecordHistory {
     Iterable<T> records, {
     required String Function(T) idOf,
     required DateTime Function(T) dateOf,
+    bool Function(T)? pinnedFirst,
   }) {
     final unique = <String, T>{};
     for (final record in records) {
@@ -38,6 +39,13 @@ class ModelRecordHistory {
       dated.add((record, date));
     }
     if (requiresSort) dated.sort((a, b) => b.$2.compareTo(a.$2));
-    return [for (final item in dated) item.$1];
+    final ordered = [for (final item in dated) item.$1];
+    if (pinnedFirst == null) return ordered;
+    return [
+      for (final record in ordered)
+        if (pinnedFirst(record)) record,
+      for (final record in ordered)
+        if (!pinnedFirst(record)) record,
+    ];
   }
 }

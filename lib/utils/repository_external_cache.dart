@@ -1,5 +1,3 @@
-import 'dart:async';
-import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/repository_cloud_gateway.dart';
 
 /// Reads shared public results, not provider credentials. Cache misses retain
@@ -21,36 +19,50 @@ class RepositoryExternalCache {
     return cached ?? await backend();
   }
 
-  Future<dynamic> holidays({
-    required int year,
-    required String language,
-    required Future<dynamic> Function() backend,
-    void Function(dynamic data)? onRefreshed,
+  Future<List<dynamic>> weatherBatch({
+    required List<({double lat, double lng})> locations,
   }) async {
-    final cached = await gateway.rpc(
-      'life_pilot_cached_holidays',
-      params: {'p_year': year, 'p_language': language},
+    if (locations.isEmpty) return const [];
+    final result = await gateway.rpc(
+      'life_pilot_cached_weather_batch',
+      params: {
+        'p_locations': [
+          for (final location in locations)
+            {'lat': location.lat, 'lng': location.lng},
+        ],
+      },
     );
-    if (cached == null) return backend();
-    if (cached is! Map || cached['cached'] is! bool) {
-      throw const FormatException('Invalid holiday cache response');
+    if (result is! List || result.length != locations.length) {
+      throw const FormatException('Invalid weather batch cache response');
     }
-    if (cached['cached'] == false) return backend();
-    if (cached['fresh'] != true) {
-      // Show existing holidays while the Edge refresh is pending/unavailable.
-      unawaited(() async {
-        try {
-          final refreshed = await backend();
-          onRefreshed?.call(refreshed);
-        } catch (error, stack) {
-          logger.w(
-            'Holiday background refresh failed; keeping cached dates',
-            error: error,
-            stackTrace: stack,
-          );
+    return List<dynamic>.unmodifiable(result);
+  }
+
+  Future<List<Map<String, dynamic>>> holidayYears({
+    required List<int> years,
+    required String language,
+  }) async {
+    if (years.isEmpty) return const [];
+    final result = await gateway.rpc(
+      'life_pilot_cached_holidays_batch',
+      params: {'p_years': years, 'p_language': language},
+    );
+    if (result is! List || result.length != years.length) {
+      throw const FormatException('Invalid holiday batch cache response');
+    }
+    return List<Map<String, dynamic>>.unmodifiable(
+      result.map((row) {
+        if (row is! Map ||
+            row['year'] is! int ||
+            row['cached'] is! bool ||
+            row['fresh'] is! bool ||
+            row['items'] is! List) {
+          throw const FormatException('Invalid holiday batch cache row');
         }
-      }());
-    }
-    return cached;
+        return Map<String, dynamic>.unmodifiable(
+          Map<String, dynamic>.from(row),
+        );
+      }),
+    );
   }
 }

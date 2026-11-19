@@ -157,6 +157,7 @@ class ServiceCloudApi {
 
   Duration? _cacheDuration(String route) => switch (route) {
     'external/weather' => const Duration(minutes: 5),
+    'external/weather-batch' => const Duration(minutes: 5),
     'external/holidays' => const Duration(hours: 1),
     'external/geocode' => const Duration(hours: 24),
     'external/geocode-batch' => const Duration(hours: 24),

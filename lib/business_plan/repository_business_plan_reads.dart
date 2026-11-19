@@ -29,23 +29,6 @@ class RepositoryBusinessPlanReads {
     },
   );
 
-  Future<List<Map<String, dynamic>>> plans({
-    required String user,
-    required DateTime from,
-    required DateTime to,
-  }) async {
-    final rows = await client
-        .from(TableNames.businessPlan)
-        .select('id,title,created_at,status')
-        .eq(Fields.createdBy, user)
-        .gte(Fields.createdAt, from.toUtc().toIso8601String())
-        .lt(Fields.createdAt, to.toUtc().toIso8601String())
-        .order(Fields.createdAt, ascending: false);
-    return List.unmodifiable(
-      rows.map((row) => Map<String, dynamic>.unmodifiable(row)),
-    );
-  }
-
   Future<Map<String, dynamic>> planWindow({
     required DateTime before,
     required bool seekOlder,

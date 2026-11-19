@@ -131,7 +131,7 @@ void main() {
   tearDown(() => client.dispose());
 
   test(
-    'active read projections include only consumed fields and preserve filters/order',
+    'template projection includes only consumed fields and filters',
     () async {
       final repo = RepositoryBusinessPlanReads(client);
       final templates = await repo.templates();
@@ -144,29 +144,6 @@ void main() {
       expect(
         requests.last.url.queryParameters['order'],
         'created_at.asc.nullslast',
-      );
-      final plans = await repo.plans(
-        user: 'one@example.com',
-        from: from,
-        to: to,
-      );
-      expect(plans.single['status'], 'in_progress');
-      expect(
-        requests.last.url.queryParameters['select'],
-        'id,title,created_at,status',
-      );
-      expect(
-        requests.last.url.queryParameters[Fields.createdBy],
-        'eq.one@example.com',
-      );
-      // Multiple constraints for a single field remain inclusive-start/exclusive-end.
-      expect(requests.last.url.queryParametersAll[Fields.createdAt], [
-        'gte.${from.toIso8601String()}',
-        'lt.${to.toIso8601String()}',
-      ]);
-      expect(
-        requests.last.url.queryParameters['order'],
-        'created_at.desc.nullslast',
       );
     },
   );
@@ -209,16 +186,6 @@ void main() {
     await login(client, 'two');
     gate!.complete();
     await checked;
-  });
-  test('plan list reads remain independent across refresh workflows', () async {
-    gate = Completer<void>();
-    final repo = RepositoryBusinessPlanReads(client);
-    final a = repo.plans(user: 'one@example.com', from: from, to: to);
-    final b = repo.plans(user: 'one@example.com', from: from, to: to);
-    await Future<void>.delayed(Duration.zero);
-    expect(requests, hasLength(2));
-    gate!.complete();
-    await Future.wait([a, b]);
   });
   test(
     'creating from a template uses one atomic RPC with only identifiers',

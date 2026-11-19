@@ -31,23 +31,30 @@ class ServiceEvent {
     int offset = 0,
     bool expandFallback = false,
   }) async {
-    final result = await supabase.rpc(
-      'get_my_memory_window',
-      params: {
-        'p_from': from.formatDateString(),
-        'p_to': to.formatDateString(),
-        'p_limit': limit,
-        'p_offset': offset,
-        'p_expand_fallback': expandFallback,
-      },
-    );
-    if (result is! Map) {
-      throw const FormatException('Invalid memory window response');
+    final params = <String, Object>{
+      'p_from': from.formatDateString(),
+      'p_to': to.formatDateString(),
+      'p_limit': limit,
+      'p_offset': offset,
+      'p_expand_fallback': expandFallback,
+    };
+    try {
+      final result = await supabase.rpc('get_my_memory_window', params: params);
+      if (result is! Map) {
+        throw const FormatException('Invalid memory window response');
+      }
+      return ModelMemoryInitialWindow.fromJson(
+        Map<String, dynamic>.from(result),
+        _decodeEventRow,
+      );
+    } catch (error, stackTrace) {
+      logger.e(
+        'Memory window query failed: $params',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      rethrow;
     }
-    return ModelMemoryInitialWindow.fromJson(
-      Map<String, dynamic>.from(result),
-      _decodeEventRow,
-    );
   }
 
   ServiceEvent({RepositoryEventCloudOperations? cloudOperations})

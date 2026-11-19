@@ -5,6 +5,7 @@
 - 股票維持既有路徑：Supabase 直接讀取、既有 Render／本機股票後端更新；本次不修改 `lib/stock/service_stock.dart`。
 - 一般資料讀寫、額度、公開活動匯入／更新鎖／例行清理：App 使用既有受控 RPC，保留登入者 JWT、RLS 及資料庫端權限檢查。
 - 天氣／假日／地址：先讀既有 Supabase 共用快取 RPC；未命中才呼叫本 Edge Function。需要外部服務的工作不在 SQL 裡處理。
+- 天氣預載會先用單一批次 RPC 檢查最多 8 個地點，未命中資料再以單一 `external/weather-batch` Edge 呼叫取得；跨年度假日也只使用一次批次快取 RPC 與最多一次 Edge 呼叫。
 - 管理員建立帳號與重設密碼：本 Function 驗證登入者後，以登入者 JWT 呼叫 `life_pilot_is_admin`，通過才使用伺服器管理金鑰。
 - 公開活動 HTML 代理僅接受 HTTPS `www.taiwan.net.tw/m1.aspx`，不接受任意網址、重新導向或股票代理路徑。
 - `apiSupabase` 已限制為 `stock/`；非股票功能不會退回 Render。舊 Python 非股票路由暫時保留相容性，但新 App 不再使用，股票需要的舊代理也不移除。
@@ -12,6 +13,7 @@
 ## 部署前順序（尚未自動部署）
 
 1. 在 Supabase SQL Editor 執行本機 `tool/supabase_edge_services_20261102.sql`。這是安裝腳本，**不要執行** `tool/test_edge_services_20261102.sql`；後者只用於獨立測試資料庫。
+   現行版本另須套用 `supabase/migrations/20261119000100_external_cache_batches.sql`，再部署 Edge Function 與 App。
 2. 確認既有快取資料表：`weather_forecast_cache`、`geocode_cache`、`public_holidays`、`holiday_sync_runs`。腳本沿用它們的既有欄位，不遷移原資料。
 3. 確認之前的 RPC 已部署：`life_pilot_cached_weather`、`life_pilot_cached_holidays`、`life_pilot_cached_geocode`、`life_pilot_cached_map_coordinates`、`life_pilot_backfill_cached_map_coordinates`、`life_pilot_public_event_refresh`、`life_pilot_import_public_events`、`life_pilot_run_daily_cleanup`。Edge 不會繞過未安裝的資料庫權限流程。
 4. 到 Supabase Dashboard → Edge Functions → Secrets 設定下列值；**不要貼到 App、`--dart-define`、Git、SQL 資料表或聊天內容**。

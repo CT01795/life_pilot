@@ -5,8 +5,10 @@ import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/model_record_history.dart';
+import 'package:life_pilot/utils/model_record_history_page.dart';
 import 'package:life_pilot/utils/nlp.dart';
 import 'package:life_pilot/utils/model_personal_data_scope.dart';
+import 'package:life_pilot/utils/record_categories.dart';
 
 class ControllerPointRecordDetail extends SafeChangeNotifier {
   final ServicePointRecord service;
@@ -137,16 +139,24 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     final targetAccountId = inputAccountId ?? accountId;
     try {
       if (!_isCurrent(generation, request)) return;
-      final window = ModelRecordHistory.windowEndingAt(nextDate);
-      final page = await service.fetchRecordsPage(
-        accountId: targetAccountId,
-        type: currentType,
-        dateFrom: window.start,
-        dateTo: window.end,
-        // Reserved point rows are already present on the first page.
-        includeReservedRecords: false,
+      final page = await readNextNonDuplicateHistoryPage(
+        cursor: nextDate,
+        existingIds: todayRecords.map((record) => record.id),
+        idOf: (record) => record.id,
+        shouldContinue: () => _isCurrent(generation, request),
+        read: (cursor) {
+          final window = ModelRecordHistory.windowEndingAt(cursor);
+          return service.fetchRecordsPage(
+            accountId: targetAccountId,
+            type: currentType,
+            dateFrom: window.start,
+            dateTo: window.end,
+            // Reserved point rows are already pinned on the first page.
+            includeReservedRecords: false,
+          );
+        },
       );
-      if (!_isCurrent(generation, request)) return;
+      if (!_isCurrent(generation, request) || page == null) return;
       todayRecords = [...todayRecords, ...page.rows];
       _nextRecordDate = page.nextDate;
       _sortAndDeduplicate();
@@ -166,6 +176,8 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
       todayRecords,
       idOf: (record) => record.id,
       dateOf: (record) => record.localTime,
+      pinnedFirst: (record) =>
+          record.primaryCategory == RecordCategories.reserved,
     );
   }
 
