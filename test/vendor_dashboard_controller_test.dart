@@ -1,15 +1,16 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/model_content_performance.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/vendor/controller_vendor_dashboard.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/vendor/model_vendor_dashboard.dart';
-import 'package:life_pilot/vendor/service_vendor_account.dart';
 import 'package:life_pilot/vendor/page_vendor_dashboard.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/vendor/service_vendor_account.dart';
+import 'package:provider/provider.dart';
 
 VendorPricingPlan _plan(String code, int month) => VendorPricingPlan(
   id: '$code-$month',
@@ -22,6 +23,7 @@ VendorPricingPlan _plan(String code, int month) => VendorPricingPlan(
   imageMegabytes: 25,
   analyticsDays: 365,
 );
+
 final _status = VendorSubscriptionStatus(
   plan: _plan('partner', 10),
   status: 'active',
@@ -34,19 +36,27 @@ final _metrics = VendorContentMetrics(
   pending: 0,
   activeEvents: 1,
   activeAttractions: 0,
-  recentSubmissions: [],
-  performance: ModelContentPerformance([]),
+  recentSubmissions: const [],
+  performance: ModelContentPerformance(const []),
+);
+
+ModelVendorDashboard _dashboard() => ModelVendorDashboard(
+  status: _status,
+  metrics: _metrics,
+  plans: [_plan('growth', 10), _plan('free', 10)],
 );
 
 class _Auth extends ControllerAuth {
   String? account = 'a';
   int revision = 0;
+
   @override
   String? get currentAccount => account;
   @override
   bool get isSysAdmin => false;
   @override
   int get personalDataRevision => revision;
+
   void change(String? value) {
     account = value;
     notifyListeners();
@@ -54,45 +64,21 @@ class _Auth extends ControllerAuth {
 }
 
 class _Service extends ServiceVendorAccount {
-  final setups = <Completer<void>>[];
-  final statuses = <Completer<VendorSubscriptionStatus>>[];
-  final metrics = <Completer<VendorContentMetrics>>[];
-  final pricing = <Completer<List<VendorPricingPlan>>>[];
+  final reads = <Completer<ModelVendorDashboard>>[];
   final owners = <String>[];
-  @override
-  Future<void> ensureVendorAccount() {
-    final done = Completer<void>();
-    setups.add(done);
-    return done.future;
-  }
 
   @override
-  Future<VendorSubscriptionStatus> fetchMyStatus() {
-    final done = Completer<VendorSubscriptionStatus>();
-    statuses.add(done);
-    return done.future;
-  }
-
-  @override
-  Future<VendorContentMetrics> fetchMetrics(String account) {
+  Future<ModelVendorDashboard> fetchDashboard(
+    String account, {
+    bool force = false,
+  }) {
     owners.add(account);
-    final done = Completer<VendorContentMetrics>();
-    metrics.add(done);
+    final done = Completer<ModelVendorDashboard>();
+    reads.add(done);
     return done.future;
   }
 
-  @override
-  Future<List<VendorPricingPlan>> fetchPricingPlans() {
-    final done = Completer<List<VendorPricingPlan>>();
-    pricing.add(done);
-    return done.future;
-  }
-
-  void complete(int index) {
-    statuses[index].complete(_status);
-    metrics[index].complete(_metrics);
-    pricing[index].complete([_plan('growth', 10), _plan('free', 10)]);
-  }
+  void complete(int index) => reads[index].complete(_dashboard());
 }
 
 Future<void> _flush() => Future<void>.delayed(Duration.zero);
@@ -100,381 +86,121 @@ Future<void> _flush() => Future<void>.delayed(Duration.zero);
 void main() {
   late _Auth auth;
   late _Service service;
-  late ControllerVendorDashboard c;
+  late ControllerVendorDashboard controller;
+
   setUp(() {
     auth = _Auth();
     service = _Service();
-    c = ControllerVendorDashboard(auth: auth, service: service);
+    controller = ControllerVendorDashboard(auth: auth, service: service);
   });
   tearDown(() {
-    if (!c.notifierDisposed) c.dispose();
+    if (!controller.notifierDisposed) controller.dispose();
     auth.dispose();
   });
-  test(
-    'sign-out clears loaded vendor data and original sign-in reloads',
-    () async {
-      final first = c.load();
-      service.setups[0].complete();
-      await _flush();
-      service.complete(0);
-      await first;
-      expect(c.data, isNotNull);
-      auth.change(null);
-      expect(c.data, isNull);
-      expect(c.loading, isFalse);
-      await c.load();
-      expect(service.setups, hasLength(1));
-      auth.change('a');
-      expect(service.setups, hasLength(2));
-      final fresh = c.load();
-      service.setups[1].complete();
-      await _flush();
-      service.complete(1);
-      await fresh;
-      expect(c.data, isNotNull);
-      expect(service.owners, ['a', 'a']);
-    },
-  );
 
-  for (final duringSetup in [true, false]) {
-    for (final oldFailure in [false, true]) {
-      test(
-        'A-B-A reloads the owner without redundant foreign-account updates (setup=$duringSetup, old error=$oldFailure)',
-        () async {
-          final old = c.load();
-          if (!duringSetup) {
-            service.setups[0].complete();
-            await _flush();
-          }
-          auth.change('b');
-          var notifications = 0;
-          c.addListener(() => notifications++);
-          for (var i = 0; i < 4; i++) {
-            auth.notifyListeners();
-          }
-          expect(notifications, 0);
-          expect(c.data, isNull);
-          expect(c.loading, isFalse);
-          await c.load();
-          expect(service.setups, hasLength(1));
-          auth.change('a');
-          expect(service.setups, hasLength(2));
-          expect(c.loading, isTrue);
-          final fresh = c.load();
-          service.setups[1].complete();
-          await _flush();
-          final currentIndex = service.statuses.length - 1;
-          service.complete(currentIndex);
-          await fresh;
-          final current = c.data;
-          expect(current, isNotNull);
-          if (duringSetup) {
-            if (oldFailure) {
-              service.setups[0].completeError(StateError('obsolete setup'));
-            } else {
-              service.setups[0].complete();
-            }
-          } else if (oldFailure) {
-            service.statuses[0].completeError(StateError('obsolete status'));
-            service.metrics[0].complete(_metrics);
-            service.pricing[0].complete([]);
-          } else {
-            service.complete(0);
-          }
-          await old;
-          expect(c.data, same(current));
-          expect(c.error, isNull);
-          expect(c.loading, isFalse);
-          expect(service.owners.every((owner) => owner == 'a'), isTrue);
-          expect(service.statuses, hasLength(duringSetup ? 1 : 2));
-        },
-      );
-    }
-  }
+  test('concurrent loads share one combined dashboard request', () async {
+    final first = controller.load();
+    expect(controller.load(), same(first));
+    expect(service.reads, hasLength(1));
+    expect(service.owners, ['a']);
+    service.complete(0);
+    await first;
+    expect(controller.error, isNull);
+    expect(controller.data!.metrics, same(_metrics));
+    expect(controller.data!.plans.map((plan) => plan.code), ['free', 'growth']);
+  });
 
-  for (final duringSetup in [true, false]) {
-    testWidgets(
-      'timeout during ${duringSetup ? 'setup' : 'parallel reads'} is retryable and ignores late work',
-      (tester) async {
-        c.dispose();
-        c = ControllerVendorDashboard(
-          auth: auth,
-          service: service,
-          requestTimeout: const Duration(milliseconds: 20),
-        );
-        final old = c.load();
-        expect(c.load(), same(old));
-        if (!duringSetup) {
-          service.setups.single.complete();
-          await tester.pump();
-          expect(service.statuses.length, 1);
-        }
-        await tester.pump(const Duration(milliseconds: 21));
-        await old;
-        expect(c.loading, isFalse);
-        expect(c.error, isA<TimeoutException>());
-        expect(c.data, isNull);
+  test('failed combined request retains data and remains retryable', () async {
+    final first = controller.load();
+    service.complete(0);
+    await first;
+    final snapshot = controller.data;
 
-        final retry = c.load();
-        expect(retry, isNot(same(old)));
-        expect(c.error, isNull);
-        expect(c.loading, isTrue);
-        if (duringSetup) {
-          service.setups.first.complete();
-        } else {
-          service.complete(0);
-        }
-        await tester.pump();
-        expect(c.data, isNull);
-        expect(c.loading, isTrue);
-        expect(service.statuses.length, duringSetup ? 0 : 1);
+    final failed = controller.load();
+    service.reads.last.completeError(StateError('offline'));
+    await failed;
+    expect(controller.data, same(snapshot));
+    expect(controller.error, isA<StateError>());
 
-        service.setups.last.complete();
-        await tester.pump();
-        service.complete(duringSetup ? 0 : 1);
-        await tester.pump();
-        await retry;
-        expect(c.data, isNotNull);
-        expect(c.error, isNull);
-        expect(c.loading, isFalse);
-      },
-    );
-  }
-  for (final failedRead in ['status', 'metrics', 'pricing']) {
-    test('$failedRead failure does not wait for other pending reads', () async {
-      final pending = c.load();
-      service.setups.single.complete();
-      await _flush();
-      final error = StateError(failedRead);
-      switch (failedRead) {
-        case 'status':
-          service.statuses.single.completeError(error);
-        case 'metrics':
-          service.metrics.single.completeError(error);
-        case 'pricing':
-          service.pricing.single.completeError(error);
-      }
-      await pending;
-      expect(c.error, same(error));
-      expect(c.loading, isFalse);
-      // A second failure arriving after the first must also be handled, without
-      // replacing the error already shown or creating an unhandled exception.
-      if (!service.statuses.single.isCompleted) {
-        service.statuses.single.completeError(StateError('late status'));
-      }
-      if (!service.metrics.single.isCompleted) {
-        service.metrics.single.completeError(StateError('late metrics'));
-      }
-      if (!service.pricing.single.isCompleted) {
-        service.pricing.single.completeError(StateError('late pricing'));
-      }
-      await _flush();
-      expect(c.error, same(error));
-      final retry = c.load();
-      service.setups.last.complete();
-      await _flush();
-      service.complete(1);
-      await retry;
-      expect(c.error, isNull);
-      expect(c.data, isNotNull);
-    });
-  }
-  testWidgets('setup and reads share one total timeout budget', (tester) async {
-    c.dispose();
-    c = ControllerVendorDashboard(
+    final retry = controller.load();
+    service.complete(2);
+    await retry;
+    expect(controller.error, isNull);
+    expect(controller.data, isNotNull);
+  });
+
+  testWidgets('timeout releases loading and ignores the late response', (
+    tester,
+  ) async {
+    controller.dispose();
+    controller = ControllerVendorDashboard(
       auth: auth,
       service: service,
       requestTimeout: const Duration(milliseconds: 20),
     );
-    final pending = c.load();
-    await tester.pump(const Duration(milliseconds: 12));
-    service.setups.single.complete();
-    await tester.pump();
-    expect(service.statuses.length, 1);
-    await tester.pump(const Duration(milliseconds: 9));
-    await pending;
-    expect(c.error, isA<TimeoutException>());
-    expect(c.loading, isFalse);
-    service.complete(0);
-    await tester.pump();
-    expect(c.data, isNull);
-  });
-  for (final change in ['account', 'dispose']) {
-    testWidgets('late timeout after $change cannot publish an error', (
-      tester,
-    ) async {
-      c.dispose();
-      c = ControllerVendorDashboard(
-        auth: auth,
-        service: service,
-        requestTimeout: const Duration(milliseconds: 20),
-      );
-      final pending = c.load();
-      if (change == 'account') {
-        auth.change('other');
-      } else {
-        c.dispose();
-      }
-      var notifications = 0;
-      if (!c.notifierDisposed) c.addListener(() => notifications++);
-      await tester.pump(const Duration(milliseconds: 21));
-      await pending;
-      expect(c.error, isNull);
-      expect(c.data, isNull);
-      expect(notifications, 0);
-      service.setups.single.complete();
-      await tester.pump();
-      expect(service.statuses, isEmpty);
-    });
-  }
-  test('failed refresh retains the last complete dashboard snapshot', () async {
-    final first = c.load();
-    service.setups.single.complete();
-    await _flush();
-    service.complete(0);
-    await first;
-    final snapshot = c.data;
-    final refresh = c.load();
-    service.setups.last.complete();
-    await _flush();
-    service.statuses.last.completeError(StateError('offline'));
-    await refresh;
-    expect(c.data, same(snapshot));
-    expect(c.error, isA<StateError>());
-    expect(c.loading, isFalse);
-    service.metrics.last.complete(_metrics);
-    service.pricing.last.complete([]);
-    await _flush();
-    expect(c.data, same(snapshot));
-  });
+    final old = controller.load();
+    await tester.pump(const Duration(milliseconds: 21));
+    await old;
+    expect(controller.error, isA<TimeoutException>());
+    expect(controller.loading, isFalse);
 
-  test(
-    'setup gates three parallel reads and concurrent loads share one future',
-    () async {
-      final first = c.load();
-      expect(c.load(), same(first));
-      expect(service.setups.length, 1);
-      expect(service.statuses, isEmpty);
-      service.setups.single.complete();
-      await _flush();
-      expect(service.statuses.length, 1);
-      expect(service.metrics.length, 1);
-      expect(service.pricing.length, 1);
-      expect(service.owners, ['a']);
-      service.complete(0);
-      await first;
-      expect(c.loading, isFalse);
-      expect(c.error, isNull);
-      expect(c.data!.metrics, same(_metrics));
-      expect(c.data!.plans.map((p) => p.code), ['free', 'growth']);
-    },
-  );
-  test(
-    'setup failure is retryable and does not launch dashboard reads',
-    () async {
-      final first = c.load();
-      service.setups.single.completeError(StateError('offline'));
-      await first;
-      expect(c.error, isA<StateError>());
-      expect(c.loading, isFalse);
-      expect(service.statuses, isEmpty);
-      final retry = c.load();
-      service.setups.last.complete();
-      await _flush();
-      service.complete(0);
-      await retry;
-      expect(c.error, isNull);
-    },
-  );
-  test('a failed parallel read ends loading and can retry', () async {
-    final first = c.load();
-    service.setups.single.complete();
-    await _flush();
-    service.statuses.single.completeError(StateError('status'));
-    service.metrics.single.complete(_metrics);
-    service.pricing.single.complete([]);
-    await first;
-    expect(c.error, isA<StateError>());
-    expect(c.loading, isFalse);
-    final retry = c.load();
-    service.setups.last.complete();
-    await _flush();
+    final retry = controller.load();
     service.complete(1);
     await retry;
-    expect(c.data, isNotNull);
+    final current = controller.data;
+    service.complete(0);
+    await tester.pump();
+    expect(controller.data, same(current));
   });
-  test('account change during setup prevents all follow-up reads', () async {
-    final first = c.load();
+
+  test('account round trip ignores the old account result', () async {
+    final old = controller.load();
     auth.change('b');
-    service.setups.single.complete();
-    await first;
-    expect(service.statuses, isEmpty);
-    expect(c.data, isNull);
-    await c.load();
-    expect(service.setups.length, 1);
+    auth.change('a');
+    final fresh = controller.load();
+    expect(service.owners, ['a', 'a']);
+    service.complete(1);
+    await fresh;
+    final current = controller.data;
+    service.complete(0);
+    await old;
+    expect(controller.data, same(current));
+    expect(controller.error, isNull);
   });
-  test(
-    'account round trip ignores old results and accepts a fresh load',
-    () async {
-      final old = c.load();
-      service.setups.single.complete();
-      await _flush();
-      auth.change('b');
-      auth.change('a');
-      final fresh = c.load();
-      service.setups.last.complete();
-      await _flush();
-      service.complete(0);
-      await old;
-      expect(c.data, isNull);
-      expect(c.loading, isTrue);
-      service.complete(1);
-      await fresh;
-      expect(c.data, isNotNull);
-    },
-  );
-  test(
-    'personal-data revision reloads without retaining old dashboard',
-    () async {
-      final first = c.load();
-      service.setups.single.complete();
-      await _flush();
-      service.complete(0);
-      await first;
-      auth.revision++;
-      auth.notifyListeners();
-      expect(c.data, isNull);
-      expect(service.setups.length, 2);
-      service.setups.last.complete();
-      await _flush();
-      service.complete(1);
-      await c.load();
-      expect(c.data, isNotNull);
-    },
-  );
-  test(
-    'dispose during setup neither queries nor publishes afterwards',
-    () async {
-      final first = c.load();
-      c.dispose();
-      service.setups.single.complete();
-      await first;
-      expect(service.statuses, isEmpty);
-      expect(c.data, isNull);
-    },
-  );
-  test('same-account notifications do not reload dashboard', () async {
-    final first = c.load();
-    auth.notifyListeners();
-    expect(service.setups.length, 1);
-    service.setups.single.complete();
-    await _flush();
+
+  test('sign-out clears data and blocks further reads', () async {
+    final pending = controller.load();
+    service.complete(0);
+    await pending;
+    expect(controller.data, isNotNull);
+    auth.change(null);
+    expect(controller.data, isNull);
+    await controller.load();
+    expect(service.reads, hasLength(1));
+  });
+
+  test('personal-data revision starts a fresh dashboard request', () async {
+    final first = controller.load();
     service.complete(0);
     await first;
-    final snapshot = c.data;
+    auth.revision++;
     auth.notifyListeners();
-    expect(c.data, same(snapshot));
+    await _flush();
+    expect(controller.data, isNull);
+    expect(service.reads, hasLength(2));
+    service.complete(1);
+    await controller.load();
+    expect(controller.data, isNotNull);
   });
+
+  test('dispose prevents an in-flight response from publishing', () async {
+    final pending = controller.load();
+    controller.dispose();
+    service.complete(0);
+    await pending;
+    expect(controller.data, isNull);
+  });
+
   test('model sorts without changing source and exposes read-only plans', () {
     final source = [
       _plan('partner', 1),
@@ -487,7 +213,7 @@ void main() {
       status: _status,
       plans: source,
     );
-    expect(data.plans.map((p) => p.id), [
+    expect(data.plans.map((plan) => plan.id), [
       'free-1',
       'partner-10',
       'partner-1',
@@ -498,36 +224,33 @@ void main() {
   });
 
   for (final language in ['en', 'zh', 'ja', 'ko']) {
-    testWidgets(
-      'dashboard page retries and renders on narrow $language screen',
-      (tester) async {
-        await tester.binding.setSurfaceSize(const Size(360, 740));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
-        await tester.pumpWidget(
-          ChangeNotifierProvider<ControllerAuth>.value(
-            value: auth,
-            child: MaterialApp(
-              locale: Locale(language),
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              home: PageVendorDashboard(service: service),
-            ),
+    testWidgets('dashboard retries and renders on a narrow $language screen', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(360, 740));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        ChangeNotifierProvider<ControllerAuth>.value(
+          value: auth,
+          child: MaterialApp(
+            locale: Locale(language),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: PageVendorDashboard(service: service),
           ),
-        );
-        service.setups.single.completeError(StateError('offline'));
-        await tester.pumpAndSettle();
-        expect(find.byIcon(Icons.cloud_off_outlined), findsOneWidget);
-        await tester.tap(find.byIcon(Icons.refresh));
-        await tester.pump();
-        service.setups.last.complete();
-        await tester.pump();
-        service.complete(0);
-        await tester.pumpAndSettle();
-        expect(find.byIcon(Icons.cloud_off_outlined), findsNothing);
-        expect(find.byIcon(Icons.storefront_outlined), findsOneWidget);
-        expect(tester.takeException(), isNull);
-        await tester.pumpWidget(const SizedBox.shrink());
-      },
-    );
+        ),
+      );
+      service.reads.single.completeError(StateError('offline'));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.cloud_off_outlined), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.refresh));
+      await tester.pump();
+      service.complete(1);
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.cloud_off_outlined), findsNothing);
+      expect(find.byIcon(Icons.storefront_outlined), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
   }
 }

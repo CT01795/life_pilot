@@ -15,8 +15,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ledgerDeclineShare => 'Stop viewing';
 
   @override
-  String get ledgerDeclineShareExplanation =>
-      'You will lose access to this shared account. The original account data will not be deleted.';
+  String get ledgerDeclineShareExplanation => 'You will lose access to this shared account. The original account data will not be deleted.';
 
   @override
   String get ledgerDeclineShareConfirm => 'Stop viewing this shared account?';
@@ -28,12 +27,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ledgerStopSharingConfirm => 'Stop sharing this account?';
 
   @override
-  String get ledgerAllowProposalsConfirm =>
-      'Allow this person to submit change proposals?';
+  String get ledgerAllowProposalsConfirm => 'Allow this person to submit change proposals?';
 
   @override
-  String get ledgerStopProposalsConfirm =>
-      'Stop accepting change proposals? Pending proposals will be rejected.';
+  String get ledgerStopProposalsConfirm => 'Stop accepting change proposals? Pending proposals will be rejected.';
 
   @override
   String get ledgerAllowImageChanges => 'Allow image changes';
@@ -42,31 +39,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ledgerStopImageChanges => 'Stop image changes';
 
   @override
-  String get ledgerAllowImageChangesConfirm =>
-      'Allow this person to replace the account image directly without approval?';
+  String get ledgerAllowImageChangesConfirm => 'Allow this person to replace the account image directly without approval?';
 
   @override
-  String get ledgerStopImageChangesConfirm =>
-      'Stop allowing this person to change the account image?';
+  String get ledgerStopImageChangesConfirm => 'Stop allowing this person to change the account image?';
 
   @override
-  String get sharedLedgerStatisticsUnavailable =>
-      'Shared account statistics are not set up yet. Contact an administrator.';
+  String get sharedLedgerStatisticsUnavailable => 'Shared account statistics are not set up yet. Contact an administrator.';
 
   @override
-  String get sharedLedgerStatisticsLoadFailed =>
-      'Could not load shared account statistics.';
+  String get sharedLedgerStatisticsLoadFailed => 'Could not load shared account statistics.';
 
   @override
   String get adminReactivateAccount => 'Restore account';
 
   @override
-  String get adminAccountReactivated =>
-      'Account restored. The user can sign in again.';
+  String get adminAccountReactivated => 'Account restored. The user can sign in again.';
 
   @override
-  String get adminAccountReactivationPurgeStarted =>
-      'Permanent deletion has started. This account cannot be restored.';
+  String get adminAccountReactivationPurgeStarted => 'Permanent deletion has started. This account cannot be restored.';
 
   @override
   String get previewAccountImage => 'Preview account image';
@@ -75,12 +66,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ledgerSharedAccount => 'Shared account';
 
   @override
-  String get accountPurgeMoreFiles =>
-      'A batch of files was removed. The account remains disabled. Run deletion again to continue.';
+  String get accountPurgeMoreFiles => 'A batch of files was removed. The account remains disabled. Run deletion again to continue.';
 
   @override
-  String get accountPurgeInProgress =>
-      'This deletion is in progress. Try again later.';
+  String get accountPurgeInProgress => 'This deletion is in progress. Try again later.';
 
   @override
   String get adminDisableAccount => 'Disable account';
@@ -104,8 +93,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ledgerSubmitProposal => 'Submit change proposal';
 
   @override
-  String get ledgerProposalSent =>
-      'Proposal sent. It is pending the owner\'s review.';
+  String get ledgerProposalSent => 'Proposal sent. It is pending the owner\'s review.';
 
   @override
   String get ledgerStopProposals => 'Stop accepting proposals';
@@ -144,12 +132,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get refreshList => 'Refresh list';
 
   @override
-  String get cloudDeleteUnconfirmedLocalCopyKept =>
-      'Cloud cleanup could not be confirmed. Your local copy has been kept. Do not repeat the transfer; refresh and contact an administrator to verify the result.';
+  String get cloudDeleteUnconfirmedLocalCopyKept => 'Cloud cleanup could not be confirmed. Your local copy has been kept. Do not repeat the transfer; refresh and contact an administrator to verify the result.';
 
   @override
-  String get cloudZeroHistoryTransferWarning =>
-      'Your cloud plan does not retain individual answers. They will be omitted and their device copies removed after transfer succeeds. Game scores and progress will still be transferred.';
+  String get cloudZeroHistoryTransferWarning => 'Your cloud plan does not retain individual answers. They will be omitted and their device copies removed after transfer succeeds. Game scores and progress will still be transferred.';
 
   @override
   String cloudHistoryOmitted(int count) {
@@ -167,8 +153,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String billingMonthlyPrice(int price) {
-    final intl.NumberFormat priceNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String priceString = priceNumberFormat.format(price);
 
     return 'NT\$$priceString per month';
@@ -178,27 +163,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get billingPeriodPrice => 'Price per billing period (TWD)';
 
   @override
-  String get cloudAnswerRetention =>
-      'Cloud answer history days (0 = do not retain)';
+  String get cloudAnswerRetention => 'Cloud answer history days (0 = do not retain)';
 
   @override
   String get answerHistoryNotRetained => 'Cloud answer history is not retained';
 
   @override
-  String get coreQuotaExplanation =>
-      'Calendar events, accounting entries, points entries and memories each have a separate limit.';
+  String get coreQuotaExplanation => 'Calendar events, accounting entries, points entries and memories each have a separate limit.';
 
   @override
-  String get coreQuotaWithoutPoints =>
-      'Calendar events, accounting entries and memories each have a separate limit.';
+  String get coreQuotaWithoutPoints => 'Calendar events, accounting entries and memories each have a separate limit.';
 
   @override
-  String get localImagesDeviceOnly =>
-      'Device images use device storage; cloud image capacity is not included.';
+  String get localImagesDeviceOnly => 'Device images use device storage; cloud image capacity is not included.';
 
   @override
-  String get cloudSubmissionExplanation =>
-      'Event and place quotas count unexpired cloud submissions. Unlimited device data does not increase these quotas.';
+  String get cloudSubmissionExplanation => 'Event and place quotas count unexpired cloud submissions. Unlimited device data does not increase these quotas.';
 
   @override
   String get activeEventSubmissions => 'Unexpired event submissions';
@@ -207,47 +187,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activePlaceSubmissions => 'Unexpired place submissions';
 
   @override
-  String get subscriptionConfigurationMissing =>
-      'No applicable allowance is configured. Read only: adding, editing and deleting are unavailable. Contact the administrator.';
+  String get subscriptionConfigurationMissing => 'No applicable allowance is configured. Read only: adding, editing and deleting are unavailable. Contact the administrator.';
 
   @override
-  String get recordInputInvalid =>
-      'Enter a description and a value greater than zero.';
+  String get recordInputInvalid => 'Enter a description and a value greater than zero.';
 
   @override
-  String get recordTextInvalid =>
-      'Invalid format. Use a description, + or -, and a non-zero value (up to 4 decimal places), e.g. Lunch-120; Salary+30000. No data was saved.';
+  String get recordTextInvalid => 'Invalid format. Use a description, + or -, and a non-zero value (up to 4 decimal places), e.g. Lunch-120; Salary+30000. No data was saved.';
 
   @override
-  String get pointRecordTextInvalid =>
-      'Invalid format. Use non-zero whole numbers, e.g. Exercise+10; Late-2. Check every entry; no data was saved.';
+  String get pointRecordTextInvalid => 'Invalid format. Use non-zero whole numbers, e.g. Exercise+10; Late-2. Check every entry; no data was saved.';
 
   @override
-  String get localSubscriptionRequiredForChanges =>
-      'Device plan inactive. You can only view or delete data. Subscribe and ask an administrator to activate it.';
+  String get localSubscriptionRequiredForChanges => 'Device plan inactive. You can only view or delete data. Subscribe and ask an administrator to activate it.';
 
   @override
   String get quotaNotLimited => 'No limit';
 
   @override
-  String get subscriptionLocalRequiresActiveSubscription =>
-      'An active Device plan subscription is required to add or edit device data';
+  String get subscriptionLocalRequiresActiveSubscription => 'An active Device plan subscription is required to add or edit device data';
 
   @override
-  String get subscriptionCurrentLocalInactive =>
-      'Current storage: This device (no active Device plan)';
+  String get subscriptionCurrentLocalInactive => 'Current storage: This device (no active Device plan)';
 
   @override
-  String get subscriptionCurrentLocalPromotion =>
-      'Current storage: This device (promotion access)';
+  String get subscriptionCurrentLocalPromotion => 'Current storage: This device (promotion access)';
 
   @override
-  String get dataStorageLocalPromotionNoSubscription =>
-      'Temporarily available during the promotion. Without an active Device plan, only viewing and deletion remain after it ends.';
+  String get dataStorageLocalPromotionNoSubscription => 'Temporarily available during the promotion. Without an active Device plan, only viewing and deletion remain after it ends.';
 
   @override
-  String get accountNoLongerAvailable =>
-      'This account was deleted or the session has expired. Please sign in again.';
+  String get accountNoLongerAvailable => 'This account was deleted or the session has expired. Please sign in again.';
 
   @override
   String get accessDenied => 'Access denied';
@@ -268,8 +238,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ai => 'AI';
 
   @override
-  String get alarmUpdateFailed =>
-      'Could not update the reminder. Please try again later';
+  String get alarmUpdateFailed => 'Could not update the reminder. Please try again later';
 
   @override
   String get allCities => 'All cities';
@@ -299,8 +268,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get askAdministrator => 'Ask the administrator';
 
   @override
-  String get askAdministratorDescription =>
-      'Open your email app and send a request. The administrator will reply after handling it.';
+  String get askAdministratorDescription => 'Open your email app and send a request. The administrator will reply after handling it.';
 
   @override
   String get back => 'Back';
@@ -397,8 +365,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dataCleanupAll => 'Clear all';
 
   @override
-  String get dataCleanupAllConfirm =>
-      'Delete all personal data in the selected storage? This cannot be undone.';
+  String get dataCleanupAllConfirm => 'Delete all personal data in the selected storage? This cannot be undone.';
 
   @override
   String get dataCleanupConfirmTitle => 'Confirm deletion';
@@ -407,15 +374,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dataCleanupExcess => 'Remove excess';
 
   @override
-  String get dataCleanupExcessConfirm =>
-      'Delete only records above the current allowance? This cannot be undone.';
+  String get dataCleanupExcessConfirm => 'Delete only records above the current allowance? This cannot be undone.';
 
   @override
   String get dataCleanupFailed => 'Data cleanup failed';
 
   @override
-  String get dataCleanupNoOverage =>
-      'No cloud data currently exceeds the allowance.';
+  String get dataCleanupNoOverage => 'No cloud data currently exceeds the allowance.';
 
   @override
   String get dataCleanupSuccess => 'Data cleanup completed';
@@ -430,12 +395,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dataClearLocalAction => 'Clear device data';
 
   @override
-  String get dataClearLocalConfirm =>
-      'This permanently deletes all personal data on this device and cannot be undone. You can then try switching to cloud storage. Continue?';
+  String get dataClearLocalConfirm => 'This permanently deletes all personal data on this device and cannot be undone. You can then try switching to cloud storage. Continue?';
 
   @override
-  String get dataClearLocalFailed =>
-      'Could not clear device data. Try again later.';
+  String get dataClearLocalFailed => 'Could not clear device data. Try again later.';
 
   @override
   String get dataClearLocalSuccess => 'Device data cleared';
@@ -447,12 +410,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dataMoveToLocal => 'Move cloud data to this device';
 
   @override
-  String get dataMoveToLocalConfirm =>
-      'Cloud data will be copied and verified before it is removed from the cloud. It will then be visible only on this device, browser, and browser profile. It will not automatically appear elsewhere, and removing the app or clearing site data may permanently delete it. Continue?';
+  String get dataMoveToLocalConfirm => 'Cloud data will be copied and verified before it is removed from the cloud. It will then be visible only on this device, browser, and browser profile. It will not automatically appear elsewhere, and removing the app or clearing site data may permanently delete it. Continue?';
 
   @override
-  String get dataMoveToLocalFailed =>
-      'Some data could not be moved. Cloud originals were retained.';
+  String get dataMoveToLocalFailed => 'Some data could not be moved. Cloud originals were retained.';
 
   @override
   String get dataMoveToLocalSuccess => 'Cloud data was moved to this device.';
@@ -502,8 +463,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emailNotConfirmed => 'Email not confirmed';
 
   @override
-  String get emailRateLimitExceeded =>
-      'Too many verification emails have been requested. Please try again later.';
+  String get emailRateLimitExceeded => 'Too many verification emails have been requested. Please try again later.';
 
   @override
   String get endDate => 'End date';
@@ -521,8 +481,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterAnswer => 'Enter your answer';
 
   @override
-  String get excelColumnHeaderActivityName =>
-      'Activity name_______________________';
+  String get excelColumnHeaderActivityName => 'Activity name_______________________';
 
   @override
   String get excelColumnHeaderAgeMax => 'Max Age';
@@ -555,8 +514,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get excelColumnHeaderKeywords => 'Keywords_______________________';
 
   @override
-  String get excelColumnHeaderMasterUrl =>
-      'Activity url_______________________';
+  String get excelColumnHeaderMasterUrl => 'Activity url_______________________';
 
   @override
   String get excelColumnHeaderPriceMax => 'Max Price';
@@ -574,8 +532,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get excelColumnHeaderStartTime => 'Start Time';
 
   @override
-  String get externalLinkOpenFailed =>
-      'Could not open the link. Please try again later';
+  String get externalLinkOpenFailed => 'Could not open the link. Please try again later';
 
   @override
   String get fee => 'Fee';
@@ -626,23 +583,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moreActions => 'More';
 
   @override
-  String get networkError =>
-      'Unable to connect. Check your network and try again.';
+  String get networkError => 'Unable to connect. Check your network and try again.';
 
   @override
   String get verifyingAccount => 'Verifying your account…';
 
   @override
-  String get adminPricingDeleteCheckFailed =>
-      'Unable to confirm whether this plan can be deleted. Please retry.';
+  String get adminPricingDeleteCheckFailed => 'Unable to confirm whether this plan can be deleted. Please retry.';
 
   @override
-  String get accountVerificationFailed =>
-      'Unable to verify your account right now. Please retry.';
+  String get accountVerificationFailed => 'Unable to verify your account right now. Please retry.';
 
   @override
-  String get subscriptionLoadFailed =>
-      'Unable to load your plan details. Please retry.';
+  String get subscriptionLoadFailed => 'Unable to load your plan details. Please retry.';
 
   @override
   String get next => 'Next';
@@ -711,23 +664,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get priceMin => 'Min. Price';
 
   @override
-  String get publishedContentDeleteAdminOnly =>
-      'Published content can only be deleted by an administrator. You can edit it; after saving, it returns to pending review.';
+  String get publishedContentDeleteAdminOnly => 'Published content can only be deleted by an administrator. You can edit it; after saving, it returns to pending review.';
 
   @override
-  String get previouslyPublishedContentDeleteAdminOnly =>
-      'This content was previously published and can only be deleted by an administrator. You can still edit and resubmit it for review.';
+  String get previouslyPublishedContentDeleteAdminOnly => 'This content was previously published and can only be deleted by an administrator. You can still edit and resubmit it for review.';
 
   @override
-  String get submissionPermissionDenied =>
-      'This account does not currently have submission write access. Please contact the administrator to update the submission permissions.';
+  String get submissionPermissionDenied => 'This account does not currently have submission write access. Please contact the administrator to update the submission permissions.';
 
   @override
   String get publishedSubmission => 'Public';
 
   @override
-  String get publishedSubmissionTooltip =>
-      'This information is public and can be viewed by everyone.';
+  String get publishedSubmissionTooltip => 'This information is public and can be viewed by everyone.';
 
   @override
   String get registrationSuccessful => 'Registration successful.';
@@ -816,56 +765,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameInstructions => 'How to play';
 
   @override
-  String get gameInstructionsGeneral =>
-      'Follow the prompts to complete the question. Use the speaker to play audio. Tap the microphone to start speaking and tap again to finish. Drag movable blocks to their targets, then check or submit after answering.';
+  String get gameInstructionsGeneral => 'Follow the prompts to complete the question. Use the speaker to play audio. Tap the microphone to start speaking and tap again to finish. Drag movable blocks to their targets, then check or submit after answering.';
 
   @override
-  String get gameInstructionsGrammar =>
-      'Listen to or read the question, choose the correct grammar answer.';
+  String get gameInstructionsGrammar => 'Listen to or read the question, choose the correct grammar answer.';
 
   @override
-  String get gameInstructionsSentence =>
-      'Play the prompt, drag the word blocks into the correct order, then press Check.';
+  String get gameInstructionsSentence => 'Play the prompt, drag the word blocks into the correct order, then press Check.';
 
   @override
-  String get gameInstructionsSpeaking =>
-      'Play the prompt, tap the microphone to start speaking, then tap again to finish and submit.';
+  String get gameInstructionsSpeaking => 'Play the prompt, tap the microphone to start speaking, then tap again to finish and submit.';
 
   @override
-  String get gameInstructionsTranslation =>
-      'Play the prompt and options, then check the correct translation.';
+  String get gameInstructionsTranslation => 'Play the prompt and options, then check the correct translation.';
 
   @override
-  String get gameInstructionsSocial =>
-      'Listen to the situation and options, then check the best response. Pressing text only plays its audio.';
+  String get gameInstructionsSocial => 'Listen to the situation and options, then check the best response. Pressing text only plays its audio.';
 
   @override
-  String get gameInstructionsWordSearch =>
-      'Listen to or read the prompt, select the answer letters in order, then submit.';
+  String get gameInstructionsWordSearch => 'Listen to or read the prompt, select the answer letters in order, then submit.';
 
   @override
-  String get gameInstructionsPuzzleMap =>
-      'Choose a difficulty, complete the map puzzle using the hints, then submit your answer.';
+  String get gameInstructionsPuzzleMap => 'Choose a difficulty, complete the map puzzle using the hints, then submit your answer.';
 
   @override
-  String get gameInstructionsMonomino =>
-      'Drag the arrows from the top onto the grid to guide the character to the goal, then check the path.';
+  String get gameInstructionsMonomino => 'Drag the arrows from the top onto the grid to guide the character to the goal, then check the path.';
 
   @override
-  String get gameInstructionsPolyomino =>
-      'Drag blocks from the left onto the grid. Tap a block to rotate it, then submit after connecting the path.';
+  String get gameInstructionsPolyomino => 'Drag blocks from the left onto the grid. Tap a block to rotate it, then submit after connecting the path.';
 
   @override
-  String get gameInstructionsScratch =>
-      'Arrange Blockly commands in the editor and press Start to avoid obstacles and reach the treasure.';
+  String get gameInstructionsScratch => 'Arrange Blockly commands in the editor and press Start to avoid obstacles and reach the treasure.';
 
   @override
-  String get gameInstructionsScratchMaze =>
-      'Arrange Blockly commands in the editor and press Start to guide the character through the maze. Each direction block moves exactly one cell. Connect more blocks or use a repeat block to move farther.';
+  String get gameInstructionsScratchMaze => 'Arrange Blockly commands in the editor and press Start to guide the character through the maze. Each direction block moves exactly one cell. Connect more blocks or use a repeat block to move farther.';
 
   @override
-  String get gameInstructionsMarioTranslation =>
-      'Use the left, right, jump, and shoot controls. Press the question or words to play audio and collect the correct words to complete the translation.';
+  String get gameInstructionsMarioTranslation => 'Use the left, right, jump, and shoot controls. Press the question or words to play audio and collect the correct words to complete the translation.';
 
   @override
   String get checkOption => 'Check';
@@ -948,8 +884,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayLifeOverview => 'Today\'s Life Overview';
 
   @override
-  String get todayLifeOverviewHint =>
-      'See your schedule, money, and points together. Tap an item for details.';
+  String get todayLifeOverviewHint => 'See your schedule, money, and points together. Tap an item for details.';
 
   @override
   String get toggleView => 'Toggle View';
@@ -973,12 +908,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unpublishedSubmission => 'Not public yet';
 
   @override
-  String get unpublishedSubmissionTooltip =>
-      'This information is awaiting review and is currently visible only to you and administrators.';
+  String get unpublishedSubmissionTooltip => 'This information is awaiting review and is currently visible only to you and administrators.';
 
   @override
-  String get unsavedChangesPrompt =>
-      'Your changes have not been saved. Discard them?';
+  String get unsavedChangesPrompt => 'Your changes have not been saved. Discard them?';
 
   @override
   String get uploadExcel => 'Upload Csv';
@@ -987,8 +920,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uploadFailed => '❌ Upload failed';
 
   @override
-  String get uploadInProgress =>
-      '❌ The previous file upload is still in progress.';
+  String get uploadInProgress => '❌ The previous file upload is still in progress.';
 
   @override
   String get uploadSuccess => '✅ Upload successful';
@@ -1027,8 +959,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountSecurity => 'Account security';
 
   @override
-  String get adminPasswordHelpBody =>
-      'Hello, I cannot sign in to Life Pilot. Please help with my password change.\n\nPlease reply to this email after the request has been handled.';
+  String get adminPasswordHelpBody => 'Hello, I cannot sign in to Life Pilot. Please help with my password change.\n\nPlease reply to this email after the request has been handled.';
 
   @override
   String adminPasswordHelpEmailUnavailable(String email) {
@@ -1036,19 +967,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get adminPasswordHelpOpened =>
-      'Your email app is open. Review the message and send it.';
+  String get adminPasswordHelpOpened => 'Your email app is open. Review the message and send it.';
 
   @override
   String get adminPasswordHelpSubject => 'Life Pilot password change request';
 
   @override
-  String get adminPasswordResetDescription =>
-      'Enter the requester\'s account email to create a temporary password. Reply to the user and ask them to change it immediately after signing in.';
+  String get adminPasswordResetDescription => 'Enter the requester\'s account email to create a temporary password. Reply to the user and ask them to change it immediately after signing in.';
 
   @override
-  String get adminPasswordResetFailed =>
-      'The temporary password could not be created. Try again later.';
+  String get adminPasswordResetFailed => 'The temporary password could not be created. Try again later.';
 
   @override
   String get adminPasswordResetSend => 'Create temporary password';
@@ -1060,8 +988,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPasswordResetUserEmail => 'User email';
 
   @override
-  String get adminPasswordResetUserNotFound =>
-      'No user was found for this email.';
+  String get adminPasswordResetUserNotFound => 'No user was found for this email.';
 
   @override
   String get adminAccountCreateAccountType => 'Account type';
@@ -1070,12 +997,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminAccountCreateAction => 'Approve and create';
 
   @override
-  String get adminAccountCreateAlreadyExists =>
-      'An account already exists for this email. Use password reset instead.';
+  String get adminAccountCreateAlreadyExists => 'An account already exists for this email. Use password reset instead.';
 
   @override
-  String get adminAccountCreateFailed =>
-      'The account could not be created. Try again later.';
+  String get adminAccountCreateFailed => 'The account could not be created. Try again later.';
 
   @override
   String adminAccountCreateSuccessful(String email) {
@@ -1089,8 +1014,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get registrationAdminApprovalTitle => 'Request an account';
 
   @override
-  String get registrationAdminApprovalDescription =>
-      'No password is needed to register. Enter your email address and submit your request. Once approved and your account is created, the administrator will reply with a temporary password.';
+  String get registrationAdminApprovalDescription => 'No password is needed to register. Enter your email address and submit your request. Once approved and your account is created, the administrator will reply with a temporary password.';
 
   @override
   String get registrationAdminApprovalAction => 'Email administrator';
@@ -1104,8 +1028,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get registrationAdminApprovalOpened =>
-      'Email draft opened. Review and send it. Your account has not been created yet; wait for administrator approval.';
+  String get registrationAdminApprovalOpened => 'Email draft opened. Review and send it. Your account has not been created yet; wait for administrator approval.';
 
   @override
   String get adminTemporaryPasswordCopied => 'Temporary password copied.';
@@ -1119,8 +1042,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get adminTemporaryPasswordInstruction =>
-      'Copy and reply with it, then ask the user to change it in Account security immediately after signing in.';
+  String get adminTemporaryPasswordInstruction => 'Copy and reply with it, then ask the user to change it in Account security immediately after signing in.';
 
   @override
   String get adminTemporaryPasswordLabel => 'Temporary password';
@@ -1129,8 +1051,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get changePassword => 'Change password';
 
   @override
-  String get changePasswordFailed =>
-      'Password update failed. Check your current password and try again.';
+  String get changePasswordFailed => 'Password update failed. Check your current password and try again.';
 
   @override
   String get changePasswordSuccessful => 'Your password has been updated.';
@@ -1172,34 +1093,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moduleAuthorization => 'Access';
 
   @override
-  String get moduleAuthorizationDescription =>
-      'Choose the extra features available to a user. Home and the feature menu update together.';
+  String get moduleAuthorizationDescription => 'Choose the extra features available to a user. Home and the feature menu update together.';
 
   @override
-  String get moduleAuthorizationLoadFailed =>
-      'Could not load feature access. Check the account or try again.';
+  String get moduleAuthorizationLoadFailed => 'Could not load feature access. Check the account or try again.';
 
   @override
   String get moduleAuthorizationNoAccess => 'No extra features are enabled.';
 
   @override
-  String get moduleAuthorizationNotDeployed =>
-      'Feature access is not deployed. Run the authorization SQL in Supabase first.';
+  String get moduleAuthorizationNotDeployed => 'Feature access is not deployed. Run the authorization SQL in Supabase first.';
 
   @override
   String get moduleAuthorizationSaved => 'Feature access updated.';
 
   @override
-  String get moduleAuthorizationSaveFailed =>
-      'Feature access was not updated correctly. Search again and retry.';
+  String get moduleAuthorizationSaveFailed => 'Feature access was not updated correctly. Search again and retry.';
 
   @override
-  String get moduleAuthorizationSearchFirst =>
-      'Enter and search for a user email first.';
+  String get moduleAuthorizationSearchFirst => 'Enter and search for a user email first.';
 
   @override
-  String get moduleAuthorizationUserNotFound =>
-      'No user was found for that email address.';
+  String get moduleAuthorizationUserNotFound => 'No user was found for that email address.';
 
   @override
   String get newPassword => 'New password';
@@ -1208,19 +1123,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPasswordError => 'Please enter your password.';
 
   @override
-  String get noRecoverySession =>
-      'The system cannot find a valid [verification credential], or the credential has expired.';
+  String get noRecoverySession => 'The system cannot find a valid [verification credential], or the credential has expired.';
 
   @override
   String get password => 'Password';
 
   @override
-  String get passwordDoesNotMeetPolicy =>
-      'The new password does not meet the security requirements. Add letters, numbers, or symbols and try again.';
+  String get passwordDoesNotMeetPolicy => 'The new password does not meet the security requirements. Add letters, numbers, or symbols and try again.';
 
   @override
-  String get passwordHelpDescription =>
-      'If you forgot your password, email the administrator, who will reply after processing your request.';
+  String get passwordHelpDescription => 'If you forgot your password, email the administrator, who will reply after processing your request.';
 
   @override
   String get passwordHelpTitle => 'Administrator assistance';
@@ -1229,23 +1141,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordMismatch => 'Passwords do not match.';
 
   @override
-  String get passwordMustBeDifferent =>
-      'The new password must be different from the current password.';
+  String get passwordMustBeDifferent => 'The new password must be different from the current password.';
 
   @override
-  String get passwordReauthenticationRequired =>
-      'For security, reset your password through email verification first.';
+  String get passwordReauthenticationRequired => 'For security, reset your password through email verification first.';
 
   @override
-  String get passwordRecoveryChoiceDescription =>
-      'Reset it yourself using a verification email, or email the administrator for help.';
+  String get passwordRecoveryChoiceDescription => 'Reset it yourself using a verification email, or email the administrator for help.';
 
   @override
   String get passwordRecoveryChoiceTitle => 'Choose a reset method';
 
   @override
-  String get passwordUpdateSuccessful =>
-      'Password updated. Please sign in with your new password.';
+  String get passwordUpdateSuccessful => 'Password updated. Please sign in with your new password.';
 
   @override
   String get register => '  Register  ';
@@ -1254,15 +1162,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get registerError => 'Registration failed. Please try again.';
 
   @override
-  String get registrationVerificationRequired =>
-      'Registration successful. Please verify your email before signing in.';
+  String get registrationVerificationRequired => 'Registration successful. Please verify your email before signing in.';
 
   @override
   String get resetByEmailVerification => 'Reset by verification email';
 
   @override
-  String get resetByEmailVerificationDescription =>
-      'We will email you a secure link so you can set a new password.';
+  String get resetByEmailVerificationDescription => 'We will email you a secure link so you can set a new password.';
 
   @override
   String get resetPassword => 'Reset Password';
@@ -1273,8 +1179,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get resetPasswordEmail =>
-      'Password reset email sent. Please check your inbox.';
+  String get resetPasswordEmail => 'Password reset email sent. Please check your inbox.';
 
   @override
   String get resetPasswordEmailNotFound => 'Account not found';
@@ -1295,23 +1200,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wrongUserPassword => 'User or Password is wrong';
 
   @override
-  String get dashboardLoadFailed =>
-      'Could not load this information. Please try again later';
+  String get dashboardLoadFailed => 'Could not load this information. Please try again later';
 
   @override
-  String get dashboardSettingSaveFailed =>
-      'Could not save the setting. Please try again later';
+  String get dashboardSettingSaveFailed => 'Could not save the setting. Please try again later';
 
   @override
   String get home => 'Home';
 
   @override
-  String get homeInsightDiscover =>
-      'Nothing planned today. Start with an event or place that interests you.';
+  String get homeInsightDiscover => 'Nothing planned today. Start with an event or place that interests you.';
 
   @override
-  String get homeInsightReadyForReview =>
-      'Today\'s schedule is connected to memories, money, and points for one-step review.';
+  String get homeInsightReadyForReview => 'Today\'s schedule is connected to memories, money, and points for one-step review.';
 
   @override
   String homeInsightResolveConflicts(int count) {
@@ -1324,8 +1225,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get homeJourneyReviewHint =>
-      'When completing a schedule, record money and points together and add it to memories';
+  String get homeJourneyReviewHint => 'When completing a schedule, record money and points together and add it to memories';
 
   @override
   String get language => 'Language';
@@ -1355,8 +1255,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get userMenuButton => 'User Menu';
 
   @override
-  String get accountDeletionCloudOnly =>
-      'Account deletion requests are available in cloud mode only. Switch the storage location to cloud before submitting a request.';
+  String get accountDeletionCloudOnly => 'Account deletion requests are available in cloud mode only. Switch the storage location to cloud before submitting a request.';
 
   @override
   String get adminPricingAccountingQuota => 'Accounting records';
@@ -1371,8 +1270,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPricingCreate => 'Create version';
 
   @override
-  String get adminPricingCreated =>
-      'New pricing version created; existing benefits are unchanged';
+  String get adminPricingCreated => 'New pricing version created; existing benefits are unchanged';
 
   @override
   String adminPricingCreateFailed(String error) {
@@ -1388,12 +1286,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPricingDeleted => 'Pricing version deleted.';
 
   @override
-  String get adminPricingDeleteInUse =>
-      'This version has been used and cannot be edited or deleted. Create a new version.';
+  String get adminPricingDeleteInUse => 'This version has been used and cannot be edited or deleted. Create a new version.';
 
   @override
-  String get adminPricingPriceRule =>
-      'Free plans cost 0; paid plans must cost more than 0.';
+  String get adminPricingPriceRule => 'Free plans cost 0; paid plans must cost more than 0.';
 
   @override
   String get adminPricingDeleteTitle => 'Delete pricing version';
@@ -1408,8 +1304,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPricingImageQuota => 'Images (MB)';
 
   @override
-  String get adminPricingLocalZeroUnlimited =>
-      '0 means unlimited device core records and questions. Cloud submission quotas are separate; 0 cloud history days means no retention.';
+  String get adminPricingLocalZeroUnlimited => '0 means unlimited device core records and questions. Cloud submission quotas are separate; 0 cloud history days means no retention.';
 
   @override
   String get adminPricingMemoryQuota => 'Memories';
@@ -1427,8 +1322,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPricingShareQuota => 'Calendar shares';
 
   @override
-  String get adminPricingSubtitle =>
-      'Applies to future payments and add-ons only';
+  String get adminPricingSubtitle => 'Applies to future payments and add-ons only';
 
   @override
   String get adminPricingTitle => 'Create user pricing version';
@@ -1437,8 +1331,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPricingUpdate => 'Update version';
 
   @override
-  String get adminPricingUpdated =>
-      'User pricing version updated; existing subscription snapshots are unchanged';
+  String get adminPricingUpdated => 'User pricing version updated; existing subscription snapshots are unchanged';
 
   @override
   String get adminPricingVersionHint => 'Example: 2026-Q4';
@@ -1447,19 +1340,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPricingVersionName => 'Version name';
 
   @override
-  String get adminSubscriptionAddQuota =>
-      'Add quota without replacing current benefits';
+  String get adminSubscriptionAddQuota => 'Add quota without replacing current benefits';
 
   @override
-  String get adminSubscriptionAddQuotaHint =>
-      'The new quota is added to unexpired quota';
+  String get adminSubscriptionAddQuotaHint => 'The new quota is added to unexpired quota';
 
   @override
   String get adminSubscriptionCloud => 'Cloud';
 
   @override
-  String get adminSubscriptionDeleteAll =>
-      'Delete all subscription and quota settings';
+  String get adminSubscriptionDeleteAll => 'Delete all subscription and quota settings';
 
   @override
   String adminSubscriptionDeleteConfirmation(String email) {
@@ -1467,8 +1357,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get adminSubscriptionDeleted =>
-      'Subscription and quota settings deleted.';
+  String get adminSubscriptionDeleted => 'Subscription and quota settings deleted.';
 
   @override
   String adminSubscriptionDeleteEntitlementConfirmation(String version) {
@@ -1482,25 +1371,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSubscriptionEmail => 'User email';
 
   @override
-  String get adminSubscriptionEmailOrAllHint =>
-      'Enter an email for one user, or search while blank to list everyone.';
+  String get adminSubscriptionEmailOrAllHint => 'Enter an email for one user, or search while blank to list everyone.';
 
   @override
-  String get adminSubscriptionAllUsers =>
-      'All users: subscriptions and combined quotas';
+  String get adminSubscriptionAllUsers => 'All users: subscriptions and combined quotas';
 
   @override
   String adminSubscriptionActiveCount(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '$countString active allowances';
   }
 
   @override
-  String get adminSubscriptionEntitlementDeleted =>
-      'This allowance was deleted. Other allowances were kept.';
+  String get adminSubscriptionEntitlementDeleted => 'This allowance was deleted. Other allowances were kept.';
 
   @override
   String get adminSubscriptionEntitlements => 'Created allowances';
@@ -1509,16 +1394,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSubscriptionExpiry => 'Benefit expiry';
 
   @override
-  String get adminSubscriptionExpiryMustBeFuture =>
-      'The expiry must be later than now. For same-day expiry, choose tomorrow or later.';
+  String get adminSubscriptionExpiryMustBeFuture => 'The expiry must be later than now. For same-day expiry, choose tomorrow or later.';
 
   @override
-  String get adminSubscriptionSimilarQuotaTitle =>
-      'Active allowance already exists';
+  String get adminSubscriptionSimilarQuotaTitle => 'Active allowance already exists';
 
   @override
-  String get adminSubscriptionSimilarQuotaMessage =>
-      'This user already has an active allowance. Add another entitlement anyway?';
+  String get adminSubscriptionSimilarQuotaMessage => 'This user already has an active allowance. Add another entitlement anyway?';
 
   @override
   String get adminSubscriptionAddQuotaConfirm => 'Add anyway';
@@ -1544,16 +1426,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSubscriptionFree => 'Free';
 
   @override
-  String get adminSubscriptionInactiveWarning =>
-      'The account and cloud data are removed after 3 months without changes.';
+  String get adminSubscriptionInactiveWarning => 'The account and cloud data are removed after 3 months without changes.';
 
   @override
-  String get adminSubscriptionInvalidExtensionDays =>
-      'Enter a number from 1 to 3650.';
+  String get adminSubscriptionInvalidExtensionDays => 'Enter a number from 1 to 3650.';
 
   @override
-  String get adminSubscriptionLoadedForEditing =>
-      'The current subscription is ready to edit and save.';
+  String get adminSubscriptionLoadedForEditing => 'The current subscription is ready to edit and save.';
 
   @override
   String get adminSubscriptionLocal => 'Local unlimited';
@@ -1577,8 +1456,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSubscriptionNotFound => 'No subscription found';
 
   @override
-  String get adminSubscriptionNotFoundCreate =>
-      'You can create a new subscription for this user.';
+  String get adminSubscriptionNotFoundCreate => 'You can create a new subscription for this user.';
 
   @override
   String get adminSubscriptionPaid => 'Paid';
@@ -1604,8 +1482,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSubscriptionStoragePlan => 'Storage plan';
 
   @override
-  String get adminSubscriptionSubtitle =>
-      'Apply the pricing and quota purchased';
+  String get adminSubscriptionSubtitle => 'Apply the pricing and quota purchased';
 
   @override
   String adminSubscriptionTimes(int count) {
@@ -1622,8 +1499,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminVendorPricingCreated => 'Organizer pricing version created.';
 
   @override
-  String get adminVendorPricingSubtitle =>
-      'Future purchases use the latest effective version; existing entitlements keep their snapshot.';
+  String get adminVendorPricingSubtitle => 'Future purchases use the latest effective version; existing entitlements keep their snapshot.';
 
   @override
   String get adminVendorPricingTitle => 'Create vendor pricing version';
@@ -1635,57 +1511,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminVendorSubscriptionSaved => 'Organizer subscription saved.';
 
   @override
-  String get adminVendorSubscriptionSubtitle =>
-      'Assign a pricing version, allowance multiplier and expiry date to an organizer account.';
+  String get adminVendorSubscriptionSubtitle => 'Assign a pricing version, allowance multiplier and expiry date to an organizer account.';
 
   @override
   String get adminVendorSubscriptionTitle => 'Manage organizer subscription';
 
   @override
-  String get calendarInvitationQuotaExceeded =>
-      'You have reached the calendar sharing limit. Please remove an existing share or upgrade your plan.';
+  String get calendarInvitationQuotaExceeded => 'You have reached the calendar sharing limit. Please remove an existing share or upgrade your plan.';
 
   @override
-  String get dataCleanupCloudExplanation =>
-      'Review current cloud overages, then remove only the excess or all personal cloud data.';
+  String get dataCleanupCloudExplanation => 'Review current cloud overages, then remove only the excess or all personal cloud data.';
 
   @override
   String get dataStorageCloud => 'Cloud';
 
   @override
-  String get dataStorageCloudWarning =>
-      'Cloud data is available across devices and is subject to your plan limits.';
+  String get dataStorageCloudWarning => 'Cloud data is available across devices and is subject to your plan limits.';
 
   @override
   String get dataStorageLocal => 'This device';
 
   @override
-  String get dataStorageLocalPlanRequired =>
-      'Complete Device Plus payment and wait for admin activation before switching.';
+  String get dataStorageLocalPlanRequired => 'Complete Device Plus payment and wait for admin activation before switching.';
 
   @override
-  String get dataStorageLocalWarning =>
-      'Local data is visible only on this device, browser, and browser profile. It will not automatically appear on another device, browser, or profile. Removing the app or clearing site or browser data may permanently delete it. It can be moved to the cloud when it fits your plan limits.';
+  String get dataStorageLocalWarning => 'Local data is visible only on this device, browser, and browser profile. It will not automatically appear on another device, browser, or profile. Removing the app or clearing site or browser data may permanently delete it. It can be moved to the cloud when it fits your plan limits.';
 
   @override
   String get dataStorageTitle => 'Storage';
 
   @override
-  String dataUploadQuotaExceeded(
-    String resource,
-    int used,
-    int incoming,
-    int quota,
-  ) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
-      localeName,
-    );
+  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String usedString = usedNumberFormat.format(used);
-    final intl.NumberFormat incomingNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat incomingNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String incomingString = incomingNumberFormat.format(incoming);
-    final intl.NumberFormat quotaNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String quotaString = quotaNumberFormat.format(quota);
 
     return 'Upload cancelled: $resource currently uses $usedString cloud records; this upload adds $incomingString, but the plan limit is $quotaString.';
@@ -1698,37 +1559,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dataUploadToCloudAction => 'Move local data to cloud';
 
   @override
-  String get dataUploadToCloudConfirm =>
-      'All local data will first be checked against your current plan limits. Local copies are deleted and cloud mode is enabled only after the entire upload is verified. If it exceeds a limit or fails, local mode remains active. Continue?';
+  String get dataUploadToCloudConfirm => 'All local data will first be checked against your current plan limits. Local copies are deleted and cloud mode is enabled only after the entire upload is verified. If it exceeds a limit or fails, local mode remains active. Continue?';
 
   @override
-  String get dataUploadToCloudFailed =>
-      'The upload was cancelled. All local records remain on this device.';
+  String get dataUploadToCloudFailed => 'The upload was cancelled. All local records remain on this device.';
 
   @override
-  String get dataUploadToCloudSuccess =>
-      'Local data was uploaded to the cloud.';
+  String get dataUploadToCloudSuccess => 'Local data was uploaded to the cloud.';
 
   @override
   String get quotaFreePeriodActive => 'Active now';
 
   @override
-  String get quotaFreePeriodAutomaticHint =>
-      'Limits are suspended only between the selected start and end times.';
+  String get quotaFreePeriodAutomaticHint => 'Limits are suspended only between the selected start and end times.';
 
   @override
   String get quotaFreePeriodClear => 'Clear setting';
 
   @override
-  String get quotaFreePeriodClearConfirm =>
-      'Remove the configured no-limit period? Normal plan limits will apply immediately.';
+  String get quotaFreePeriodClearConfirm => 'Remove the configured no-limit period? Normal plan limits will apply immediately.';
 
   @override
   String get quotaFreePeriodCleared => 'No-limit promotion removed.';
 
   @override
-  String get quotaFreePeriodDescription =>
-      'New cloud records do not count against plan limits during this period. Normal limits resume automatically afterward.';
+  String get quotaFreePeriodDescription => 'New cloud records do not count against plan limits during this period. Normal limits resume automatically afterward.';
 
   @override
   String get quotaFreePeriodDisabled => 'Disabled';
@@ -1737,8 +1592,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quotaFreePeriodEdit => 'Edit period';
 
   @override
-  String get quotaFreePeriodEmpty =>
-      'No no-limit periods have been configured.';
+  String get quotaFreePeriodEmpty => 'No no-limit periods have been configured.';
 
   @override
   String get quotaFreePeriodEnabled => 'Enable this period';
@@ -1750,8 +1604,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quotaFreePeriodEnded => 'Ended';
 
   @override
-  String get quotaFreePeriodInvalidRange =>
-      'The end time must be later than the start time.';
+  String get quotaFreePeriodInvalidRange => 'The end time must be later than the start time.';
 
   @override
   String get quotaFreePeriodName => 'Promotion name';
@@ -1763,8 +1616,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quotaFreePeriodSaved => 'No-limit promotion saved.';
 
   @override
-  String get quotaFreePeriodSaveFailed =>
-      'Could not save the no-limit promotion.';
+  String get quotaFreePeriodSaveFailed => 'Could not save the no-limit promotion.';
 
   @override
   String get quotaFreePeriodScheduled => 'Scheduled';
@@ -1779,8 +1631,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quotaFreePeriodTargetAccounts => 'Eligible accounts';
 
   @override
-  String get quotaFreePeriodTargetAccountsHint =>
-      'Enter multiple emails separated by commas or new lines. Leave blank for all regular users.';
+  String get quotaFreePeriodTargetAccountsHint => 'Enter multiple emails separated by commas or new lines. Leave blank for all regular users.';
 
   @override
   String get quotaFreePeriodAllUsers => 'Applies to all regular users';
@@ -1791,12 +1642,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get quotaFreePeriodUserBanner =>
-      'New records are unlimited during this promotion, and you can switch freely between cloud and this device. Your regular plan limits return afterward.';
+  String get quotaFreePeriodUserBanner => 'New records are unlimited during this promotion, and you can switch freely between cloud and this device. Your regular plan limits return afterward.';
 
   @override
-  String get quotaFreePeriodUserBannerShort =>
-      'New records are unlimited during this promotion.';
+  String get quotaFreePeriodUserBannerShort => 'New records are unlimited during this promotion.';
 
   @override
   String get quotaFreePeriodDetailsHint => 'View details';
@@ -1815,16 +1664,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get quotaFreePeriodReminderDays =>
-      'Remind before ending (days, optional)';
+  String get quotaFreePeriodReminderDays => 'Remind before ending (days, optional)';
 
   @override
-  String get quotaFreePeriodReminderDaysHint =>
-      'Leave blank to show only the standard promotion message through the final day.';
+  String get quotaFreePeriodReminderDaysHint => 'Leave blank to show only the standard promotion message through the final day.';
 
   @override
-  String get quotaFreePeriodReminderDaysInvalid =>
-      'Enter 1–365 reminder days, or leave it blank.';
+  String get quotaFreePeriodReminderDaysInvalid => 'Enter 1–365 reminder days, or leave it blank.';
 
   @override
   String quotaFreePeriodReminderSummary(int days) {
@@ -1849,12 +1695,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionCommonFeatures => 'Included with both plans';
 
   @override
-  String get subscriptionCommonFeaturesDetail =>
-      'Calendar, accounting, points, recommended events and attractions, and the administrator question bank. Local-device data remains unlimited. Stocks and Business Plan are administrator-only.';
+  String get subscriptionCommonFeaturesDetail => 'Calendar, accounting, points, recommended events and attractions, and the administrator question bank. Local-device data remains unlimited. Stocks and Business Plan are administrator-only.';
 
   @override
-  String get subscriptionCurrentAdmin =>
-      'Current access: Administrator (unlimited)';
+  String get subscriptionCurrentAdmin => 'Current access: Administrator (unlimited)';
 
   @override
   String get subscriptionCurrentCloudPlus => 'Current: Cloud Plus';
@@ -1869,8 +1713,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionCurrentPlus => 'Current plan: Plus';
 
   @override
-  String get subscriptionDeleteRecordHint =>
-      'Deleting this record will also recalculate today and total values.';
+  String get subscriptionDeleteRecordHint => 'Deleting this record will also recalculate today and total values.';
 
   @override
   String subscriptionDowngradeWarning(String date) {
@@ -1888,16 +1731,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get subscriptionPartialExpiryImpact =>
-      'Other subscriptions remain active. Your cumulative quota after expiry is shown below.';
+  String get subscriptionPartialExpiryImpact => 'Other subscriptions remain active. Your cumulative quota after expiry is shown below.';
 
   @override
-  String get subscriptionExpiringCloudImpact =>
-      'After expiry, your remaining active cloud quota applies, or the free quota if no paid quota remains. Excess data is subject to cleanup after the grace period.';
+  String get subscriptionExpiringCloudImpact => 'After expiry, your remaining active cloud quota applies, or the free quota if no paid quota remains. Excess data is subject to cleanup after the grace period.';
 
   @override
-  String get subscriptionExpiringLocalImpact =>
-      'Without renewal, local data becomes read/delete only; adding and editing stops.';
+  String get subscriptionExpiringLocalImpact => 'Without renewal, local data becomes read/delete only; adding and editing stops.';
 
   @override
   String get subscriptionQuotaScheduleTitle => 'Quota changes at expiry';
@@ -1914,49 +1754,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionFreeName => 'Cloud Free';
 
   @override
-  String get subscriptionFreePersonalRecords =>
-      'Cloud storage: up to 30 records each for calendar, accounting, points, and memories';
+  String get subscriptionFreePersonalRecords => 'Cloud storage: up to 30 records each for calendar, accounting, points, and memories';
 
   @override
   String get subscriptionFreePrice => 'Free';
 
   @override
-  String get subscriptionImagePlusOnly =>
-      'Photo uploads are available with Plus.';
+  String get subscriptionImagePlusOnly => 'Photo uploads are available with Plus.';
 
   @override
   String get subscriptionImageStorage => 'Photo storage';
 
   @override
-  String get subscriptionInactiveAccountWarning =>
-      'Free accounts have no expiry date. If no data is added or changed for 3 months, the account and its cloud data will be automatically removed.';
+  String get subscriptionInactiveAccountWarning => 'Free accounts have no expiry date. If no data is added or changed for 3 months, the account and its cloud data will be automatically removed.';
 
   @override
-  String get subscriptionLatestLocalVersionTitle =>
-      'Local Plus version for the next payment';
+  String get subscriptionLatestLocalVersionTitle => 'Local Plus version for the next payment';
 
   @override
-  String get subscriptionLocalAnswerHistory =>
-      'No limit on answer history stored on this device';
+  String get subscriptionLocalAnswerHistory => 'No limit on answer history stored on this device';
 
   @override
-  String get subscriptionLocalPaidFeature =>
-      'While subscribed, records and photos on this device have no limit; data does not automatically appear on other devices';
+  String get subscriptionLocalPaidFeature => 'While subscribed, records and photos on this device have no limit; data does not automatically appear on other devices';
 
   @override
-  String get subscriptionLocalPublicSubmissionTitle =>
-      'Public submission limits';
+  String get subscriptionLocalPublicSubmissionTitle => 'Public submission limits';
 
   @override
   String subscriptionLocalPublicSubmissionQuota(int events, int attractions) {
-    final intl.NumberFormat eventsNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat eventsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String eventsString = eventsNumberFormat.format(events);
-    final intl.NumberFormat attractionsNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
-    final String attractionsString = attractionsNumberFormat.format(
-      attractions,
-    );
+    final intl.NumberFormat attractionsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String attractionsString = attractionsNumberFormat.format(attractions);
 
     return '$eventsString recommended activities and $attractionsString recommended places';
   }
@@ -1969,9 +1798,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String subscriptionLocalUsage(int used) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
-      localeName,
-    );
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String usedString = usedNumberFormat.format(used);
 
     return 'Stored on this device: $usedString / No limit';
@@ -1988,8 +1815,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get subscriptionNextCloudVersionTitle =>
-      'Cloud version for the next payment';
+  String get subscriptionNextCloudVersionTitle => 'Cloud version for the next payment';
 
   @override
   String subscriptionNextLocalVersionName(String version) {
@@ -1997,25 +1823,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get subscriptionNextVersionTitle =>
-      'Latest version for your next payment';
+  String get subscriptionNextVersionTitle => 'Latest version for your next payment';
 
   @override
-  String subscriptionOverageItem(
-    String resource,
-    int used,
-    int quota,
-    int excess,
-  ) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
-      localeName,
-    );
+  String subscriptionOverageItem(String resource, int used, int quota, int excess) {
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String usedString = usedNumberFormat.format(used);
-    final intl.NumberFormat quotaNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String quotaString = quotaNumberFormat.format(quota);
-    final intl.NumberFormat excessNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat excessNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String excessString = excessNumberFormat.format(excess);
 
     return '$resource: $usedString/$quotaString (over by $excessString)';
@@ -2028,8 +1844,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionPlusName => 'Cloud Plus';
 
   @override
-  String get subscriptionPlusPersonalRecords =>
-      '300 cloud records each for calendar, accounting, points, and memories';
+  String get subscriptionPlusPersonalRecords => '300 cloud records each for calendar, accounting, points, and memories';
 
   @override
   String get subscriptionPlusPrice => 'From NT\$129 / quarter';
@@ -2038,12 +1853,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionPricingVersion => 'Current version';
 
   @override
-  String get subscriptionPurchaseComingSoon =>
-      'In-app subscription coming soon';
+  String get subscriptionPurchaseComingSoon => 'In-app subscription coming soon';
 
   @override
-  String get subscriptionPurchaseExplanation =>
-      'Plus cannot be purchased yet. Once store billing is available, this page will show the official price, renewal terms, purchase, restore, and subscription management actions.';
+  String get subscriptionPurchaseExplanation => 'Plus cannot be purchased yet. Once store billing is available, this page will show the official price, renewal terms, purchase, restore, and subscription management actions.';
 
   @override
   String get subscriptionQuarterlyPayment => 'Quarterly payment';
@@ -2052,37 +1865,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionQuotaMultiplier => 'Quota multiplier';
 
   @override
-  String get subscriptionQuotaReached =>
-      'This plan has reached its limit. Delete older data before adding more, or upgrade to Plus.';
+  String get subscriptionQuotaReached => 'This plan has reached its limit. Delete older data before adding more, or upgrade to Plus.';
 
   @override
   String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
-      localeName,
-    );
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String usedString = usedNumberFormat.format(used);
-    final intl.NumberFormat quotaNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String quotaString = quotaNumberFormat.format(quota);
-    final intl.NumberFormat remainingNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat remainingNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String remainingString = remainingNumberFormat.format(remaining);
 
     return 'Cloud limit reached: $usedString of $quotaString records are in use, so $remainingString more can be added. Delete an older record, switch to this device, or upgrade to Plus.';
   }
 
   @override
-  String get subscriptionRenewalRequired =>
-      'Changes were rejected. Refresh your quota; if the issue persists, contact an administrator.';
+  String get subscriptionRenewalRequired => 'Changes were rejected. Refresh your quota; if the issue persists, contact an administrator.';
 
   @override
   String subscriptionUsage(int used, int quota) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
-      localeName,
-    );
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String usedString = usedNumberFormat.format(used);
-    final intl.NumberFormat quotaNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String quotaString = quotaNumberFormat.format(quota);
 
     return 'Used $usedString / $quotaString';
@@ -2099,17 +1903,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get vendorContentQuotaReached =>
-      'The active-listing allowance is full. Remove an active listing or upgrade the organizer plan.';
+  String get vendorContentQuotaReached => 'The active-listing allowance is full. Remove an active listing or upgrade the organizer plan.';
 
   @override
-  String get vendorImageQuotaReached =>
-      'The organizer image allowance is full. Remove images or upgrade the organizer plan.';
+  String get vendorImageQuotaReached => 'The organizer image allowance is full. Remove images or upgrade the organizer plan.';
 
   @override
   String vendorPlanActivityQuota(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return 'Up to $countString unexpired event submissions';
@@ -2117,8 +1918,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String vendorPlanAttractionQuota(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return 'Up to $countString unexpired place submissions';
@@ -2126,36 +1926,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String vendorPlanImageQuota(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '$countString MB image storage';
   }
 
   @override
-  String get vendorPricingActiveOnlyNote =>
-      'Listing allowances count content that has not ended. Expired content does not occupy an active-listing allowance.';
+  String get vendorPricingActiveOnlyNote => 'Listing allowances count content that has not ended. Expired content does not occupy an active-listing allowance.';
 
   @override
-  String get vendorPricingDescription =>
-      'Start free, then expand the number of public listings and the reporting period as your organization grows.';
+  String get vendorPricingDescription => 'Start free, then expand the number of public listings and the reporting period as your organization grows.';
 
   @override
   String get vendorPricingTitle => 'Organizer plans';
 
   @override
-  String get vendorQuotaFullHint =>
-      'An allowance is full. Upgrade or remove an active listing before adding more.';
+  String get vendorQuotaFullHint => 'An allowance is full. Upgrade or remove an active listing before adding more.';
 
   @override
-  String get vendorQuotaNearFullHint =>
-      'An allowance is almost full. Review the available plans before your next submission.';
+  String get vendorQuotaNearFullHint => 'An allowance is almost full. Review the available plans before your next submission.';
 
   @override
   String vendorQuotaRemaining(int count, String suffix) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '$countString$suffix remaining';
@@ -2177,8 +1971,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get copyContent => 'Copy content';
 
   @override
-  String get copyContentHint =>
-      'This creates an independent record and leaves the original unchanged.';
+  String get copyContentHint => 'This creates an independent record and leaves the original unchanged.';
 
   @override
   String get copyToPage => 'Copy to';
@@ -2199,8 +1992,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarInvitationAccepted => 'Accepted';
 
   @override
-  String get calendarInvitationAccountNotFound =>
-      'That account could not be found.';
+  String get calendarInvitationAccountNotFound => 'That account could not be found.';
 
   @override
   String get calendarInvitationDecline => 'Decline';
@@ -2209,16 +2001,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarInvitationDeclined => 'Declined';
 
   @override
-  String get calendarInvitationDuplicate =>
-      'These events are already shared with this account.';
+  String get calendarInvitationDuplicate => 'These events are already shared with this account.';
 
   @override
-  String get calendarInvitationEventUnavailable =>
-      'The selected event no longer exists or cannot be shared. Refresh and select it again.';
+  String get calendarInvitationEventUnavailable => 'The selected event no longer exists or cannot be shared. Refresh and select it again.';
 
   @override
-  String get calendarInvitationFailed =>
-      'Calendar invitation could not be updated.';
+  String get calendarInvitationFailed => 'Calendar invitation could not be updated.';
 
   @override
   String calendarInvitationFailedWithReason(String reason) {
@@ -2235,15 +2024,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarInvitationRevoked => 'Revoked';
 
   @override
-  String get calendarInvitationSelfInvite =>
-      'You cannot invite your own account.';
+  String get calendarInvitationSelfInvite => 'You cannot invite your own account.';
 
   @override
   String get calendarInvitationSent => 'Invitation sent.';
 
   @override
-  String get calendarInvitationStateChanged =>
-      'The invitation status changed. Refresh and try again.';
+  String get calendarInvitationStateChanged => 'The invitation status changed. Refresh and try again.';
 
   @override
   String get calendarInvite => 'Invite viewers';
@@ -2252,12 +2039,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarSendShare => 'Send share';
 
   @override
-  String get calendarInviteHint =>
-      'Enter account emails, separated by commas or new lines';
+  String get calendarInviteHint => 'Enter account emails, separated by commas or new lines';
 
   @override
-  String get calendarNoShareableEvents =>
-      'There are no events available to share.';
+  String get calendarNoShareableEvents => 'There are no events available to share.';
 
   @override
   String get calendarNoSharedEvents => 'No events are currently shared.';
@@ -2272,8 +2057,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarSearchEvent => 'Event';
 
   @override
-  String get calendarSelectEventRequired =>
-      'Select at least one event to share.';
+  String get calendarSelectEventRequired => 'Select at least one event to share.';
 
   @override
   String get calendarSentInvitations => 'Sent invitations';
@@ -2370,12 +2154,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get scheduleDuplicateConfirmation =>
-      'This item is already in your calendar. Add it again?';
+  String get scheduleDuplicateConfirmation => 'This item is already in your calendar. Add it again?';
 
   @override
-  String get scheduleNeedsReview =>
-      'This schedule has ended. Check whether it is complete.';
+  String get scheduleNeedsReview => 'This schedule has ended. Check whether it is complete.';
 
   @override
   String scheduleNeedsReviewCount(int count) {
@@ -2412,8 +2194,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attractionAddEdit => 'Add/Edit attraction';
 
   @override
-  String get completeEventMessage =>
-      'Once completed, this trip will disappear from today\'s list.';
+  String get completeEventMessage => 'Once completed, this trip will disappear from today\'s list.';
 
   @override
   String get completeEventTitle => 'Complete the schedule';
@@ -2460,8 +2241,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventRefresh => 'Update recommended events';
 
   @override
-  String get eventRefreshFailed =>
-      'Could not update recommended events. Try again later.';
+  String get eventRefreshFailed => 'Could not update recommended events. Try again later.';
 
   @override
   String eventRefreshFailedSummary(int successful, int attempted, int failed) {
@@ -2469,18 +2249,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get eventRefreshRunning =>
-      'Recommended events are being updated. Please check again later.';
+  String get eventRefreshRunning => 'Recommended events are being updated. Please check again later.';
 
   @override
   String get eventRefreshSucceeded => 'Recommended events updated.';
 
   @override
-  String eventRefreshSucceededSummary(
-    int successful,
-    int attempted,
-    int failed,
-  ) {
+  String eventRefreshSucceededSummary(int successful, int attempted, int failed) {
     return 'Update completed: $successful/$attempted sources succeeded; $failed failed.';
   }
 
@@ -2491,8 +2266,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventSaveError => 'Activity name cannot be empty';
 
   @override
-  String get eventSaveFailed =>
-      'Could not save the event. Please try again later';
+  String get eventSaveFailed => 'Could not save the event. Please try again later';
 
   @override
   String eventSessionCount(int count) {
@@ -2569,8 +2343,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vendorAnalyticsDislikes => 'Dislikes';
 
   @override
-  String get vendorAnalyticsEmpty =>
-      'Performance data appears after people discover and interact with your public content.';
+  String get vendorAnalyticsEmpty => 'Performance data appears after people discover and interact with your public content.';
 
   @override
   String get vendorAnalyticsLikes => 'Likes';
@@ -2591,8 +2364,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vendorAttractionLabel => 'Attraction';
 
   @override
-  String get vendorAttractionSubmissionGuideTitle =>
-      'Help people discover your attraction';
+  String get vendorAttractionSubmissionGuideTitle => 'Help people discover your attraction';
 
   @override
   String get vendorClickThroughRate => 'View-to-click';
@@ -2601,22 +2373,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vendorContentMixTitle => 'Content overview';
 
   @override
-  String get vendorCreateAccountAction => 'Create an account and submit';
+  String get vendorCreateAccountAction => 'Create a free account and submit';
 
   @override
-  String get vendorCreateAccountDescription =>
-      'Create an account to submit activities, follow review status and keep your public information up to date.';
+  String get vendorCreateAccountDescription => 'Create an account so people can add your activities and attractions to their calendar, navigate, save them and follow your external registration link. You can keep details current and measure engagement.';
 
   @override
   String get vendorCreateAccountTitle => 'Organizing an event?';
 
   @override
-  String get vendorDashboardLoadFailed =>
-      'Organizer information could not be loaded.';
+  String get vendorDashboardLoadFailed => 'Organizer information could not be loaded.';
 
   @override
-  String get vendorDashboardSubtitle =>
-      'Manage submissions, follow review status and keep track of your current allowance.';
+  String get vendorDashboardSubtitle => 'Manage submissions and review, then improve content using views, saves, navigation and external registration-link clicks.';
 
   @override
   String get vendorDashboardTitle => 'Organizer workspace';
@@ -2634,43 +2403,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vendorMySubmissions => 'My submissions';
 
   @override
-  String get vendorNextStepClickMessage =>
-      'Strengthen the opening description, highlights and image so planners know why to open it.';
+  String get vendorNextStepClickMessage => 'Strengthen the opening description, highlights and image so planners know why to open it.';
 
   @override
   String get vendorNextStepClickTitle => 'Turn views into interest';
 
   @override
-  String get vendorNextStepExposureMessage =>
-      'A clear title, cover image and city help people discover and understand your listing.';
+  String get vendorNextStepExposureMessage => 'A clear title, cover image and city help people discover and understand your listing.';
 
   @override
   String get vendorNextStepExposureTitle => 'Make the first impression count';
 
   @override
-  String get vendorNextStepFirstMessage =>
-      'Start with one complete activity: add an accurate date, place, image and registration link.';
+  String get vendorNextStepFirstMessage => 'Start with one complete activity: add an accurate date, place, image and registration link.';
 
   @override
   String get vendorNextStepFirstTitle => 'Publish your first listing';
 
   @override
-  String get vendorNextStepGrowingMessage =>
-      'Keep dates and availability current, then use the conversion rates to improve the next listing.';
+  String get vendorNextStepGrowingMessage => 'Keep dates and availability current, then use the conversion rates to improve the next listing.';
 
   @override
   String get vendorNextStepGrowingTitle => 'Your content is creating action';
 
   @override
-  String get vendorNextStepRegistrationMessage =>
-      'Check that the registration URL and call to action are clear and still available.';
+  String get vendorNextStepRegistrationMessage => 'Check that the registration URL and call to action are clear and still available.';
 
   @override
   String get vendorNextStepRegistrationTitle => 'Make registration easier';
 
   @override
-  String get vendorNextStepReviewMessage =>
-      'You can track the result here. Once approved, everyone can discover it while planning.';
+  String get vendorNextStepReviewMessage => 'You can track the result here. Once approved, everyone can discover it while planning.';
 
   @override
   String get vendorNextStepReviewTitle => 'Your submission is being reviewed';
@@ -2681,8 +2444,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get vendorPendingReviewHint =>
-      'Review status is kept here. Published listings become visible to everyone.';
+  String get vendorPendingReviewHint => 'Review status is kept here. Published listings become visible to everyone.';
 
   @override
   String vendorPositiveActions(int count) {
@@ -2719,31 +2481,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String vendorQuarterlyPrice(int price) {
-    final intl.NumberFormat priceNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String priceString = priceNumberFormat.format(price);
 
     return 'NT\$$priceString / quarter';
   }
 
   @override
-  String get vendorRecentSubmissionsEmpty =>
-      'No submissions yet. Add your first activity or attraction.';
+  String get vendorRecentSubmissionsEmpty => 'No submissions yet. Add your first activity or attraction.';
 
   @override
   String get vendorRecentSubmissionsTitle => 'Recent submissions';
 
   @override
-  String get vendorRegistrationAnalytics =>
-      'See content performance in one workspace';
+  String get vendorRegistrationAnalytics => 'Track views, saves, navigation and external registration clicks';
 
   @override
-  String get vendorRegistrationDescription =>
-      'This account opens an organizer workspace for managing activities, attractions and review status.';
+  String get vendorRegistrationDescription => 'More than a listing: people can add your activities and attractions to their calendar, navigate and save them, then follow your link to an external registration page.';
 
   @override
-  String get vendorRegistrationFreeStart =>
-      'Start with the free organizer plan';
+  String get vendorRegistrationFreeStart => 'Start with the free organizer plan';
 
   @override
   String get vendorRegistrationRate => 'Click-to-registration';
@@ -2755,18 +2512,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vendorSubmissionBenefitManage => 'Manage your own information';
 
   @override
-  String get vendorSubmissionBenefitReach => 'Reach active planners';
+  String get vendorSubmissionBenefitReach => 'Join people’s planning flow';
 
   @override
   String get vendorSubmissionBenefitReview => 'Clear review status';
 
   @override
-  String get vendorSubmissionDescription =>
-      'Publish activities and attractions where people plan their time. Keep ownership and update your listing after review.';
+  String get vendorSubmissionDescription => 'Publish activities and attractions where people plan their time. Keep ownership and update your listing after review.';
 
   @override
-  String get vendorSubmissionGuideDescription =>
-      'Add an accurate date, place, organizer and registration link. Your submission becomes public after review; later edits return it for review.';
+  String get vendorSubmissionGuideDescription => 'Add an accurate date, place, organizer and registration link. Your submission becomes public after review; later edits return it for review.';
 
   @override
   String get vendorSubmissionGuideTitle => 'Help people discover your activity';
@@ -2888,15 +2643,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapCoordinateBackfill => 'Fill map coordinates';
 
   @override
-  String get mapCoordinateBackfillFailed =>
-      'Could not fill map coordinates. Try again later.';
+  String get mapCoordinateBackfillFailed => 'Could not fill map coordinates. Try again later.';
 
   @override
-  String mapCoordinateBackfillResult(
-    int saved,
-    int remaining,
-    String coverage,
-  ) {
+  String mapCoordinateBackfillResult(int saved, int remaining, String coverage) {
     return 'Saved $saved; $remaining remaining; coverage $coverage%.';
   }
 
@@ -3005,19 +2755,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountingSpeechHint => 'For example: add/subtract an amount';
 
   @override
-  String get accountingSpeechExample =>
-      'Tap to speak, for example: lunch expense 120; salary income 30,000';
+  String get accountingSpeechExample => 'Tap to speak, for example: lunch expense 120; salary income 30,000';
 
   @override
   String get accountingUnit => '';
 
   @override
-  String get accountListEmpty =>
-      'No account has been created yet. Create one before selecting it.';
+  String get accountListEmpty => 'No account has been created yet. Create one before selecting it.';
 
   @override
-  String get accountListLoadFailed =>
-      'Could not load the account list. Please try again later';
+  String get accountListLoadFailed => 'Could not load the account list. Please try again later';
 
   @override
   String get accountMaster => 'Master';
@@ -3050,8 +2797,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editRecord => 'Edit record';
 
   @override
-  String get homeInsightConnectAccounts =>
-      'Choose money and points accounts to review your day in one step.';
+  String get homeInsightConnectAccounts => 'Choose money and points accounts to review your day in one step.';
 
   @override
   String get quickAddAccounting => 'Quick money entry';
@@ -3165,8 +2911,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pointsSpeechHint => 'For example: add/subtract points';
 
   @override
-  String get pointsSpeechExample =>
-      'Tap to speak, for example: exercise plus 10 points; late minus 2 points';
+  String get pointsSpeechExample => 'Tap to speak, for example: exercise plus 10 points; late minus 2 points';
 
   @override
   String get pointsUnit => 'points';
@@ -3193,8 +2938,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allQuestionStatuses => 'All statuses';
 
   @override
-  String get completedGrammarQuestion =>
-      'Complete question with the answer (for example, We are young)';
+  String get completedGrammarQuestion => 'Complete question with the answer (for example, We are young)';
 
   @override
   String get customQuestionGroup => '+ Create a new category';
@@ -3203,8 +2947,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deactivateQuestion => 'Deactivate question';
 
   @override
-  String get duplicateQuestion =>
-      'The same question and answer already exist in your selected question group.';
+  String get duplicateQuestion => 'The same question and answer already exist in your selected question group.';
 
   @override
   String get editQuestion => 'Edit question';
@@ -3256,34 +2999,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get grammarAnswerMustAppear =>
-      'The complete question must contain the correct answer so the blank can be created automatically.';
+  String get grammarAnswerMustAppear => 'The complete question must contain the correct answer so the blank can be created automatically.';
 
   @override
   String get grammarBaseWord => 'Base word (for example, head)';
 
   @override
-  String get grammarQuestionHelp =>
-      'For grammar questions, enter a complete sentence such as We are young; are becomes the blank automatically. For the plural category, enter only head and heads.';
+  String get grammarQuestionHelp => 'For grammar questions, enter a complete sentence such as We are young; are becomes the blank automatically. For the plural category, enter only head and heads.';
 
   @override
   String get inactiveQuestion => 'Inactive';
 
   @override
-  String get japaneseTranslationQuestionHelp =>
-      'Enter Japanese in Question and its translation in Correct answer. Create at least 3 questions in the same group.';
+  String get japaneseTranslationQuestionHelp => 'Enter Japanese in Question and its translation in Correct answer. Create at least 3 questions in the same group.';
 
   @override
-  String get koreanTranslationQuestionHelp =>
-      'Enter Korean in Question and its translation in Correct answer. Create at least 3 questions in the same group.';
+  String get koreanTranslationQuestionHelp => 'Enter Korean in Question and its translation in Correct answer. Create at least 3 questions in the same group.';
 
   @override
-  String get leaveGameConfirmation =>
-      'Leave this game and return to the previous page?';
+  String get leaveGameConfirmation => 'Leave this game and return to the previous page?';
 
   @override
-  String get localQuestionBankOnly =>
-      'Local mode only uses your question bank on this device. The admin question bank is unavailable.';
+  String get localQuestionBankOnly => 'Local mode only uses your question bank on this device. The admin question bank is unavailable.';
 
   @override
   String get monominoGameTitle => 'Monomino Game';
@@ -3292,15 +3029,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myQuestionBank => 'My question bank';
 
   @override
-  String get myQuestionBankEmpty =>
-      'Your question bank has no questions available for this level. Add a question first.';
+  String get myQuestionBankEmpty => 'Your question bank has no questions available for this level. Add a question first.';
 
   @override
   String get myQuestions => 'View my questions';
 
   @override
-  String get questionSearchGuidance =>
-      'Search first; add a question when no result is found';
+  String get questionSearchGuidance => 'Search first; add a question when no result is found';
 
   @override
   String get jumpToScheduleSection => 'Open the upcoming schedules section';
@@ -3315,8 +3050,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newQuestionGroup => 'New category name';
 
   @override
-  String get noMyQuestions =>
-      'You have not added any questions for this game yet.';
+  String get noMyQuestions => 'You have not added any questions for this game yet.';
 
   @override
   String get polyominoGameTitle => 'Polyomino Game';
@@ -3334,8 +3068,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get questionBank => 'Question bank';
 
   @override
-  String get questionBankInsufficient =>
-      'The selected question bank does not have enough questions for this level.';
+  String get questionBankInsufficient => 'The selected question bank does not have enough questions for this level.';
 
   @override
   String get questionDeactivated => 'Question deactivated.';
@@ -3350,16 +3083,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get questionGroup => 'Question group';
 
   @override
-  String get questionGroupLevelNumber =>
-      'Level number after the category (blank means 1)';
+  String get questionGroupLevelNumber => 'Level number after the category (blank means 1)';
 
   @override
-  String get questionGroupLevelRange =>
-      'The level number must be between 1 and 30.';
+  String get questionGroupLevelRange => 'The level number must be between 1 and 30.';
 
   @override
-  String get questionHasAnswersDeleteBlocked =>
-      'This question has answer history and cannot be deleted. You can deactivate it instead.';
+  String get questionHasAnswersDeleteBlocked => 'This question has answer history and cannot be deleted. You can deactivate it instead.';
 
   @override
   String get questionReactivated => 'Question reactivated.';
@@ -3368,8 +3098,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get questionStatus => 'Question status';
 
   @override
-  String get questionStatusUpdateFailed =>
-      'Question status could not be updated. Please try again.';
+  String get questionStatusUpdateFailed => 'Question status could not be updated. Please try again.';
 
   @override
   String get questionUpdated => 'Question updated';
@@ -3390,30 +3119,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sentenceOrWord => 'Complete word or correct sentence';
 
   @override
-  String get sentenceQuestionHelp =>
-      'Enter a complete word or correct sentence, such as mother or I love apples. It will be split into rearrangeable parts automatically.';
+  String get sentenceQuestionHelp => 'Enter a complete word or correct sentence, such as mother or I love apples. It will be split into rearrangeable parts automatically.';
 
   @override
   String get socialTitle => 'Social';
 
   @override
-  String get speakingQuestionHelp =>
-      'Enter the word or sentence the user should read aloud. Example: Nice to meet you.';
+  String get speakingQuestionHelp => 'Enter the word or sentence the user should read aloud. Example: Nice to meet you.';
 
   @override
-  String get threeQuestionsRequired =>
-      'This question bank needs at least 3 available questions for the current level.';
+  String get threeQuestionsRequired => 'This question bank needs at least 3 available questions for the current level.';
 
   @override
-  String get translationQuestionHelp =>
-      'Enter the source text and its translation. Create at least 3 questions in the same group so the game can generate two incorrect choices.';
+  String get translationQuestionHelp => 'Enter the source text and its translation. Create at least 3 questions in the same group so the game can generate two incorrect choices.';
 
   @override
   String get translationTitle => 'Translation';
 
   @override
-  String get wordSearchQuestionHelp =>
-      'Enter an English word in Question and its meaning in Correct answer. Example: apple / 蘋果.';
+  String get wordSearchQuestionHelp => 'Enter an English word in Question and its meaning in Correct answer. Example: apple / 蘋果.';
 
   @override
   String get wordSentenceBuilderTitle => 'Word and Sentence Builder';
@@ -3431,8 +3155,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get businessPlan => 'Business Plan';
 
   @override
-  String get dataCleanupLocalExplanation =>
-      'Device data is unlimited. You can clear all personal data stored on this device.';
+  String get dataCleanupLocalExplanation => 'Device data is unlimited. You can clear all personal data stored on this device.';
 
   @override
   String get planTitle => 'Plan title';
@@ -3450,8 +3173,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String vendorPlanAnalyticsDays(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return 'Analytics for the latest $countString days';
@@ -3499,8 +3221,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stockSourceBackend => 'Server data';
 
   @override
-  String get stockLoadFailed =>
-      'Stock data could not be loaded. Please try again.';
+  String get stockLoadFailed => 'Stock data could not be loaded. Please try again.';
 
   @override
   String get stockNet => 'Net';
@@ -3523,12 +3244,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get stockUpdateFailed =>
-      'The stock update failed. The last available data is still displayed.';
+  String get stockUpdateFailed => 'The stock update failed. The last available data is still displayed.';
 
   @override
-  String get stockUpdateInProgress =>
-      'Stock data and model are updating. New results will appear automatically.';
+  String get stockUpdateInProgress => 'Stock data and model are updating. New results will appear automatically.';
 
   @override
   String get stockUpdateSucceeded => 'Stock data and model update completed.';
@@ -3568,23 +3287,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusPending => 'Pending';
 
   @override
-  String get acceptLegalTermsRequired =>
-      'Please agree to the Privacy Policy and Terms of Service before registering.';
+  String get acceptLegalTermsRequired => 'Please agree to the Privacy Policy and Terms of Service before registering.';
 
   @override
-  String get accountDeletionCancellationPending =>
-      'Cancellation is waiting for administrator confirmation.';
+  String get accountDeletionCancellationPending => 'Cancellation is waiting for administrator confirmation.';
 
   @override
-  String get accountDeletionCancellationSubmitted =>
-      'Cancellation requested. Waiting for administrator confirmation.';
+  String get accountDeletionCancellationSubmitted => 'Cancellation requested. Waiting for administrator confirmation.';
 
   @override
   String get accountDeletionCancelRequest => 'Cancel request';
 
   @override
-  String get accountDeletionCompleted =>
-      'Your deletion request was sent to an administrator.';
+  String get accountDeletionCompleted => 'Your deletion request was sent to an administrator.';
 
   @override
   String accountDeletionFailed(Object message) {
@@ -3595,34 +3310,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountDeletionPending => 'Request pending';
 
   @override
-  String get accountDeletionPendingDescription =>
-      'Your account deletion request is waiting for administrator review. You can request cancellation if you no longer want to delete the account.';
+  String get accountDeletionPendingDescription => 'Your account deletion request is waiting for administrator review. You can request cancellation if you no longer want to delete the account.';
 
   @override
-  String get accountDeletionRequestDescription =>
-      'Your request will be sent to an administrator. The account and related data will be deleted only after approval.';
+  String get accountDeletionRequestDescription => 'Your request will be sent to an administrator. The account and related data will be deleted only after approval.';
 
   @override
   String get accountMenuAccountDeletion => 'Delete account';
 
   @override
-  String get accountDeletionAdminReviewHint =>
-      'Submit an account and data deletion request for administrator review.';
+  String get accountDeletionAdminReviewHint => 'Submit an account and data deletion request for administrator review.';
 
   @override
   String get accountMenuDataExport => 'Export data';
 
   @override
-  String get adminAccountDeletionCancellationConfirmed =>
-      'Cancellation confirmed and the original deletion request was removed.';
+  String get adminAccountDeletionCancellationConfirmed => 'Cancellation confirmed and the original deletion request was removed.';
 
   @override
-  String get adminAccountDeletionCancellationRequested =>
-      'The user requested cancellation of account deletion.';
+  String get adminAccountDeletionCancellationRequested => 'The user requested cancellation of account deletion.';
 
   @override
-  String get adminAccountDeletionCompleted =>
-      'The account and its related data were deleted.';
+  String get adminAccountDeletionCompleted => 'The account and its related data were deleted.';
 
   @override
   String get adminAccountDeletionConfirmCancellation => 'Confirm cancellation';
@@ -3641,12 +3350,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get dataExportIncludedPages =>
-      'Included pages: calendar, memories, accounting records, and point records.';
+  String get dataExportIncludedPages => 'Included pages: calendar, memories, accounting records, and point records.';
 
   @override
-  String get dataExportRequestDescription =>
-      'Your personal data will be downloaded as Excel. Recommended events and attractions are excluded; the workbook lists all included data.';
+  String get dataExportRequestDescription => 'Your personal data will be downloaded as Excel. Recommended events and attractions are excluded; the workbook lists all included data.';
 
   @override
   String get dataExportSummarySheet => 'Export summary';
@@ -3658,8 +3365,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportFailed => '❌ Export failed';
 
   @override
-  String get exportInProgress =>
-      '❌ The previous file export is still in progress.';
+  String get exportInProgress => '❌ The previous file export is still in progress.';
 
   @override
   String get exportSuccess => '✅ Export successful';
@@ -3683,8 +3389,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privacyPolicy => 'Privacy Policy';
 
   @override
-  String get readLegalTermsRequired =>
-      'Please read both the Privacy Policy and Terms of Service before agreeing.';
+  String get readLegalTermsRequired => 'Please read both the Privacy Policy and Terms of Service before agreeing.';
 
   @override
   String get requestAccountDeletion => 'Request account deletion';
@@ -3720,8 +3425,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lastTwelveMonths => 'Last 12 months';
 
   @override
-  String get invalidEventDateRange =>
-      'The end date cannot be before the start date.';
+  String get invalidEventDateRange => 'The end date cannot be before the start date.';
 
   @override
   String get activityPerformance => 'Activity Insights';
@@ -3733,15 +3437,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewPerformance => 'View insights';
 
   @override
-  String get personalActivityPerformanceHint =>
-      'Insights for activities you created';
+  String get personalActivityPerformanceHint => 'Insights for activities you created';
 
   @override
   String get personalActivityPerformanceTitle => 'My Activity Insights';
 
   @override
-  String get personalAttractionPerformanceHint =>
-      'Insights for attractions you created';
+  String get personalAttractionPerformanceHint => 'Insights for attractions you created';
 
   @override
   String get personalAttractionPerformanceTitle => 'My Attraction Insights';
@@ -3759,8 +3461,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get performanceContents => 'Content details';
 
   @override
-  String get performancePeriodHint =>
-      'Select a month to show content expiring that month. Unexpired shows all unexpired content and clears the month. Metrics are lifetime totals.';
+  String get performancePeriodHint => 'Select a month to show content expiring that month. Unexpired shows all unexpired content and clears the month. Metrics are lifetime totals.';
 
   @override
   String get performanceNoExpiry => 'No expiry date';
@@ -3769,12 +3470,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get performanceSearchHint => 'Name or city';
 
   @override
-  String get performanceHideZeroHint =>
-      'Content without statistics is not shown.';
+  String get performanceHideZeroHint => 'Content without statistics is not shown.';
 
   @override
-  String get performanceTimeout =>
-      'The request timed out. Retry or narrow your search.';
+  String get performanceTimeout => 'The request timed out. Retry or narrow your search.';
 
   @override
   String get statisticsNoData => 'No data to display';
@@ -3788,6 +3487,5 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get performanceMetricShareExplanation =>
-      'The numerator is this item\'s value; the denominator is the same metric\'s total for the current month filter and search. For example, 25/100 means 25%. These figures are not unique visitor counts.';
+  String get performanceMetricShareExplanation => 'The numerator is this item\'s value; the denominator is the same metric\'s total for the current month filter and search. For example, 25/100 means 25%. These figures are not unique visitor counts.';
 }

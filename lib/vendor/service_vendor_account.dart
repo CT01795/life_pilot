@@ -1,6 +1,7 @@
-import 'package:life_pilot/vendor/repository_vendor_initialization.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
+import 'package:life_pilot/vendor/model_vendor_dashboard.dart';
+import 'package:life_pilot/vendor/repository_vendor_dashboard_cache.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:life_pilot/subscription/repository_pricing_catalog.dart';
 import 'package:life_pilot/subscription/model_billing_cycle.dart';
@@ -23,26 +24,10 @@ class ServiceVendorAccount {
     );
   }
 
-  static final _initializers = Expando<RepositoryVendorInitialization>();
-  final bool displayPricing;
-  ServiceVendorAccount({this.displayPricing = false});
-  Future<void> ensureVendorAccount() async {
-    final client = supabase;
-    final user = client.auth.currentUser;
-    final token = client.auth.currentSession?.accessToken;
-    final scope = user == null || token == null
-        ? null
-        : (user.id, user.email, token);
-    await (_initializers[client] ??= RepositoryVendorInitialization(
-      client,
-    )).ensure(scope);
-  }
+  ServiceVendorAccount();
 
   Future<List<VendorPricingPlan>> fetchPricingPlans() async {
-    final rows = await RepositoryPricingCatalog().read(
-      vendor: true,
-      displayOnly: displayPricing,
-    );
+    final rows = await RepositoryPricingCatalog().read(vendor: true);
     return rows
         .map(
           (row) =>
@@ -51,35 +36,63 @@ class ServiceVendorAccount {
         .toList(growable: false);
   }
 
-  Future<VendorSubscriptionStatus> fetchMyStatus() async {
-    final value = await supabase.rpc('get_my_vendor_subscription_status');
-    if (value is! Map) throw StateError('vendor_subscription_status_missing');
-    return VendorSubscriptionStatus.fromJson(Map<String, dynamic>.from(value));
-  }
-
-  Future<VendorContentMetrics> fetchMetrics(String account) async {
+  Future<ModelVendorDashboard> fetchDashboard(
+    String account, {
+    bool force = false,
+  }) async {
     final normalized = normalizeText(account);
     final client = supabase;
     if (normalizeText(client.auth.currentUser?.email) != normalized ||
         normalized.isEmpty) {
       throw StateError('Account scope changed');
     }
+    final cache = RepositoryVendorDashboardCache(client);
+    if (!force) {
+      final cached = cache.read();
+      if (cached != null) return cached;
+    }
     final now = DateTime.now();
-    final summary = await client.rpc(
-      'get_my_vendor_dashboard_metrics',
+    final value = await client.rpc(
+      'get_my_vendor_dashboard_bootstrap',
       params: {
         'p_day_start': DateTime(
           now.year,
           now.month,
           now.day,
         ).toUtc().toIso8601String(),
+        'p_force_refresh': force,
       },
     );
     if (normalizeText(client.auth.currentUser?.email) != normalized) {
       throw StateError('Account scope changed');
     }
-    if (summary is! Map) throw const FormatException('Invalid vendor metrics');
-    return VendorContentMetrics.fromSummary(Map<String, dynamic>.from(summary));
+    if (value is! Map) {
+      throw const FormatException('Invalid vendor dashboard');
+    }
+    final payload = Map<String, dynamic>.from(value);
+    final status = payload['status'];
+    final metrics = payload['metrics'];
+    final plans = payload['plans'];
+    if (status is! Map || metrics is! Map || plans is! List) {
+      throw const FormatException('Invalid vendor dashboard');
+    }
+    final dashboard = ModelVendorDashboard(
+      status: VendorSubscriptionStatus.fromJson(
+        Map<String, dynamic>.from(status),
+      ),
+      metrics: VendorContentMetrics.fromSummary(
+        Map<String, dynamic>.from(metrics),
+      ),
+      plans: plans
+          .map(
+            (row) => VendorPricingPlan.fromJson(
+              Map<String, dynamic>.from(row as Map),
+            ),
+          )
+          .toList(growable: false),
+    );
+    cache.write(dashboard);
+    return dashboard;
   }
 
   Future<void> createPricingVersionAsAdmin({

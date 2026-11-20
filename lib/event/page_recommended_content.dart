@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/widgets_content_performance_link.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -13,6 +15,9 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:life_pilot/utils/widgets/widgets_search_panel.dart';
+import 'package:life_pilot/utils/supabase.dart';
+import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/vendor/repository_vendor_dashboard_cache.dart';
 import 'package:provider/provider.dart';
 
 enum RecommendedContentKind {
@@ -50,6 +55,17 @@ class _RecommendedContentPageState extends State<RecommendedContentPage> {
   late final ControllerEvent _controllerEvent;
   bool _showOnlyMySubmissions = false;
 
+  RepositoryVendorDashboardCache get _vendorDashboardCache =>
+      RepositoryVendorDashboardCache(supabase);
+
+  void _refreshRecentSubmissions() {
+    unawaited(
+      _vendorDashboardCache.refreshRecentSubmissions().catchError((error) {
+        logger.w('Vendor recent submissions refresh failed', error: error);
+      }),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +76,22 @@ class _RecommendedContentPageState extends State<RecommendedContentPage> {
       tableName: widget.kind.tableName,
       toTableName: TableNames.calendarEvents,
       modelEvent: ModelEvent(),
+      onSubmissionSaved:
+          ({required previous, required current, required attraction}) {
+            _vendorDashboardCache.applySubmissionSaved(
+              previous: previous,
+              current: current,
+              attraction: attraction,
+            );
+            _refreshRecentSubmissions();
+          },
+      onSubmissionDeleted: ({required previous, required attraction}) {
+        _vendorDashboardCache.applySubmissionDeleted(
+          previous: previous,
+          attraction: attraction,
+        );
+        _refreshRecentSubmissions();
+      },
     );
   }
 
@@ -76,8 +108,10 @@ class _RecommendedContentPageState extends State<RecommendedContentPage> {
       ),
     );
     if (event == null || !mounted) return;
-    await context.read<ControllerAuth>().refreshSubscriptionUsage();
-    await _controllerEvent.loadEvents(isGetPublicEvents: false);
+    final auth = context.read<ControllerAuth>();
+    if (!auth.isVendor) await auth.refreshSubscriptionUsage();
+    if (!mounted) return;
+    _controllerEvent.onCreateEvent(event);
   }
 
   Widget _buildSubmissionHub(BuildContext context, {required bool isVendor}) {

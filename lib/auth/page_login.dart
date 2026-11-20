@@ -303,6 +303,10 @@ class _PageLoginState extends State<PageLogin> {
                                     runSpacing: 6,
                                     children: [
                                       _vendorBenefit(
+                                        Icons.savings_outlined,
+                                        loc.vendorRegistrationFreeStart,
+                                      ),
+                                      _vendorBenefit(
                                         Icons.campaign_outlined,
                                         loc.vendorSubmissionBenefitReach,
                                       ),

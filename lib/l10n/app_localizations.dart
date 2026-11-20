@@ -64,8 +64,7 @@ import 'app_localizations_zh.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -73,8 +72,7 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate =
-      _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -86,20 +84,19 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
-      <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
     Locale('ja'),
     Locale('ko'),
-    Locale('zh'),
+    Locale('zh')
   ];
 
   /// Pagination has no further matching records
@@ -3058,12 +3055,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Upload cancelled: {resource} currently uses {used} cloud records; this upload adds {incoming}, but the plan limit is {quota}.'**
-  String dataUploadQuotaExceeded(
-    String resource,
-    int used,
-    int incoming,
-    int quota,
-  );
+  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota);
 
   /// Label for dataUploadToCloud
   ///
@@ -3543,12 +3535,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'{resource}: {used}/{quota} (over by {excess})'**
-  String subscriptionOverageItem(
-    String resource,
-    int used,
-    int quota,
-    int excess,
-  );
+  String subscriptionOverageItem(String resource, int used, int quota, int excess);
 
   /// Label for subscriptionPlansTitle
   ///
@@ -4256,11 +4243,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Update completed: {successful}/{attempted} sources succeeded; {failed} failed.'**
-  String eventRefreshSucceededSummary(
-    int successful,
-    int attempted,
-    int failed,
-  );
+  String eventRefreshSucceededSummary(int successful, int attempted, int failed);
 
   /// Label for eventSaved
   ///
@@ -4475,13 +4458,13 @@ abstract class AppLocalizations {
   /// Label for vendor create account action
   ///
   /// In en, this message translates to:
-  /// **'Create an account and submit'**
+  /// **'Create a free account and submit'**
   String get vendorCreateAccountAction;
 
   /// Label for vendor create account description
   ///
   /// In en, this message translates to:
-  /// **'Create an account to submit activities, follow review status and keep your public information up to date.'**
+  /// **'Create an account so people can add your activities and attractions to their calendar, navigate, save them and follow your external registration link. You can keep details current and measure engagement.'**
   String get vendorCreateAccountDescription;
 
   /// Label for vendor create account title
@@ -4499,7 +4482,7 @@ abstract class AppLocalizations {
   /// Label for vendor dashboard subtitle
   ///
   /// In en, this message translates to:
-  /// **'Manage submissions, follow review status and keep track of your current allowance.'**
+  /// **'Manage submissions and review, then improve content using views, saves, navigation and external registration-link clicks.'**
   String get vendorDashboardSubtitle;
 
   /// Label for vendor dashboard title
@@ -4691,13 +4674,13 @@ abstract class AppLocalizations {
   /// Label for vendor registration analytics
   ///
   /// In en, this message translates to:
-  /// **'See content performance in one workspace'**
+  /// **'Track views, saves, navigation and external registration clicks'**
   String get vendorRegistrationAnalytics;
 
   /// Label for vendor registration description
   ///
   /// In en, this message translates to:
-  /// **'This account opens an organizer workspace for managing activities, attractions and review status.'**
+  /// **'More than a listing: people can add your activities and attractions to their calendar, navigate and save them, then follow your link to an external registration page.'**
   String get vendorRegistrationDescription;
 
   /// Label for vendor registration free start
@@ -4727,7 +4710,7 @@ abstract class AppLocalizations {
   /// Label for vendor submission benefit reach
   ///
   /// In en, this message translates to:
-  /// **'Reach active planners'**
+  /// **'Join people’s planning flow'**
   String get vendorSubmissionBenefitReach;
 
   /// Label for vendor submission benefit review
@@ -6591,8 +6574,7 @@ abstract class AppLocalizations {
   String get performanceMetricShareExplanation;
 }
 
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -6601,30 +6583,27 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['en', 'ja', 'ko', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['en', 'ja', 'ko', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'en':
-      return AppLocalizationsEn();
-    case 'ja':
-      return AppLocalizationsJa();
-    case 'ko':
-      return AppLocalizationsKo();
-    case 'zh':
-      return AppLocalizationsZh();
+    case 'en': return AppLocalizationsEn();
+    case 'ja': return AppLocalizationsJa();
+    case 'ko': return AppLocalizationsKo();
+    case 'zh': return AppLocalizationsZh();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
+    'that was used.'
   );
 }

@@ -49,7 +49,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
     super.initState();
     _controller = ControllerVendorDashboard(
       auth: context.read<ControllerAuth>(),
-      service: widget.service ?? ServiceVendorAccount(displayPricing: true),
+      service: widget.service ?? ServiceVendorAccount(),
     );
     unawaited(_controller.load());
   }
@@ -60,14 +60,14 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
     super.dispose();
   }
 
-  void _reload() => unawaited(_controller.load());
+  void _reload() => unawaited(_controller.load(force: true));
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
       body: RefreshIndicator(
-        onRefresh: _controller.load,
+        onRefresh: () => _controller.load(force: true),
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, _) {

@@ -82,6 +82,7 @@ void main() {
         late ServiceEventPublic public;
         late ControllerEvent controller;
         late EventItem event;
+        late int dashboardUpdates;
         Future<void> act() => switch (operation) {
           'save' => controller.saveEvent(newEvent: event),
           'delete' => controller.deleteEvent(event),
@@ -91,6 +92,7 @@ void main() {
           auth = _Auth();
           service = _Service();
           public = ServiceEventPublic();
+          dashboardUpdates = 0;
           event = EventItem(id: 'same-id', name: 'old', isApproved: false);
           controller = ControllerEvent(
             auth: auth,
@@ -99,6 +101,17 @@ void main() {
             serviceEventPublic: public,
             modelEvent: ModelEvent()..setEvents([event]),
             tableName: table,
+            onSubmissionSaved:
+                ({required previous, required current, required attraction}) {
+                  dashboardUpdates++;
+                  expect(current, same(event));
+                  expect(attraction, table == TableNames.recommendPlaces);
+                },
+            onSubmissionDeleted: ({required previous, required attraction}) {
+              dashboardUpdates++;
+              expect(previous, same(event));
+              expect(attraction, table == TableNames.recommendPlaces);
+            },
           );
         });
         tearDown(() {
@@ -120,6 +133,10 @@ void main() {
             controller.modelEvent.removedEventIds.contains(event.id),
             operation == 'delete',
           );
+          expect(
+            dashboardUpdates,
+            operation != 'approve' && table != TableNames.memoryTrace ? 1 : 0,
+          );
         });
         for (final local in [false, true]) {
           test('scope change local=$local ignores late completion', () async {
@@ -136,6 +153,7 @@ void main() {
             expect(event.isApproved, false);
             expect(controller.findEventById(event.id), same(replacement));
             expect(controller.modelEvent.removedEventIds, isEmpty);
+            expect(dashboardUpdates, 0);
           });
         }
         test('disposal ignores completion and blocks new work', () async {
@@ -147,6 +165,7 @@ void main() {
           expect(service.calls, 1);
           expect(auth.usageReads, 0);
           expect(event.isApproved, false);
+          expect(dashboardUpdates, 0);
         });
         if (table == TableNames.memoryTrace && operation == 'delete') {
           test(
@@ -170,4 +189,30 @@ void main() {
       });
     }
   }
+
+  test('created recommendation is appended without another service read', () {
+    final auth = _Auth();
+    final service = _Service();
+    final public = ServiceEventPublic();
+    final controller = ControllerEvent(
+      auth: auth,
+      serviceEvent: service,
+      serviceWeather: ServiceWeather(),
+      serviceEventPublic: public,
+      modelEvent: ModelEvent(),
+      tableName: TableNames.recommendEvents,
+    );
+    addTearDown(() {
+      controller.dispose();
+      if (!service.completion.isCompleted) service.completion.complete();
+      auth.dispose();
+      public.close();
+    });
+
+    final event = EventItem(id: 'created', name: 'New submission');
+    controller.onCreateEvent(event);
+
+    expect(controller.findEventById(event.id), same(event));
+    expect(service.calls, 0);
+  });
 }

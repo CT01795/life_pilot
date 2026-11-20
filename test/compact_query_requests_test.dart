@@ -5,6 +5,7 @@ import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/vendor/service_vendor_account.dart';
+import 'package:life_pilot/vendor/repository_vendor_dashboard_cache.dart';
 import 'package:life_pilot/event/service_content_performance.dart';
 import 'package:life_pilot/event/model_content_performance_period.dart';
 import 'package:life_pilot/event/model_content_performance.dart';
@@ -104,7 +105,7 @@ void main() {
       isA<PostgrestException>().having((e) => e.code, 'code', 'PGRST202'),
     );
     await expectLater(
-      ServiceVendorAccount().fetchMetrics('one@example.com'),
+      ServiceVendorAccount().fetchDashboard('one@example.com'),
       missing,
     );
     await expectLater(
@@ -119,7 +120,7 @@ void main() {
       missing,
     );
     expect(requests.map((r) => r.url.pathSegments.last), [
-      'get_my_vendor_dashboard_metrics',
+      'get_my_vendor_dashboard_bootstrap',
       'get_my_record_statistics',
     ]);
   });
@@ -127,25 +128,88 @@ void main() {
     'vendor dashboard retrieves totals and five previews in one request',
     () async {
       response = {
-        'published': 10000,
-        'pending': 0,
-        'active_events': 10000,
-        'active_attractions': 0,
-        'totals': {'page_views': 123456},
-        'recent_submissions': [],
+        'status': {
+          'plan': {'plan_code': 'free'},
+          'status': 'active',
+          'event_used': 10000,
+          'attraction_used': 0,
+          'image_bytes_used': 0,
+        },
+        'metrics': {
+          'published': 10000,
+          'pending': 0,
+          'active_events': 10000,
+          'active_attractions': 0,
+          'totals': {'page_views': 123456},
+          'recent_submissions': [],
+        },
+        'plans': [],
       };
-      final result = await ServiceVendorAccount().fetchMetrics(
+      final result = await ServiceVendorAccount().fetchDashboard(
         'one@example.com',
       );
       expect(requests, hasLength(1));
       expect(
         requests.single.url.path,
-        endsWith('/get_my_vendor_dashboard_metrics'),
+        endsWith('/get_my_vendor_dashboard_bootstrap'),
       );
       expect(
-        result.performance.totalFor(ContentPerformanceMetric.pageViews),
+        result.metrics.performance.totalFor(ContentPerformanceMetric.pageViews),
         123456,
       );
+      final cached = await ServiceVendorAccount().fetchDashboard(
+        'one@example.com',
+      );
+      expect(cached, same(result));
+      expect(requests, hasLength(1));
+      expect(jsonDecode(requests.single.body)['p_force_refresh'], false);
+
+      response = [
+        {
+          'id': 'recent',
+          'name': 'Recent event',
+          'city': 'Taipei',
+          'is_activity': true,
+          'is_approved': false,
+        },
+      ];
+      await RepositoryVendorDashboardCache(client).refreshRecentSubmissions();
+      expect(requests, hasLength(2));
+      expect(
+        requests.last.url.path,
+        endsWith('/get_my_vendor_recent_submissions'),
+      );
+      expect(
+        RepositoryVendorDashboardCache(
+          client,
+        ).read()!.metrics.recentSubmissions.single.name,
+        'Recent event',
+      );
+
+      response = {
+        'status': {
+          'plan': {'plan_code': 'free'},
+          'status': 'active',
+          'event_used': 10000,
+          'attraction_used': 0,
+          'image_bytes_used': 0,
+        },
+        'metrics': {
+          'published': 10000,
+          'pending': 0,
+          'active_events': 10000,
+          'active_attractions': 0,
+          'totals': {'page_views': 123456},
+          'recent_submissions': [],
+        },
+        'plans': [],
+      };
+      await ServiceVendorAccount().fetchDashboard(
+        'one@example.com',
+        force: true,
+      );
+      expect(requests, hasLength(3));
+      expect(jsonDecode(requests.last.body)['p_force_refresh'], true);
     },
   );
   for (final history in [false, true]) {

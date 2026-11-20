@@ -132,12 +132,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get refreshList => '重新整理清單';
 
   @override
-  String get cloudDeleteUnconfirmedLocalCopyKept =>
-      '雲端清理結果尚未確認，已保留本機副本。請勿重複轉移，請先重新整理並聯絡管理者確認。';
+  String get cloudDeleteUnconfirmedLocalCopyKept => '雲端清理結果尚未確認，已保留本機副本。請勿重複轉移，請先重新整理並聯絡管理者確認。';
 
   @override
-  String get cloudZeroHistoryTransferWarning =>
-      '雲端方案不保留逐題答題紀錄。轉移時會略過這些紀錄，確認轉移完成後會清除本機副本；遊戲總分與進度仍會轉移。';
+  String get cloudZeroHistoryTransferWarning => '雲端方案不保留逐題答題紀錄。轉移時會略過這些紀錄，確認轉移完成後會清除本機副本；遊戲總分與進度仍會轉移。';
 
   @override
   String cloudHistoryOmitted(int count) {
@@ -155,8 +153,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String billingMonthlyPrice(int price) {
-    final intl.NumberFormat priceNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String priceString = priceNumberFormat.format(price);
 
     return '每月 NT\$$priceString';
@@ -190,30 +187,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get activePlaceSubmissions => '尚未到期的景點投稿';
 
   @override
-  String get subscriptionConfigurationMissing =>
-      '尚未設定適用額度，僅可讀取，無法新增、修改或刪除。請聯絡管理者。';
+  String get subscriptionConfigurationMissing => '尚未設定適用額度，僅可讀取，無法新增、修改或刪除。請聯絡管理者。';
 
   @override
   String get recordInputInvalid => '請填寫描述及大於 0 的數值。';
 
   @override
-  String get recordTextInvalid =>
-      '格式錯誤，請填寫描述、加減符號及非零數值（最多 4 位小數），例如：午餐-120；薪資+30000。尚未儲存，請修正後重送。';
+  String get recordTextInvalid => '格式錯誤，請填寫描述、加減符號及非零數值（最多 4 位小數），例如：午餐-120；薪資+30000。尚未儲存，請修正後重送。';
 
   @override
-  String get pointRecordTextInvalid =>
-      '格式錯誤，積分須為非零整數，例如：運動+10；遲到-2。尚未儲存，請檢查每筆內容後重送。';
+  String get pointRecordTextInvalid => '格式錯誤，積分須為非零整數，例如：運動+10；遲到-2。尚未儲存，請檢查每筆內容後重送。';
 
   @override
-  String get localSubscriptionRequiredForChanges =>
-      '本機方案未啟用，僅可查看或刪除資料。請先訂閱並由管理者開通。';
+  String get localSubscriptionRequiredForChanges => '本機方案未啟用，僅可查看或刪除資料。請先訂閱並由管理者開通。';
 
   @override
   String get quotaNotLimited => '不限制';
 
   @override
-  String get subscriptionLocalRequiresActiveSubscription =>
-      '需維持有效的本機方案訂閱，才能新增或修改本機資料';
+  String get subscriptionLocalRequiresActiveSubscription => '需維持有效的本機方案訂閱，才能新增或修改本機資料';
 
   @override
   String get subscriptionCurrentLocalInactive => '目前儲存位置：此裝置（未訂閱本機方案）';
@@ -222,8 +214,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionCurrentLocalPromotion => '目前儲存位置：此裝置（活動期間開放）';
 
   @override
-  String get dataStorageLocalPromotionNoSubscription =>
-      '活動期間可暫時使用；尚未訂閱本機方案，活動結束後僅可查詢或刪除。';
+  String get dataStorageLocalPromotionNoSubscription => '活動期間可暫時使用；尚未訂閱本機方案，活動結束後僅可查詢或刪除。';
 
   @override
   String get accountNoLongerAvailable => '此帳號已被刪除或登入已失效，請重新登入。';
@@ -404,8 +395,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dataClearLocalAction => '清除本機資料';
 
   @override
-  String get dataClearLocalConfirm =>
-      '這會永久清除這台裝置上的所有個人資料，且無法復原。清除後可再嘗試切換至雲端。確定繼續嗎？';
+  String get dataClearLocalConfirm => '這會永久清除這台裝置上的所有個人資料，且無法復原。清除後可再嘗試切換至雲端。確定繼續嗎？';
 
   @override
   String get dataClearLocalFailed => '無法清除本機資料，請稍後再試';
@@ -420,8 +410,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dataMoveToLocal => '將雲端資料移到此裝置';
 
   @override
-  String get dataMoveToLocalConfirm =>
-      '系統會先複製並驗證資料，再從雲端刪除。完成後資料只有這台裝置、這個瀏覽器及目前的瀏覽器使用者設定檔看得到；換裝置、換瀏覽器或清除網站資料時不會自動出現，且可能永久遺失。確定繼續嗎？';
+  String get dataMoveToLocalConfirm => '系統會先複製並驗證資料，再從雲端刪除。完成後資料只有這台裝置、這個瀏覽器及目前的瀏覽器使用者設定檔看得到；換裝置、換瀏覽器或清除網站資料時不會自動出現，且可能永久遺失。確定繼續嗎？';
 
   @override
   String get dataMoveToLocalFailed => '部分資料無法搬移，雲端原始資料已保留。';
@@ -678,8 +667,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get publishedContentDeleteAdminOnly => '已公開資料僅限管理員刪除。您仍可編輯，儲存後會轉為待審核。';
 
   @override
-  String get previouslyPublishedContentDeleteAdminOnly =>
-      '此資料曾經公開，僅限管理員刪除。您仍可繼續編輯並重新送審。';
+  String get previouslyPublishedContentDeleteAdminOnly => '此資料曾經公開，僅限管理員刪除。您仍可繼續編輯並重新送審。';
 
   @override
   String get submissionPermissionDenied => '目前帳號尚未取得投稿寫入權限，請聯絡管理員更新投稿權限設定。';
@@ -777,8 +765,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gameInstructions => '遊戲說明';
 
   @override
-  String get gameInstructionsGeneral =>
-      '依畫面提示完成題目。喇叭可播放語音；麥克風點一下開始說話，再點一下完成；可拖曳的方塊請拖到目標位置，答題後再按檢查或送出。';
+  String get gameInstructionsGeneral => '依畫面提示完成題目。喇叭可播放語音；麥克風點一下開始說話，再點一下完成；可拖曳的方塊請拖到目標位置，答題後再按檢查或送出。';
 
   @override
   String get gameInstructionsGrammar => '聆聽或閱讀題目，選出正確的文法答案。';
@@ -811,12 +798,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gameInstructionsScratch => '在編輯區排列 Blockly 指令並按開始，讓角色避開障礙並取得寶藏。';
 
   @override
-  String get gameInstructionsScratchMaze =>
-      '在編輯區排列 Blockly 指令並按開始，引導角色通過迷宮抵達終點。每個方向積木只移動一格；需要多走幾格時，請接上更多積木或使用重複積木。';
+  String get gameInstructionsScratchMaze => '在編輯區排列 Blockly 指令並按開始，引導角色通過迷宮抵達終點。每個方向積木只移動一格；需要多走幾格時，請接上更多積木或使用重複積木。';
 
   @override
-  String get gameInstructionsMarioTranslation =>
-      '使用左右、跳躍與發射按鈕。按下題目或文字可播放語音，收集正確文字完成翻譯。';
+  String get gameInstructionsMarioTranslation => '使用左右、跳躍與發射按鈕。按下題目或文字可播放語音，收集正確文字完成翻譯。';
 
   @override
   String get checkOption => '勾選';
@@ -974,8 +959,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountSecurity => '帳號安全';
 
   @override
-  String get adminPasswordHelpBody =>
-      '您好，我無法登入 Life Pilot，請協助處理密碼修改。\n\n管理員處理後，請回覆此信箱通知結果。';
+  String get adminPasswordHelpBody => '您好，我無法登入 Life Pilot，請協助處理密碼修改。\n\n管理員處理後，請回覆此信箱通知結果。';
 
   @override
   String adminPasswordHelpEmailUnavailable(String email) {
@@ -989,8 +973,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminPasswordHelpSubject => 'Life Pilot 密碼修改申請';
 
   @override
-  String get adminPasswordResetDescription =>
-      '輸入求助者的帳號信箱，由系統產生臨時密碼。請回覆使用者，提醒登入後立即改成自己的密碼。';
+  String get adminPasswordResetDescription => '輸入求助者的帳號信箱，由系統產生臨時密碼。請回覆使用者，提醒登入後立即改成自己的密碼。';
 
   @override
   String get adminPasswordResetFailed => '無法建立臨時密碼，請稍後再試。';
@@ -1031,8 +1014,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get registrationAdminApprovalTitle => '申請建立帳號';
 
   @override
-  String get registrationAdminApprovalDescription =>
-      '註冊不需填寫密碼。請填入帳號送出；核准並建立帳號後，管理員會回覆臨時密碼。';
+  String get registrationAdminApprovalDescription => '註冊不需填寫密碼。請填入帳號送出；核准並建立帳號後，管理員會回覆臨時密碼。';
 
   @override
   String get registrationAdminApprovalAction => '寄給管理員';
@@ -1046,8 +1028,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get registrationAdminApprovalOpened =>
-      '已開啟郵件草稿，請確認後寄出。帳號尚未建立，請等待管理員核准。';
+  String get registrationAdminApprovalOpened => '已開啟郵件草稿，請確認後寄出。帳號尚未建立，請等待管理員核准。';
 
   @override
   String get adminTemporaryPasswordCopied => '已複製臨時密碼。';
@@ -1061,8 +1042,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get adminTemporaryPasswordInstruction =>
-      '請複製後回覆給使用者，並提醒使用者登入後立即到「帳號安全」修改密碼。';
+  String get adminTemporaryPasswordInstruction => '請複製後回覆給使用者，並提醒使用者登入後立即到「帳號安全」修改密碼。';
 
   @override
   String get adminTemporaryPasswordLabel => '臨時密碼';
@@ -1122,8 +1102,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get moduleAuthorizationNoAccess => '目前未開放額外功能。';
 
   @override
-  String get moduleAuthorizationNotDeployed =>
-      '模組授權尚未部署，請先在 Supabase 執行授權 SQL。';
+  String get moduleAuthorizationNotDeployed => '模組授權尚未部署，請先在 Supabase 執行授權 SQL。';
 
   @override
   String get moduleAuthorizationSaved => '模組授權已更新。';
@@ -1325,8 +1304,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminPricingImageQuota => '圖片容量（MB）';
 
   @override
-  String get adminPricingLocalZeroUnlimited =>
-      '本機核心資料與題目填 0 代表不限量；雲端投稿額度另計，雲端答題保留天數 0 代表不保留。';
+  String get adminPricingLocalZeroUnlimited => '本機核心資料與題目填 0 代表不限量；雲端投稿額度另計，雲端答題保留天數 0 代表不保留。';
 
   @override
   String get adminPricingMemoryQuota => '回憶紀錄';
@@ -1400,8 +1378,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String adminSubscriptionActiveCount(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '有效額度 $countString 筆';
@@ -1449,8 +1426,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminSubscriptionFree => '免費版';
 
   @override
-  String get adminSubscriptionInactiveWarning =>
-      '連續 3 個月未新增或修改資料，帳號及雲端資料會自動清除。';
+  String get adminSubscriptionInactiveWarning => '連續 3 個月未新增或修改資料，帳號及雲端資料會自動清除。';
 
   @override
   String get adminSubscriptionInvalidExtensionDays => '請輸入 1 至 3650 的天數。';
@@ -1559,28 +1535,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dataStorageLocalPlanRequired => '請先完成本機 Plus 付款，並由管理者開通後再切換。';
 
   @override
-  String get dataStorageLocalWarning =>
-      '本機資料只有這台裝置、這個瀏覽器及目前的瀏覽器使用者設定檔看得到。換裝置、換瀏覽器或換瀏覽器設定檔時不會自動出現；解除安裝 App、清除網站或瀏覽器資料可能永久遺失。資料在方案額度內時可移回雲端。';
+  String get dataStorageLocalWarning => '本機資料只有這台裝置、這個瀏覽器及目前的瀏覽器使用者設定檔看得到。換裝置、換瀏覽器或換瀏覽器設定檔時不會自動出現；解除安裝 App、清除網站或瀏覽器資料可能永久遺失。資料在方案額度內時可移回雲端。';
 
   @override
   String get dataStorageTitle => '儲存位置';
 
   @override
-  String dataUploadQuotaExceeded(
-    String resource,
-    int used,
-    int incoming,
-    int quota,
-  ) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
-      localeName,
-    );
+  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String usedString = usedNumberFormat.format(used);
-    final intl.NumberFormat incomingNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat incomingNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String incomingString = incomingNumberFormat.format(incoming);
-    final intl.NumberFormat quotaNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String quotaString = quotaNumberFormat.format(quota);
 
     return '已取消上傳：$resource 雲端目前已有 $usedString 筆，本次要上傳 $incomingString 筆，但方案額度為 $quotaString 筆。';
@@ -1593,8 +1559,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dataUploadToCloudAction => '將本機資料移到雲端';
 
   @override
-  String get dataUploadToCloudConfirm =>
-      '系統會先檢查全部本機資料是否符合目前方案額度。只有整批上傳並驗證成功後，才會刪除這台裝置的本機資料並切換為雲端模式；若超額或失敗則維持本機模式。確定繼續嗎？';
+  String get dataUploadToCloudConfirm => '系統會先檢查全部本機資料是否符合目前方案額度。只有整批上傳並驗證成功後，才會刪除這台裝置的本機資料並切換為雲端模式；若超額或失敗則維持本機模式。確定繼續嗎？';
 
   @override
   String get dataUploadToCloudFailed => '部分本機資料無法上傳，已保留在這台裝置。';
@@ -1666,8 +1631,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get quotaFreePeriodTargetAccounts => '適用帳號';
 
   @override
-  String get quotaFreePeriodTargetAccountsHint =>
-      '可輸入多個 Email，以逗號或換行分隔；留白表示適用所有一般使用者。';
+  String get quotaFreePeriodTargetAccountsHint => '可輸入多個 Email，以逗號或換行分隔；留白表示適用所有一般使用者。';
 
   @override
   String get quotaFreePeriodAllUsers => '適用所有一般使用者';
@@ -1678,8 +1642,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get quotaFreePeriodUserBanner =>
-      '活動期間新增資料不限量，且可自由切換雲端與此裝置；活動結束後恢復原方案額度。';
+  String get quotaFreePeriodUserBanner => '活動期間新增資料不限量，且可自由切換雲端與此裝置；活動結束後恢復原方案額度。';
 
   @override
   String get quotaFreePeriodUserBannerShort => '活動期間新增資料不限量。';
@@ -1732,8 +1695,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionCommonFeatures => '兩種方案皆可使用';
 
   @override
-  String get subscriptionCommonFeaturesDetail =>
-      '行事曆、記帳、積分、推薦活動與景點，以及管理者遊戲題庫。本機資料不限量；股票與商業企劃書僅限管理者。';
+  String get subscriptionCommonFeaturesDetail => '行事曆、記帳、積分、推薦活動與景點，以及管理者遊戲題庫。本機資料不限量；股票與商業企劃書僅限管理者。';
 
   @override
   String get subscriptionCurrentAdmin => '目前權限：管理員（不限額度）';
@@ -1772,8 +1734,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionPartialExpiryImpact => '其他訂閱仍有效；到期後的剩餘累積額度如下。';
 
   @override
-  String get subscriptionExpiringCloudImpact =>
-      '到期後依剩餘有效雲端額度使用；無有效付費額度時改用免費額度。超額資料依寬限期清理。';
+  String get subscriptionExpiringCloudImpact => '到期後依剩餘有效雲端額度使用；無有效付費額度時改用免費額度。超額資料依寬限期清理。';
 
   @override
   String get subscriptionExpiringLocalImpact => '未續訂將無法新增或修改本機資料，但仍可查詢或刪除。';
@@ -1805,8 +1766,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionImageStorage => '圖片容量';
 
   @override
-  String get subscriptionInactiveAccountWarning =>
-      '免費帳戶沒有到期日；若連續 3 個月沒有新增或修改資料，帳戶及雲端資料將由系統自動清除。';
+  String get subscriptionInactiveAccountWarning => '免費帳戶沒有到期日；若連續 3 個月沒有新增或修改資料，帳戶及雲端資料將由系統自動清除。';
 
   @override
   String get subscriptionLatestLocalVersionTitle => '下次付款適用的本機 Plus 版本';
@@ -1815,22 +1775,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionLocalAnswerHistory => '本機答題紀錄不限制筆數';
 
   @override
-  String get subscriptionLocalPaidFeature =>
-      '有效訂閱期間，此裝置上的紀錄與圖片不限制數量；資料不會自動出現在其他裝置';
+  String get subscriptionLocalPaidFeature => '有效訂閱期間，此裝置上的紀錄與圖片不限制數量；資料不會自動出現在其他裝置';
 
   @override
   String get subscriptionLocalPublicSubmissionTitle => '公開投稿額度';
 
   @override
   String subscriptionLocalPublicSubmissionQuota(int events, int attractions) {
-    final intl.NumberFormat eventsNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat eventsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String eventsString = eventsNumberFormat.format(events);
-    final intl.NumberFormat attractionsNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
-    final String attractionsString = attractionsNumberFormat.format(
-      attractions,
-    );
+    final intl.NumberFormat attractionsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String attractionsString = attractionsNumberFormat.format(attractions);
 
     return '推薦活動 $eventsString 筆、推薦景點 $attractionsString 筆';
   }
@@ -1843,9 +1798,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String subscriptionLocalUsage(int used) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
-      localeName,
-    );
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String usedString = usedNumberFormat.format(used);
 
     return '此裝置已使用 $usedString 筆／不限制';
@@ -1873,21 +1826,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionNextVersionTitle => '下次付款適用的最新版本';
 
   @override
-  String subscriptionOverageItem(
-    String resource,
-    int used,
-    int quota,
-    int excess,
-  ) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
-      localeName,
-    );
+  String subscriptionOverageItem(String resource, int used, int quota, int excess) {
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String usedString = usedNumberFormat.format(used);
-    final intl.NumberFormat quotaNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String quotaString = quotaNumberFormat.format(quota);
-    final intl.NumberFormat excessNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat excessNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String excessString = excessNumberFormat.format(excess);
 
     return '$resource：已用 $usedString／額度 $quotaString，超出 $excessString';
@@ -1912,8 +1856,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionPurchaseComingSoon => 'App 內訂閱即將開放';
 
   @override
-  String get subscriptionPurchaseExplanation =>
-      '目前尚不能購買 Plus。商店付款功能上線後，此頁會顯示正式價格、續訂條款，以及購買、恢復購買與管理訂閱功能。';
+  String get subscriptionPurchaseExplanation => '目前尚不能購買 Plus。商店付款功能上線後，此頁會顯示正式價格、續訂條款，以及購買、恢復購買與管理訂閱功能。';
 
   @override
   String get subscriptionQuarterlyPayment => '每季費用';
@@ -1926,15 +1869,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
-      localeName,
-    );
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String usedString = usedNumberFormat.format(used);
-    final intl.NumberFormat quotaNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String quotaString = quotaNumberFormat.format(quota);
-    final intl.NumberFormat remainingNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat remainingNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String remainingString = remainingNumberFormat.format(remaining);
 
     return '雲端額度已滿：目前已使用 $usedString／$quotaString 筆，還可新增 $remainingString 筆。請先刪除舊資料、改存此裝置，或升級 Plus。';
@@ -1945,12 +1884,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String subscriptionUsage(int used, int quota) {
-    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(
-      localeName,
-    );
+    final intl.NumberFormat usedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String usedString = usedNumberFormat.format(used);
-    final intl.NumberFormat quotaNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat quotaNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String quotaString = quotaNumberFormat.format(quota);
 
     return '已使用 $usedString／$quotaString';
@@ -1974,8 +1910,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String vendorPlanActivityQuota(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '尚未到期的活動投稿最多 $countString 筆';
@@ -1983,8 +1918,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String vendorPlanAttractionQuota(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '尚未到期的景點投稿最多 $countString 筆';
@@ -1992,8 +1926,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String vendorPlanImageQuota(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '圖片容量 $countString MB';
@@ -2016,8 +1949,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String vendorQuotaRemaining(int count, String suffix) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '尚可使用 $countString$suffix';
@@ -2323,11 +2255,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get eventRefreshSucceeded => '推薦活動已更新。';
 
   @override
-  String eventRefreshSucceededSummary(
-    int successful,
-    int attempted,
-    int failed,
-  ) {
+  String eventRefreshSucceededSummary(int successful, int attempted, int failed) {
     return '更新完成：共 $attempted 個來源，成功 $successful 個、失敗 $failed 個。';
   }
 
@@ -2445,10 +2373,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vendorContentMixTitle => '內容概況';
 
   @override
-  String get vendorCreateAccountAction => '建帳號並投稿';
+  String get vendorCreateAccountAction => '免費建帳號並投稿';
 
   @override
-  String get vendorCreateAccountDescription => '建立帳號即可投稿活動、追蹤審核狀態，並持續維護公開資訊。';
+  String get vendorCreateAccountDescription => '建立帳號後，活動與景點可被使用者加入行事曆、開啟導航、收藏，並透過您提供的外部連結前往報名；您也能持續更新資訊與查看互動成效。';
 
   @override
   String get vendorCreateAccountTitle => '您是活動主辦單位？';
@@ -2457,7 +2385,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vendorDashboardLoadFailed => '無法載入合作廠商資料。';
 
   @override
-  String get vendorDashboardSubtitle => '管理投稿、追蹤審核並掌握目前額度。';
+  String get vendorDashboardSubtitle => '從投稿與審核，到瀏覽、收藏、導航及外部報名連結點擊，在同一工作台持續優化內容。';
 
   @override
   String get vendorDashboardTitle => '合作廠商工作台';
@@ -2553,8 +2481,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String vendorQuarterlyPrice(int price) {
-    final intl.NumberFormat priceNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String priceString = priceNumberFormat.format(price);
 
     return '每季 NT\$$priceString';
@@ -2567,10 +2494,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vendorRecentSubmissionsTitle => '近期投稿';
 
   @override
-  String get vendorRegistrationAnalytics => '在同一工作區查看內容成效';
+  String get vendorRegistrationAnalytics => '追蹤瀏覽、收藏、導航與外部報名連結點擊';
 
   @override
-  String get vendorRegistrationDescription => '此帳號將開啟廠商工作台，專門管理活動、景點與審核狀態。';
+  String get vendorRegistrationDescription => '不只是刊登資訊：活動與景點可被使用者加入行事曆、開啟導航與收藏；若提供報名網址，也可直接前往外部頁面報名。';
 
   @override
   String get vendorRegistrationFreeStart => '可先使用免費廠商方案';
@@ -2585,7 +2512,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vendorSubmissionBenefitManage => '自主管理資訊';
 
   @override
-  String get vendorSubmissionBenefitReach => '觸及行程規劃者';
+  String get vendorSubmissionBenefitReach => '進入使用者的行程規劃';
 
   @override
   String get vendorSubmissionBenefitReview => '審核狀態清楚';
@@ -2594,8 +2521,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vendorSubmissionDescription => '讓正在安排生活的使用者看見您的活動與景點；公開後仍由原作者管理。';
 
   @override
-  String get vendorSubmissionGuideDescription =>
-      '請填寫正確日期、地點、主辦單位與報名網址。審核後對所有人公開；後續修改會重新送審。';
+  String get vendorSubmissionGuideDescription => '請填寫正確日期、地點、主辦單位與報名網址。審核後對所有人公開；後續修改會重新送審。';
 
   @override
   String get vendorSubmissionGuideTitle => '讓更多人發現您的活動';
@@ -2720,11 +2646,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mapCoordinateBackfillFailed => '無法回填地圖座標，請稍後再試。';
 
   @override
-  String mapCoordinateBackfillResult(
-    int saved,
-    int remaining,
-    String coverage,
-  ) {
+  String mapCoordinateBackfillResult(int saved, int remaining, String coverage) {
     return '本次寫入 $saved 筆，剩餘 $remaining 筆，覆蓋率 $coverage%。';
   }
 
@@ -3083,8 +3005,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get grammarBaseWord => '單字原形（例如 head）';
 
   @override
-  String get grammarQuestionHelp =>
-      '一般文法題請輸入包含答案的完整句子，例如 We are young，系統會自動把 are 變成空格。plural 分類只需輸入 head 與 heads。';
+  String get grammarQuestionHelp => '一般文法題請輸入包含答案的完整句子，例如 We are young，系統會自動把 are 變成空格。plural 分類只需輸入 head 與 heads。';
 
   @override
   String get inactiveQuestion => '已停用';
@@ -3198,8 +3119,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sentenceOrWord => '完整單字或正確句子';
 
   @override
-  String get sentenceQuestionHelp =>
-      '只要輸入完整單字或正確句子，例如 mother 或 I love apples，系統會自動拆開並建立重新排列題目。';
+  String get sentenceQuestionHelp => '只要輸入完整單字或正確句子，例如 mother 或 I love apples，系統會自動拆開並建立重新排列題目。';
 
   @override
   String get socialTitle => '社交情境';
@@ -3211,8 +3131,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get threeQuestionsRequired => '目前題庫在這個關卡的可用題目合計至少需要 3 題。';
 
   @override
-  String get translationQuestionHelp =>
-      '題目填原文，正確答案填翻譯。同一分類至少建立 3 題，遊戲才能產生兩個錯誤選項。';
+  String get translationQuestionHelp => '題目填原文，正確答案填翻譯。同一分類至少建立 3 題，遊戲才能產生兩個錯誤選項。';
 
   @override
   String get translationTitle => '翻譯';
@@ -3254,8 +3173,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String vendorPlanAnalyticsDays(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '最近 $countString 天成效統計';
@@ -3392,12 +3310,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountDeletionPending => '申請中';
 
   @override
-  String get accountDeletionPendingDescription =>
-      '刪除帳號申請正在等待管理者處理。若不再刪除帳號，可以提出取消申請。';
+  String get accountDeletionPendingDescription => '刪除帳號申請正在等待管理者處理。若不再刪除帳號，可以提出取消申請。';
 
   @override
-  String get accountDeletionRequestDescription =>
-      '申請會送給管理者審核。管理者確認後才會刪除帳號與相關資料。';
+  String get accountDeletionRequestDescription => '申請會送給管理者審核。管理者確認後才會刪除帳號與相關資料。';
 
   @override
   String get accountMenuAccountDeletion => '刪除帳號';
@@ -3437,8 +3353,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dataExportIncludedPages => '下載內容包含：行事曆、回憶走廊、記帳與積分。';
 
   @override
-  String get dataExportRequestDescription =>
-      '個人資料會下載至 Excel，不含推薦活動與推薦景點；可供下載的資料詳如 Excel。';
+  String get dataExportRequestDescription => '個人資料會下載至 Excel，不含推薦活動與推薦景點；可供下載的資料詳如 Excel。';
 
   @override
   String get dataExportSummarySheet => '匯出說明';
@@ -3546,8 +3461,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get performanceContents => '內容明細';
 
   @override
-  String get performancePeriodHint =>
-      '選擇月份只顯示該月到期內容；「尚未到期」顯示所有未到期內容並清除月份。數據為累計互動。';
+  String get performancePeriodHint => '選擇月份只顯示該月到期內容；「尚未到期」顯示所有未到期內容並清除月份。數據為累計互動。';
 
   @override
   String get performanceNoExpiry => '未設定到期日';
@@ -3573,6 +3487,5 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get performanceMetricShareExplanation =>
-      '分子是此筆數值，分母是目前月份與搜尋條件下，同一指標的總計。例如 25／100 代表佔 25%；不代表獨立訪客人數。';
+  String get performanceMetricShareExplanation => '分子是此筆數值，分母是目前月份與搜尋條件下，同一指標的總計。例如 25／100 代表佔 25%；不代表獨立訪客人數。';
 }

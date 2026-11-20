@@ -25,6 +25,16 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 
+typedef SubmissionSavedCallback =
+    void Function({
+      required EventItem? previous,
+      required EventItem current,
+      required bool attraction,
+    });
+
+typedef SubmissionDeletedCallback =
+    void Function({required EventItem previous, required bool attraction});
+
 class ControllerEvent extends SafeChangeNotifier {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -39,6 +49,8 @@ class ControllerEvent extends SafeChangeNotifier {
   final bool _ownsServiceEventPublic;
   final EventTrackingService tracking;
   final Future<void> Function()? onCalendarReload;
+  final SubmissionSavedCallback? onSubmissionSaved;
+  final SubmissionDeletedCallback? onSubmissionDeleted;
   bool _isLoadingEvents = false;
   bool _isLoadingMemoryRecords = false;
   bool _hasLoadedEventsSuccessfully = false;
@@ -78,6 +90,8 @@ class ControllerEvent extends SafeChangeNotifier {
     String? toTableName,
     ServiceEventPublic? serviceEventPublic,
     this.onCalendarReload,
+    this.onSubmissionSaved,
+    this.onSubmissionDeleted,
     EventTrackingService? eventTracking,
   }) : tracking = eventTracking ?? EventTrackingService(),
        _tableName = tableName,
@@ -200,6 +214,13 @@ class ControllerEvent extends SafeChangeNotifier {
       originalIsApproved: oldEvent?.isApproved,
     );
     if (!_isCurrentDataScope(generation)) return;
+    if (_isRecommendedContent) {
+      onSubmissionSaved?.call(
+        previous: isNew ? null : oldEvent,
+        current: newEvent,
+        attraction: _tableName == TableNames.recommendPlaces,
+      );
+    }
     if (isNew &&
         (_tableName == TableNames.calendarEvents ||
             _tableName == TableNames.memoryTrace)) {
@@ -219,6 +240,12 @@ class ControllerEvent extends SafeChangeNotifier {
       tableName: _tableName,
     );
     if (!_isCurrentDataScope(generation)) return;
+    if (_isRecommendedContent) {
+      onSubmissionDeleted?.call(
+        previous: event,
+        attraction: _tableName == TableNames.recommendPlaces,
+      );
+    }
     if (_tableName == TableNames.calendarEvents ||
         _tableName == TableNames.memoryTrace) {
       await auth.refreshSubscriptionUsage();
@@ -358,6 +385,15 @@ class ControllerEvent extends SafeChangeNotifier {
       _invalidateViewModel(updatedEvent.id);
     }
     if (!_disposed) notifyListeners();
+  }
+
+  void onCreateEvent(EventItem event) {
+    if (_disposed || !_isRecommendedContent) return;
+    _modelEvent.appendRecommendedEvents([
+      event,
+    ], isEvent: _tableName == TableNames.recommendEvents);
+    _invalidateViewModel(event.id);
+    notifyListeners();
   }
 
   // ---------------------------------------------------------------------------

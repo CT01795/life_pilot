@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/supabase.dart';
-import 'package:life_pilot/vendor/repository_vendor_initialization.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
@@ -77,20 +76,6 @@ void main() {
       expect(jsonDecode(requests.single.body), {'p_email': 'a@example.com'});
     },
   );
-  test('missing vendor initialization fails and can be retried', () async {
-    status = 404;
-    payload = {'code': 'PGRST202', 'message': 'not deployed'};
-    final repository = RepositoryVendorInitialization(client);
-    await expectLater(
-      repository.ensure('session'),
-      throwsA(isA<PostgrestException>()),
-    );
-    status = 200;
-    payload = null;
-    await repository.ensure('session');
-    await repository.ensure('session');
-    expect(requests, hasLength(2));
-  });
   test(
     'bundled empty promotion list is authoritative and survives usage copies',
     () async {
