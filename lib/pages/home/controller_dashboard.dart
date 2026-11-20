@@ -45,6 +45,7 @@ class ControllerDashboard extends SafeChangeNotifier {
   int _pointsRequest = 0;
   int _todayScheduleRequest = 0;
   final _eventCompletions = <(int, String), Future<void>>{};
+  final _eventDetails = <String, Future<CalendarEvent>>{};
 
   bool get loading => _sectionLoadingCounts.isNotEmpty;
 
@@ -227,6 +228,7 @@ class ControllerDashboard extends SafeChangeNotifier {
     _sharedSelectionRevision++;
     _accountGeneration++;
     _eventCompletions.clear();
+    _eventDetails.clear();
     _activeAccount = account;
     _settingsLoad = null;
     _settingsSaveTail = null;
@@ -250,6 +252,24 @@ class ControllerDashboard extends SafeChangeNotifier {
       !notifierDisposed &&
       _activeAccount == account &&
       _accountGeneration == generation;
+
+  Future<CalendarEvent> loadCalendarEventDetail({
+    required CalendarEvent summary,
+    required String account,
+  }) {
+    final existing = _eventDetails[summary.id];
+    if (existing != null) return existing;
+    late final Future<CalendarEvent> request;
+    request = repository
+        .loadCalendarEventDetail(summary: summary, account: account)
+        .whenComplete(() {
+          if (identical(_eventDetails[summary.id], request)) {
+            _eventDetails.remove(summary.id);
+          }
+        });
+    _eventDetails[summary.id] = request;
+    return request;
+  }
 
   /// Recommendations need the saved city, not every dashboard summary.
   Future<void> waitForSettings({required String account}) async {
@@ -317,6 +337,7 @@ class ControllerDashboard extends SafeChangeNotifier {
         !_allCityRequests.isRunning) {
       return;
     }
+    if (forceRefresh) repository.invalidateRecommendationCityCounts();
     await _allCityRequests.run(() async {
       if (!_isCurrentRequest(account, generation)) return;
       try {

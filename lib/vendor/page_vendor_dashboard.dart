@@ -635,6 +635,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
   }
 
   Future<void> _openVendorPlanManager() async {
+    VendorPricingChange? change;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -647,11 +648,29 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
             16,
             MediaQuery.viewInsetsOf(context).bottom + 24,
           ),
-          child: const AdminVendorPricing(),
+          child: AdminVendorPricing(
+            onChanged: (value) {
+              if (value == VendorPricingChange.subscription) {
+                change = value;
+              } else {
+                change ??= value;
+              }
+            },
+          ),
         ),
       ),
     );
-    if (mounted) _reload();
+    if (!mounted) return;
+    switch (change) {
+      case VendorPricingChange.pricing:
+        await _controller.refreshPlans();
+        break;
+      case VendorPricingChange.subscription:
+        _reload();
+        break;
+      case null:
+        break;
+    }
   }
 
   Widget _engagementSection(AppLocalizations loc, ModelVendorDashboard data) {

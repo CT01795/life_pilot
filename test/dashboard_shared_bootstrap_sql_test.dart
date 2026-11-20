@@ -21,4 +21,16 @@ void main() {
       expect(sql, contains("notify pgrst, 'reload schema'"));
     },
   );
+
+  test('dashboard schedule bootstrap defers descriptions and sub-events', () {
+    final sql = File(
+      'supabase/migrations/20261120000300_dashboard_schedule_summary.sql',
+    ).readAsStringSync();
+
+    expect(sql, contains('get_or_create_my_dashboard_core_v2'));
+    expect(sql, contains('event.master_url'));
+    expect(sql, isNot(contains('event.description')));
+    expect(sql, isNot(contains('event.sub_events')));
+    expect(sql, contains("notify pgrst, 'reload schema'"));
+  });
 }

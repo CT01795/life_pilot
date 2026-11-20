@@ -97,6 +97,16 @@ class RepositoryVendorDashboardCache {
     );
   }
 
+  ModelVendorDashboard? updatePlans(Iterable<VendorPricingPlan> plans) {
+    final cached = read();
+    if (cached == null) return null;
+    final state = _states[client] ??= _VendorDashboardCacheState();
+    state.revision++;
+    final updated = cached.withPlans(plans);
+    write(updated);
+    return updated;
+  }
+
   /// Refreshes only the small recent-submission list. Counters and plan data
   /// remain the locally updated snapshot, avoiding another dashboard bootstrap.
   Future<ModelVendorDashboard?> refreshRecentSubmissions() async {

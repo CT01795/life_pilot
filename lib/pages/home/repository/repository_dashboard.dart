@@ -15,12 +15,24 @@ import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/service/network_availability.dart';
 
+typedef _RecommendationCities = ({
+  List<DashboardCity> events,
+  List<DashboardCity> places,
+});
+
+class _RecommendationCityCacheEntry {
+  const _RecommendationCityCacheEntry(this.value, this.expiresAt);
+
+  final _RecommendationCities value;
+  final DateTime expiresAt;
+}
+
 class DashboardRepository {
+  static const _recommendationCityTtl = Duration(minutes: 2);
   static final _recommendationCityReads =
-      InFlightReadPool<
-        String,
-        ({List<DashboardCity> events, List<DashboardCity> places})
-      >();
+      InFlightReadPool<String, _RecommendationCities>();
+  static final _recommendationCityCache =
+      <String, _RecommendationCityCacheEntry>{};
   ({String accountId, AccountingDashboardSummary summary})?
   _bootstrapAccounting;
   ({String accountId, PointDashboardSummary summary})? _bootstrapPoints;
@@ -75,7 +87,7 @@ class DashboardRepository {
         .from(TableNames.calendarEvents)
         .select(
           'id,name,start_date,start_time,end_date,end_time,country,city,location,'
-          'type,is_free,description,master_url,sub_events,is_completed,account',
+          'type,is_free,master_url,is_completed,account',
         )
         .eq('is_completed', false)
         .lt('start_date', query.rangeEnd.toUtc().toIso8601String())
@@ -94,6 +106,33 @@ class DashboardRepository {
               normalizeStringValue(account),
         },
     ]);
+  }
+
+  Future<CalendarEvent> loadCalendarEventDetail({
+    required CalendarEvent summary,
+    required String account,
+  }) async {
+    Map<String, dynamic>? row;
+    if (await _storesLocally) {
+      row = await LocalDataStore.instance.readOnlyRow(
+        owner: account,
+        resource: TableNames.calendarEvents,
+        id: summary.id,
+      );
+    } else {
+      final result = await supabase
+          .from(TableNames.calendarEvents)
+          .select(
+            'id,name,start_date,start_time,end_date,end_time,country,city,'
+            'location,type,is_free,description,master_url,sub_events,'
+            'is_completed,account',
+          )
+          .eq(Fields.id, summary.id)
+          .maybeSingle();
+      if (result != null) row = Map<String, dynamic>.from(result);
+    }
+    if (row == null) throw StateError('Calendar event is unavailable.');
+    return CalendarEvent.fromJson({...row, 'is_shared': summary.isShared});
   }
 
   Future<void> completeEvent({
@@ -296,7 +335,15 @@ class DashboardRepository {
     await _requireNetworkForLocalCloudContent();
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) throw StateError('Authentication required');
+    final cached = _recommendationCityCache[userId];
+    if (cached != null && DateTime.now().isBefore(cached.expiresAt)) {
+      return cached.value;
+    }
     return _recommendationCityReads.read(userId, () async {
+      final current = _recommendationCityCache[userId];
+      if (current != null && DateTime.now().isBefore(current.expiresAt)) {
+        return current.value;
+      }
       final result = await supabase.rpc('get_home_recommendation_city_counts');
       if (result is! Map) {
         throw const FormatException('Invalid recommendation city counts');
@@ -304,11 +351,23 @@ class DashboardRepository {
       List<DashboardCity> decode(Object? value) => (value as List? ?? const [])
           .map((row) => DashboardCity.fromJson(Map<String, dynamic>.from(row)))
           .toList(growable: false);
-      return (
+      final value = (
         events: decode(result['events']),
         places: decode(result['places']),
       );
+      _recommendationCityCache[userId] = _RecommendationCityCacheEntry(
+        value,
+        DateTime.now().add(_recommendationCityTtl),
+      );
+      return value;
     });
+  }
+
+  void invalidateRecommendationCityCounts() {
+    // This is called only by an explicit user refresh. Clearing the small
+    // process cache avoids consulting auth again and also prevents a recently
+    // switched account from retaining stale city counts.
+    _recommendationCityCache.clear();
   }
 
   Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async {

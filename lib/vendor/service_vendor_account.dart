@@ -35,6 +35,9 @@ class ServiceVendorAccount {
   Future<ModelVendorDashboard?> refreshRecentSubmissions() =>
       _dashboardCache.refreshRecentSubmissions();
 
+  Future<ModelVendorDashboard?> refreshDashboardPlans() async =>
+      _dashboardCache.updatePlans(await fetchPricingPlans());
+
   Future<void> addSpecialAuthorization({
     required String email,
     required DateTime endsAt,

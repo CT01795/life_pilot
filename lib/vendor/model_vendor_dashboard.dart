@@ -46,6 +46,13 @@ class ModelVendorDashboard {
     plans: plans,
   );
 
+  ModelVendorDashboard withPlans(Iterable<VendorPricingPlan> updatedPlans) =>
+      ModelVendorDashboard(
+        metrics: metrics,
+        status: status,
+        plans: updatedPlans,
+      );
+
   ModelVendorDashboard _applySubmissionMutation({
     required EventItem? previous,
     required EventItem? current,

@@ -146,6 +146,22 @@ class ControllerVendorDashboard extends SafeChangeNotifier {
     }
   }
 
+  Future<void> refreshPlans() async {
+    final revision = _revision;
+    try {
+      final result = await service.refreshDashboardPlans();
+      if (result == null || !_active(revision)) return;
+      _data = result;
+      notifyListeners();
+    } catch (error, stackTrace) {
+      logger.w(
+        'Vendor pricing refresh failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
   @override
   void dispose() {
     _revision++;

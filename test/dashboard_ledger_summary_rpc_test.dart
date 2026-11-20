@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
+import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -129,6 +130,59 @@ void main() {
       isTrue,
     );
   });
+
+  test(
+    'schedule list omits deferred detail and one detail read restores it',
+    () async {
+      final requests = <http.Request>[];
+      final client = SupabaseClient(
+        'https://example.supabase.co',
+        'test-key',
+        httpClient: MockClient((request) async {
+          requests.add(request);
+          if (request.url.queryParameters['select']?.contains('description') ==
+              true) {
+            return http.Response(
+              jsonEncode({
+                'id': 'event',
+                'name': 'Event',
+                'description': 'Full detail',
+                'sub_events': [
+                  {'id': 'child'},
+                ],
+                'account': 'person@example.com',
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+              request: request,
+            );
+          }
+          return http.Response(
+            '[]',
+            200,
+            headers: {'content-type': 'application/json'},
+            request: request,
+          );
+        }),
+      );
+      addTearDown(client.dispose);
+      supabase = client;
+      final repository = DashboardRepository();
+
+      await repository.loadTodayEvents('person@example.com');
+      final summarySelect = requests.single.url.queryParameters['select']!;
+      expect(summarySelect, isNot(contains('description')));
+      expect(summarySelect, isNot(contains('sub_events')));
+
+      final detail = await repository.loadCalendarEventDetail(
+        summary: CalendarEvent(id: 'event', name: 'Event'),
+        account: 'person@example.com',
+      );
+      expect(detail.description, 'Full detail');
+      expect(detail.subEvents.single['id'], 'child');
+      expect(requests, hasLength(2));
+    },
+  );
 
   test('home recommendations use one combined RPC', () async {
     final requests = <http.Request>[];

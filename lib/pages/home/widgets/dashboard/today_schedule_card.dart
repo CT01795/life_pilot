@@ -292,10 +292,16 @@ class TodayScheduleCard extends StatelessWidget {
                                               .read<CalendarService>();
                                           pendingWrites.add(() async {
                                             try {
+                                              final event = await context
+                                                  .read<ControllerDashboard>()
+                                                  .loadCalendarEventDetail(
+                                                    summary: e,
+                                                    account: account,
+                                                  );
                                               await calendar
                                                   .addCalendarEventToMemory(
                                                     account: account,
-                                                    event: e,
+                                                    event: event,
                                                     id: e.id,
                                                     selectedDate:
                                                         DateTime.now(),

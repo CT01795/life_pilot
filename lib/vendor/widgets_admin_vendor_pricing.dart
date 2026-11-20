@@ -11,8 +11,14 @@ import 'package:life_pilot/subscription/billing_cycle_labels.dart';
 import 'package:life_pilot/subscription/controller_pricing_list.dart';
 import 'package:life_pilot/subscription/widgets_admin_special_authorization.dart';
 
+enum VendorPricingChange { pricing, subscription }
+
 class AdminVendorPricing extends StatefulWidget {
-  const AdminVendorPricing({super.key});
+  const AdminVendorPricing({super.key, this.onChanged});
+
+  /// Reports only persisted pricing or subscription changes. Opening and
+  /// closing the manager without saving must not refresh the whole dashboard.
+  final ValueChanged<VendorPricingChange>? onChanged;
 
   @override
   State<AdminVendorPricing> createState() => _AdminVendorPricingState();
@@ -128,6 +134,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
             : loc.adminVendorPricingUpdated,
       );
       _resetPricingForm();
+      widget.onChanged?.call(VendorPricingChange.pricing);
       await _catalog.load(force: true);
     } catch (error) {
       if (mounted) {
@@ -247,6 +254,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
       if (!mounted) return;
       if (_editingPricingId == plan.id) _resetPricingForm();
       _message(loc.adminPricingDeleted);
+      widget.onChanged?.call(VendorPricingChange.pricing);
       await _catalog.load(force: true);
     } catch (error) {
       if (mounted) {
@@ -285,7 +293,10 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
         currentPeriodEnd: _periodEnd,
         note: _note.text,
       );
-      if (mounted) _message(loc.adminVendorSubscriptionSaved);
+      if (mounted) {
+        widget.onChanged?.call(VendorPricingChange.subscription);
+        _message(loc.adminVendorSubscriptionSaved);
+      }
     } catch (error) {
       if (mounted) _message(loc.adminSubscriptionSaveFailed(error.toString()));
     } finally {

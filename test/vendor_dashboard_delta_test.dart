@@ -119,4 +119,24 @@ void main() {
     expect(result.status.eventUsed, 1);
     expect(result.plans, hasLength(1));
   });
+
+  test('pricing refresh replaces only plans', () {
+    final free = VendorPricingPlan(
+      id: 'free',
+      code: 'free',
+      versionName: 'free',
+      effectiveAt: DateTime(2026),
+      quarterlyPriceTwd: 0,
+      eventQuota: 5,
+      attractionQuota: 2,
+      imageMegabytes: 1,
+      analyticsDays: 0,
+    );
+    final original = dashboard();
+    final result = original.withPlans([plan, free]);
+
+    expect(result.metrics, same(original.metrics));
+    expect(result.status, same(original.status));
+    expect(result.plans.map((value) => value.id), ['free', 'plan']);
+  });
 }
