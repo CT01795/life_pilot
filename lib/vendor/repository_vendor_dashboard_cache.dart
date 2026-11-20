@@ -7,6 +7,9 @@ class _VendorDashboardCacheState {
   Object? scope;
   DateTime? expiresAt;
   ModelVendorDashboard? value;
+  int revision = 0;
+  int? recentRefreshRevision;
+  Future<ModelVendorDashboard?>? recentRefresh;
 }
 
 /// Session-scoped dashboard snapshot shared by the dashboard and submission
@@ -46,6 +49,12 @@ class RepositoryVendorDashboardCache {
     final currentScope = scope;
     if (currentScope == null) return;
     final state = _states[client] ??= _VendorDashboardCacheState();
+    if (state.scope != currentScope) {
+      state.revision++;
+      state
+        ..recentRefreshRevision = null
+        ..recentRefresh = null;
+    }
     state
       ..scope = currentScope
       ..value = value
@@ -59,6 +68,7 @@ class RepositoryVendorDashboardCache {
   }) {
     final cached = read();
     if (cached == null) return;
+    (_states[client] ??= _VendorDashboardCacheState()).revision++;
     final now = _now();
     write(
       cached.applySubmissionSaved(
@@ -76,6 +86,7 @@ class RepositoryVendorDashboardCache {
   }) {
     final cached = read();
     if (cached == null) return;
+    (_states[client] ??= _VendorDashboardCacheState()).revision++;
     final now = _now();
     write(
       cached.applySubmissionDeleted(
@@ -88,37 +99,58 @@ class RepositoryVendorDashboardCache {
 
   /// Refreshes only the small recent-submission list. Counters and plan data
   /// remain the locally updated snapshot, avoiding another dashboard bootstrap.
-  Future<void> refreshRecentSubmissions() async {
-    if (read() == null) return;
+  Future<ModelVendorDashboard?> refreshRecentSubmissions() async {
+    if (read() == null) return null;
     final requestScope = scope;
-    if (requestScope == null) return;
+    if (requestScope == null) return null;
+    final state = _states[client]!;
+    final active = state.recentRefresh;
+    if (active != null) {
+      final activeRevision = state.recentRefreshRevision;
+      await active;
+      if (scope != requestScope) return null;
+      if (state.revision != activeRevision) {
+        return refreshRecentSubmissions();
+      }
+      return read();
+    }
+    final requestRevision = state.revision;
     final now = _now();
-    final value = await client.rpc(
-      'get_my_vendor_recent_submissions',
-      params: {
-        'p_day_start': DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).toUtc().toIso8601String(),
-      },
-    );
-    if (scope != requestScope || value is! List) return;
-    final latest = read();
-    if (latest == null) return;
-    write(
-      latest.withRecentSubmissions(
-        value.take(5).map(VendorRecentSubmission.fromJson),
-      ),
-    );
-  }
-
-  void invalidate() {
-    final state = _states[client];
-    if (state == null) return;
+    late final Future<ModelVendorDashboard?> request;
+    request =
+        Future<ModelVendorDashboard?>.sync(() async {
+          final value = await client.rpc(
+            'get_my_vendor_recent_submissions',
+            params: {
+              'p_day_start': DateTime(
+                now.year,
+                now.month,
+                now.day,
+              ).toUtc().toIso8601String(),
+            },
+          );
+          if (scope != requestScope ||
+              state.revision != requestRevision ||
+              value is! List) {
+            return null;
+          }
+          final latest = read();
+          if (latest == null) return null;
+          final updated = latest.withRecentSubmissions(
+            value.take(5).map(VendorRecentSubmission.fromJson),
+          );
+          write(updated);
+          return updated;
+        }).whenComplete(() {
+          if (identical(state.recentRefresh, request)) {
+            state
+              ..recentRefresh = null
+              ..recentRefreshRevision = null;
+          }
+        });
     state
-      ..scope = null
-      ..expiresAt = null
-      ..value = null;
+      ..recentRefreshRevision = requestRevision
+      ..recentRefresh = request;
+    return request;
   }
 }

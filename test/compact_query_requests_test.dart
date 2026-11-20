@@ -173,7 +173,11 @@ void main() {
           'is_approved': false,
         },
       ];
-      await RepositoryVendorDashboardCache(client).refreshRecentSubmissions();
+      final cache = RepositoryVendorDashboardCache(client);
+      await Future.wait([
+        cache.refreshRecentSubmissions(),
+        cache.refreshRecentSubmissions(),
+      ]);
       expect(requests, hasLength(2));
       expect(
         requests.last.url.path,

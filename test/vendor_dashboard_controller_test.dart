@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/model_content_performance.dart';
+import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/vendor/controller_vendor_dashboard.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
@@ -66,6 +67,8 @@ class _Auth extends ControllerAuth {
 class _Service extends ServiceVendorAccount {
   final reads = <Completer<ModelVendorDashboard>>[];
   final owners = <String>[];
+  final recentReads = <Completer<ModelVendorDashboard?>>[];
+  ModelVendorDashboard? cached;
 
   @override
   Future<ModelVendorDashboard> fetchDashboard(
@@ -79,6 +82,16 @@ class _Service extends ServiceVendorAccount {
   }
 
   void complete(int index) => reads[index].complete(_dashboard());
+
+  @override
+  void cacheDashboard(ModelVendorDashboard value) => cached = value;
+
+  @override
+  Future<ModelVendorDashboard?> refreshRecentSubmissions() {
+    final done = Completer<ModelVendorDashboard?>();
+    recentReads.add(done);
+    return done.future;
+  }
 }
 
 Future<void> _flush() => Future<void>.delayed(Duration.zero);
@@ -200,6 +213,45 @@ void main() {
     await pending;
     expect(controller.data, isNull);
   });
+
+  test(
+    'saved submission updates immediately and refreshes only preview',
+    () async {
+      final first = controller.load();
+      service.complete(0);
+      await first;
+
+      controller.applySubmissionSaved(
+        previous: null,
+        current: EventItem(
+          id: 'new',
+          name: 'New event',
+          endDate: DateTime.now().add(const Duration(days: 1)),
+        ),
+        attraction: false,
+      );
+
+      expect(controller.data!.metrics.pending, 1);
+      expect(controller.data!.status.eventUsed, 2);
+      expect(service.cached, same(controller.data));
+      expect(service.reads, hasLength(1));
+      expect(service.recentReads, hasLength(1));
+
+      final refreshed = controller.data!.withRecentSubmissions([
+        VendorRecentSubmission(
+          id: 'new',
+          name: 'New event',
+          city: 'Taipei',
+          isActivity: true,
+          isApproved: false,
+        ),
+      ]);
+      service.recentReads.single.complete(refreshed);
+      await _flush();
+      expect(controller.data, same(refreshed));
+      expect(controller.data!.metrics.recentSubmissions.single.id, 'new');
+    },
+  );
 
   test('model sorts without changing source and exposes read-only plans', () {
     final source = [

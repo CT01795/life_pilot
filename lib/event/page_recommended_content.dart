@@ -15,9 +15,8 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:life_pilot/utils/widgets/widgets_search_panel.dart';
-import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:life_pilot/vendor/repository_vendor_dashboard_cache.dart';
+import 'package:life_pilot/vendor/service_vendor_account.dart';
 import 'package:provider/provider.dart';
 
 enum RecommendedContentKind {
@@ -55,13 +54,13 @@ class _RecommendedContentPageState extends State<RecommendedContentPage> {
   late final ControllerEvent _controllerEvent;
   bool _showOnlyMySubmissions = false;
 
-  RepositoryVendorDashboardCache get _vendorDashboardCache =>
-      RepositoryVendorDashboardCache(supabase);
+  final _vendorService = ServiceVendorAccount();
 
   void _refreshRecentSubmissions() {
     unawaited(
-      _vendorDashboardCache.refreshRecentSubmissions().catchError((error) {
+      _vendorService.refreshRecentSubmissions().catchError((error) {
         logger.w('Vendor recent submissions refresh failed', error: error);
+        return null;
       }),
     );
   }
@@ -78,7 +77,7 @@ class _RecommendedContentPageState extends State<RecommendedContentPage> {
       modelEvent: ModelEvent(),
       onSubmissionSaved:
           ({required previous, required current, required attraction}) {
-            _vendorDashboardCache.applySubmissionSaved(
+            _vendorService.applySubmissionSaved(
               previous: previous,
               current: current,
               attraction: attraction,
@@ -86,7 +85,7 @@ class _RecommendedContentPageState extends State<RecommendedContentPage> {
             _refreshRecentSubmissions();
           },
       onSubmissionDeleted: ({required previous, required attraction}) {
-        _vendorDashboardCache.applySubmissionDeleted(
+        _vendorService.applySubmissionDeleted(
           previous: previous,
           attraction: attraction,
         );

@@ -2,11 +2,39 @@ import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/vendor/model_vendor_dashboard.dart';
 import 'package:life_pilot/vendor/repository_vendor_dashboard_cache.dart';
+import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:life_pilot/subscription/repository_pricing_catalog.dart';
 import 'package:life_pilot/subscription/model_billing_cycle.dart';
 
 class ServiceVendorAccount {
+  RepositoryVendorDashboardCache get _dashboardCache =>
+      RepositoryVendorDashboardCache(supabase);
+
+  void cacheDashboard(ModelVendorDashboard value) =>
+      _dashboardCache.write(value);
+
+  void applySubmissionSaved({
+    required EventItem? previous,
+    required EventItem current,
+    required bool attraction,
+  }) => _dashboardCache.applySubmissionSaved(
+    previous: previous,
+    current: current,
+    attraction: attraction,
+  );
+
+  void applySubmissionDeleted({
+    required EventItem previous,
+    required bool attraction,
+  }) => _dashboardCache.applySubmissionDeleted(
+    previous: previous,
+    attraction: attraction,
+  );
+
+  Future<ModelVendorDashboard?> refreshRecentSubmissions() =>
+      _dashboardCache.refreshRecentSubmissions();
+
   Future<void> addSpecialAuthorization({
     required String email,
     required DateTime endsAt,

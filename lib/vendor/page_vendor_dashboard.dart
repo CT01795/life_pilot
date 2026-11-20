@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
+import 'package:life_pilot/event/model_content_performance.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/page_event_add.dart';
@@ -209,7 +210,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
           ),
         ),
         Gaps.h12,
-        _engagementSection(loc),
+        _engagementSection(loc, data),
         Gaps.h12,
         _nextStep(loc, data),
         Gaps.h24,
@@ -612,6 +613,14 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
       tableName: tableName,
       toTableName: TableNames.calendarEvents,
       modelEvent: ModelEvent(),
+      onSubmissionSaved:
+          ({required previous, required current, required attraction}) {
+            _controller.applySubmissionSaved(
+              previous: previous,
+              current: current,
+              attraction: attraction,
+            );
+          },
     );
     try {
       final event = await Navigator.of(context).push<EventItem?>(
@@ -620,8 +629,6 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
         ),
       );
       if (event == null || !mounted) return;
-      await context.read<ControllerAuth>().refreshSubscriptionUsage();
-      _reload();
     } finally {
       controller.dispose();
     }
@@ -647,28 +654,79 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
     if (mounted) _reload();
   }
 
-  Widget _engagementSection(AppLocalizations loc) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            loc.vendorAnalyticsTitle,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          Gaps.h8,
-          const Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              ContentPerformanceLink(attractions: false),
-              ContentPerformanceLink(attractions: true),
-            ],
-          ),
-        ],
+  Widget _engagementSection(AppLocalizations loc, ModelVendorDashboard data) {
+    final performance = data.metrics.performance;
+    final views = performance.totalFor(ContentPerformanceMetric.pageViews);
+    final navigation = performance.totalFor(
+      ContentPerformanceMetric.navigationClicks,
+    );
+    final registrations = performance.totalFor(
+      ContentPerformanceMetric.registrationClicks,
+    );
+    final saves = performance.totalFor(ContentPerformanceMetric.saves);
+    String rate(int value, int total) {
+      if (total <= 0) return '0%';
+      final format = NumberFormat.percentPattern(loc.localeName)
+        ..maximumFractionDigits = 1;
+      return format.format(value / total);
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              loc.vendorAnalyticsTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Gaps.h8,
+            Wrap(
+              spacing: 18,
+              runSpacing: 10,
+              children: [
+                _engagementMetric(loc.vendorAnalyticsPageViews, views),
+                _engagementMetric(loc.vendorAnalyticsCardClicks, navigation),
+                _engagementMetric(loc.vendorAnalyticsSaves, saves),
+                _engagementMetric(
+                  loc.vendorAnalyticsRegistrationClicks,
+                  registrations,
+                ),
+              ],
+            ),
+            Gaps.h8,
+            Text(
+              '${loc.vendorClickThroughRate}: ${rate(navigation, views)}  ·  '
+              '${loc.vendorRegistrationRate}: ${rate(registrations, navigation)}',
+            ),
+            Gaps.h12,
+            const Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                ContentPerformanceLink(attractions: false),
+                ContentPerformanceLink(attractions: true),
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
+    );
+  }
+
+  Widget _engagementMetric(String label, int value) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        NumberFormat.decimalPattern().format(value),
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+      ),
+      Gaps.w8,
+      Text(label),
+    ],
   );
 
   Widget _metric(double width, IconData icon, String label, int value) {

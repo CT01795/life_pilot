@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/vendor/model_vendor_dashboard.dart';
@@ -103,6 +105,45 @@ class ControllerVendorDashboard extends SafeChangeNotifier {
     final dashboard = await service.fetchDashboard(_owner!, force: force);
     if (!shouldContinue()) return null;
     return dashboard;
+  }
+
+  /// Applies a saved submission immediately, then refreshes only the five-row
+  /// preview. This keeps the dashboard responsive without downloading its
+  /// plans, entitlement and historical engagement totals again.
+  void applySubmissionSaved({
+    required EventItem? previous,
+    required EventItem current,
+    required bool attraction,
+  }) {
+    final currentData = _data;
+    if (notifierDisposed || currentData == null) return;
+    final now = DateTime.now();
+    final updated = currentData.applySubmissionSaved(
+      previous: previous,
+      current: current,
+      attraction: attraction,
+      dayStart: DateTime(now.year, now.month, now.day),
+    );
+    _data = updated;
+    service.cacheDashboard(updated);
+    notifyListeners();
+    unawaited(_refreshRecentSubmissions());
+  }
+
+  Future<void> _refreshRecentSubmissions() async {
+    final revision = _revision;
+    try {
+      final result = await service.refreshRecentSubmissions();
+      if (result == null || !_active(revision)) return;
+      _data = result;
+      notifyListeners();
+    } catch (error, stackTrace) {
+      logger.w(
+        'Vendor recent submissions refresh failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   @override
