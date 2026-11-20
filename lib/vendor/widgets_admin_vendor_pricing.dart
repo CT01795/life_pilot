@@ -142,6 +142,11 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
     }
   }
 
+  Future<void> _refreshCatalog() async {
+    _service.invalidatePricingPlans();
+    await _catalog.load(force: true);
+  }
+
   Future<bool> _canChange(
     VendorPricingPlan plan, {
     bool deleting = false,
@@ -618,7 +623,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
           tooltip: loc.refreshList,
           onPressed: _catalog.loading || _savingPricing || _savingSubscription
               ? null
-              : () => _catalog.load(force: true),
+              : _refreshCatalog,
           icon: const Icon(Icons.refresh),
         ),
       ),

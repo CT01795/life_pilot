@@ -47,4 +47,23 @@ void main() {
       ),
     );
   });
+
+  test('vendor totals are incremental and plans can be omitted', () {
+    final sql = File(
+      'supabase/migrations/20261120000200_vendor_dashboard_incremental_totals.sql',
+    ).readAsStringSync();
+
+    expect(sql, contains('vendor_dashboard_aggregates'));
+    expect(sql, contains('life_pilot_update_vendor_aggregate'));
+    expect(sql, contains('after insert or delete or update of account'));
+    expect(sql, contains('get_my_vendor_recent_submissions(p_day_start)'));
+    expect(sql, contains('p_include_plans boolean default true'));
+    expect(sql, contains('case when coalesce(p_include_plans, true)'));
+    expect(
+      sql,
+      contains(
+        'revoke all on table public.vendor_dashboard_aggregates\n  from public, anon, authenticated',
+      ),
+    );
+  });
 }

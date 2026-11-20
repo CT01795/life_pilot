@@ -157,6 +157,29 @@ void main() {
       expect(requests, hasLength(3));
     },
   );
+  test('combined RPC can seed the display-only pricing catalog', () async {
+    final repo = RepositoryPricingCatalog(client: client, now: () => time);
+    repo.seed(
+      vendor: true,
+      rows: [
+        {'id': 'vendor-plan', 'billing_cycle': 'month'},
+      ],
+    );
+
+    expect(repo.peek(vendor: true), hasLength(1));
+    final rows = await repo.read(vendor: true, displayOnly: true);
+    expect(rows.single['id'], 'vendor-plan');
+    expect(requests, isEmpty);
+    expect(
+      () => (rows.single as Map)['id'] = 'changed',
+      throwsUnsupportedError,
+    );
+
+    time = time.add(const Duration(minutes: 6));
+    expect(repo.peek(vendor: true), isNull);
+    await repo.read(vendor: true, displayOnly: true);
+    expect(requests, hasLength(1));
+  });
   test('concurrent catalog reads share one query', () async {
     final repo = RepositoryPricingCatalog(client: client);
     gate = Completer<void>();

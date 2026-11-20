@@ -31,6 +31,40 @@ class RepositoryPricingCatalog {
     state.values.clear();
   }
 
+  List<dynamic>? peek({required bool vendor}) {
+    final state = _states[client];
+    final scope = _scope;
+    if (state == null || scope == null || state.scope != scope) return null;
+    final cached = state.values[vendor];
+    if (cached == null || !_now().isBefore(cached.expires)) return null;
+    return cached.rows;
+  }
+
+  /// Seeds display-only catalog data returned by another combined RPC.
+  /// Pricing writes and quota enforcement never rely on this snapshot.
+  void seed({
+    required bool vendor,
+    required Iterable<Object?> rows,
+    Duration ttl = const Duration(minutes: 5),
+  }) {
+    final scope = _scope;
+    if (scope == null) return;
+    final state = _states[client] ??= _CatalogState();
+    if (state.scope != scope) {
+      invalidate();
+      state.scope = scope;
+    }
+    state.values[vendor] = (expires: _now().add(ttl), rows: _freeze(rows));
+  }
+
+  List<dynamic> _freeze(Iterable<Object?> rows) => List<dynamic>.unmodifiable(
+    rows.map(
+      (row) => Map<String, dynamic>.unmodifiable(
+        Map<String, dynamic>.from(row as Map),
+      ),
+    ),
+  );
+
   Future<List<dynamic>> read({required bool vendor, bool displayOnly = false}) {
     final state = _states[client] ??= _CatalogState();
     final scope = _scope;
@@ -62,13 +96,7 @@ class RepositoryPricingCatalog {
             throw const FormatException('Invalid pricing catalog');
           }
           final rows = result['versions'] as List;
-          final frozen = List<dynamic>.unmodifiable(
-            rows.map(
-              (row) => Map<String, dynamic>.unmodifiable(
-                Map<String, dynamic>.from(row as Map),
-              ),
-            ),
-          );
+          final frozen = _freeze(rows);
           if (scope != null) {
             state.values[vendor] = (
               expires: _now().add(const Duration(seconds: 30)),

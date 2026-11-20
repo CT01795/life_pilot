@@ -163,6 +163,7 @@ void main() {
       expect(cached, same(result));
       expect(requests, hasLength(1));
       expect(jsonDecode(requests.single.body)['p_force_refresh'], false);
+      expect(jsonDecode(requests.single.body)['p_include_plans'], true);
 
       response = [
         {
@@ -206,7 +207,7 @@ void main() {
           'totals': {'page_views': 123456},
           'recent_submissions': [],
         },
-        'plans': [],
+        'plans': null,
       };
       await ServiceVendorAccount().fetchDashboard(
         'one@example.com',
@@ -214,6 +215,10 @@ void main() {
       );
       expect(requests, hasLength(3));
       expect(jsonDecode(requests.last.body)['p_force_refresh'], true);
+      expect(jsonDecode(requests.last.body)['p_include_plans'], false);
+
+      await ServiceVendorAccount().fetchPricingPlans();
+      expect(requests, hasLength(3));
     },
   );
   for (final history in [false, true]) {

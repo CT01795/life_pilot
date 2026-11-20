@@ -55,7 +55,10 @@ class ServiceVendorAccount {
   ServiceVendorAccount();
 
   Future<List<VendorPricingPlan>> fetchPricingPlans() async {
-    final rows = await RepositoryPricingCatalog().read(vendor: true);
+    final rows = await RepositoryPricingCatalog().read(
+      vendor: true,
+      displayOnly: true,
+    );
     return rows
         .map(
           (row) =>
@@ -63,6 +66,8 @@ class ServiceVendorAccount {
         )
         .toList(growable: false);
   }
+
+  void invalidatePricingPlans() => RepositoryPricingCatalog().invalidate();
 
   Future<ModelVendorDashboard> fetchDashboard(
     String account, {
@@ -75,11 +80,14 @@ class ServiceVendorAccount {
       throw StateError('Account scope changed');
     }
     final cache = RepositoryVendorDashboardCache(client);
+    final pricing = RepositoryPricingCatalog(client: client);
     if (!force) {
       final cached = cache.read();
       if (cached != null) return cached;
     }
     final now = DateTime.now();
+    final cachedPlans = pricing.peek(vendor: true);
+    final includePlans = cachedPlans == null;
     final value = await client.rpc(
       'get_my_vendor_dashboard_bootstrap',
       params: {
@@ -89,6 +97,7 @@ class ServiceVendorAccount {
           now.day,
         ).toUtc().toIso8601String(),
         'p_force_refresh': force,
+        'p_include_plans': includePlans,
       },
     );
     if (normalizeText(client.auth.currentUser?.email) != normalized) {
@@ -100,9 +109,13 @@ class ServiceVendorAccount {
     final payload = Map<String, dynamic>.from(value);
     final status = payload['status'];
     final metrics = payload['metrics'];
-    final plans = payload['plans'];
-    if (status is! Map || metrics is! Map || plans is! List) {
+    final returnedPlans = payload['plans'];
+    final plans = returnedPlans is List ? returnedPlans : cachedPlans;
+    if (status is! Map || metrics is! Map || plans == null) {
       throw const FormatException('Invalid vendor dashboard');
+    }
+    if (returnedPlans is List) {
+      pricing.seed(vendor: true, rows: returnedPlans);
     }
     final dashboard = ModelVendorDashboard(
       status: VendorSubscriptionStatus.fromJson(
