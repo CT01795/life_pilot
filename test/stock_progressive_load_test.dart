@@ -73,6 +73,18 @@ class _Service extends ServiceStock {
   }
 }
 
+class _DelayedHistoryService extends _Service {
+  final history = <Completer<List<ModelStock>>>[];
+
+  @override
+  Future<List<ModelStock>> getSimpleStrategyForDate(DateTime date) {
+    historyCalls++;
+    final request = Completer<List<ModelStock>>();
+    history.add(request);
+    return request.future;
+  }
+}
+
 class _CountedStock extends ModelStock {
   _CountedStock()
     : super(
@@ -108,6 +120,36 @@ class _CountedSell extends ModelInstitutional {
 Future<void> _flush() => Future<void>.delayed(Duration.zero);
 
 void main() {
+  test(
+    'forced date load during an active read queues one fresh read',
+    () async {
+      final service = _DelayedHistoryService();
+      final controller = ControllerStock(service)..loading = false;
+      addTearDown(controller.dispose);
+
+      final initial = controller.loadDate(_day);
+      final forced = List.generate(
+        4,
+        (_) => controller.loadDate(_day, force: true),
+      );
+      expect(service.history, hasLength(1));
+
+      service.history.first.complete([_stock(_day)]);
+      await initial;
+      await _flush();
+      expect(service.history, hasLength(2));
+
+      service.history.last.complete([_stock(_day)]);
+      await Future.wait(forced);
+      expect(service.historyCalls, 2);
+      expect(controller.stocks, hasLength(1));
+
+      service.foreign[_day]?.complete([]);
+      service.futuresByDate[_day]?.complete([]);
+      await _flush();
+    },
+  );
+
   test(
     'startup notification superseded by history does not send an initial cloud read',
     () async {

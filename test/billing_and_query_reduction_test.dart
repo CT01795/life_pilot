@@ -190,6 +190,17 @@ void main() {
     await Future.wait([first, second]);
     expect(requests, hasLength(1));
   });
+  test(
+    'forced catalog read bypasses cache and invalidates an active read',
+    () async {
+      final repo = RepositoryPricingCatalog(client: client);
+      await repo.read(vendor: true, displayOnly: true);
+      expect(requests, hasLength(1));
+
+      await repo.read(vendor: true, displayOnly: true, force: true);
+      expect(requests, hasLength(2));
+    },
+  );
   test('saving invalidates completed display data', () async {
     final repo = RepositoryPricingCatalog(client: client);
     await repo.read(vendor: false, displayOnly: true);

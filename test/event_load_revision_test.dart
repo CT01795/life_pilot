@@ -155,6 +155,32 @@ void main() {
         await initial;
       }
 
+      test(
+        'forced reload during an active read queues one fresh read',
+        () async {
+          final initial = c.loadEvents(isGetPublicEvents: false);
+          final forced = List.generate(
+            4,
+            (_) => c.loadEvents(isGetPublicEvents: false, force: true),
+          );
+          expect(service.reads, hasLength(1));
+
+          service.reads.first.done.complete(rows('stale'));
+          await initial;
+          await Future<void>.delayed(Duration.zero);
+          expect(service.reads, hasLength(2));
+
+          service.reads.last.done.complete(rows('fresh'));
+          await Future.wait(forced);
+          expect(
+            c
+                .getFilteredEvents(loc)
+                .every((event) => event.id.startsWith('fresh')),
+            isTrue,
+          );
+        },
+      );
+
       for (final fails in [false, true]) {
         for (final finishesFirst in [false, true]) {
           test(

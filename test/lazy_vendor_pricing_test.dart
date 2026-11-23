@@ -18,7 +18,7 @@ void main() {
       var calls = 0;
       final gate = Completer<List<int>>();
       final c = ControllerPricingList<int>(
-        load: () {
+        load: ({force = false}) {
           calls++;
           return gate.future;
         },
@@ -45,14 +45,17 @@ void main() {
       final old = Completer<List<int>>(), fresh = Completer<List<int>>();
       var calls = 0;
       final c = ControllerPricingList<int>(
-        load: () => calls++ == 0 ? old.future : fresh.future,
+        load: ({force = false}) => calls++ == 0 ? old.future : fresh.future,
       );
       addTearDown(c.dispose);
       final a = c.load(), b = c.load(force: true);
-      fresh.complete([2]);
-      await b;
+      expect(calls, 1);
       old.complete([1]);
       await a;
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, 2);
+      fresh.complete([2]);
+      await b;
       expect(c.rows, [2]);
       expect(c.ready, isTrue);
       expect(calls, 2);
@@ -63,7 +66,7 @@ void main() {
     () async {
       var calls = 0;
       final c = ControllerPricingList<int>(
-        load: () async {
+        load: ({force = false}) async {
           calls++;
           if (calls == 2) throw StateError('network');
           return [calls];
@@ -85,7 +88,7 @@ void main() {
     () async {
       var fail = true;
       final c = ControllerPricingList<int>(
-        load: () {
+        load: ({force = false}) {
           if (fail) throw StateError('sync');
           return Future.value([]);
         },
@@ -105,7 +108,7 @@ void main() {
     var calls = 0;
     final c = ControllerPricingList<int>(
       timeout: const Duration(milliseconds: 5),
-      load: () => calls++ == 0 ? late.future : Future.value([2]),
+      load: ({force = false}) => calls++ == 0 ? late.future : Future.value([2]),
     );
     addTearDown(c.dispose);
     await c.load();
@@ -118,7 +121,9 @@ void main() {
   });
   test('dispose ignores late response and does not notify', () async {
     final gate = Completer<List<int>>();
-    final c = ControllerPricingList<int>(load: () => gate.future);
+    final c = ControllerPricingList<int>(
+      load: ({force = false}) => gate.future,
+    );
     var notices = 0;
     c.addListener(() => notices++);
     final load = c.load();

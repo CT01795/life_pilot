@@ -33,6 +33,7 @@ class DashboardRepository {
       InFlightReadPool<String, _RecommendationCities>();
   static final _recommendationCityCache =
       <String, _RecommendationCityCacheEntry>{};
+  static int _recommendationCityRevision = 0;
   ({String accountId, AccountingDashboardSummary summary})?
   _bootstrapAccounting;
   ({String accountId, PointDashboardSummary summary})? _bootstrapPoints;
@@ -339,6 +340,7 @@ class DashboardRepository {
     if (cached != null && DateTime.now().isBefore(cached.expiresAt)) {
       return cached.value;
     }
+    final revision = _recommendationCityRevision;
     return _recommendationCityReads.read(userId, () async {
       final current = _recommendationCityCache[userId];
       if (current != null && DateTime.now().isBefore(current.expiresAt)) {
@@ -355,6 +357,9 @@ class DashboardRepository {
         events: decode(result['events']),
         places: decode(result['places']),
       );
+      if (revision != _recommendationCityRevision) {
+        throw StateError('Recommendation city request was invalidated');
+      }
       _recommendationCityCache[userId] = _RecommendationCityCacheEntry(
         value,
         DateTime.now().add(_recommendationCityTtl),
@@ -367,6 +372,8 @@ class DashboardRepository {
     // This is called only by an explicit user refresh. Clearing the small
     // process cache avoids consulting auth again and also prevents a recently
     // switched account from retaining stale city counts.
+    _recommendationCityRevision++;
+    _recommendationCityReads.invalidate();
     _recommendationCityCache.clear();
   }
 

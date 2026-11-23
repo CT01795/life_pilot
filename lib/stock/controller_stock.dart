@@ -8,6 +8,7 @@ import 'package:life_pilot/stock/service_stock.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 
 enum StockUpdateStatus { idle, updating, succeeded, failed }
 
@@ -74,6 +75,7 @@ class ControllerStock extends SafeChangeNotifier {
   int _dashboardRequestId = 0;
   Future<void>? _dashboardLoad;
   Future<void>? _activeLoad;
+  final RefreshRequestCoordinator _dateLoads = RefreshRequestCoordinator();
 
   ControllerStock(
     this.service, {
@@ -269,9 +271,15 @@ class ControllerStock extends SafeChangeNotifier {
 
   /// Reuse only the fully loaded date currently on screen, never a historical
   /// cache. Explicit refreshes and incomplete/failed data still query afresh.
-  Future<void> loadDate(DateTime date, {bool force = false}) async {
-    if (_isDisposed || dateLoading) return;
-    if (!force && _canReuseSelectedDate(date)) return;
+  Future<void> loadDate(DateTime date, {bool force = false}) {
+    if (_isDisposed) return Future<void>.value();
+    if (!force && _canReuseSelectedDate(date)) return Future<void>.value();
+    if (force && _dateLoads.isRunning) _dataRequestId++;
+    return _dateLoads.run(() => _loadDate(date), force: force);
+  }
+
+  Future<void> _loadDate(DateTime date) async {
+    if (_isDisposed) return;
     final requestId = ++_dataRequestId;
     institutionalsLoading = false;
     futuresLoading = false;

@@ -23,6 +23,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
+import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 
 typedef SubmissionSavedCallback =
@@ -78,6 +79,7 @@ class ControllerEvent extends SafeChangeNotifier {
   late String _dataScopeKey;
   int _dataScopeGeneration = 0;
   int _eventLoadRevision = 0;
+  RefreshRequestCoordinator _eventLoads = RefreshRequestCoordinator();
   final Set<String> _pendingPreferences = {};
   Future<void>? _pageInitialization;
 
@@ -117,6 +119,8 @@ class ControllerEvent extends SafeChangeNotifier {
     if (nextKey == _dataScopeKey) return;
     _dataScopeKey = nextKey;
     _dataScopeGeneration++;
+    _eventLoadRevision++;
+    _eventLoads = RefreshRequestCoordinator();
     _pageInitialization = null;
     _isRefreshingPublicEvents = false;
     _hasCheckedPublicEventsUpdate = false;
@@ -608,10 +612,21 @@ class ControllerEvent extends SafeChangeNotifier {
     return page.events;
   }
 
-  Future<void> loadEvents({required bool isGetPublicEvents}) async {
-    if (_disposed) return;
+  Future<void> loadEvents({
+    required bool isGetPublicEvents,
+    bool force = false,
+  }) {
+    if (_disposed) return Future<void>.value();
     _handleAuthChange();
-    if (_isLoadingEvents) return;
+    if (force && _eventLoads.isRunning) _eventLoadRevision++;
+    return _eventLoads.run(
+      () => _loadEvents(isGetPublicEvents: isGetPublicEvents),
+      force: force,
+    );
+  }
+
+  Future<void> _loadEvents({required bool isGetPublicEvents}) async {
+    if (_disposed) return;
     final generation = _dataScopeGeneration;
     final revision = ++_eventLoadRevision;
     _isLoadingMoreMemory = false;

@@ -65,13 +65,18 @@ class RepositoryPricingCatalog {
     ),
   );
 
-  Future<List<dynamic>> read({required bool vendor, bool displayOnly = false}) {
+  Future<List<dynamic>> read({
+    required bool vendor,
+    bool displayOnly = false,
+    bool force = false,
+  }) {
     final state = _states[client] ??= _CatalogState();
     final scope = _scope;
     if (state.scope != scope) {
       invalidate();
       state.scope = scope;
     }
+    if (force) invalidate();
     final cached = state.values[vendor];
     if (displayOnly &&
         scope != null &&

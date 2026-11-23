@@ -36,7 +36,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
   final _analyticsDays = TextEditingController();
   final _multiplier = TextEditingController(text: '1');
   late final _catalog = ControllerPricingList<VendorPricingPlan>(
-    load: _service.fetchPricingPlans,
+    load: ({force = false}) => _service.fetchPricingPlans(force: force),
   );
   String _planCode = 'partner';
   BillingCycle _billingCycle = BillingCycle.month;

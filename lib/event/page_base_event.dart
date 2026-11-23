@@ -477,7 +477,8 @@ class _GenericEventPageState extends State<GenericEventPage> {
         title: Text(loc.dashboardLoadFailed),
         trailing: IconButton(
           tooltip: loc.retry,
-          onPressed: () => _controller.loadEvents(isGetPublicEvents: false),
+          onPressed: () =>
+              _controller.loadEvents(isGetPublicEvents: false, force: true),
           icon: const Icon(Icons.refresh),
         ),
       ),

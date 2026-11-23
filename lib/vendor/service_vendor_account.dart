@@ -57,10 +57,13 @@ class ServiceVendorAccount {
 
   ServiceVendorAccount();
 
-  Future<List<VendorPricingPlan>> fetchPricingPlans() async {
+  Future<List<VendorPricingPlan>> fetchPricingPlans({
+    bool force = false,
+  }) async {
     final rows = await RepositoryPricingCatalog().read(
       vendor: true,
       displayOnly: true,
+      force: force,
     );
     return rows
         .map(
