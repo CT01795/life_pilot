@@ -125,6 +125,26 @@ void main() {
     expect(controller.data!.plans.map((plan) => plan.code), ['free', 'growth']);
   });
 
+  test(
+    'forced load queues an authoritative read behind an active read',
+    () async {
+      final first = controller.load();
+      final forced = controller.load(force: true);
+      expect(service.reads, hasLength(1));
+      expect(service.forces, [false]);
+
+      service.complete(0);
+      await first;
+      await _flush();
+
+      expect(service.reads, hasLength(2));
+      expect(service.forces, [false, true]);
+      service.complete(1);
+      await forced;
+      expect(controller.data, isNotNull);
+    },
+  );
+
   test('failed combined request retains data and remains retryable', () async {
     final first = controller.load();
     service.complete(0);

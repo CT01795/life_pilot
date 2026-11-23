@@ -67,7 +67,7 @@ class ControllerVendorDashboard extends SafeChangeNotifier {
         _owner != auth.currentAccount) {
       return Future.value();
     }
-    return _loads.run(() => _load(force: force));
+    return _loads.run(() => _load(force: force), force: force);
   }
 
   Future<void> _load({required bool force}) async {
