@@ -235,6 +235,8 @@ Future<AccountingPreview?> showAccountingRecordDialog(
       );
     },
   );
-
+  valueController.dispose();
+  descController.dispose();
+  secondaryController.dispose();
   return result;
 }

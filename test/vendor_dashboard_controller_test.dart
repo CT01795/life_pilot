@@ -68,6 +68,7 @@ class _Service extends ServiceVendorAccount {
   final reads = <Completer<ModelVendorDashboard>>[];
   final owners = <String>[];
   final recentReads = <Completer<ModelVendorDashboard?>>[];
+  final forces = <bool>[];
   ModelVendorDashboard? cached;
 
   @override
@@ -76,6 +77,7 @@ class _Service extends ServiceVendorAccount {
     bool force = false,
   }) {
     owners.add(account);
+    forces.add(force);
     final done = Completer<ModelVendorDashboard>();
     reads.add(done);
     return done.future;
@@ -140,6 +142,41 @@ void main() {
     await retry;
     expect(controller.error, isNull);
     expect(controller.data, isNotNull);
+  });
+
+  testWidgets('visible refresh keeps current dashboard while forcing reload', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ControllerAuth>.value(
+        value: auth,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: PageVendorDashboard(service: service),
+        ),
+      ),
+    );
+    service.complete(0);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('vendor-dashboard-refresh')));
+    await tester.pump();
+
+    expect(service.forces, [false, true]);
+    expect(find.byIcon(Icons.storefront_outlined), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('vendor-dashboard-refresh-progress')),
+      findsOneWidget,
+    );
+
+    service.complete(1);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('vendor-dashboard-refresh-progress')),
+      findsNothing,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('timeout releases loading and ignores the late response', (

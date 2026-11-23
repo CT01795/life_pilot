@@ -26,7 +26,7 @@ Future<PointRecordPreview?> showPointRecordDialog(
   final loc = AppLocalizations.of(context)!;
 
   String? validationError;
-  return showDialog<PointRecordPreview>(
+  final result = await showDialog<PointRecordPreview>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
@@ -178,4 +178,8 @@ Future<PointRecordPreview?> showPointRecordDialog(
       ),
     ),
   );
+  valueController.dispose();
+  descController.dispose();
+  secondaryController.dispose();
+  return result;
 }

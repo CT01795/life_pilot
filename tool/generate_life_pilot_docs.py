@@ -15,27 +15,29 @@ from docx.shared import Inches, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
-UPDATED = "2026-10-13"
+UPDATED = "2026-11-23"
+BASELINE = "f6948de9"
+DOCUMENT_VERSION = "2026.11 重寫版"
 
 DOCUMENTS = [
     {
         "source": DOCS / "USER_GUIDE_zh-TW.md",
         "output": DOCS / "Life_Pilot_使用者操作說明.docx",
-        "subtitle": "功能操作、資料模式、方案額度與個人資料指南",
+        "subtitle": "功能操作與個人資料管理指南",
         "audience": "Life Pilot 一般使用者、合作廠商與管理者",
         "short": "Life Pilot 使用者操作說明",
     },
     {
         "source": DOCS / "DEVELOPER_GUIDE_zh-TW.md",
         "output": DOCS / "Life_Pilot_開發者技術文件.docx",
-        "subtitle": "架構、資料安全、部署、維護與法遵技術基準",
+        "subtitle": "系統架構與效能維護技術指南",
         "audience": "Life Pilot 開發、維運、資料庫與資安人員",
         "short": "Life Pilot 開發者技術文件",
     },
     {
         "source": DOCS / "TEST_PLAN_zh-TW.md",
         "output": DOCS / "Life_Pilot_測試計畫與檢查點.docx",
-        "subtitle": "功能驗收、回歸測試、資料檢查與上線 Gate",
+        "subtitle": "實機操作與完整功能驗收案例",
         "audience": "Life Pilot 測試、開發、產品與上線驗收人員",
         "short": "Life Pilot 測試計畫與檢查點",
     },
@@ -145,6 +147,12 @@ def set_repeat_table_header(row) -> None:
     tr_pr.append(tbl_header)
 
 
+def set_row_cant_split(row) -> None:
+    tr_pr = row._tr.get_or_add_trPr()
+    if tr_pr.find(qn("w:cantSplit")) is None:
+        tr_pr.append(OxmlElement("w:cantSplit"))
+
+
 def add_page_number(paragraph) -> None:
     paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     run = paragraph.add_run("第 ")
@@ -160,6 +168,10 @@ def add_page_number(paragraph) -> None:
 
 
 def configure_document(doc: Document, short_title: str) -> None:
+    # The bundled default template carries decorative Title borders. Remove
+    # them explicitly so Word 2007 does not restore a blue cover rule.
+    for border in list(doc.styles.element.iter(qn("w:pBdr"))):
+        border.getparent().remove(border)
     section = doc.sections[0]
     section.page_width = Inches(8.5)
     section.page_height = Inches(11)
@@ -172,11 +184,11 @@ def configure_document(doc: Document, short_title: str) -> None:
 
     normal = doc.styles["Normal"]
     normal.font.name = FONT_LATIN
-    normal.font.size = Pt(10.5)
-    normal.font.color.rgb = TEXT
+    normal.font.size = Pt(11)
+    normal.font.color.rgb = RGBColor(0, 0, 0)
     normal._element.rPr.rFonts.set(qn("w:eastAsia"), FONT_CJK)
     normal.paragraph_format.space_after = Pt(5)
-    normal.paragraph_format.line_spacing = 1.12
+    normal.paragraph_format.line_spacing = 1.16
 
     style_specs = {
         "Title": (26, True, "000000", 0, 10),
@@ -201,7 +213,7 @@ def configure_document(doc: Document, short_title: str) -> None:
     else:
         code = doc.styles["Code Block"]
     code.font.name = "Cascadia Mono"
-    code.font.size = Pt(8.3)
+    code.font.size = Pt(9.5)
     code.paragraph_format.left_indent = Inches(0.18)
     code.paragraph_format.right_indent = Inches(0.18)
     code.paragraph_format.space_before = Pt(3)
@@ -215,7 +227,7 @@ def configure_document(doc: Document, short_title: str) -> None:
         run.font.name = FONT_LATIN
         run._element.rPr.rFonts.set(qn("w:eastAsia"), FONT_CJK)
         run.font.size = Pt(8.5)
-        run.font.color.rgb = MUTED
+        run.font.color.rgb = RGBColor(0, 0, 0)
     add_page_number(section.footer.paragraphs[0])
 
 
@@ -223,6 +235,12 @@ def clean_inline(text: str) -> str:
     text = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)
     text = text.replace("**", "").replace("__", "")
     return text.strip()
+
+
+def clean_heading(text: str) -> str:
+    text = clean_inline(text)
+    text = re.sub(r"[、，,:：／/]", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def add_inline(paragraph, text: str) -> None:
@@ -250,14 +268,14 @@ def add_inline(paragraph, text: str) -> None:
 
 
 def add_cover(doc: Document, title: str, subtitle: str, audience: str) -> None:
-    for _ in range(3):
+    for _ in range(2):
         doc.add_paragraph()
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r = p.add_run("LIFE PILOT")
     r.bold = True
     r.font.size = Pt(14)
-    r.font.color.rgb = RGBColor.from_string(BLUE)
+    r.font.color.rgb = RGBColor(0, 0, 0)
 
     p = doc.add_paragraph(style="Title")
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -267,41 +285,31 @@ def add_cover(doc: Document, title: str, subtitle: str, audience: str) -> None:
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r = p.add_run(subtitle)
     r.font.size = Pt(14)
-    r.font.color.rgb = MUTED
+    r.font.color.rgb = RGBColor(0, 0, 0)
 
     doc.add_paragraph()
-    table = doc.add_table(rows=3, cols=2)
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.autofit = True
-    values = [("文件版本", "2.0"), ("更新日期", UPDATED), ("適用對象", audience)]
-    for i, (key, value) in enumerate(values):
-        left, right = table.rows[i].cells
-        left.text = key
-        right.text = value
-        set_cell_shading(left, LIGHT_BLUE)
-        for cell in (left, right):
-            set_cell_border(cell)
-            set_cell_margins(cell, 120, 130, 120, 130)
-            cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
-        left.paragraphs[0].runs[0].bold = True
+    for key, value in [("文件版本", DOCUMENT_VERSION), ("更新日期", UPDATED),
+                       ("程式基準", BASELINE), ("適用對象", audience)]:
+        p = doc.add_paragraph(f"{key}　{value}")
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     doc.add_paragraph()
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run("本文件依目前專案功能、資料規則、隱私權政策與服務條款重新編寫。")
-    r.font.size = Pt(9.5)
-    r.font.color.rgb = MUTED
+    r = p.add_run("Life Pilot 操作與維護文件")
+    r.font.size = Pt(11)
+    r.font.color.rgb = RGBColor(0, 0, 0)
     p.add_run().add_break(WD_BREAK.PAGE)
 
 
 def extract_headings(lines: list[str]) -> list[str]:
-    return [clean_inline(line[3:]) for line in lines if line.startswith("## ")]
+    return [clean_heading(line[3:]) for line in lines if line.startswith("## ")]
 
 
 def add_document_intro(doc: Document, headings: list[str]) -> None:
     doc.add_heading("文件說明", level=1)
     p = doc.add_paragraph()
-    add_inline(p, "本文件為完整重寫版本，內容以 2026-10-13 的 Life Pilot 專案、資料規則與操作流程為準。畫面名稱或額度若由管理者建立的版本控制，請以 App 當下顯示內容為準。")
+    add_inline(p, f"本文件依 {UPDATED} 的程式基準 {BASELINE} 重新編寫。價格、額度、生效日期與授權由管理者及資料庫設定決定，請以當下帳號所對應的有效版本為準。測試案例須由實機操作後填寫結果，不預先視為通過。")
     doc.add_heading("文件導覽", level=1)
     table = doc.add_table(rows=1, cols=2)
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -312,6 +320,14 @@ def add_document_intro(doc: Document, headings: list[str]) -> None:
         row[0].text = str(idx)
         row[1].text = heading
     style_table(table)
+    table.autofit = False
+    table.columns[0].width = Inches(0.6)
+    table.columns[1].width = Inches(6.46)
+    for row in table.rows:
+        row.cells[0].width = Inches(0.6)
+        row.cells[1].width = Inches(6.46)
+        for cell in row.cells:
+            set_cell_margins(cell, top=30, bottom=30)
     doc.add_page_break()
 
 
@@ -320,12 +336,13 @@ def style_table(table) -> None:
     table.autofit = True
     set_repeat_table_header(table.rows[0])
     for r_idx, row in enumerate(table.rows):
+        set_row_cant_split(row)
         for cell in row.cells:
             cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
             set_cell_border(cell)
             set_cell_margins(cell)
             if r_idx == 0:
-                set_cell_shading(cell, NAVY)
+                set_cell_shading(cell, LIGHT_GRAY)
             elif r_idx % 2 == 0:
                 set_cell_shading(cell, "F8FAFC")
             for paragraph in cell.paragraphs:
@@ -334,10 +351,10 @@ def style_table(table) -> None:
                 for run in paragraph.runs:
                     run.font.name = FONT_LATIN
                     run._element.get_or_add_rPr().rFonts.set(qn("w:eastAsia"), FONT_CJK)
-                    run.font.size = Pt(8.8)
+                    run.font.size = Pt(10)
                     if r_idx == 0:
                         run.bold = True
-                        run.font.color.rgb = RGBColor(255, 255, 255)
+                        run.font.color.rgb = RGBColor(0, 0, 0)
 
 
 def add_markdown_table(doc: Document, rows: list[list[str]]) -> None:
@@ -367,9 +384,7 @@ def add_code_block(doc: Document, code_lines: list[str]) -> None:
     p.paragraph_format.line_spacing = 1.0
     p.add_run("\n".join(code_lines) or " ")
     p_pr = p._p.get_or_add_pPr()
-    shd = OxmlElement("w:shd")
-    shd.set(qn("w:fill"), LIGHT_GRAY)
-    p_pr.append(shd)
+    # Keep code as plain monospaced text, without boxed or shaded callouts.
 
 
 def render_markdown(doc: Document, lines: list[str]) -> None:
@@ -403,24 +418,26 @@ def render_markdown(doc: Document, lines: list[str]) -> None:
             if not first_title_skipped:
                 first_title_skipped = True
             else:
-                doc.add_heading(clean_inline(stripped[2:]), level=1)
+                doc.add_heading(clean_heading(stripped[2:]), level=1)
             i += 1
             continue
         if stripped.startswith("#### "):
-            doc.add_heading(clean_inline(stripped[5:]), level=4)
+            doc.add_heading(clean_heading(stripped[5:]), level=3)
             i += 1
             continue
         if stripped.startswith("### "):
-            doc.add_heading(clean_inline(stripped[4:]), level=3)
+            doc.add_heading(clean_heading(stripped[4:]), level=2)
             i += 1
             continue
         if stripped.startswith("## "):
-            doc.add_heading(clean_inline(stripped[3:]), level=1)
+            doc.add_heading(clean_heading(stripped[3:]), level=1)
             i += 1
             continue
         if re.match(r"^\d+\.\s+", stripped):
-            p = doc.add_paragraph(style="List Number")
-            add_inline(p, re.sub(r"^\d+\.\s+", "", stripped))
+            p = doc.add_paragraph()
+            p.paragraph_format.left_indent = Inches(0.18)
+            p.paragraph_format.first_line_indent = Inches(-0.18)
+            add_inline(p, stripped)
             i += 1
             continue
         if stripped.startswith("- "):
@@ -430,6 +447,8 @@ def render_markdown(doc: Document, lines: list[str]) -> None:
             continue
         p = doc.add_paragraph()
         p.paragraph_format.keep_together = len(stripped) < 180
+        if stripped.startswith(("案例編號", "前置條件：")) or stripped == "操作步驟":
+            p.paragraph_format.keep_with_next = True
         add_inline(p, stripped)
         i += 1
 

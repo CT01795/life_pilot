@@ -73,7 +73,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
           animation: _controller,
           builder: (context, _) {
             final data = _controller.data;
-            if (_controller.loading) {
+            if (_controller.loading && data == null) {
               return const Center(child: CircularProgressIndicator());
             }
             if (_controller.error != null || data == null) {
@@ -125,6 +125,12 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (_controller.loading) ...[
+          const LinearProgressIndicator(
+            key: ValueKey('vendor-dashboard-refresh-progress'),
+          ),
+          Gaps.h8,
+        ],
         _hero(loc, status),
         Gaps.h16,
         LayoutBuilder(
@@ -294,6 +300,12 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
                           fontWeight: FontWeight.w900,
                         ),
                       ),
+                    ),
+                    IconButton(
+                      key: const ValueKey('vendor-dashboard-refresh'),
+                      tooltip: loc.refreshList,
+                      onPressed: _controller.loading ? null : _reload,
+                      icon: const Icon(Icons.refresh),
                     ),
                   ],
                 );

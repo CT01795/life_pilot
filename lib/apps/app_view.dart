@@ -262,20 +262,11 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                       );
                     },
                   );
-              final interactiveContent = Focus(
-                canRequestFocus: false,
-                onKeyEvent: (_, _) {
-                  unawaited(_validateCurrentAccount(messageContext: context));
-                  return KeyEventResult.ignored;
-                },
-                child: Listener(
-                  behavior: HitTestBehavior.translucent,
-                  onPointerDown: (_) => unawaited(
-                    _validateCurrentAccount(messageContext: context),
-                  ),
-                  child: content,
-                ),
-              );
+              // Login restoration, the two-hour validation timer and app
+              // resume already verify the account. Validating every pointer
+              // or key event adds work to each form-field tap and can delay
+              // the software keyboard without improving the security gate.
+              final interactiveContent = content;
               return Selector<ControllerAuth, (bool, bool)>(
                 selector: (_, auth) => (
                   auth.isLoggedIn &&
