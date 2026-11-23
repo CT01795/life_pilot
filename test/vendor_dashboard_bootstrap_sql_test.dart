@@ -66,4 +66,28 @@ void main() {
       ),
     );
   });
+
+  test('forced vendor refresh reconciles source rows before reading totals', () {
+    final sql = File(
+      'supabase/migrations/'
+      '20261123000100_vendor_dashboard_force_reconcile.sql',
+    ).readAsStringSync();
+
+    expect(sql, contains('life_pilot_rebuild_vendor_dashboard_aggregate'));
+    expect(sql, contains('from public.recommended_events event'));
+    expect(sql, contains('from public.recommended_attractions attraction'));
+    expect(
+      sql,
+      contains(
+        'perform public.life_pilot_rebuild_vendor_dashboard_aggregate(v_email)',
+      ),
+    );
+    expect(
+      sql,
+      contains(
+        'revoke all on function '
+        'public.life_pilot_rebuild_vendor_dashboard_aggregate(text)',
+      ),
+    );
+  });
 }

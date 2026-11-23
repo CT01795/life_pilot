@@ -163,7 +163,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('vendor-dashboard-refresh')));
     await tester.pump();
 
-    expect(service.forces, [false, true]);
+    expect(service.forces, [true, true]);
     expect(find.byIcon(Icons.storefront_outlined), findsOneWidget);
     expect(
       find.byKey(const ValueKey('vendor-dashboard-refresh-progress')),

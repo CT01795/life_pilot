@@ -52,7 +52,11 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
       auth: context.read<ControllerAuth>(),
       service: widget.service ?? ServiceVendorAccount(),
     );
-    unawaited(_controller.load());
+    // The page widget is cached by PageMain, while approval and deletion may
+    // happen in another administrator session. Re-entering the dashboard must
+    // therefore bypass the short-lived App/DB projection instead of showing a
+    // stale published count until the vendor signs in again.
+    unawaited(_controller.load(force: true));
   }
 
   @override
