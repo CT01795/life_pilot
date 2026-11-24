@@ -33,7 +33,7 @@ Future<AccountingPreview?> showAccountingRecordDialog(
   final loc = AppLocalizations.of(context)!;
 
   String? validationError;
-  final result = await showDialog<AccountingPreview>(
+  final route = DialogRoute<AccountingPreview>(
     context: context,
     builder: (context) {
       // ✅ 使用 StatefulBuilder 來控制 dialog 內的狀態
@@ -110,14 +110,13 @@ Future<AccountingPreview?> showAccountingRecordDialog(
                           const Duration(days: 3650),
                         ),
                       );
-                      if (picked != null) {
-                        setState(() {
-                          selectedDate = replaceRecordDate(
-                            selectedDate,
-                            picked,
-                          );
-                        });
-                      }
+                      if (!context.mounted || picked == null) return;
+                      setState(() {
+                        selectedDate = replaceRecordDate(
+                          selectedDate,
+                          picked,
+                        );
+                      });
                     },
                   ),
                   ListTile(
@@ -134,7 +133,7 @@ Future<AccountingPreview?> showAccountingRecordDialog(
                         context: context,
                         initialTime: TimeOfDay.fromDateTime(selectedDate),
                       );
-                      if (picked == null) return;
+                      if (!context.mounted || picked == null) return;
                       setState(() {
                         selectedDate = replaceRecordTime(selectedDate, picked);
                       });
@@ -235,8 +234,20 @@ Future<AccountingPreview?> showAccountingRecordDialog(
       );
     },
   );
-  valueController.dispose();
-  descController.dispose();
-  secondaryController.dispose();
-  return result;
+  try {
+    final result = await Navigator.of(
+      context,
+      rootNavigator: true,
+    ).push(route);
+
+    // ✅ 等待 Dialog 離場動畫結束，
+    // 並且 Overlay entries 已經移除
+    await route.completed;
+
+    return result;
+  } finally {
+    valueController.dispose();
+    descController.dispose();
+    secondaryController.dispose();
+  }
 }
