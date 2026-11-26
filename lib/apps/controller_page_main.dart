@@ -13,11 +13,10 @@ import 'package:url_launcher/url_launcher.dart';
 class ControllerPageMain extends SafeChangeNotifier {
   ControllerPageMain({
     required ControllerAuth auth,
-    required AppLocalizations loc,
+    required this._loc,
     required Locale initialLocale,
     ServiceModule? serviceModule,
   }) : _auth = auth,
-       _loc = loc,
        _locale = initialLocale,
        _serviceModule = serviceModule ?? ServiceModule(),
        _accountKey = normalizeText(auth.currentAccount),

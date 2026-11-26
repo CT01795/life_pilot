@@ -5,8 +5,8 @@ import 'package:life_pilot/utils/safe_change_notifier.dart';
 class ControllerAdminSubscriptionPage extends SafeChangeNotifier {
   ControllerAdminSubscriptionPage({
     required this.auth,
-    required AdminSubscriptionPageLoader load,
-  }) : _load = load {
+    required this._load,
+  }) {
     _owner = auth.currentAccount;
     auth.addListener(_accountChanged);
   }

@@ -17,9 +17,9 @@ enum ModuleAuthorizationResult {
 /// Binds editable permissions to the account that was successfully looked up.
 class ControllerModuleAuthorization extends SafeChangeNotifier {
   ControllerModuleAuthorization({
-    required ServiceModule service,
+    required this._service,
     this.readTimeout = const Duration(seconds: 20),
-  }) : _service = service;
+  });
 
   final ServiceModule _service;
   final Duration readTimeout;

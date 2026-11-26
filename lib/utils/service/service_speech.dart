@@ -5,10 +5,12 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../logger.dart';
+import '../tts/native_speech.dart';
 
 class ServiceSpeech {
   final stt.SpeechToText _speech;
   final FlutterTts _tts;
+  NativeSpeech? _playback;
 
   bool _initialized = false;
   bool _isListening = false;
@@ -56,14 +58,19 @@ class ServiceSpeech {
     if (text.isEmpty) return;
 
     try {
-      if (_isSpeaking) await _tts.stop();
       _isSpeaking = true;
-      await _tts.speak(text);
+      final playback = _playback ??= NativeSpeech(tts: _tts);
+      await playback.speak(text, languageCode: speechLanguageForText(text));
     } catch (e, st) {
       logger.e("TTS speak error", error: e, stackTrace: st);
     } finally {
       _isSpeaking = false;
     }
+  }
+
+  Future<void> stopSpeaking() async {
+    await _playback?.stop();
+    _isSpeaking = false;
   }
 
   Future<bool> startListening({required ValueChanged<String> onResult}) async {

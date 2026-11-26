@@ -20,8 +20,7 @@ typedef WeatherLoader = Future<WeatherLoadResult?> Function(EventViewModel);
 
 class ServiceWeather {
   static const int preloadConcurrency = 3;
-  ServiceWeather({WeatherLoader? weatherLoader})
-    : _weatherLoader = weatherLoader;
+  ServiceWeather({this._weatherLoader});
 
   final WeatherLoader? _weatherLoader;
   final cacheStore = WeatherCacheStore.I;

@@ -5,12 +5,10 @@ import 'package:life_pilot/utils/safe_change_notifier.dart';
 class ControllerAccountDeletionQueue extends SafeChangeNotifier {
   ControllerAccountDeletionQueue({
     required this.auth,
-    required AccountDeletionPageLoader load,
-    required Future<void> Function(String) approve,
-    required Future<void> Function(String) confirmCancellation,
-  }) : _load = load,
-       _approve = approve,
-       _confirmCancellation = confirmCancellation {
+    required this._load,
+    required this._approve,
+    required this._confirmCancellation,
+  }) {
     _owner = auth.currentAccount;
     _admin = auth.isSysAdmin;
     auth.addListener(_authChanged);

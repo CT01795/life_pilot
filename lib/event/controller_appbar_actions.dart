@@ -26,16 +26,12 @@ class ControllerAppBarActions extends SafeChangeNotifier {
 
   ControllerAppBarActions({
     required this.auth,
-    required ServiceEvent serviceEvent,
-    required ModelEvent modelEvent,
-    required ServiceExportPlatform exportService,
-    required ServiceExportExcel excelService,
-    required String tableName,
-  }) : _tableName = tableName,
-       _serviceEvent = serviceEvent,
-       _modelEvent = modelEvent,
-       _excelService = excelService,
-       _exportService = exportService;
+    required this._serviceEvent,
+    required this._modelEvent,
+    required this._exportService,
+    required this._excelService,
+    required this._tableName,
+  });
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;

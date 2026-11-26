@@ -16,9 +16,9 @@ typedef _SocialQuestionQuery = ({
 /// Social question state and operations; navigation and messages remain in View.
 class ControllerGameSocialQuestions extends SafeChangeNotifier {
   ControllerGameSocialQuestions({
-    required ServiceGame service,
+    required this._service,
     this.requestTimeout = const Duration(seconds: 30),
-  }) : _service = service;
+  });
 
   final ServiceGame _service;
   final Duration requestTimeout;

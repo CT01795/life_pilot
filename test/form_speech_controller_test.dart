@@ -19,6 +19,7 @@ class _Speech implements ServiceSpeech {
   final callbacks = <ValueChanged<String>>[];
   final spoken = <String>[];
   int stops = 0;
+  int speechStops = 0;
   Completer<void>? stopping;
 
   @override
@@ -33,6 +34,11 @@ class _Speech implements ServiceSpeech {
   Future<void> stopListening() async {
     stops++;
     await stopping?.future;
+  }
+
+  @override
+  Future<void> stopSpeaking() async {
+    speechStops++;
   }
 
   @override
@@ -223,6 +229,7 @@ void main() {
           expect(speech.pending, isEmpty);
           expect(speech.spoken, ['Read this']);
           expect(speech.stops, 1);
+          expect(speech.speechStops, 1);
         },
       );
 

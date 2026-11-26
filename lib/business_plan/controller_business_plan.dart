@@ -35,11 +35,10 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   bool isCreatingPlan = false;
 
   ControllerBusinessPlan({
-    required ServiceBusinessPlan service,
+    required this._service,
     required this.auth,
     this.requestTimeout = const Duration(seconds: 30),
-  }) : _service = service,
-       _accountKey = normalizeText(auth?.currentAccount);
+  }) : _accountKey = normalizeText(auth?.currentAccount);
 
   String? currentPlanId;
   ModelBusinessPlan? currentPlan;

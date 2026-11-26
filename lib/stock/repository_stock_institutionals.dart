@@ -7,7 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Reads only the fields used by the institutional dashboard. The Controller
 /// owns ranking, concurrent requests and retry state; this layer caches nothing.
 class RepositoryStockInstitutionals {
-  RepositoryStockInstitutionals({SupabaseClient? client}) : _client = client;
+  RepositoryStockInstitutionals({this._client});
   final SupabaseClient? _client;
 
   Future<List<ModelInstitutional>> readDate(DateTime date) async {

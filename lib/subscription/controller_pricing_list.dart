@@ -4,9 +4,9 @@ import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 /// Lazy view data only. Never use the displayed list as a write authorization.
 class ControllerPricingList<T> extends SafeChangeNotifier {
   ControllerPricingList({
-    required Future<List<T>> Function({bool force}) load,
+    required this._load,
     this.timeout = const Duration(seconds: 30),
-  }) : _load = load;
+  });
   final Future<List<T>> Function({bool force}) _load;
   final Duration timeout;
   List<T> rows = const [];

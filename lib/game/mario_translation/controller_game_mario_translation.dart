@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/game/google_tts_audio.dart';
+import 'package:life_pilot/utils/tts/native_speech.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
 import 'package:life_pilot/utils/value_parser.dart';
@@ -48,10 +49,9 @@ class ControllerGameMarioTranslation extends SafeChangeNotifier {
         return;
       }
 
-      final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
       await _ttsAudio.speak(
         text: text,
-        languageCode: containsChinese ? 'zh' : 'en-US',
+        languageCode: speechLanguageForText(text),
       );
     } catch (error, stackTrace) {
       logger.e(

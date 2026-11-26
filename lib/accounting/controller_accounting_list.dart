@@ -27,11 +27,10 @@ class ControllerAccountingList extends SafeChangeNotifier {
   int _currencyRevision = 0;
 
   ControllerAccountingList({
-    required ServiceAccounting service,
+    required this._service,
     required this.auth,
     this.requestTimeout = const Duration(seconds: 30),
-  }) : _service = service,
-       _dataScopeKey = _scopeKey(auth) {
+  }) : _dataScopeKey = _scopeKey(auth) {
     auth?.addListener(_onAuthChanged);
   }
 

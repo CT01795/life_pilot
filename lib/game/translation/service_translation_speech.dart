@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:life_pilot/game/google_tts_audio.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
@@ -6,6 +7,9 @@ import 'package:life_pilot/utils/tts/tts_stub.dart'
 
 /// Owns platform audio resources; translation direction stays independent of UI locale.
 class ServiceTranslationSpeech {
+  ServiceTranslationSpeech({FlutterTts? tts})
+    : _audio = tts == null ? null : GoogleTtsAudio(tts: tts);
+
   GoogleTtsAudio? _audio;
   bool _disposed = false;
   Future<void> _speak(String text, String group, bool isQuestion) async {

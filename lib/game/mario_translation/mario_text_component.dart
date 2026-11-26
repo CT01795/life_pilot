@@ -13,13 +13,13 @@ class MarioTextComponent extends PositionComponent {
   TextPainter? _painter;
 
   MarioTextComponent({
-    required String text,
+    required this._text,
     required this.maxWidth,
     required this.style,
     this.padding = EdgeInsets.zero,
     super.position,
     super.anchor,
-  }) : _text = text {
+  }) {
     if (!maxWidth.isFinite || maxWidth <= 0) {
       throw ArgumentError.value(
         maxWidth,

@@ -13,10 +13,9 @@ typedef EventCounterWriter =
 class EventTrackingService {
   EventTrackingService({
     ServiceExternalLink? links,
-    EventCounterWriter? counterWriter,
+    this._counterWriter,
     Object? Function()? accountScope,
   }) : _links = links ?? ServiceExternalLink(),
-       _counterWriter = counterWriter,
        _accountScope = accountScope ?? (() => supabase.auth.currentUser?.id);
 
   final ServiceExternalLink _links;

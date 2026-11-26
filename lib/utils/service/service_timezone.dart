@@ -46,7 +46,7 @@ class ServiceTimezone {
         logger.d('Web 時區設定為 $tzName');
       } else {
         // Android / iOS
-        tzName = await FlutterTimezone.getLocalTimezone();
+        tzName = (await FlutterTimezone.getLocalTimezone()).identifier;
         logger.d('裝置時區為 $tzName');
       }
 

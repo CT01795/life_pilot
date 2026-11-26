@@ -31,10 +31,9 @@ class ControllerGamePuzzleMap extends SafeChangeNotifier {
     required this.service,
     required this.gameId,
     required this.gameLevel,
-    Random? random,
+    this._random,
     DateTime Function()? now,
-  }) : _random = random,
-       _now = now ?? DateTime.now;
+  }) : _now = now ?? DateTime.now;
 
   void setGridSize(int imgWidth, int imgHeight, int shortSideCount) {
     if (notifierDisposed) return;

@@ -68,6 +68,9 @@ class ControllerSpeechInput extends SafeChangeNotifier {
     _currentListeningKey = null;
     super.dispose();
     final service = _speechService;
-    if (service != null) unawaited(service.stopListening());
+    if (service != null) {
+      unawaited(service.stopListening());
+      unawaited(service.stopSpeaking());
+    }
   }
 }

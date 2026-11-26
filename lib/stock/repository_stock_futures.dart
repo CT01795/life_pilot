@@ -8,7 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Authenticated, read-only cloud access. RLS remains authoritative; never
 /// route failed reads through a privileged backend or embed a service key.
 class RepositoryStockFutures {
-  RepositoryStockFutures({SupabaseClient? client}) : _client = client;
+  RepositoryStockFutures({this._client});
   final SupabaseClient? _client;
 
   Future<List<Map<String, dynamic>>> readPreviousDate(

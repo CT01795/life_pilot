@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/game/google_tts_audio.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/tts/native_speech.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
     if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
@@ -8,7 +9,6 @@ import 'package:life_pilot/utils/tts/tts_stub.dart'
 class ServiceGameSpeech {
   GoogleTtsAudio? _audio;
   bool _disposed = false;
-  static final _chinese = RegExp(r'[\u4e00-\u9fff]');
 
   Future<void> speak(String text) async {
     await _speak(text);
@@ -28,8 +28,7 @@ class ServiceGameSpeech {
         final audio = _audio ??= GoogleTtsAudio();
         await audio.speak(
           text: text,
-          languageCode:
-              nativeLanguage ?? (_chinese.hasMatch(text) ? 'zh' : 'en-US'),
+          languageCode: nativeLanguage ?? speechLanguageForText(text),
         );
       }
     } catch (error, stackTrace) {

@@ -406,3 +406,38 @@ flutter test
 8. Migration 與 Edge Function 已部署並驗證。
 9. 完整自動測試通過，沒有只為通過 CI 而移除有效斷言。
 10. Supabase 與 Render 用量沒有未解異常尖峰。
+
+
+## Android Built-in Kotlin 遷移驗收（2026-11-26）
+
+自動化：完整 `test/`、`service_timezone_test.dart` 新 API 與夏令時間回歸，以及 SH M32 上的 `integration_test/android_plugin_migration_test.dart`。Debug APK 需正常建置與啟動，建置輸出應無舊 KGP 遷移警告。
+
+人工驗收使用一般 App 入口：
+
+| 功能 | 操作與預期 |
+| --- | --- |
+| 遊戲音檔 | 自動發音、手動重播、快速換題、背景切回後正常播放 |
+| 系統朗讀 | 中英日韓喇叭按鈕與自動朗讀；錄音結束後可繼續發音 |
+| 檔案選擇 | 活動 CSV/XLSX 匯入、取消選檔、企畫書富文字編輯器選檔與媒體插入 |
+| 時區與提醒 | 啟動後日期時間正確，建立測試提醒後在預期時間通知 |
+| 地圖資料 | 景點經緯度與標記正確 |
+| 偏好與登入 | 重開 App 後登入狀態保留，登出後不恢復舊工作階段 |
+| WebView | Blockly/Scratch 編輯、拖曳、執行及畫面旋轉後保持正常 |
+
+原生冒煙測試確認 API 可用及播放完成回報；實際音量、藍牙輸出、系統選檔對話框與個人登入流程仍需人工驗收。iPad/macOS 需另做語音與選檔回歸。依使用者指示，本次先完成 Debug；Release 驗證待正式簽署設定就緒。
+
+
+### 本次自動化結果
+
+- 標準 `flutter analyze`：No issues found；含 integration_test 套件 URI 驗證。
+- 完整 `test/`：3,077 項通過；清理建構子提示後再次全部通過。
+- SH M32 原生外掛冒煙測試：4 組通過（時區與偏好儲存、TTS、音訊、WebView）。
+- ARM64 Android Debug APK：建置通過；App 與七個外掛的舊 KGP 警告已消除。
+- Web JavaScript Debug：建置通過。額外 Wasm dry run 仍回報上游 `flutter_keyboard_visibility_web` 使用 dart:html，以及 `image` 4.3.0 的兩項數值型別相容性提示。這三項屬 WebAssembly 目標的後續遷移範圍，未用旗標關閉提示。
+
+
+### 實機測試清理設定
+
+本次首次整合測試使用 Flutter 的預設 `--uninstall` 清理，曾在測試完成後卸載 `com.minavi.life_pilot`。測試與原 App 使用相同識別碼，因此裝置上的 App 本機資料可能已被清除；之後已重新安裝一般 Debug App。原始碼與雲端資料未刪除。
+
+後續統一使用 `bash tool/test_android_plugins.sh <device-id>`，固定 `--no-uninstall`。測試後保留原安裝與資料，再以正常 Debug APK 使用 `adb install -r` 覆蓋，並啟動 `com.minavi.life_pilot/.MainActivity`。

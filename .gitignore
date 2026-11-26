@@ -85,3 +85,9 @@ venv/
 # Vendored plugin development fixtures are not required by Life Pilot.
 /third_party/flutter_keyboard_visibility/example/
 /third_party/flutter_keyboard_visibility/test/
+
+# Generated state for project-local plugin patches.
+/third_party/**/.gradle/
+/third_party/**/.kotlin/
+/third_party/**/build/
+/third_party/**/pubspec.lock

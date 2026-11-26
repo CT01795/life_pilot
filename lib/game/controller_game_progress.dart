@@ -7,11 +7,10 @@ import 'package:life_pilot/utils/safe_change_notifier.dart';
 /// Owns progress windows and derived statistics; contains no navigation or UI.
 class ControllerGameProgress extends SafeChangeNotifier {
   ControllerGameProgress({
-    required ServiceGame service,
+    required this._service,
     required this.userName,
     DateTime Function()? now,
-  }) : _service = service,
-       _now = now ?? DateTime.now;
+  }) : _now = now ?? DateTime.now;
 
   final ServiceGame _service;
   final String userName;

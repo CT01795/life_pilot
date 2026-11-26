@@ -8,8 +8,7 @@ class ControllerNotification {
   final ServiceNotificationPlatform _service;
   ServiceNotificationPlatform get service => _service;
 
-  ControllerNotification({required ServiceNotificationPlatform service})
-    : _service = service;
+  ControllerNotification({required this._service});
 
   Future<void> initialize() async {
     await _service.initialize();

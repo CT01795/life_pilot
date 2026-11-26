@@ -29,7 +29,7 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
     const android = AndroidInitializationSettings(CalendarMisc.androidIcon);
     const ios = DarwinInitializationSettings();
     await _plugin.initialize(
-      settings: InitializationSettings(android: android, iOS: ios),
+      settings: InitializationSettings(android: android, iOS: ios, macOS: ios),
     );
     await _requestPermissions();
   }
@@ -192,6 +192,10 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
       presentSound: true,
     );
 
-    return const NotificationDetails(android: androidDetails, iOS: iosDetails);
+    return const NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+      macOS: iosDetails,
+    );
   }
 }

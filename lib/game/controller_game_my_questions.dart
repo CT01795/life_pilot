@@ -22,10 +22,10 @@ typedef _QuestionRead = ({
 /// Owns question-list state and operations; navigation and messages stay in View.
 class ControllerGameMyQuestions extends SafeChangeNotifier {
   ControllerGameMyQuestions({
-    required ServiceGame service,
+    required this._service,
     required this.gameName,
     this.requestTimeout = const Duration(seconds: 30),
-  }) : _service = service;
+  });
 
   final ServiceGame _service;
   final String gameName;

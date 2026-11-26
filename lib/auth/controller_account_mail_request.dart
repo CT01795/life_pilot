@@ -12,8 +12,7 @@ enum AccountMailRequestResult {
 
 /// Opens a user-reviewed email draft; never creates an account or sends Auth mail.
 class ControllerAccountMailRequest extends SafeChangeNotifier {
-  ControllerAccountMailRequest({required ServiceAccountSecurity service})
-    : _service = service;
+  ControllerAccountMailRequest({required this._service});
   final ServiceAccountSecurity _service;
   static final _email = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
   bool sending = false;

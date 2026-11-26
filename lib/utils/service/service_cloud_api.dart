@@ -9,11 +9,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Secret-bearing operations execute on Supabase, never on Render or the device.
 class ServiceCloudApi {
   ServiceCloudApi({
-    SupabaseClient? client,
+    this._client,
     this.timeout = const Duration(seconds: 45),
     DateTime Function()? now,
-  }) : _client = client,
-       _now = now ?? DateTime.now;
+  }) : _now = now ?? DateTime.now;
 
   static const int _maxCachedReads = 64;
 

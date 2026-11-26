@@ -1,22 +1,26 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import '../utils/tts/native_speech.dart';
 
 import '../utils/logger.dart';
 
 class GoogleTtsAudio {
   GoogleTtsAudio({
-    AudioPlayer? player,
-    http.Client? client,
+    this._player,
+    this._tts,
+    this._client,
     this.requestTimeout = const Duration(seconds: 10),
     this.playbackTimeout = const Duration(minutes: 2),
-  }) : _player = player ?? AudioPlayer(),
-       _client = client ?? http.Client();
+  });
 
-  final AudioPlayer _player;
-  final http.Client _client;
+  AudioPlayer? _player;
+  http.Client? _client;
+  final FlutterTts? _tts;
+  NativeSpeech? _nativeSpeech;
   final Duration requestTimeout;
   final Duration playbackTimeout;
   final Map<String, Uint8List> _cache = {};
@@ -30,6 +34,14 @@ class GoogleTtsAudio {
     final spokenText = text.split('/').first.trim();
     if (_disposed || spokenText.isEmpty) return;
 
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS)) {
+      final speech = _nativeSpeech ??= NativeSpeech(tts: _tts);
+      await speech.speak(spokenText, languageCode: languageCode);
+      return;
+    }
+
     final cacheKey = '$languageCode\u0000$spokenText';
     if (!_activeRequests.add(cacheKey)) return;
 
@@ -39,8 +51,9 @@ class GoogleTtsAudio {
           await _download(spokenText, languageCode, cacheKey);
       if (bytes == null || _disposed) return;
 
-      final playbackComplete = _player.onPlayerComplete.first;
-      await _player.play(BytesSource(bytes));
+      final player = _player ??= AudioPlayer();
+      final playbackComplete = player.onPlayerComplete.first;
+      await player.play(BytesSource(bytes, mimeType: 'audio/mpeg'));
       await playbackComplete.timeout(playbackTimeout, onTimeout: () {});
     } on TimeoutException catch (error, stackTrace) {
       logger.w('Google TTS timed out', error: error, stackTrace: stackTrace);
@@ -62,7 +75,8 @@ class GoogleTtsAudio {
       'client': 'tw-ob',
       'q': text,
     });
-    final response = await _client
+    final client = _client ??= http.Client();
+    final response = await client
         .get(
           url,
           headers: {
@@ -87,7 +101,8 @@ class GoogleTtsAudio {
     if (_disposed) return;
     _disposed = true;
     _activeRequests.clear();
-    _client.close();
-    await _player.dispose();
+    _client?.close();
+    await _nativeSpeech?.dispose();
+    await _player?.dispose();
   }
 }

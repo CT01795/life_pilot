@@ -22,14 +22,13 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   num? currentExchangeRate;
 
   ControllerAccountingDetail({
-    required ServiceAccounting service,
+    required this._service,
     required this.auth,
     required this.accountId,
     this.onRecordsChanged,
     this.loadAllRecords = false,
     this.currentExchangeRate,
-  }) : _service = service,
-       _accountKey = _scopeKey(auth) {
+  }) : _accountKey = _scopeKey(auth) {
     auth?.addListener(_onAuthChanged);
   }
 

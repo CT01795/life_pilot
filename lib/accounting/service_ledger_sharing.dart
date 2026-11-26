@@ -21,7 +21,7 @@ typedef SharedLedgerDetailReads = ({
 });
 
 class ServiceLedgerSharing {
-  ServiceLedgerSharing({SupabaseClient? client}) : _client = client;
+  ServiceLedgerSharing({this._client});
   final SupabaseClient? _client;
   SupabaseClient get _db => _client ?? supabase;
   static const _group = 'ledger-sharing';

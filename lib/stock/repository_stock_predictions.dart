@@ -8,7 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// authenticated request. Historical reads use an explicit UTC day window;
 /// server-side updates remain separate.
 class RepositoryStockPredictions {
-  RepositoryStockPredictions({SupabaseClient? client}) : _client = client;
+  RepositoryStockPredictions({this._client});
   final SupabaseClient? _client;
 
   Future<List<ModelStock>> readLatest() async {

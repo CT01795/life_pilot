@@ -45,7 +45,7 @@ Life Pilot 是跨平台 Flutter 應用，主要功能包括帳號與授權、首
 
 ## 3 開發環境
 
-主要版本由 `pubspec.yaml` 與鎖檔決定。目前 Dart SDK 約束為 `^3.10.0`，Supabase Flutter 固定為 `2.12.4`。
+主要版本由 `pubspec.yaml` 與鎖檔決定。目前 Dart SDK 約束為 `^3.12.0`、Flutter 最低版本為 `3.47.0`，Supabase Flutter 固定為 `2.12.4`。
 
 日常檢查：
 
@@ -57,6 +57,31 @@ flutter test
 ```
 
 只改特定模組時先跑對應測試，再跑完整測試。測試通過不代表 migration 已部署，也不代表 Android、iOS、Web、macOS 的權限與簽章設定正確。
+
+### Android 建置設定
+
+Android 只保留 Groovy `.gradle` 設定；AGP 9.0.1 與 Kotlin 2.3.20 的版本統一由 `android/settings.gradle` 宣告。根目錄以 `apply false` 載入相同工具版本，讓子專案共用；App 與本機修補外掛都不再套用舊 `kotlin-android`。Java 與 Kotlin 編譯目標均為 JVM 17。
+
+`android/gradle.properties` 啟用 `android.builtInKotlin=true`；`android.newDsl=false` 保留目前 Flutter 所需的 DSL 相容設定。不要藉由跳過 Flutter dependency validation 來遷移。
+
+下列兩個外掛以 `dependency_overrides` 指向專案內來源：
+
+- `third_party/flutter_tts`：4.2.5 的 Android Built-in Kotlin 修補；Dart 公開 API 與 Apple 平台保留上游版本，Web 語音事件使用明確的 JS interop 型別轉換。
+- `third_party/file_picker`：保留 10.3.10，以符合商業企畫書富文字編輯器的 `file_picker ^10.2.0` 相依限制；只遷移 Android 建置。
+
+各目錄的 `LOCAL_PATCH.md` 記錄來源、授權及移除修補的條件。勿修改共用 pub cache。`flutter_timezone` 5.x 的裝置時區改從 `TimezoneInfo.identifier` 取得。
+
+驗證指令：
+
+```sh
+flutter test test
+flutter build apk --debug --target-platform android-arm64
+bash tool/test_android_plugins.sh <Android-device-id>
+```
+
+實機測試必須透過上述腳本執行，腳本固定傳入 `--no-uninstall`，保留已安裝 App 與本機資料。Flutter 的預設測試清理會卸載同識別碼的 App。測試會讀取時區、寫入並移除專用暫存偏好值、播放測試語音與音訊、驗證本機 WebView JavaScript。測試結束需重新建置並安裝一般 `lib/main.dart` App。Release 簽署需依 `RELEASE_SIGNING.md` 提供正式設定；目前驗收範圍為 Debug。
+
+SDK XML 版本警告應先透過 Android Studio 的 SDK Manager 更新「Android SDK Command-line Tools (latest)」，並確認子專案沒有載入過舊 AGP。
 
 ## 4 MVC 與依賴方向
 

@@ -22,11 +22,11 @@ class ModelGameMonominoTile extends SafeChangeNotifier {
   bool isFixedArrow = false;
 
   ModelGameMonominoTile({
-    EnumMonominoTileDirection direction = EnumMonominoTileDirection.empty,
+    this._direction = EnumMonominoTileDirection.empty,
     this.isObstacle = false,
     this.isStartP = false,
     this.isGoalP = false,
-  }) : _direction = direction;
+  });
 }
 
 class _BFSNode {

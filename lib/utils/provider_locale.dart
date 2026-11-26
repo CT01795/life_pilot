@@ -4,7 +4,7 @@ import 'package:life_pilot/utils/safe_change_notifier.dart';
 class ProviderLocale extends SafeChangeNotifier {
   Locale _locale;
 
-  ProviderLocale({required Locale locale}) : _locale = locale;
+  ProviderLocale({required this._locale});
 
   Locale get locale => _locale;
 

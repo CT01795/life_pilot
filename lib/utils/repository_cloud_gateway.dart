@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Calls Supabase with the signed-in client and propagates database errors.
 class RepositoryCloudGateway {
   final SupabaseClient? _client;
-  RepositoryCloudGateway({SupabaseClient? client}) : _client = client;
+  RepositoryCloudGateway({this._client});
 
   Future<dynamic> rpc(
     String function, {
