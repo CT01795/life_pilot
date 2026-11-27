@@ -21,6 +21,25 @@ abstract class ServiceNotificationPlatform {
   });
 }
 
+class CalendarReminderPayload {
+  static const _prefix = 'calendar-reminder:';
+
+  static String forEvent(String id) => '$_prefix$id';
+
+  /// Null keeps compatibility with pending notifications created before
+  /// event IDs were recorded. An empty set means no reminders are pending.
+  static Set<String>? pendingEventIds(Iterable<String?> payloads) {
+    final ids = <String>{};
+    for (final payload in payloads) {
+      if (payload == null || !payload.startsWith(_prefix)) return null;
+      final id = payload.substring(_prefix.length);
+      if (id.isEmpty) return null;
+      ids.add(id);
+    }
+    return ids;
+  }
+}
+
 // 通知資料物件
 class EventNotification {
   final int? id;

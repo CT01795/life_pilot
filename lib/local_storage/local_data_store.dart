@@ -1045,6 +1045,22 @@ class LocalDataStore {
     required String resource,
     required DateTime before,
   }) async {
+    final id = await eventIdBefore(
+      owner: owner,
+      resource: resource,
+      before: before,
+    );
+    return id == null
+        ? null
+        : readOnlyRow(owner: owner, resource: resource, id: id);
+  }
+
+  /// A pagination probe only needs the date index, never the event payload.
+  Future<String?> eventIdBefore({
+    required String owner,
+    required String resource,
+    required DateTime before,
+  }) async {
     if (!_isIndexedEventResource(resource)) {
       throw ArgumentError.value(resource, 'resource');
     }
@@ -1062,11 +1078,7 @@ class LocalDataStore {
       final entry = value as Map;
       final date = tryParseDateTimeValue(entry['date']);
       if (date == null || !date.isBefore(boundary)) continue;
-      return readOnlyRow(
-        owner: owner,
-        resource: resource,
-        id: parseStringValue(entry['id']),
-      );
+      return parseStringValue(entry['id']);
     }
     return null;
   }
@@ -1102,6 +1114,83 @@ class LocalDataStore {
       if (row != null) rows.add(row);
     }
     return List.unmodifiable(rows);
+  }
+
+  /// A single date-index snapshot drives both the memory rows and continuation.
+  Future<
+    ({
+      List<Map<String, dynamic>> rows,
+      DateTime start,
+      DateTime end,
+      DateTime? nextDate,
+    })
+  >
+  memoryWindow({
+    required String owner,
+    required DateTime start,
+    required DateTime end,
+    bool older = false,
+  }) async {
+    const resource = 'memory_trace';
+    final database = await _db;
+    final index = await _eventDateIndex(database, owner, resource);
+    DateTime day(DateTime date) => DateTime(date.year, date.month, date.day);
+    var from = day(start);
+    var through = day(end);
+    final entries = <({String id, DateTime date})>[
+      for (final value in index['entries']! as List)
+        if (tryParseDateTimeValue((value as Map)['date'], toLocal: true)
+            case final DateTime date)
+          (id: parseStringValue(value['id']), date: day(date)),
+    ];
+    final undated = older
+        ? const <String>[]
+        : [
+            for (final id in index['undated_ids']! as List)
+              parseStringValue(id),
+          ];
+    DateTime? latestBefore(DateTime boundary) => entries.reversed
+        .where((entry) => entry.date.isBefore(boundary))
+        .firstOrNull
+        ?.date;
+    bool inRange(DateTime date) =>
+        !date.isBefore(from) && !date.isAfter(through);
+    if (older) {
+      final anchor = latestBefore(from);
+      if (anchor == null) {
+        return (
+          rows: const <Map<String, dynamic>>[],
+          start: from,
+          end: through,
+          nextDate: null,
+        );
+      }
+      through = anchor;
+      from = DateTime(anchor.year, anchor.month, anchor.day - 29);
+    } else if (undated.isEmpty &&
+        !entries.any((entry) => inRange(entry.date))) {
+      final anchor = latestBefore(from);
+      if (anchor != null) from = through = anchor;
+    }
+    final rows = <Map<String, dynamic>>[];
+    final keys = [
+      for (final entry in entries)
+        if (inRange(entry.date)) _recordKey(owner, resource, entry.id),
+      for (final id in undated) _recordKey(owner, resource, id),
+    ];
+    if (keys.isNotEmpty) {
+      final snapshots = await _records.records(keys).get(database);
+      for (final snapshot in snapshots) {
+        final row = snapshot?['data'];
+        if (row is Map) rows.add(Map<String, dynamic>.unmodifiable(row));
+      }
+    }
+    return (
+      rows: List<Map<String, dynamic>>.unmodifiable(rows),
+      start: from,
+      end: through,
+      nextDate: latestBefore(from),
+    );
   }
 
   /// Returns ledger totals from a persistent local index. Existing installs

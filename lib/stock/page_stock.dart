@@ -207,10 +207,13 @@ Widget _buildLoadFailure(BuildContext context, ControllerStock controller) {
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           Gaps.h16,
-          FilledButton.icon(
-            onPressed: controller.load,
-            icon: const Icon(Icons.refresh),
-            label: Text(loc.stockRetry),
+          Selector<ControllerStock, bool>(
+            selector: (_, state) => state.runningSelectedDate,
+            builder: (_, running, _) => FilledButton.icon(
+              onPressed: running ? null : controller.load,
+              icon: const Icon(Icons.refresh),
+              label: Text(running ? loc.stockUpdateInProgress : loc.stockRetry),
+            ),
           ),
         ],
       ),

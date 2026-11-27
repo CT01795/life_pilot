@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
@@ -12,10 +13,10 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 
 class _Auth extends ControllerAuth {
-  String account = 'one@example.com';
+  String owner = 'one@example.com';
   bool local = true;
   @override
-  String? get currentAccount => account;
+  String get currentAccount => owner;
   @override
   bool get isSysAdmin => false;
   @override
@@ -23,27 +24,40 @@ class _Auth extends ControllerAuth {
       local ? DataStorageLocation.local : DataStorageLocation.cloud;
   @override
   bool get storesNewDataLocally => local;
-  void switchAccount() {
-    account = 'two@example.com';
-    notifyListeners();
-  }
 }
 
 class _Service extends ServiceEvent {
-  List<EventItem> rows = [
-    EventItem(id: 'recent', name: 'Recent', startDate: DateTime.now()),
-  ];
-  final checks = <Completer<bool>>[];
-  final boundaries = <DateTime>[];
-  int reads = 0;
-  bool paged = false;
-  final windows =
-      <({int? limit, int offset, DateTime? start, DateTime? end})>[];
-  DateTime? latest;
-  Completer<List<EventItem>>? pendingRows;
-  Completer<List<EventItem>>? pendingFallback;
-  void Function(List<EventItem>)? previewCallback;
-  bool Function()? continueCallback;
+  final localReads =
+      <
+        ({
+          String owner,
+          DateTime from,
+          DateTime to,
+          bool older,
+          Completer<ModelMemoryInitialWindow> result,
+        })
+      >[];
+  final cloudReads = <({DateTime from, DateTime to, int offset})>[];
+  List<EventItem> cloudRows = [];
+
+  @override
+  Future<ModelMemoryInitialWindow> getLocalMemoryWindow({
+    required String owner,
+    required DateTime from,
+    required DateTime to,
+    bool older = false,
+  }) {
+    final result = Completer<ModelMemoryInitialWindow>();
+    localReads.add((
+      owner: owner,
+      from: from,
+      to: to,
+      older: older,
+      result: result,
+    ));
+    return result.future;
+  }
+
   @override
   Future<ModelMemoryInitialWindow> getMemoryWindow({
     required DateTime from,
@@ -52,94 +66,31 @@ class _Service extends ServiceEvent {
     int offset = 0,
     bool expandFallback = false,
   }) async {
-    final allEvents =
-        await getEvents(
-          tableName: TableNames.memoryTrace,
-          dateS: from,
-          dateE: to,
-          limit: limit,
-          offset: offset,
-        ) ??
-        const [];
-    bool isInWindow(EventItem event) {
-      final date = event.startDate;
-      return date != null && !date.isBefore(from) && !date.isAfter(to);
-    }
-
-    var sourceWindowEvents = rows.where(isInWindow).toList();
-    var windowEvents = allEvents.where(isInWindow).toList();
-    if (windowEvents.isEmpty && expandFallback) {
-      sourceWindowEvents = rows
-          .where((event) => event.startDate?.isBefore(from) ?? false)
-          .toList();
-      windowEvents = allEvents
-          .where((event) => event.startDate?.isBefore(from) ?? false)
-          .toList();
-    }
-    final events = windowEvents.take(limit).toList();
-    final start = latest ?? from;
+    cloudReads.add((from: from, to: to, offset: offset));
+    final rows = cloudRows.skip(offset).take(limit).toList();
+    final more = offset + rows.length < cloudRows.length;
     return ModelMemoryInitialWindow(
-      events: events,
-      hasPageMore: sourceWindowEvents.length > offset + limit,
-      hasMore: sourceWindowEvents.length > offset + limit,
-      windowStart: start,
-      windowEnd: latest ?? to,
+      events: rows,
+      hasPageMore: more,
+      hasMore: more,
+      windowStart: from,
+      windowEnd: to,
     );
-  }
-
-  @override
-  Future<List<EventItem>?> getEvents({
-    required String tableName,
-    DateTime? dateS,
-    DateTime? dateE,
-    String? id,
-    String? inputUser,
-    DataStorageLocation? storageLocation,
-    int? limit,
-    int offset = 0,
-    void Function(List<EventItem> events)? onPartialEvents,
-    bool Function()? shouldContinue,
-  }) async {
-    reads++;
-    continueCallback = shouldContinue;
-    windows.add((limit: limit, offset: offset, start: dateS, end: dateE));
-    previewCallback = onPartialEvents;
-    if (reads > 1 && pendingFallback != null) return pendingFallback!.future;
-    if (pendingRows != null) return pendingRows!.future;
-    if (latest != null && reads == 1) return [];
-    if (paged) return rows.skip(offset).take(limit ?? rows.length).toList();
-    return rows;
-  }
-
-  @override
-  Future<DateTime?> latestEventDateBefore({
-    required String tableName,
-    required DateTime before,
-    String? inputUser,
-    DataStorageLocation? storageLocation,
-    void Function(EventItem event)? onLatestEvent,
-    bool Function()? shouldContinue,
-  }) async {
-    if (latest != null && rows.isNotEmpty) onLatestEvent?.call(rows.first);
-    return latest;
-  }
-
-  @override
-  Future<bool> hasEventsBefore({
-    required String tableName,
-    required DateTime before,
-    String? inputUser,
-    DataStorageLocation? storageLocation,
-    bool Function()? shouldContinue,
-  }) {
-    boundaries.add(before);
-    final check = Completer<bool>();
-    checks.add(check);
-    return check.future;
   }
 }
 
-Future<void> _flush() => Future<void>.delayed(Duration.zero);
+ModelMemoryInitialWindow _page(
+  DateTime day,
+  List<String> ids, {
+  bool more = false,
+}) => ModelMemoryInitialWindow(
+  events: [for (final id in ids) EventItem(id: id, name: id, startDate: day)],
+  hasPageMore: false,
+  hasMore: more,
+  windowStart: day,
+  windowEnd: day,
+  nextDate: more ? day.subtract(const Duration(days: 100)) : null,
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -147,6 +98,7 @@ void main() {
   late _Service service;
   late ControllerEvent controller;
   final loc = AppLocalizationsEn();
+  final now = DateTime(2026, 11, 27);
   setUp(() {
     auth = _Auth();
     service = _Service();
@@ -163,423 +115,88 @@ void main() {
     auth.dispose();
   });
 
-  for (final local in [true]) {
-    test(
-      'older fallback is visible before full day query finishes local=$local',
-      () async {
-        auth.local = local;
-        auth.notifyListeners();
-        final date = DateTime.now().subtract(const Duration(days: 100));
-        service.latest = date;
-        service.rows = [EventItem(id: 'old', name: 'Old', startDate: date)];
-        service.pendingFallback = Completer<List<EventItem>>();
-        final request = controller.loadEvents(isGetPublicEvents: false);
-        await _flush();
-        expect(service.reads, 2);
-        expect(controller.getFilteredEvents(loc).single.id, 'old');
-        expect(controller.isLoadingMemoryRecords, true);
-        service.pendingFallback!.complete(service.rows);
-        await _flush();
-        service.checks.single.complete(false);
-        await request;
-        expect(controller.isLoadingMemoryRecords, false);
-      },
-    );
-  }
-
-  for (final local in [true]) {
-    test(
-      'first rows are visible while ${local ? 'local' : 'cloud'} load waits',
-      () async {
-        auth.local = local;
-        auth.notifyListeners();
-        final completion = service.pendingRows = Completer<List<EventItem>>();
-        final request = controller.loadEvents(isGetPublicEvents: false);
-        service.previewCallback!(service.rows);
-        expect(controller.hasLoadedEventsSuccessfully, true);
-        expect(controller.isLoadingEvents, true);
-        expect(controller.isLoadingMemoryRecords, true);
-        expect(controller.isLoadingMoreMemory, true);
-        expect(controller.getFilteredEvents(loc).single.id, 'recent');
-        completion.complete(service.rows);
-        await _flush();
-        expect(controller.isLoadingMemoryRecords, false);
-        service.checks.single.complete(false);
-        await request;
-        expect(controller.isLoadingEvents, false);
-      },
-    );
-  }
-
-  test('late preview cannot restore records after account switch', () async {
-    final completion = service.pendingRows = Completer<List<EventItem>>();
-    final request = controller.loadEvents(isGetPublicEvents: false);
-    final oldCallback = service.previewCallback!;
-    auth.switchAccount();
-    oldCallback(service.rows);
-    completion.complete(service.rows);
-    await request;
-    expect(controller.getFilteredEvents(loc), isEmpty);
-    expect(controller.hasLoadedEventsSuccessfully, false);
-  });
-
   test(
-    'progressive and final publishing reuse unchanged card models',
+    'one local request publishes rows and continuation; rejects overlapping load more',
     () async {
-      final completion = service.pendingRows = Completer<List<EventItem>>();
-      final request = controller.loadEvents(isGetPublicEvents: false);
-      service.previewCallback!(service.rows);
-      final first = controller.buildViewModel(
-        event: service.rows.first,
-        loc: loc,
-      );
-      service.previewCallback!([
-        ...service.rows,
-        EventItem(id: 'another', name: 'Another', startDate: DateTime.now()),
-      ]);
-      expect(
-        controller.buildViewModel(event: service.rows.first, loc: loc),
-        same(first),
-      );
-      completion.complete(service.rows);
-      await _flush();
-      expect(
-        controller.buildViewModel(event: service.rows.first, loc: loc),
-        same(first),
-      );
-      service.checks.single.complete(false);
-      await request;
-      expect(
-        controller.buildViewModel(event: service.rows.first, loc: loc),
-        same(first),
-      );
-    },
-  );
-
-  test('late preview after disposal is ignored', () async {
-    final completion = service.pendingRows = Completer<List<EventItem>>();
-    final request = controller.loadEvents(isGetPublicEvents: false);
-    expect(service.continueCallback!(), true);
-    controller.dispose();
-    expect(service.continueCallback!(), false);
-    service.previewCallback!(service.rows);
-    completion.complete(service.rows);
-    await request;
-    expect(controller.hasLoadedEventsSuccessfully, false);
-  });
-
-  test('scope predicate expires after account change', () async {
-    final completion = service.pendingRows = Completer<List<EventItem>>();
-    final request = controller.loadEvents(isGetPublicEvents: false);
-    final active = service.continueCallback!;
-    expect(active(), true);
-    auth.switchAccount();
-    expect(active(), false);
-    completion.complete(service.rows);
-    await request;
-    expect(controller.getFilteredEvents(loc), isEmpty);
-  });
-
-  test('expired service query does not access storage or network', () async {
-    for (final storage in DataStorageLocation.values) {
-      final rows = await ServiceEvent().getEvents(
-        tableName: TableNames.memoryTrace,
-        inputUser: 'expired@example.com',
-        storageLocation: storage,
-        shouldContinue: () => false,
-      );
-      expect(rows, isEmpty);
-    }
-  });
-
-  test(
-    'later query failure retains preview and load-more retries initial load',
-    () async {
-      final completion = service.pendingRows = Completer<List<EventItem>>();
-      final request = controller.loadEvents(isGetPublicEvents: false);
-      service.previewCallback!(service.rows);
-      completion.completeError(StateError('next page failed'));
-      await request;
-      expect(controller.hasLoadEventsError, true);
-      expect(controller.getFilteredEvents(loc).single.id, 'recent');
-      expect(controller.isLoadingMoreMemory, false);
-      service.pendingRows = null;
-      final retry = controller.loadMoreMemoryEvents();
-      await _flush();
-      service.checks.single.complete(false);
-      await retry;
-      expect(service.reads, 2);
-      expect(controller.hasLoadEventsError, false);
-      expect(controller.getFilteredEvents(loc).single.id, 'recent');
-    },
-  );
-
-  testWidgets(
-    'load-more metadata timeout preserves rows and releases loading',
-    (tester) async {
-      final initial = controller.loadEvents(isGetPublicEvents: false);
-      await tester.pump();
-      service.checks.single.complete(true);
-      await initial;
-      final oldDate = DateTime.now().subtract(const Duration(days: 100));
-      service.latest = oldDate;
-      service.rows = [
-        EventItem(id: 'older', name: 'Older', startDate: oldDate),
-      ];
-      final pending = controller.loadMoreMemoryEvents();
-      await tester.pump();
-      expect(service.checks.length, 2);
-      expect(
-        controller.getFilteredEvents(loc).map((e) => e.id),
-        contains('older'),
-      );
-      expect(controller.isLoadingMoreMemory, true);
-      await tester.pump(const Duration(seconds: 10));
-      await pending;
-      expect(controller.isLoadingMoreMemory, false);
-      expect(controller.hasMoreMemory, true);
-      expect(controller.hasLoadEventsError, false);
-      service.checks.last.complete(false);
-      await tester.pump();
-      expect(controller.hasMoreMemory, true);
-    },
-  );
-
-  for (final change in ['account', 'storage', 'dispose']) {
-    test('late load-more metadata cannot update after $change', () async {
-      final initial = controller.loadEvents(isGetPublicEvents: false);
-      await _flush();
-      service.checks.single.complete(true);
-      await initial;
-      final oldDate = DateTime.now().subtract(const Duration(days: 100));
-      service.latest = oldDate;
-      service.rows = [
-        EventItem(id: 'older', name: 'Older', startDate: oldDate),
-      ];
-      final pending = controller.loadMoreMemoryEvents();
-      await _flush();
-      expect(service.checks.length, 2);
-      var updates = 0;
-      controller.addListener(() => updates++);
-      if (change == 'account') {
-        auth.switchAccount();
-      } else if (change == 'storage') {
-        auth.local = false;
-        auth.notifyListeners();
-      } else {
-        controller.dispose();
-      }
-      final before = controller.hasMoreMemory;
-      updates = 0;
-      service.checks.last.complete(!before);
-      await pending;
-      expect(controller.hasMoreMemory, before);
-      expect(updates, 0);
-    });
-  }
-
-  test(
-    'load-more metadata failure keeps new rows and permits another attempt',
-    () async {
-      final initial = controller.loadEvents(isGetPublicEvents: false);
-      await _flush();
-      service.checks.single.complete(true);
-      await initial;
-      final oldDate = DateTime.now().subtract(const Duration(days: 100));
-      service.latest = oldDate;
-      service.rows = [
-        EventItem(id: 'older', name: 'Older', startDate: oldDate),
-      ];
-      final pending = controller.loadMoreMemoryEvents();
-      await _flush();
-      service.checks.last.completeError(
-        StateError('history metadata unavailable'),
-      );
-      await pending;
-      expect(controller.getFilteredEvents(loc).map((e) => e.id).toSet(), {
-        'recent',
-        'older',
-      });
-      expect(controller.hasMoreMemory, true);
-      expect(controller.isLoadingMoreMemory, false);
-      service.latest = null;
+      final first = controller.loadEvents(isGetPublicEvents: false);
+      expect(service.localReads, hasLength(1));
       await controller.loadMoreMemoryEvents();
+      expect(service.localReads, hasLength(1));
+      service.localReads.single.result.complete(
+        _page(now, List.generate(25, (i) => '$i'), more: true),
+      );
+      await first;
+      expect(controller.getFilteredEvents(loc), hasLength(25));
+      expect(controller.hasMoreMemory, true);
+      final old = controller.loadMoreMemoryEvents();
+      expect(service.localReads.last.from, now);
+      expect(service.localReads.last.older, true);
+      service.localReads.last.result.complete(_page(DateTime(2025), ['old']));
+      await old;
+      expect(controller.getFilteredEvents(loc), hasLength(26));
       expect(controller.hasMoreMemory, false);
-      expect(controller.getFilteredEvents(loc).length, 2);
+      expect(service.localReads, hasLength(2));
     },
   );
 
-  testWidgets('history metadata timeout does not leave loading stuck', (
-    tester,
-  ) async {
-    final pending = controller.loadEvents(isGetPublicEvents: false);
-    await tester.pump();
-    expect(controller.hasLoadedEventsSuccessfully, true);
-    expect(controller.isLoadingMoreMemory, true);
-    await tester.pump(const Duration(seconds: 10));
-    await pending;
-    expect(controller.isLoadingEvents, false);
-    expect(controller.isLoadingMoreMemory, false);
-    expect(controller.hasLoadEventsError, false);
-    expect(controller.hasMoreMemory, true);
-    service.checks.single.complete(false);
-    await tester.pump();
-  });
-
-  test('records are published before history metadata completes', () async {
-    var published = false;
-    controller.addListener(() {
-      if (controller.hasLoadedEventsSuccessfully &&
-          controller.getFilteredEvents(loc).isNotEmpty) {
-        published = true;
-      }
-    });
-    final pending = controller.loadEvents(isGetPublicEvents: false);
-    await _flush();
-    expect(service.checks.length, 1);
-    expect(published, true);
-    expect(controller.hasLoadedEventsSuccessfully, true);
-    expect(controller.getFilteredEvents(loc).single.id, 'recent');
-    expect(controller.isLoadingMoreMemory, true);
-    service.checks.single.complete(false);
-    await pending;
-    expect(controller.isLoadingEvents, false);
-    expect(controller.isLoadingMoreMemory, false);
-    expect(controller.hasMoreMemory, false);
-  });
   test(
-    'metadata failure keeps records and a retryable history button',
-    () async {
-      final pending = controller.loadEvents(isGetPublicEvents: false);
-      await _flush();
-      service.checks.single.completeError(StateError('metadata unavailable'));
-      await pending;
-      expect(controller.getFilteredEvents(loc).single.id, 'recent');
-      expect(controller.hasLoadEventsError, false);
-      expect(controller.hasMoreMemory, true);
-      expect(controller.isLoadingMoreMemory, false);
-    },
-  );
-  test('load-more cannot race the first metadata request', () async {
-    final pending = controller.loadEvents(isGetPublicEvents: false);
-    await _flush();
-    await controller.loadMoreMemoryEvents();
-    await controller.loadEvents(isGetPublicEvents: false);
-    expect(service.reads, 1);
-    expect(service.checks.length, 1);
-    service.checks.single.complete(false);
-    await pending;
-  });
-  test(
-    'full cloud page skips unnecessary history availability query',
-    () async {
-      auth.local = false;
-      auth.notifyListeners();
-      service.rows = List.generate(
-        51,
-        (i) => EventItem(id: '$i', name: '$i', startDate: DateTime.now()),
-      );
-      await controller.loadEvents(isGetPublicEvents: false);
-      expect(service.checks, isEmpty);
-      expect(controller.getFilteredEvents(loc).length, 12);
-      expect(controller.hasMoreMemory, true);
-    },
-  );
-  test(
-    'small cloud pages retain lookahead and future-date query bounds',
-    () async {
-      auth.local = false;
-      auth.notifyListeners();
-      service.paged = true;
-      final future = DateTime.now().add(const Duration(days: 7));
-      service.rows = List.generate(
-        25,
-        (i) => EventItem(id: '$i', name: '$i', startDate: future),
-      );
-      await controller.loadEvents(isGetPublicEvents: false);
-      expect(controller.getFilteredEvents(loc).length, 12);
-      expect(service.windows.single.limit, 12);
-      final firstWindow = service.windows.single;
-      expect(firstWindow.end!.isAfter(future), true);
-      await controller.loadMoreMemoryEvents();
-      expect(controller.getFilteredEvents(loc).length, 24);
-      expect(service.windows.last.offset, 12);
-      expect(service.windows.last.start, firstWindow.start);
-      expect(service.windows.last.end, firstWindow.end);
-      expect(controller.hasMoreMemory, true);
-      await controller.loadMoreMemoryEvents();
-      expect(service.windows.map((window) => window.offset), [0, 12, 24]);
-      expect(
-        controller.getFilteredEvents(loc).map((event) => event.id).toSet(),
-        service.rows.map((event) => event.id).toSet(),
-      );
-      expect(controller.getFilteredEvents(loc).length, 25);
-      expect(controller.hasMoreMemory, false);
-    },
-  );
-  test('local history is not truncated to the cloud page size', () async {
-    auth.local = true;
-    auth.notifyListeners();
-    service.paged = true;
-    service.rows = List.generate(
-      25,
-      (i) => EventItem(id: '$i', name: '$i', startDate: DateTime.now()),
-    );
-    final pending = controller.loadEvents(isGetPublicEvents: false);
-    await _flush();
-    service.checks.single.complete(false);
-    await pending;
-    expect(service.windows.single.limit, isNull);
-    expect(controller.getFilteredEvents(loc).length, 25);
-  });
-  test(
-    'account switch discards old metadata and does not block new load',
+    'account change ignores the late local result and does not block new load',
     () async {
       final old = controller.loadEvents(isGetPublicEvents: false);
-      await _flush();
-      auth.switchAccount();
-      expect(controller.getFilteredEvents(loc), isEmpty);
-      expect(controller.isLoadingMoreMemory, false);
-      service.rows = [
-        EventItem(id: 'new', name: 'New', startDate: DateTime.now()),
-      ];
+      auth.owner = 'two@example.com';
+      auth.notifyListeners();
       final fresh = controller.loadEvents(isGetPublicEvents: false);
-      await _flush();
-      service.checks[0].complete(true);
-      await old;
-      expect(controller.isLoadingMoreMemory, true);
-      service.checks[1].complete(false);
+      expect(service.localReads.last.owner, 'two@example.com');
+      service.localReads.last.result.complete(_page(now, ['new']));
       await fresh;
+      service.localReads.first.result.complete(_page(now, ['old'], more: true));
+      await old;
       expect(controller.getFilteredEvents(loc).single.id, 'new');
       expect(controller.hasMoreMemory, false);
     },
   );
-  test('disposal ignores late history results', () async {
-    final pending = controller.loadEvents(isGetPublicEvents: false);
-    await _flush();
-    var notifications = 0;
-    controller.addListener(() => notifications++);
-    controller.dispose();
-    service.checks.single.complete(false);
-    await pending;
-    expect(notifications, 0);
-  });
+
   test(
-    'latest older fallback is still visible before metadata finishes',
+    'failed old window can be retried without losing the first window',
     () async {
-      final oldDate = DateTime.now().subtract(const Duration(days: 100));
-      service.latest = oldDate;
-      service.rows = [EventItem(id: 'old', name: 'Old', startDate: oldDate)];
-      final pending = controller.loadEvents(isGetPublicEvents: false);
-      await _flush();
-      expect(service.reads, 2);
-      expect(controller.getFilteredEvents(loc).single.id, 'old');
-      expect(
-        service.boundaries.single,
-        DateTime(oldDate.year, oldDate.month, oldDate.day),
+      final first = controller.loadEvents(isGetPublicEvents: false);
+      service.localReads.single.result.complete(
+        _page(now, ['new'], more: true),
       );
-      service.checks.single.complete(false);
-      await pending;
+      await first;
+      final request = controller.loadMoreMemoryEvents();
+      final failure = expectLater(request, throwsStateError);
+      service.localReads.last.result.completeError(StateError('failed'));
+      await failure;
+      expect(controller.getFilteredEvents(loc).single.id, 'new');
+      expect(controller.hasMoreMemory, true);
+      final retry = controller.loadMoreMemoryEvents();
+      service.localReads.last.result.complete(_page(DateTime(2025), ['old']));
+      await retry;
+      expect(controller.getFilteredEvents(loc), hasLength(2));
     },
   );
+
+  test('cloud page preserves lookahead and future-date bounds', () async {
+    auth.local = false;
+    auth.notifyListeners();
+    final future = DateTime.now().add(const Duration(days: 7));
+    service.cloudRows = List.generate(
+      25,
+      (i) => EventItem(id: '$i', name: '$i', startDate: future),
+    );
+    await controller.loadEvents(isGetPublicEvents: false);
+    expect(controller.getFilteredEvents(loc), hasLength(12));
+    expect(service.cloudReads.single.to.isAfter(future), true);
+    await controller.loadMoreMemoryEvents();
+    await controller.loadMoreMemoryEvents();
+    expect(service.cloudReads.map((page) => page.offset), [0, 12, 24]);
+    expect(
+      service.cloudReads.map((page) => (page.from, page.to)).toSet(),
+      hasLength(1),
+    );
+    expect(controller.getFilteredEvents(loc), hasLength(25));
+    expect(controller.hasMoreMemory, false);
+    expect(service.localReads, isEmpty);
+  });
 }

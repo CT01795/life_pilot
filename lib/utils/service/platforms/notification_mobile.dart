@@ -102,6 +102,7 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
           id: id,
           title: title,
           body: '',
+          payload: CalendarReminderPayload.forEvent(event.id),
           scheduledDate: tz.TZDateTime.from(reminderTime, tz.local),
           notificationDetails: details,
           androidScheduleMode: _canScheduleExactNotifications

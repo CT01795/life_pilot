@@ -316,9 +316,10 @@ class ServiceLedgerSharing {
   Future<Map<String, int>> pendingCounts(
     LedgerKind kind, {
     String? accountId,
+    bool fresh = false,
   }) => RepositorySessionReads(_db).read(
     _pendingGroup,
-    ('pending', kind, accountId),
+    ('pending', kind, accountId, fresh),
     () async {
       const accountRpc = 'get_my_ledger_account_pending_count';
       const countsRpc = 'get_my_ledger_pending_counts';

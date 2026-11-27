@@ -29,6 +29,58 @@ void main() {
   tearDown(() => database.close());
 
   test(
+    'memory windows skip date gaps without repeating undated records',
+    () async {
+      Future<void> seed(String id, String? date, {String account = owner}) =>
+          store.put(
+            owner: account,
+            resource: resource,
+            id: id,
+            data: {'id': id, 'name': id, 'start_date': date},
+          );
+      await seed('today', '2026-11-27');
+      await seed('undated', null);
+      await seed('malformed', 'not a date');
+      await seed('old', '2026-07-05');
+      await seed('older', '2026-07-04');
+      await seed('unrelated', '2026-11-27', account: 'other@example.com');
+      final first = await store.memoryWindow(
+        owner: owner,
+        start: DateTime(2026, 11),
+        end: DateTime(2026, 12),
+      );
+      expect(
+        first.rows.map((row) => row['id']),
+        unorderedEquals(['today', 'undated', 'malformed']),
+      );
+      expect(first.nextDate, DateTime(2026, 7, 5));
+      final more = await store.memoryWindow(
+        owner: owner,
+        start: first.start,
+        end: first.end,
+        older: true,
+      );
+      expect(
+        more.rows.map((row) => row['id']),
+        unorderedEquals(['old', 'older']),
+      );
+      expect(more.end, DateTime(2026, 7, 5));
+      expect(more.nextDate, isNull);
+      await store.delete(owner: owner, resource: resource, id: 'undated');
+      await store.delete(owner: owner, resource: resource, id: 'malformed');
+      await store.delete(owner: owner, resource: resource, id: 'today');
+      final fallback = await store.memoryWindow(
+        owner: owner,
+        start: DateTime(2026, 11),
+        end: DateTime(2026, 12),
+      );
+      expect(fallback.rows.single['id'], 'old');
+      expect(fallback.start, DateTime(2026, 7, 5));
+      expect(fallback.nextDate, DateTime(2026, 7, 4));
+    },
+  );
+
+  test(
     'reuses the same read-only snapshot without cloning every row',
     () async {
       await put('one');

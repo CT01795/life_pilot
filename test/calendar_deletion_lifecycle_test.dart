@@ -28,6 +28,20 @@ class _Service extends ServiceEvent {
   final deleted = Completer<void>();
   int calls = 0;
   String? owner;
+  final reminderReads = <String, Completer<List<String>>>{};
+  final reminderCandidates = <String, Set<String>?>{};
+
+  @override
+  Future<List<String>> getCompletedCalendarEventIds({
+    required String account,
+    Set<String>? pendingEventIds,
+  }) {
+    reminderCandidates[account] = pendingEventIds;
+    return reminderReads
+        .putIfAbsent(account, Completer<List<String>>.new)
+        .future;
+  }
+
   @override
   Future<void> deleteEvent({
     required String currentAccount,
@@ -43,6 +57,9 @@ class _Service extends ServiceEvent {
 class _Notifications implements ControllerNotification {
   final cancelled = <String>[];
   Completer<void>? pending;
+  Set<String>? reminderIds;
+  @override
+  Future<Set<String>?> pendingReminderEventIds() async => reminderIds;
   @override
   Future<void> cancelAllEventReminders({required String eventId}) async {
     cancelled.add(eventId);
@@ -104,6 +121,31 @@ void main() {
     if (!controller.notifierDisposed) controller.dispose();
     locale.dispose();
     auth.dispose();
+  });
+
+  test(
+    'changed account starts a new reminder read and ignores old IDs',
+    () async {
+      notifications.reminderIds = {'old', 'new'};
+      final old = controller.syncCompletedEventReminders();
+      await Future<void>.delayed(Duration.zero);
+      auth.account = 'two@example.com';
+      controller.updateAuth(auth);
+      final next = controller.syncCompletedEventReminders();
+      await Future<void>.delayed(Duration.zero);
+      expect(service.reminderCandidates['two@example.com'], {'old', 'new'});
+      service.reminderReads['two@example.com']!.complete(['new']);
+      await next;
+      service.reminderReads['one@example.com']!.complete(['old']);
+      await old;
+      expect(notifications.cancelled, ['new']);
+    },
+  );
+
+  test('no pending reminders skips the cloud read', () async {
+    notifications.reminderIds = {};
+    await controller.syncCompletedEventReminders();
+    expect(service.reminderReads, isEmpty);
   });
 
   test('only confirmed deletion cancels reminder and updates model', () async {

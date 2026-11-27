@@ -24,6 +24,28 @@ import 'package:life_pilot/utils/repository_cloud_gateway.dart';
 import 'package:life_pilot/utils/repository_event_cloud_operations.dart';
 
 class ServiceEvent {
+  Future<ModelMemoryInitialWindow> getLocalMemoryWindow({
+    required String owner,
+    required DateTime from,
+    required DateTime to,
+    bool older = false,
+  }) async {
+    final window = await LocalDataStore.instance.memoryWindow(
+      owner: owner,
+      start: from,
+      end: to,
+      older: older,
+    );
+    return ModelMemoryInitialWindow(
+      events: window.rows.map(_decodeEventRow).toList(growable: false),
+      hasPageMore: false,
+      hasMore: window.nextDate != null,
+      windowStart: window.start,
+      windowEnd: window.end,
+      nextDate: window.nextDate,
+    );
+  }
+
   Future<ModelMemoryInitialWindow> getMemoryWindow({
     required DateTime from,
     required DateTime to,
@@ -93,16 +115,44 @@ class ServiceEvent {
 
   Future<List<String>> getCompletedCalendarEventIds({
     required String account,
+    Set<String>? pendingEventIds,
   }) async {
     final normalizedAccount = normalizeText(account);
     if (normalizedAccount.isEmpty) return const [];
 
-    final response = await supabase
+    if (pendingEventIds?.isEmpty == true) return const [];
+    final client = supabase;
+    final session = client.auth.currentSession;
+    if (normalizeText(session?.user.email) != normalizedAccount) {
+      return const [];
+    }
+    final query = client
         .from(TableNames.calendarEvents)
         .select(Fields.id)
         .eq('is_completed', true);
+    final List<dynamic> response;
+    if (pendingEventIds == null) {
+      response = await query;
+    } else {
+      // Keep each filter small enough for a request URL, even on devices
+      // that allow many reminders to be scheduled at once.
+      final ids = pendingEventIds.toList(growable: false);
+      const batchSize = 80;
+      response = [];
+      for (var offset = 0; offset < ids.length; offset += batchSize) {
+        if (client.auth.currentSession?.accessToken != session?.accessToken) {
+          return const [];
+        }
+        response.addAll(
+          await query.inFilter(
+            Fields.id,
+            ids.skip(offset).take(batchSize).toList(growable: false),
+          ),
+        );
+      }
+    }
 
-    return (response as List)
+    return response
         .map(
           (row) => parseOptionalStringValue(
             (row as Map<String, dynamic>)[Fields.id],
@@ -348,13 +398,13 @@ class ServiceEvent {
     );
     if (shouldContinue?.call() == false) return false;
     if (local) {
-      final row = await LocalDataStore.instance.eventRowBefore(
+      final id = await LocalDataStore.instance.eventIdBefore(
         owner: inputUser!,
         resource: tableName,
         before: before,
       );
       if (shouldContinue?.call() == false) return false;
-      return row != null;
+      return id != null;
     }
     var query = supabase
         .from(tableName)

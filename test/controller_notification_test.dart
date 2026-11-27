@@ -6,25 +6,35 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/service/service_notification/service_notification_platform.dart';
 
 void main() {
-  test('completed event cancels every reminder instead of scheduling',
-      () async {
-    final service = _FakeNotificationService();
-    final controller = ControllerNotification(service: service);
-    final event = EventItem(
-      id: 'completed-event',
-      isCompleted: true,
-      reminderOptions: const [CalendarReminderOption.dayBefore8am],
-    );
+  test(
+    'pending reminder payloads deduplicate IDs and keep old schedules compatible',
+    () {
+      expect(CalendarReminderPayload.pendingEventIds([]), isEmpty);
+      final payload = CalendarReminderPayload.forEvent('event');
+      expect(CalendarReminderPayload.pendingEventIds([payload, payload]), {
+        'event',
+      });
+      expect(CalendarReminderPayload.pendingEventIds([payload, null]), isNull);
+    },
+  );
+  test(
+    'completed event cancels every reminder instead of scheduling',
+    () async {
+      final service = _FakeNotificationService();
+      final controller = ControllerNotification(service: service);
+      final event = EventItem(
+        id: 'completed-event',
+        isCompleted: true,
+        reminderOptions: const [CalendarReminderOption.dayBefore8am],
+      );
 
-    await controller.scheduleEventReminders(event: event);
+      await controller.scheduleEventReminders(event: event);
 
-    expect(service.scheduledEvents, isEmpty);
-    expect(service.cancelledEventIds, ['completed-event']);
-    expect(
-      service.cancelledOptions.single,
-      CalendarReminderOption.values,
-    );
-  });
+      expect(service.scheduledEvents, isEmpty);
+      expect(service.cancelledEventIds, ['completed-event']);
+      expect(service.cancelledOptions.single, CalendarReminderOption.values);
+    },
+  );
 
   test('active event is still scheduled normally', () async {
     final service = _FakeNotificationService();
@@ -70,6 +80,5 @@ class _FakeNotificationService implements ServiceNotificationPlatform {
   Future<List<EventNotification>> getTodayEventNotifications({
     required List<EventItem> events,
     required String close,
-  }) async =>
-      [];
+  }) async => [];
 }

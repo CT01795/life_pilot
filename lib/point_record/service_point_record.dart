@@ -11,6 +11,7 @@ import 'package:life_pilot/accounting/repository_ledger_account_options.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
+import 'package:life_pilot/accounting/repository_ledger_overview_page.dart';
 import 'package:life_pilot/record_statistics/repository_cloud_record_history.dart';
 import 'package:life_pilot/utils/model_local_account_list.dart';
 import 'package:life_pilot/utils/model_record_history_page.dart';
@@ -168,21 +169,14 @@ class ServicePointRecord {
             )
             .toList();
       }
-      const columns = 'id,account,category,points';
-      var query = supabase
-          .from(TableNames.pointRecordAccount)
-          .select(columns)
-          .eq(Fields.createdBy, user)
-          .eq(Fields.isValid, true);
-      if (category != null) {
-        query = query.eq('category', category);
-      }
-      final normalizedSearch = searchQuery?.trim() ?? '';
-      if (normalizedSearch.isNotEmpty) {
-        query = query.ilike(Fields.account, '%$normalizedSearch%');
-      }
-      final ordered = query.order(Fields.account, ascending: true);
-      final list = await ordered.range(offset, offset + limit - 1);
+      final list = await RepositoryLedgerOverviewPage(supabase).read(
+        kind: 'points',
+        expectedEmail: user,
+        category: category,
+        search: searchQuery,
+        offset: offset,
+        limit: limit,
+      );
 
       return list.map((row) => ModelPointRecordAccount.fromRow(row)).toList();
     } on Exception catch (exception) {

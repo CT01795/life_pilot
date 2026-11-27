@@ -67,7 +67,6 @@ class ControllerEvent extends SafeChangeNotifier {
   DateTime? _memoryLoadedStartDate;
   DateTime? _memoryLoadedEndDate;
   bool _isLoadingMoreMemory = false;
-  bool _isCheckingMoreMemory = false;
   bool _hasMoreMemory = true;
   // Memory rows can include embedded photos. Keep their logical page smaller
   // without changing the date window or the recommended-content page size.
@@ -125,7 +124,6 @@ class ControllerEvent extends SafeChangeNotifier {
     _isLoadingEvents = false;
     _isLoadingMemoryRecords = false;
     _isLoadingMoreMemory = false;
-    _isCheckingMoreMemory = false;
     _isLoadingMoreEvents = false;
     _hasLoadedEventsSuccessfully = false;
     _loadEventsError = null;
@@ -178,7 +176,6 @@ class ControllerEvent extends SafeChangeNotifier {
   int get filterRevision => _filterRevision;
   bool get isLoadingMoreMemory =>
       _isLoadingMoreMemory ||
-      _isCheckingMoreMemory ||
       (_tableName == TableNames.memoryTrace && _isLoadingEvents);
   bool get hasMoreMemory => _hasMoreMemory;
   bool get isLoadingMoreEvents => _isLoadingMoreEvents;
@@ -630,7 +627,6 @@ class ControllerEvent extends SafeChangeNotifier {
     final revision = ++_eventLoadRevision;
     _isLoadingMoreMemory = false;
     _isLoadingMoreEvents = false;
-    _isCheckingMoreMemory = false;
     _isLoadingEvents = true;
     _isLoadingMemoryRecords = _tableName == TableNames.memoryTrace;
     _loadEventsError = null;
@@ -641,84 +637,53 @@ class ControllerEvent extends SafeChangeNotifier {
       final today = DateTimeFormatter.dateOnly(DateTime.now());
       final isMemoryTrace = _tableName == TableNames.memoryTrace;
       final memoryStart = today.subtract(const Duration(days: 29));
-      void publishMemoryPreview(List<EventItem> rows) {
-        if (!_isCurrentEventLoad(generation, revision) || rows.isEmpty) return;
-        // Keep the service's accumulating buffer separate from model sorting.
-        final preview = rows.take(_cloudPageSize).toList();
-        _modelEvent.setProgressiveEvents(preview);
-        _modelEvent.sortMemoryEvents();
-        _hasLoadedEventsSuccessfully = true;
-        _hasMoreMemory = true;
-        _viewModelCache.retainEvents(preview);
-        notifyListeners();
-      }
-
-      // Continuations must use exactly the same upper bound as the first query,
-      // which also includes memories entered for a future date.
       _memoryLoadedEndDate = isMemoryTrace
           ? DateTime(today.year + 2, today.month, today.day)
           : null;
-      ModelMemoryInitialWindow? initialMemoryWindow;
-      final list = isMemoryTrace && usesCloudPagination
-          ? (initialMemoryWindow = await _serviceEvent.getMemoryWindow(
-              from: memoryStart,
-              to: _memoryLoadedEndDate!,
-              limit: _cloudPageSize,
-            )).events
-          : await _serviceEvent.getEvents(
-              tableName: _tableName,
-              inputUser: auth.currentAccount,
-              storageLocation: auth.preferredStorage,
-              dateS: isMemoryTrace ? memoryStart : null,
-              dateE: isMemoryTrace ? _memoryLoadedEndDate : null,
-              limit: usesCloudPagination ? _cloudPageSize + 1 : null,
-              onPartialEvents: isMemoryTrace ? publishMemoryPreview : null,
-              shouldContinue: () => _isCurrentEventLoad(generation, revision),
-            );
-      if (!_isCurrentEventLoad(generation, revision)) return;
-      var loadedEvents = list ?? [];
-      if (initialMemoryWindow != null) {
-        _hasMoreEvents = initialMemoryWindow.hasPageMore;
+      List<EventItem> loadedEvents;
+      if (isMemoryTrace) {
+        final localOwner = auth.currentAccount;
+        final window = usesCloudPagination
+            ? await _serviceEvent.getMemoryWindow(
+                from: memoryStart,
+                to: _memoryLoadedEndDate!,
+                limit: _cloudPageSize,
+              )
+            : localOwner == null || localOwner.isEmpty
+            ? ModelMemoryInitialWindow(
+                events: const [],
+                hasPageMore: false,
+                hasMore: false,
+                windowStart: memoryStart,
+                windowEnd: _memoryLoadedEndDate!,
+              )
+            : await _serviceEvent.getLocalMemoryWindow(
+                owner: localOwner,
+                from: memoryStart,
+                to: _memoryLoadedEndDate!,
+              );
+        if (!_isCurrentEventLoad(generation, revision)) return;
+        loadedEvents = window.events;
+        _hasMoreEvents = window.hasPageMore;
         _nextCloudOffset = loadedEvents.length;
-        _hasMoreMemory = initialMemoryWindow.hasMore;
-        _memoryLoadedStartDate = initialMemoryWindow.windowStart;
-        _memoryLoadedEndDate = initialMemoryWindow.windowEnd;
-      } else if (usesCloudPagination) {
-        loadedEvents = _acceptCloudPage(loadedEvents);
+        _hasMoreMemory = window.hasMore;
+        _memoryLoadedStartDate = window.windowStart;
+        _memoryLoadedEndDate = window.windowEnd;
       } else {
-        _hasMoreEvents = false;
-        _nextCloudOffset = 0;
-      }
-      if (isMemoryTrace &&
-          loadedEvents.isEmpty &&
-          initialMemoryWindow == null) {
-        final latestOlder = await _serviceEvent.latestEventDateBefore(
+        final list = await _serviceEvent.getEvents(
           tableName: _tableName,
-          before: memoryStart,
           inputUser: auth.currentAccount,
           storageLocation: auth.preferredStorage,
-          onLatestEvent: (event) => publishMemoryPreview([event]),
+          limit: usesCloudPagination ? _cloudPageSize + 1 : null,
           shouldContinue: () => _isCurrentEventLoad(generation, revision),
         );
         if (!_isCurrentEventLoad(generation, revision)) return;
-        if (latestOlder != null) {
-          _memoryLoadedEndDate = latestOlder;
-          loadedEvents =
-              await _serviceEvent.getEvents(
-                tableName: _tableName,
-                inputUser: auth.currentAccount,
-                storageLocation: auth.preferredStorage,
-                dateS: latestOlder,
-                dateE: latestOlder,
-                limit: usesCloudPagination ? _cloudPageSize + 1 : null,
-                onPartialEvents: publishMemoryPreview,
-                shouldContinue: () => _isCurrentEventLoad(generation, revision),
-              ) ??
-              [];
-          if (!_isCurrentEventLoad(generation, revision)) return;
-          if (usesCloudPagination) {
-            loadedEvents = _acceptCloudPage(loadedEvents);
-          }
+        loadedEvents = list ?? [];
+        if (usesCloudPagination) {
+          loadedEvents = _acceptCloudPage(loadedEvents);
+        } else {
+          _hasMoreEvents = false;
+          _nextCloudOffset = 0;
         }
       }
       _isLoadingMemoryRecords = false;
@@ -729,41 +694,7 @@ class ControllerEvent extends SafeChangeNotifier {
       }
       _hasLoadedEventsSuccessfully = true;
       _sortRecommendedContent();
-      if (isMemoryTrace) {
-        _modelEvent.sortMemoryEvents();
-        _memoryLoadedStartDate =
-            initialMemoryWindow?.windowStart ?? memoryStart;
-        if (loadedEvents.isNotEmpty &&
-            loadedEvents.every(
-              (event) =>
-                  event.startDate != null &&
-                  event.startDate!.isBefore(memoryStart),
-            )) {
-          _memoryLoadedStartDate = DateTimeFormatter.dateOnly(
-            loadedEvents
-                .map((event) => event.startDate!)
-                .reduce((left, right) => left.isBefore(right) ? left : right),
-          );
-        }
-        if (initialMemoryWindow != null) {
-          _hasMoreMemory = initialMemoryWindow.hasMore;
-        } else if (usesCloudPagination && _hasMoreEvents) {
-          _hasMoreMemory = true;
-        } else {
-          // The content is ready. Publish it before this optional metadata query.
-          _hasMoreMemory = true;
-          _isCheckingMoreMemory = true;
-          _viewModelCache.retainEvents(loadedEvents);
-          notifyListeners();
-          if (!_isCurrentEventLoad(generation, revision)) return;
-          await _refreshMemoryHistoryAvailability(
-            generation: generation,
-            revision: revision,
-            before: _memoryLoadedStartDate ?? memoryStart,
-          );
-        }
-        if (!_isCurrentEventLoad(generation, revision)) return;
-      }
+      if (isMemoryTrace) _modelEvent.sortMemoryEvents();
 
       // ✅ STOP UI card 不再觸發 weather
       if (isMemoryTrace) {
@@ -783,7 +714,6 @@ class ControllerEvent extends SafeChangeNotifier {
       if (_isCurrentEventLoad(generation, revision)) {
         _isLoadingEvents = false;
         _isLoadingMemoryRecords = false;
-        _isCheckingMoreMemory = false;
         notifyListeners();
       }
     }
@@ -832,47 +762,11 @@ class ControllerEvent extends SafeChangeNotifier {
     }
   }
 
-  /// Optional metadata must not discard content or write into a newer scope.
-  /// Keep the history action available if this lightweight check fails.
-  Future<void> _refreshMemoryHistoryAvailability({
-    required int generation,
-    required int revision,
-    required DateTime before,
-  }) async {
-    if (!_isCurrentEventLoad(generation, revision)) return;
-    var reading = true;
-    try {
-      final hasOlder = await _serviceEvent
-          .hasEventsBefore(
-            tableName: _tableName,
-            before: before,
-            inputUser: auth.currentAccount,
-            storageLocation: auth.preferredStorage,
-            shouldContinue: () =>
-                reading && _isCurrentEventLoad(generation, revision),
-          )
-          .timeout(const Duration(seconds: 10));
-      if (!_isCurrentEventLoad(generation, revision)) return;
-      _hasMoreMemory = hasOlder;
-    } catch (error, stackTrace) {
-      if (!_isCurrentEventLoad(generation, revision)) return;
-      _hasMoreMemory = true;
-      logger.w(
-        'Memory history availability check failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    } finally {
-      reading = false;
-    }
-  }
-
   Future<void> loadMoreMemoryEvents() async {
     if (_disposed) return;
     _handleAuthChange();
     if (_tableName != TableNames.memoryTrace ||
         _isLoadingEvents ||
-        _isCheckingMoreMemory ||
         _isLoadingMoreMemory ||
         !_hasMoreMemory) {
       return;
@@ -927,48 +821,19 @@ class ControllerEvent extends SafeChangeNotifier {
         _memoryLoadedEndDate = window.windowEnd;
         return;
       }
-      final latestOlder = await _serviceEvent.latestEventDateBefore(
-        tableName: _tableName,
-        before: loadedStart,
-        inputUser: auth.currentAccount,
-        storageLocation: auth.preferredStorage,
-        shouldContinue: () => _isCurrentEventLoad(generation, revision),
+      final owner = auth.currentAccount;
+      if (owner == null || owner.isEmpty) return;
+      final window = await _serviceEvent.getLocalMemoryWindow(
+        owner: owner,
+        from: loadedStart,
+        to: _memoryLoadedEndDate ?? loadedStart,
+        older: true,
       );
       if (!_isCurrentEventLoad(generation, revision)) return;
-      if (latestOlder == null) {
-        _hasMoreMemory = false;
-        return;
-      }
-      final rangeEnd = DateTimeFormatter.dateOnly(latestOlder);
-      final rangeStart = rangeEnd.subtract(const Duration(days: 29));
-      final olderEvents =
-          await _serviceEvent.getEvents(
-            tableName: _tableName,
-            inputUser: auth.currentAccount,
-            storageLocation: auth.preferredStorage,
-            dateS: rangeStart,
-            dateE: rangeEnd,
-            limit: usesCloudPagination ? _cloudPageSize + 1 : null,
-            shouldContinue: () => _isCurrentEventLoad(generation, revision),
-          ) ??
-          [];
-      if (!_isCurrentEventLoad(generation, revision)) return;
-      var visibleOlderEvents = olderEvents;
-      if (usesCloudPagination) {
-        visibleOlderEvents = _acceptCloudPage(olderEvents);
-      }
-      _modelEvent.appendMemoryEvents(visibleOlderEvents);
-      _memoryLoadedStartDate = rangeStart;
-      _memoryLoadedEndDate = rangeEnd;
-      if (_hasMoreEvents) {
-        _hasMoreMemory = true;
-      } else {
-        await _refreshMemoryHistoryAvailability(
-          generation: generation,
-          revision: revision,
-          before: rangeStart,
-        );
-      }
+      _modelEvent.appendMemoryEvents(window.events);
+      _memoryLoadedStartDate = window.windowStart;
+      _memoryLoadedEndDate = window.windowEnd;
+      _hasMoreMemory = window.hasMore;
     } catch (error, stackTrace) {
       if (_isCurrentEventLoad(generation, revision)) {
         logger.e(

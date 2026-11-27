@@ -9,6 +9,7 @@ class ModelAccountingAccount {
   String? currency;
   num? exchangeRate; // 與主要幣別轉換用
   final String category; // personal / project
+  final int? pendingProposalCount;
 
   ModelAccountingAccount({
     required this.id,
@@ -18,6 +19,7 @@ class ModelAccountingAccount {
     this.balance = 0,
     this.currency,
     this.exchangeRate,
+    this.pendingProposalCount,
   });
 
   /// Row mapping only. Images are decoded by Service and local totals by Model.
@@ -33,6 +35,7 @@ class ModelAccountingAccount {
     balance: balanceOverride ?? parseNumValue(row['balance']),
     currency: row['main_currency'],
     exchangeRate: row['exchange_rate'],
+    pendingProposalCount: tryParseIntValue(row['pending_count']),
   );
 
   ModelAccountingAccount copyWith({
@@ -52,6 +55,7 @@ class ModelAccountingAccount {
       balance: balance ?? this.balance,
       currency: currency ?? this.currency,
       exchangeRate: exchangeRate ?? this.exchangeRate,
+      pendingProposalCount: pendingProposalCount,
     );
   }
 }

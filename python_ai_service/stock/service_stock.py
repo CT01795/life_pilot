@@ -1,4 +1,3 @@
-import json
 import logging
 import sys
 from datetime import date as Date
@@ -7,7 +6,6 @@ from threading import Lock
 from typing import Annotated, Any, Literal
 from zoneinfo import ZoneInfo
 
-import pandas as pd
 from config import SessionLocal, engine
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
@@ -780,25 +778,3 @@ def _start_model_training(
       , description="查詢最近一次模型訓練的執行狀態")
 def route_model_training_status():
     return _get_model_training_state()
-
-@router.post(
-      "/stock/backtest_model"
-      , summary="模型回測"
-      , description="模型回測")
-def route_backtest_model():
-    return {"stocks": [], "message": "No data available"}
-
-@router.post(
-      "/stock/predict"
-      , summary="取得預測資料"
-      , description="取得預測資料")
-def route_predict():
-    # 先查 DB cache
-    latest_date = pd.read_sql("SELECT MAX(date) as max_date FROM stock_predicted", engine)['max_date'].values[0]
-    if latest_date is None:
-        return {"stocks": [], "message": "No predictions yet, trigger /update_model first"}
-    df_json = pd.read_sql(text("SELECT data FROM stock_predicted WHERE date=:date"), engine, params={"date": latest_date})
-    if df_json.empty:
-        return {"stocks": [], "message": "No predictions found"}
-    data_json = json.loads(df_json.iloc[0]['data'])
-    return data_json

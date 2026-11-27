@@ -3,6 +3,16 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('matching vendor catalog version omits only plans', () {
+    final sql = File(
+      'supabase/migrations/20261127000300_vendor_dashboard_catalog_revision.sql',
+    ).readAsStringSync();
+    expect(sql, contains('p_day_start, p_force_refresh, p_include_plans'));
+    expect(sql, contains('v_version = p_known_plans_version'));
+    expect(sql, contains("jsonb_set(v_dashboard, '{plans}', 'null'::jsonb)"));
+    expect(sql, contains('from public, anon'));
+    expect(sql, isNot(contains('drop function')));
+  });
   test('vendor dashboard bootstrap combines the three dashboard reads', () {
     final sql = File(
       'supabase/migrations/20261119000300_vendor_dashboard_bootstrap.sql',

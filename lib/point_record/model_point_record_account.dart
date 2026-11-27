@@ -7,6 +7,7 @@ class ModelPointRecordAccount {
   final Uint8List? masterGraphUrl;
   final int points;
   final String category; // personal / project
+  final int? pendingProposalCount;
 
   ModelPointRecordAccount({
     required this.id,
@@ -14,6 +15,7 @@ class ModelPointRecordAccount {
     required this.category,
     this.masterGraphUrl,
     this.points = 0,
+    this.pendingProposalCount,
   });
 
   /// Row mapping only; never decode image payloads or recalculate local totals.
@@ -27,6 +29,7 @@ class ModelPointRecordAccount {
     category: row['category'],
     masterGraphUrl: masterGraphUrl,
     points: pointsOverride ?? parseIntValue(row['points']),
+    pendingProposalCount: tryParseIntValue(row['pending_count']),
   );
 
   ModelPointRecordAccount copyWith({
@@ -42,6 +45,7 @@ class ModelPointRecordAccount {
       category: category ?? this.category,
       masterGraphUrl: masterGraphUrl ?? this.masterGraphUrl,
       points: points ?? this.points,
+      pendingProposalCount: pendingProposalCount,
     );
   }
 }

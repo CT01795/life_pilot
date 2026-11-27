@@ -63,6 +63,7 @@ void main() {
         'image-free account lists ignore image payloads and keep numeric fields',
         () async {
           response.single['master_graph_url'] = 'malformed-base64';
+          response.single['pending_count'] = 4;
           if (points) {
             final accounts = await ServicePointRecord().fetchAccounts(
               user: 'one@example.com',
@@ -70,6 +71,7 @@ void main() {
               limit: 20,
             );
             expect(accounts.single.points, 1234);
+            expect(accounts.single.pendingProposalCount, 4);
             expect(accounts.single.masterGraphUrl, null);
           } else {
             final accounts = await ServiceAccounting().fetchAccounts(
@@ -79,12 +81,13 @@ void main() {
             );
             expect(accounts.single.balance, 23.4567);
             expect(accounts.single.currency, 'USD');
+            expect(accounts.single.pendingProposalCount, 4);
             expect(accounts.single.masterGraphUrl, null);
           }
           expect(requests, hasLength(1));
           expect(
-            requests.single.queryParameters['select'],
-            isNot(contains('master_graph_url')),
+            requests.single.path,
+            '/rest/v1/rpc/list_my_ledger_overview_page',
           );
         },
       );

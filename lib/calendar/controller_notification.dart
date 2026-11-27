@@ -14,6 +14,19 @@ class ControllerNotification {
     await _service.initialize();
   }
 
+  Future<Set<String>?> pendingReminderEventIds() async {
+    try {
+      final requests = await _service.plugin?.pendingNotificationRequests();
+      if (requests == null) return null;
+      return CalendarReminderPayload.pendingEventIds(
+        requests.map((request) => request.payload),
+      );
+    } catch (_) {
+      // Older platform implementations may not support listing requests.
+      return null;
+    }
+  }
+
   Future<void> scheduleEventReminders({required EventItem event}) async {
     if (event.isCompleted) {
       await cancelAllEventReminders(eventId: event.id);

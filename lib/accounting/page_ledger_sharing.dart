@@ -656,12 +656,14 @@ class LedgerReviewButton extends StatefulWidget {
   const LedgerReviewButton({
     required this.kind,
     required this.accountId,
+    required this.pagePendingCount,
     this.onApproved,
     super.key,
   });
 
   final LedgerKind kind;
   final String accountId;
+  final int? pagePendingCount;
   final VoidCallback? onApproved;
 
   @override
@@ -680,7 +682,7 @@ class _LedgerReviewButtonState extends State<LedgerReviewButton>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _ledgerPendingChanges.addListener(_onPendingChanged);
-    _refresh();
+    _applyPageCount();
   }
 
   @override
@@ -688,15 +690,22 @@ class _LedgerReviewButtonState extends State<LedgerReviewButton>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.kind != widget.kind ||
         oldWidget.accountId != widget.accountId) {
-      _count = 0;
-      _countUnavailable = false;
-      _refresh();
+      _applyPageCount();
+    } else if (widget.pagePendingCount != null &&
+        oldWidget.pagePendingCount != widget.pagePendingCount) {
+      _applyPageCount();
     }
+  }
+
+  void _applyPageCount() {
+    ++_request;
+    _count = widget.pagePendingCount ?? 0;
+    _countUnavailable = widget.pagePendingCount == null;
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _refresh();
+    if (state == AppLifecycleState.resumed) _refresh(fresh: true);
   }
 
   @override
@@ -713,13 +722,14 @@ class _LedgerReviewButtonState extends State<LedgerReviewButton>
     }
   }
 
-  Future<void> _refresh({bool accountOnly = false}) async {
+  Future<void> _refresh({bool accountOnly = false, bool fresh = false}) async {
     final request = ++_request;
     final accountId = widget.accountId;
     try {
       final counts = await _service.pendingCounts(
         widget.kind,
         accountId: accountOnly ? accountId : null,
+        fresh: fresh,
       );
       if (!mounted || request != _request) return;
       final count = counts[accountId] ?? 0;

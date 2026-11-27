@@ -94,8 +94,10 @@ class ServiceVendorAccount {
     }
     final isCurrent = cache.beginBootstrapRead();
     final now = DateTime.now();
-    final cachedPlans = force ? null : pricing.peek(vendor: true);
-    final includePlans = cachedPlans == null;
+    final catalog = pricing.peekSnapshot(vendor: true);
+    final cachedPlans = catalog?.rows;
+    final includePlans = force || cachedPlans == null;
+    final canSeedPlans = pricing.captureSeedGuard(vendor: true);
     final value = await client.rpc(
       'get_my_vendor_dashboard_bootstrap',
       params: {
@@ -106,6 +108,7 @@ class ServiceVendorAccount {
         ).toUtc().toIso8601String(),
         'p_force_refresh': force,
         'p_include_plans': includePlans,
+        'p_known_plans_version': includePlans ? catalog?.version : null,
       },
     );
     if (!isCurrent() || shouldContinue?.call() == false) {
@@ -124,12 +127,36 @@ class ServiceVendorAccount {
     final status = payload['status'];
     final metrics = payload['metrics'];
     final returnedPlans = payload['plans'];
-    final plans = returnedPlans is List ? returnedPlans : cachedPlans;
-    if (status is! Map || metrics is! Map || plans == null) {
+    final rawPlanVersion = payload['plans_version'];
+    final planVersion = rawPlanVersion is String ? rawPlanVersion : null;
+    final canReusePlans =
+        cachedPlans != null &&
+        (!includePlans ||
+            (planVersion != null && planVersion == catalog?.version));
+    if (status is! Map ||
+        metrics is! Map ||
+        (returnedPlans is! List && !canReusePlans)) {
       throw const FormatException('Invalid vendor dashboard');
     }
-    if (returnedPlans is List) {
-      pricing.seed(vendor: true, rows: returnedPlans);
+    final List<dynamic> plans;
+    if (returnedPlans is List && canSeedPlans()) {
+      pricing.seed(vendor: true, rows: returnedPlans, version: planVersion);
+      plans = returnedPlans;
+    } else if (canReusePlans && canSeedPlans()) {
+      plans = cachedPlans;
+      if (includePlans) {
+        pricing.seed(vendor: true, rows: plans, version: planVersion);
+      }
+    } else {
+      plans = await pricing.read(vendor: true, displayOnly: true);
+      if (!isCurrent() || shouldContinue?.call() == false) {
+        final latest = cache.read();
+        if (latest != null &&
+            normalizeText(client.auth.currentUser?.email) == normalized) {
+          return latest;
+        }
+        throw StateError('Dashboard read superseded');
+      }
     }
     final dashboard = ModelVendorDashboard(
       status: VendorSubscriptionStatus.fromJson(

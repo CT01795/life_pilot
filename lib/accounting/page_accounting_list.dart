@@ -355,6 +355,7 @@ class _AccountCard extends StatelessWidget {
                           LedgerReviewButton(
                             kind: LedgerKind.accounting,
                             accountId: account.id,
+                            pagePendingCount: account.pendingProposalCount,
                             onApproved: () =>
                                 controller.refreshAccount(account.id),
                           ),

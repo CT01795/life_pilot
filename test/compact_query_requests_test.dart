@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:life_pilot/vendor/service_vendor_account.dart';
 import 'package:life_pilot/vendor/repository_vendor_dashboard_cache.dart';
+import 'package:life_pilot/subscription/repository_pricing_catalog.dart';
 import 'package:life_pilot/event/service_content_performance.dart';
 import 'package:life_pilot/event/model_content_performance_period.dart';
 import 'package:life_pilot/event/model_content_performance.dart';
@@ -59,6 +60,45 @@ void main() {
     );
   });
   tearDown(() => client.dispose());
+  test(
+    'late workbench catalog never replaces a newer explicit catalog read',
+    () async {
+      response = {
+        'status': {
+          'plan': {'plan_code': 'free'},
+          'status': 'active',
+        },
+        'metrics': {
+          'published': 0,
+          'pending': 0,
+          'recent_submissions': [],
+          'totals': {},
+        },
+        'plans': [
+          {'version_name': 'Old'},
+        ],
+        'plans_version': 'old',
+      };
+      final pending = gate = Completer<void>();
+      final dashboard = ServiceVendorAccount().fetchDashboard(
+        'one@example.com',
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(requests, hasLength(1));
+      gate = null;
+      response = {
+        'versions': [
+          {'version_name': 'New'},
+        ],
+      };
+      final catalog = RepositoryPricingCatalog(client: client);
+      await catalog.read(vendor: true, force: true);
+      pending.complete();
+      await dashboard;
+      expect(catalog.peek(vendor: true)!.single['version_name'], 'New');
+      expect(requests, hasLength(2));
+    },
+  );
   test('obsolete workbench response cannot repopulate the cache', () async {
     response = {
       'status': {
@@ -178,6 +218,7 @@ void main() {
           'recent_submissions': [],
         },
         'plans': [],
+        'plans_version': 'same-plans',
       };
       final result = await ServiceVendorAccount().fetchDashboard(
         'one@example.com',
@@ -241,7 +282,8 @@ void main() {
           'totals': {'page_views': 123456},
           'recent_submissions': [],
         },
-        'plans': [],
+        'plans': null,
+        'plans_version': 'same-plans',
       };
       await ServiceVendorAccount().fetchDashboard(
         'one@example.com',
@@ -250,6 +292,10 @@ void main() {
       expect(requests, hasLength(3));
       expect(jsonDecode(requests.last.body)['p_force_refresh'], true);
       expect(jsonDecode(requests.last.body)['p_include_plans'], true);
+      expect(
+        jsonDecode(requests.last.body)['p_known_plans_version'],
+        'same-plans',
+      );
 
       await ServiceVendorAccount().fetchPricingPlans();
       expect(requests, hasLength(3));

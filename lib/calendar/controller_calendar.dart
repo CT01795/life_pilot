@@ -47,7 +47,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   String closeText;
   Locale? _lastLocale;
   Timer? _webNotificationTimer;
-  Future<void>? _completedReminderSync;
+  ({Object scope, Future<void> request})? _completedReminderSync;
 
   // ------------------------
   // 狀態
@@ -655,37 +655,56 @@ class ControllerCalendar extends SafeChangeNotifier {
     final account = auth?.currentAccount?.trim();
     if (account == null || account.isEmpty || auth!.isAnonymous) return;
 
-    final activeSync = _completedReminderSync;
-    if (activeSync != null) return activeSync;
+    final generation = _dataGeneration;
+    final storage = auth!.preferredStorage;
+    final scope = (generation, normalizeText(account), storage);
+    final active = _completedReminderSync;
+    if (active != null && active.scope == scope) return active.request;
+    bool isCurrent() =>
+        !notifierDisposed &&
+        generation == _dataGeneration &&
+        normalizeText(auth?.currentAccount) == scope.$2 &&
+        auth?.preferredStorage == storage;
 
-    final sync = () async {
+    final sync = Future<void>.sync(() async {
       try {
-        final completedIds = auth!.preferredStorage == DataStorageLocation.local
+        final pending = await _controllerNotification.pendingReminderEventIds();
+        if (!isCurrent() || pending?.isEmpty == true) return;
+        final completedIds = storage == DataStorageLocation.local
             ? _modelCalendar.events
-                  .where((event) => event.isCompleted)
+                  .where(
+                    (event) =>
+                        event.isCompleted &&
+                        (pending == null || pending.contains(event.id)),
+                  )
                   .map((event) => event.id)
                   .toList(growable: false)
             : await _serviceEvent.getCompletedCalendarEventIds(
                 account: account,
+                pendingEventIds: pending,
               );
-        await Future.wait(
-          completedIds.map(
-            (eventId) => _controllerNotification.cancelAllEventReminders(
-              eventId: eventId,
-            ),
-          ),
-        );
+        for (final eventId in completedIds) {
+          if (!isCurrent()) return;
+          await _controllerNotification.cancelAllEventReminders(
+            eventId: eventId,
+          );
+        }
       } catch (error, stackTrace) {
         logger.e(
           'Sync completed calendar reminders failed',
           error: error,
           stackTrace: stackTrace,
         );
-      } finally {
-        _completedReminderSync = null;
       }
-    }();
-    _completedReminderSync = sync;
+    });
+    _completedReminderSync = (scope: scope, request: sync);
+    unawaited(
+      sync.whenComplete(() {
+        if (identical(_completedReminderSync?.request, sync)) {
+          _completedReminderSync = null;
+        }
+      }),
+    );
     return sync;
   }
 

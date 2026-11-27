@@ -55,7 +55,7 @@ void main() {
       client: client,
     );
 
-    await api.post('/stock/predict', {});
+    await api.post('/stock/select_latest_stock_date', {});
 
     expect(authorizationHeader, 'Bearer session-token');
   });

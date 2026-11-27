@@ -26,7 +26,7 @@ class StockAuthorizationTest(unittest.TestCase):
         service_stock._set_model_training_state("idle")
 
     def test_rejects_request_without_authentication(self):
-        response = self.client.post("/stock/backtest_model")
+        response = self.client.get("/stock/model_training_status")
 
         self.assertEqual(response.status_code, 401)
 
@@ -36,7 +36,10 @@ class StockAuthorizationTest(unittest.TestCase):
             "app_metadata": {"role": "user"},
         }
 
-        response = self.client.post("/stock/backtest_model")
+        response = self.client.post(
+            "/stock/update_model_for_date",
+            json={"prediction_date": "2026-08-20"},
+        )
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(
@@ -50,10 +53,18 @@ class StockAuthorizationTest(unittest.TestCase):
             "app_metadata": {"role": "admin"},
         }
 
-        response = self.client.post("/stock/backtest_model")
+        response = self.client.get("/stock/model_training_status")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["stocks"], [])
+        self.assertEqual(response.json()["status"], "idle")
+
+    def test_retired_routes_are_not_registered(self):
+        paths = {route.path for route in app.routes}
+        self.assertNotIn("/stock/backtest_model", paths)
+        self.assertNotIn("/stock/predict", paths)
+        self.assertIn("/stock/update_model_for_date", paths)
+        self.assertIn("/stock/model_training_status", paths)
+        self.assertIn("/stock/select_stock_predicted", paths)
 
     def test_rejects_duplicate_model_training(self):
         app.dependency_overrides[require_supabase_user] = lambda: {

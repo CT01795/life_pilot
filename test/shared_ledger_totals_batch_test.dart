@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,52 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+    'foreground proposal counts share a fresh read, not the old one',
+    () async {
+      final reads = <Completer<http.Response>>[];
+      final requests = <http.Request>[];
+      final client = SupabaseClient(
+        'https://example.supabase.co',
+        'key',
+        httpClient: MockClient((request) {
+          requests.add(request);
+          final response = Completer<http.Response>();
+          reads.add(response);
+          return response.future;
+        }),
+      );
+      addTearDown(client.dispose);
+      await client.auth.setInitialSession(
+        jsonEncode({
+          'access_token': 'token-test',
+          'token_type': 'bearer',
+          'user': {
+            'id': 'test',
+            'aud': 'authenticated',
+            'created_at': '2026-01-01T00:00:00Z',
+          },
+        }),
+      );
+      final sharing = ServiceLedgerSharing(client: client);
+      final old = sharing.pendingCounts(LedgerKind.accounting);
+      final fresh = sharing.pendingCounts(LedgerKind.accounting, fresh: true);
+      final joined = sharing.pendingCounts(LedgerKind.accounting, fresh: true);
+      await Future<void>.delayed(Duration.zero);
+      expect(reads, hasLength(2));
+      http.Response result(int count, http.Request request) => http.Response(
+        '[{"account_id":"a","pending_count":$count}]',
+        200,
+        headers: {'content-type': 'application/json'},
+        request: request,
+      );
+      reads.last.complete(result(2, requests.last));
+      expect(await fresh, {'a': 2});
+      expect(await joined, {'a': 2});
+      reads.first.complete(result(1, requests.first));
+      expect(await old, {'a': 1});
+    },
+  );
   test(
     'missing overview and proposal RPCs fail without cross-query fallback',
     () async {

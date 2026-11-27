@@ -5,9 +5,11 @@ class _CatalogState {
   Object? scope;
   int revision = 0;
   final readRevisions = <bool, int>{};
+  final startedReads = <bool, int>{};
   final pending = <bool, Future<List<dynamic>>>{};
   final queued = <bool, Future<List<dynamic>>>{};
-  final values = <bool, ({DateTime expires, List<dynamic> rows})>{};
+  final values =
+      <bool, ({DateTime expires, List<dynamic> rows, String? version})>{};
 }
 
 /// Completed results are reused only for display, never quota/write decisions.
@@ -34,13 +36,38 @@ class RepositoryPricingCatalog {
     state.values.clear();
   }
 
-  List<dynamic>? peek({required bool vendor}) {
+  ({List<dynamic> rows, String? version})? peekSnapshot({
+    required bool vendor,
+  }) {
     final state = _states[client];
     final scope = _scope;
     if (state == null || scope == null || state.scope != scope) return null;
     final cached = state.values[vendor];
     if (cached == null || !_now().isBefore(cached.expires)) return null;
-    return cached.rows;
+    return (rows: cached.rows, version: cached.version);
+  }
+
+  List<dynamic>? peek({required bool vendor}) =>
+      peekSnapshot(vendor: vendor)?.rows;
+
+  bool Function() captureSeedGuard({required bool vendor}) {
+    final scope = _scope;
+    final state = _states[client] ??= _CatalogState();
+    if (state.scope != scope) {
+      invalidate();
+      state.scope = scope;
+    }
+    final revision = state.revision;
+    final readRevision = state.readRevisions[vendor];
+    final reads = state.startedReads[vendor];
+    return () =>
+        scope != null &&
+        _scope == scope &&
+        state.revision == revision &&
+        state.readRevisions[vendor] == readRevision &&
+        state.startedReads[vendor] == reads &&
+        state.pending[vendor] == null &&
+        state.queued[vendor] == null;
   }
 
   /// Seeds display-only catalog data returned by another combined RPC.
@@ -48,6 +75,7 @@ class RepositoryPricingCatalog {
   void seed({
     required bool vendor,
     required Iterable<Object?> rows,
+    String? version,
     Duration ttl = const Duration(minutes: 5),
   }) {
     final scope = _scope;
@@ -57,7 +85,11 @@ class RepositoryPricingCatalog {
       invalidate();
       state.scope = scope;
     }
-    state.values[vendor] = (expires: _now().add(ttl), rows: _freeze(rows));
+    state.values[vendor] = (
+      expires: _now().add(ttl),
+      rows: _freeze(rows),
+      version: version,
+    );
   }
 
   List<dynamic> _freeze(Iterable<Object?> rows) => List<dynamic>.unmodifiable(
@@ -124,6 +156,7 @@ class RepositoryPricingCatalog {
     Object? scope,
     bool vendor,
   ) {
+    state.startedReads.update(vendor, (value) => value + 1, ifAbsent: () => 1);
     final revision = state.revision;
     final readRevision = state.readRevisions[vendor];
     late Future<List<dynamic>> request;
@@ -146,6 +179,7 @@ class RepositoryPricingCatalog {
             state.values[vendor] = (
               expires: _now().add(const Duration(seconds: 30)),
               rows: frozen,
+              version: null,
             );
           }
           return frozen;
