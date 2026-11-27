@@ -83,12 +83,18 @@ class ServiceSubscription {
     final rows = usage;
     final entitlementRows = entitlements;
     final status = Map<String, dynamic>.from(rawStatus);
+    final rawLocalFreeVersion = bootstrap['local_free_version_name'];
+    final localFreeVersionName =
+        rawLocalFreeVersion is String && rawLocalFreeVersion.trim().isNotEmpty
+        ? rawLocalFreeVersion
+        : null;
     if (status['status'] == 'configuration_missing') {
       return SubscriptionSnapshot(
         plan: 'unconfigured',
         usage: const {},
         status: 'configuration_missing',
         storagePlan: storagePlan,
+        localFreeVersionName: localFreeVersionName,
         entitlements: entitlementRows
             .map(
               (row) => SubscriptionEntitlement.fromJson(
@@ -202,6 +208,7 @@ class ServiceSubscription {
         status['quarterly_price_paid_twd'],
       ),
       pricingVersionName: parseStringValue(status['pricing_version_name']),
+      localFreeVersionName: localFreeVersionName,
       pricingEffectiveAt: tryParseDateTimeValue(status['pricing_effective_at']),
       lastDataActivityAt: tryParseDateTimeValue(
         status['last_data_activity_at'],

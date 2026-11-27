@@ -9,6 +9,12 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get subscriptionLocalFreeName => '本機免費版';
+
+  @override
+  String get registrationLocalFreeExplanation => '新個人帳號預設使用本機免費版。個人資料只存在此裝置，不會同步；雲端儲存可跨裝置使用，雲端功能依雲端方案額度提供。';
+
+  @override
   String get homeUnfinishedPastSchedules => '前三天未完成的行程';
 
   @override

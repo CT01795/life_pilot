@@ -131,6 +131,10 @@ class ControllerPageCalendarAdd extends ControllerSpeechInput {
 
   // 更新欄位（主事件 / 子事件）
   void updateField(String key, String value, bool check) {
+    final controller = controllerMap[key];
+    if (controller != null && controller.text != value) {
+      controller.text = value;
+    }
     // ✅ 判斷是否是 subEvent 欄位
     if (key.contains('_sub_')) {
       final parts = key.split('_sub_');
@@ -142,10 +146,12 @@ class ControllerPageCalendarAdd extends ControllerSpeechInput {
           orElse: () => EventItem(id: nowId),
         );
         _updateSubEvent(key, sub, field, value, check);
+        onContentChanged?.call();
         return;
       }
     }
     _updateMainField(key, value, check);
+    onContentChanged?.call();
   }
 
   void _updateMainField(String key, String value, bool check) {

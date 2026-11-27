@@ -9,6 +9,12 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get subscriptionLocalFreeName => '기기 저장 무료 요금제';
+
+  @override
+  String get registrationLocalFreeExplanation => '새 개인 계정은 기기 저장 무료 요금제로 시작합니다. 개인 데이터는 이 기기에만 저장되며 동기화되지 않습니다. 클라우드 저장은 다른 기기에서도 이용할 수 있으며 클라우드 기능은 해당 요금제의 한도를 따릅니다.';
+
+  @override
   String get homeUnfinishedPastSchedules => '지난 3일간의 미완료 일정';
 
   @override

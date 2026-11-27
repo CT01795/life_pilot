@@ -258,6 +258,7 @@ class ControllerPageEventAdd extends ControllerSpeechInput {
           orElse: () => EventItem(id: nowId),
         );
         _updateSubEvent(key, sub, field, value, check);
+        onContentChanged?.call();
         return;
       }
     }

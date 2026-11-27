@@ -179,7 +179,9 @@ class _PageSettingsState extends State<PageSettings> {
               auth.preferredStorage == DataStorageLocation.local ||
               auth.canUseLocalStorage,
           localSubscriptionActive:
-              auth.isSysAdmin || auth.hasActiveLocalSubscription,
+              auth.isSysAdmin ||
+              auth.hasActiveLocalSubscription ||
+              auth.hasLocalFreePlan,
           localPromotionAccess:
               !auth.isSysAdmin &&
               auth.quotaFreePeriodActive &&

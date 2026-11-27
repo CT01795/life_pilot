@@ -43,7 +43,6 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
   late final ControllerPageEventAdd controllerAdd;
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
-  final Map<String, FocusNode> _focusNodes = {};
   bool _isSaving = false;
   bool _hasUnsavedChanges = false;
   bool _allowPop = false;
@@ -57,9 +56,6 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
       templateEvent: widget.templateEvent,
       initialDate: widget.initialDate,
     );
-    for (final controller in controllerAdd.controllerMap.values) {
-      controller.addListener(_markUnsavedChanges);
-    }
     controllerAdd.onContentChanged = _markUnsavedChanges;
   }
 
@@ -68,9 +64,6 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
     controllerAdd.onContentChanged = null;
     _scrollController.dispose();
     controllerAdd.dispose();
-    for (var node in _focusNodes.values) {
-      node.dispose();
-    }
     super.dispose();
   }
 
@@ -93,24 +86,6 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
     setState(() => _allowPop = true);
     await Future<void>.delayed(Duration.zero);
     if (mounted) Navigator.of(context).pop();
-  }
-
-  FocusNode getFocusNode(String key) {
-    return _focusNodes.putIfAbsent(key, () {
-      final node = FocusNode();
-
-      node.addListener(() {
-        if (!node.hasFocus) {
-          controllerAdd.updateField(
-            key,
-            controllerAdd.getController(key: key).text,
-            true,
-          );
-        }
-      });
-
-      return node;
-    });
   }
 
   Future<void> _saveEvent(AppLocalizations loc) async {

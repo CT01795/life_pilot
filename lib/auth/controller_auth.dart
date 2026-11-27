@@ -148,8 +148,14 @@ class ControllerAuth extends SafeChangeNotifier {
     return hasActiveLocalPlan || hasActiveLocalEntitlement;
   }
 
+  bool get hasLocalFreePlan =>
+      _accountType != 'vendor' && _subscription.localFreeVersionName != null;
+
   bool get canUseLocalStorage =>
-      isSysAdmin || _quotaFreePeriodActive || hasActiveLocalSubscription;
+      isSysAdmin ||
+      _quotaFreePeriodActive ||
+      hasActiveLocalSubscription ||
+      hasLocalFreePlan;
 
   void _syncLocalCreatePermission() {
     final account = _currentAccount;
@@ -328,6 +334,7 @@ class ControllerAuth extends SafeChangeNotifier {
         lastDataActivityAt: base.lastDataActivityAt,
         downgradeGraceEndsAt: base.downgradeGraceEndsAt,
         entitlements: base.entitlements,
+        localFreeVersionName: base.localFreeVersionName,
       );
     }
 
@@ -349,6 +356,7 @@ class ControllerAuth extends SafeChangeNotifier {
       lastDataActivityAt: base.lastDataActivityAt,
       downgradeGraceEndsAt: base.downgradeGraceEndsAt,
       entitlements: base.entitlements,
+      localFreeVersionName: base.localFreeVersionName,
     );
   }
 
@@ -429,6 +437,20 @@ class ControllerAuth extends SafeChangeNotifier {
         (basePeriodEnd == null || basePeriodEnd.isAfter(now));
 
     if (!baseIsActiveLocal && localEntitlement == null) {
+      final freeVersion = base.localFreeVersionName;
+      if (freeVersion != null) {
+        return SubscriptionSnapshot(
+          plan: 'free',
+          status: 'active',
+          storagePlan: 'local',
+          pricingVersionName: freeVersion,
+          localFreeVersionName: freeVersion,
+          usage: localUsage,
+          lastDataActivityAt: base.lastDataActivityAt,
+          downgradeGraceEndsAt: base.downgradeGraceEndsAt,
+          entitlements: base.entitlements,
+        );
+      }
       return SubscriptionSnapshot(
         plan: 'free',
         usage: {
@@ -481,6 +503,7 @@ class ControllerAuth extends SafeChangeNotifier {
       lastDataActivityAt: base.lastDataActivityAt,
       downgradeGraceEndsAt: base.downgradeGraceEndsAt,
       entitlements: base.entitlements,
+      localFreeVersionName: base.localFreeVersionName,
     );
   }
 
@@ -847,7 +870,12 @@ class ControllerAuth extends SafeChangeNotifier {
         final storedLocation = await _localStore.preferredLocation(
           _currentAccount!,
         );
-        _preferredStorage = storedLocation ?? DataStorageLocation.cloud;
+        _preferredStorage =
+            storedLocation ??
+            (_accountType == 'personal' &&
+                    user?.appMetadata['default_storage'] == 'local'
+                ? DataStorageLocation.local
+                : DataStorageLocation.cloud);
         if (_preferredStorage == DataStorageLocation.local) {
           _localStore.setCreateAllowed(_currentAccount!, false);
         }

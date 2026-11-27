@@ -33,6 +33,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
   late Future<List<SubscriptionPricingVersion>> _pricingVersions;
   List<SubscriptionPricingVersion> _availableVersions = const [];
   SubscriptionPricingVersion? _latestFreeCloudVersion;
+  SubscriptionPricingVersion? _latestFreeLocalVersion;
   SubscriptionPricingVersion? _latestCloudVersion;
   SubscriptionPricingVersion? _latestLocalVersion;
   int _adminSubscriptionEditorRevision = 0;
@@ -50,7 +51,12 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
           )
           .firstOrNull;
       _latestLocalVersion = _availableVersions
-          .where((v) => v.storagePlan == 'local' && v.billingCycle == cycle)
+          .where(
+            (v) =>
+                v.storagePlan == 'local' &&
+                v.priceTwd > 0 &&
+                v.billingCycle == cycle,
+          )
           .firstOrNull;
     });
   }
@@ -95,7 +101,14 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               .where(
                 (version) =>
                     version.storagePlan == SubscriptionStoragePlan.local &&
+                    version.priceTwd > 0 &&
                     version.billingCycle == _billingCycle,
+              )
+              .firstOrNull;
+          _latestFreeLocalVersion = versions
+              .where(
+                (version) =>
+                    version.storagePlan == 'local' && version.priceTwd == 0,
               )
               .firstOrNull;
           _adminSubscriptionEditorRevision++;
@@ -138,6 +151,8 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                         )
                         .firstOrNull ??
                     _latestLocalVersion
+              : auth.hasLocalFreePlan
+              ? _latestFreeLocalVersion
               : null
         : subscription.isPlus
         ? _availableVersions
@@ -250,6 +265,8 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                               subscription.storagePlan ==
                                   SubscriptionStoragePlan.local
                           ? loc.subscriptionCurrentLocalPlus
+                          : auth.hasLocalFreePlan
+                          ? loc.subscriptionLocalFreeName
                           : auth.quotaFreePeriodActive
                           ? loc.subscriptionCurrentLocalPromotion
                           : loc.subscriptionCurrentLocalInactive)
@@ -266,7 +283,8 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                   ? Text(loc.localSubscriptionRequiredForChanges)
                   : endLabel != null
                   ? Text(loc.subscriptionValidUntil(endLabel))
-                  : subscription.isPlus
+                  : subscription.isPlus ||
+                        (localStorageSelected && auth.hasLocalFreePlan)
                   ? null
                   : Text(loc.subscriptionInactiveAccountWarning),
             ),
@@ -550,7 +568,26 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                         canUsePoints: canUsePoints,
                         canUseGame: canUseGame,
                       ),
-                      selected: !auth.isSysAdmin && !subscription.isPlus,
+                      selected:
+                          !auth.isSysAdmin &&
+                          !subscription.isPlus &&
+                          !localStorageSelected,
+                    );
+              final localFreeCard = _latestFreeLocalVersion == null
+                  ? null
+                  : _PlanCard(
+                      title: loc.subscriptionLocalFreeName,
+                      price: billingPriceLabel(loc, 0, BillingCycle.month),
+                      features: [
+                        loc.dataStorageLocalWarning,
+                        loc.localImagesDeviceOnly,
+                        loc.cloudSubmissionExplanation,
+                      ],
+                      selected:
+                          localStorageSelected &&
+                          !auth.isSysAdmin &&
+                          !subscription.isPlus &&
+                          auth.hasLocalFreePlan,
                     );
               final cloudPlusCard = _latestCloudVersion == null
                   ? null
@@ -609,11 +646,18 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                   ? (subscription.storagePlan == SubscriptionStoragePlan.local
                         ? localPlusCard
                         : cloudPlusCard)
+                  : localStorageSelected
+                  ? localFreeCard
                   : freeCard;
               final remainingCards =
-                  <Widget?>[freeCard, cloudPlusCard, localPlusCard]
-                      .whereType<Widget>()
-                      .where((card) => !identical(card, currentCard));
+                  <Widget?>[
+                    freeCard,
+                    cloudPlusCard,
+                    localFreeCard,
+                    localPlusCard,
+                  ].whereType<Widget>().where(
+                    (card) => !identical(card, currentCard),
+                  );
               final cards = <Widget>[?currentCard, ...remainingCards];
               if (cards.isEmpty) return const SizedBox.shrink();
               if (constraints.maxWidth >= 900) {

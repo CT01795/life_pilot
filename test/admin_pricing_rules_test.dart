@@ -6,6 +6,7 @@ import 'package:http/testing.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/model_personal_pricing_choice.dart';
 import 'package:life_pilot/subscription/repository_pricing_version_guard.dart';
+import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/subscription/widgets_admin_pricing_editor.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -72,33 +73,70 @@ void main() {
   });
   tearDown(() => client.dispose());
 
+  test('free pricing is exactly zero for either storage option', () {
+    expect(PersonalPricingChoice.cloudFree.storagePlan, 'cloud');
+    expect(PersonalPricingChoice.cloudFree.acceptsPrice(0), isTrue);
+    expect(PersonalPricingChoice.cloudFree.acceptsPrice(1), isFalse);
+    expect(PersonalPricingChoice.localFree.storagePlan, 'local');
+    expect(PersonalPricingChoice.localFree.acceptsPrice(0), isTrue);
+    expect(PersonalPricingChoice.localFree.acceptsPrice(1), isFalse);
+    expect(
+      PersonalPricingChoice.from('local', 0),
+      PersonalPricingChoice.localFree,
+    );
+    for (final choice in [
+      PersonalPricingChoice.cloudPaid,
+      PersonalPricingChoice.localPaid,
+    ]) {
+      expect(choice.acceptsPrice(0), isFalse);
+      expect(choice.acceptsPrice(-1), isFalse);
+      expect(choice.acceptsPrice(null), isFalse);
+      expect(choice.acceptsPrice(149), isTrue);
+    }
+    expect(
+      PersonalPricingChoice.from('cloud', 0),
+      PersonalPricingChoice.cloudFree,
+    );
+    expect(
+      PersonalPricingChoice.from('cloud', 149),
+      PersonalPricingChoice.cloudPaid,
+    );
+    expect(
+      PersonalPricingChoice.from('local', 149),
+      PersonalPricingChoice.localPaid,
+    );
+  });
+
   test(
-    'free is cloud and exactly zero; paid choices require positive price',
-    () {
-      expect(PersonalPricingChoice.cloudFree.storagePlan, 'cloud');
-      expect(PersonalPricingChoice.cloudFree.acceptsPrice(0), isTrue);
-      expect(PersonalPricingChoice.cloudFree.acceptsPrice(1), isFalse);
-      for (final choice in [
-        PersonalPricingChoice.cloudPaid,
-        PersonalPricingChoice.localPaid,
-      ]) {
-        expect(choice.acceptsPrice(0), isFalse);
-        expect(choice.acceptsPrice(-1), isFalse);
-        expect(choice.acceptsPrice(null), isFalse);
-        expect(choice.acceptsPrice(149), isTrue);
-      }
-      expect(
-        PersonalPricingChoice.from('cloud', 0),
-        PersonalPricingChoice.cloudFree,
+    'creating a free device version sends local storage and zero price',
+    () async {
+      await ServiceSubscription().createPricingVersionAsAdmin(
+        name: 'Device free',
+        storagePlan: PersonalPricingChoice.localFree.storagePlan,
+        effectiveAt: DateTime.utc(2026, 11, 27),
+        quarterlyPrice: 0,
+        quotas: {
+          for (final key in [
+            'calendar',
+            'accounting',
+            'point',
+            'memory',
+            'game',
+            'share',
+            'event',
+            'attraction',
+            'image',
+            'answerDays',
+          ])
+            key: 0,
+        },
       );
-      expect(
-        PersonalPricingChoice.from('cloud', 149),
-        PersonalPricingChoice.cloudPaid,
-      );
-      expect(
-        PersonalPricingChoice.from('local', 149),
-        PersonalPricingChoice.localPaid,
-      );
+      final request = requests.single;
+      expect(request.url.path, endsWith('/admin_save_pricing_version'));
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(body['p_vendor'], false);
+      expect(body['p_payload']['p_storage_plan'], 'local');
+      expect(body['p_payload']['p_quarterly_price_twd'], 0);
     },
   );
 

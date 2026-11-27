@@ -99,6 +99,18 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
+  /// No description provided for @subscriptionLocalFreeName.
+  ///
+  /// In en, this message translates to:
+  /// **'Free device plan'**
+  String get subscriptionLocalFreeName;
+
+  /// No description provided for @registrationLocalFreeExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'New personal accounts start on the free device plan. Personal records stay on this device and do not sync. Cloud storage supports access on other devices; cloud features follow your cloud plan limits.'**
+  String get registrationLocalFreeExplanation;
+
   /// No description provided for @homeUnfinishedPastSchedules.
   ///
   /// In en, this message translates to:

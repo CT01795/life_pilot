@@ -9,6 +9,12 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get subscriptionLocalFreeName => '端末無料プラン';
+
+  @override
+  String get registrationLocalFreeExplanation => '新規の個人アカウントは端末無料プランから始まります。個人データはこの端末にのみ保存され、同期されません。クラウドでは他の端末からも利用でき、機能はクラウドプランの利用上限に従います。';
+
+  @override
   String get homeUnfinishedPastSchedules => '過去3日間の未完了の予定';
 
   @override

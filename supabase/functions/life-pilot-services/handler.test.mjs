@@ -115,6 +115,14 @@ test('target account missing is not an actor-session error', async () => {
   const r = await setup().run('account/admin/reset-password', { email: 'a@example.com' });
   assert.equal(r.response.status, 404); assert.equal(r.data.code, 'account_not_found');
 });
+test('new personal accounts default to device storage without any added role', async () => {
+  const s = setup();
+  const r = await s.run('account/admin/create-user', { email: 'a@example.com', account_type: 'personal' });
+  assert.equal(r.response.status, 200);
+  const write = s.calls.find(c => c.url.pathname === '/auth/v1/admin/users');
+  assert.deepEqual(write.body.app_metadata, { default_storage: 'local' });
+  assert.deepEqual(write.body.user_metadata, { account_type: 'personal' });
+});
 test('passwords include all required classes and are generated independently', () => {
   const seen = new Set();
   for (let i = 0; i < 100; i++) {

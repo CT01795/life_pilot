@@ -38,6 +38,7 @@ class SubscriptionSnapshot {
     this.quarterlyPricePaidTwd,
     this.pricingVersionName,
     this.pricingEffectiveAt,
+    this.localFreeVersionName,
     this.lastDataActivityAt,
     this.downgradeGraceEndsAt,
     this.entitlements = const [],
@@ -56,6 +57,7 @@ class SubscriptionSnapshot {
   final int? quarterlyPricePaidTwd;
   final String? pricingVersionName;
   final DateTime? pricingEffectiveAt;
+  final String? localFreeVersionName;
   final DateTime? lastDataActivityAt;
   final DateTime? downgradeGraceEndsAt;
   final List<SubscriptionEntitlement> entitlements;
@@ -84,6 +86,7 @@ class SubscriptionSnapshot {
       quarterlyPricePaidTwd: quarterlyPricePaidTwd,
       pricingVersionName: pricingVersionName,
       pricingEffectiveAt: pricingEffectiveAt,
+      localFreeVersionName: localFreeVersionName,
       lastDataActivityAt: lastDataActivityAt,
       downgradeGraceEndsAt: downgradeGraceEndsAt,
       entitlements: entitlements,

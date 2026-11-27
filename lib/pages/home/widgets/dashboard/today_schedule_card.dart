@@ -58,8 +58,9 @@ class TodayScheduleCard extends StatelessWidget {
     final upcoming = events
         .where((event) => !schedule.isReviewEvent(event))
         .toList(growable: false);
-    final rows = [...upcoming.take(5), ...review.reversed];
+    final rows = [...review.reversed, ...upcoming.take(5)];
     final firstReview = review.lastOrNull;
+    final firstUpcoming = upcoming.firstOrNull;
     final hasLoadFailed = context.select<ControllerDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.todaySchedule),
     );
@@ -186,6 +187,8 @@ class TodayScheduleCard extends StatelessWidget {
                       leading: const Icon(Icons.history),
                       title: Text(loc.homeUnfinishedPastSchedules),
                     ),
+                  if (review.isNotEmpty && identical(e, firstUpcoming))
+                    const Divider(),
                   RepaintBoundary(
                     key: ValueKey(e.id),
                     child: ListTile(

@@ -78,7 +78,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
       }
       for (final entry in _values.entries) {
         if (entry.key == 'price') continue;
-        if (choice == PersonalPricingChoice.localPaid) entry.value.text = '0';
+        if (choice.storagePlan == 'local') entry.value.text = '0';
       }
     });
   }
@@ -398,6 +398,10 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
               DropdownMenuItem(
                 value: PersonalPricingChoice.cloudPaid,
                 child: Text(loc.subscriptionPlusName),
+              ),
+              DropdownMenuItem(
+                value: PersonalPricingChoice.localFree,
+                child: Text(loc.subscriptionLocalFreeName),
               ),
               DropdownMenuItem(
                 value: PersonalPricingChoice.localPaid,

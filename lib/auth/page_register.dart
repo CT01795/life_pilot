@@ -218,6 +218,10 @@ class _PageRegisterState extends State<PageRegister> {
                     ),
                     Gaps.h16,
                     Text(loc.registrationAdminApprovalDescription),
+                    if (_authView.registrationAccountType != 'vendor') ...[
+                      Gaps.h8,
+                      Text(loc.registrationLocalFreeExplanation),
+                    ],
                     Gaps.h16,
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,

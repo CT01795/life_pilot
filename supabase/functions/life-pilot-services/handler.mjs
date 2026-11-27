@@ -343,7 +343,10 @@ export function createHandler({ env, fetchImpl = fetch, now = Date.now }) {
         const key = env('LIFE_PILOT_SERVICE_ROLE_KEY') || required('SUPABASE_SERVICE_ROLE_KEY');
         const target = existing?.id ? `/auth/v1/admin/users/${encodeURIComponent(existing.id)}` : '/auth/v1/admin/users';
         await jsonFetch(`${base}${target}`, { method: existing?.id ? 'PUT' : 'POST', headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify({
-          password, ...(creating ? { email, email_confirm: true, user_metadata: { account_type: accountType } } : {}),
+          password, ...(creating ? {
+            email, email_confirm: true, user_metadata: { account_type: accountType },
+            ...(accountType === 'personal' ? { app_metadata: { default_storage: 'local' } } : {}),
+          } : {}),
         }) });
         return respond({ email, temporary_password: password, ...(creating ? { account_type: accountType } : {}) });
       }

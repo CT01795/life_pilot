@@ -115,9 +115,24 @@ void main() {
     expect(requests, hasLength(1));
     expect(
       requests.single.url.path,
-      endsWith('/get_my_subscription_bootstrap'),
+      endsWith('/get_my_subscription_bootstrap_v2'),
     );
   });
+  test(
+    'device-free availability is independent of the cloud allowance',
+    () async {
+      payload['status'] = {
+        'plan': 'unconfigured',
+        'status': 'configuration_missing',
+      };
+      payload['local_free_version_name'] = 'Device free';
+      final snapshot = await ServiceSubscription().fetchMyUsage();
+      expect(snapshot.configurationMissing, true);
+      expect(snapshot.localFreeVersionName, 'Device free');
+      expect(snapshot.copyWithUsage({}).localFreeVersionName, 'Device free');
+      expect(requests, hasLength(1));
+    },
+  );
   for (final mode in ['cloud', 'local']) {
     test(
       'missing $mode allowance explicitly returns read-only without follow-up reads',
@@ -217,7 +232,7 @@ void main() {
     );
     expect(
       requests.single.url.path,
-      endsWith('/get_my_subscription_bootstrap'),
+      endsWith('/get_my_subscription_bootstrap_v2'),
     );
   });
   for (final code in ['42501', 'P0001', '42P01']) {

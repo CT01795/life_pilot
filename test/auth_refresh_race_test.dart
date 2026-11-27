@@ -53,7 +53,7 @@ void main() {
             final gate = Completer<bool>();
             checks.add(gate);
             body = await gate.future;
-          case 'get_my_subscription_bootstrap':
+          case 'get_my_subscription_bootstrap_v2':
             final gate = Completer<({int status, Object body})>();
             usages.add(gate);
             final response = await gate.future;

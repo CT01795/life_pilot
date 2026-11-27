@@ -7,7 +7,7 @@ class RepositorySubscriptionBootstrap {
 
   Future<Map<String, dynamic>> read(String storagePlan) async {
     final result = await client.rpc(
-      'get_my_subscription_bootstrap',
+      'get_my_subscription_bootstrap_v2',
       params: {'p_storage_plan': storagePlan},
     );
     if (result is! Map) {

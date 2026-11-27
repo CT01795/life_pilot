@@ -1,4 +1,6 @@
 {
+  "subscriptionLocalFreeName": "Free device plan",
+  "registrationLocalFreeExplanation": "New personal accounts start on the free device plan. Personal records stay on this device and do not sync. Cloud storage supports access on other devices; cloud features follow your cloud plan limits.",
   "homeUnfinishedPastSchedules": "Unfinished events from the past 3 days",
   "stockRunSelectedDate": "Run for selected date",
   "stockRunSelectedDateHint": "Only the selected date is processed. Other dates are not deleted.",

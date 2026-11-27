@@ -9,6 +9,12 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get subscriptionLocalFreeName => 'Free device plan';
+
+  @override
+  String get registrationLocalFreeExplanation => 'New personal accounts start on the free device plan. Personal records stay on this device and do not sync. Cloud storage supports access on other devices; cloud features follow your cloud plan limits.';
+
+  @override
   String get homeUnfinishedPastSchedules => 'Unfinished events from the past 3 days';
 
   @override
