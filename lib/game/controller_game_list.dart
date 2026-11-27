@@ -11,6 +11,7 @@ class ControllerGameList extends SafeChangeNotifier {
   final ServiceGame serviceGame;
   ModelGameCatalog _catalog = ModelGameCatalog(const []);
   final _loads = RefreshRequestCoordinator();
+  int _revision = 0;
   bool _isLoading = false;
   Object? _loadError;
 
@@ -24,29 +25,33 @@ class ControllerGameList extends SafeChangeNotifier {
   ModelGameItem? findGame({String? gameType, String? gameName, int? level}) =>
       _catalog.findGame(gameType: gameType, gameName: gameName, level: level);
 
-  /// Concurrent callers share one request. A later explicit load still refreshes.
-  Future<void> loadGames() {
+  /// Ordinary callers share the active read; a write queues a fresh read.
+  Future<void> loadGames({bool force = false}) {
     if (notifierDisposed) return Future.value();
-    return _loads.run(_loadGames);
+    if (force && _loads.isRunning) _revision++;
+    return _loads.run(() => _loadGames(force: force), force: force);
   }
 
-  Future<void> _loadGames() async {
+  Future<void> _loadGames({required bool force}) async {
+    if (notifierDisposed) return;
+    final revision = ++_revision;
+    bool current() => !notifierDisposed && revision == _revision;
     _isLoading = true;
     _loadError = null;
     notifyListeners();
     try {
       // A listener may close the page before the service read starts.
-      if (notifierDisposed) return;
-      final games = await serviceGame.fetchGames();
-      if (notifierDisposed) return;
+      if (!current()) return;
+      final games = await serviceGame.fetchGames(force: force);
+      if (!current()) return;
       _catalog = ModelGameCatalog(games);
     } catch (error) {
-      if (!notifierDisposed) {
+      if (current()) {
         _loadError = error;
         rethrow;
       }
     } finally {
-      if (!notifierDisposed) {
+      if (current()) {
         _isLoading = false;
         notifyListeners();
       }

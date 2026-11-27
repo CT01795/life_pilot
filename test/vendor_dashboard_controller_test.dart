@@ -75,6 +75,7 @@ class _Service extends ServiceVendorAccount {
   Future<ModelVendorDashboard> fetchDashboard(
     String account, {
     bool force = false,
+    bool Function()? shouldContinue,
   }) {
     owners.add(account);
     forces.add(force);
@@ -162,6 +163,25 @@ void main() {
     await retry;
     expect(controller.error, isNull);
     expect(controller.data, isNotNull);
+  });
+
+  test('late dashboard read cannot undo a saved submission', () async {
+    final first = controller.load();
+    service.complete(0);
+    await first;
+    final stale = controller.load(force: true);
+    controller.applySubmissionSaved(
+      previous: null,
+      current: EventItem(id: 'new', name: 'New', startDate: DateTime.now()),
+      attraction: false,
+    );
+    expect(controller.data!.metrics.pending, 1);
+    service.complete(1);
+    await stale;
+    expect(controller.data!.metrics.pending, 1);
+    expect(controller.loading, isFalse);
+    service.recentReads.single.complete(null);
+    await _flush();
   });
 
   testWidgets('visible refresh keeps current dashboard while forcing reload', (

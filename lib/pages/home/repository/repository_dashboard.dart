@@ -1,4 +1,5 @@
 import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
+import 'package:life_pilot/pages/home/model/dashboard/dashboard_bootstrap.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_recommendations.dart';
@@ -34,17 +35,6 @@ class DashboardRepository {
   static final _recommendationCityCache =
       <String, _RecommendationCityCacheEntry>{};
   static int _recommendationCityRevision = 0;
-  ({String accountId, AccountingDashboardSummary summary})?
-  _bootstrapAccounting;
-  ({String accountId, PointDashboardSummary summary})? _bootstrapPoints;
-  List<CalendarEvent>? _bootstrapTodayEvents;
-  List<Map<String, dynamic>> _bootstrapSharedLedgers = const [];
-
-  List<Map<String, dynamic>> takeBootstrapSharedLedgers() {
-    final rows = _bootstrapSharedLedgers;
-    _bootstrapSharedLedgers = const [];
-    return rows;
-  }
 
   String? get _localOwner => supabase.auth.currentUser?.email?.toLowerCase();
 
@@ -62,11 +52,6 @@ class DashboardRepository {
   }
 
   Future<List<CalendarEvent>> loadTodayEvents(String account) async {
-    final bootstrap = _bootstrapTodayEvents;
-    if (bootstrap != null) {
-      _bootstrapTodayEvents = null;
-      return bootstrap;
-    }
     final query = ModelDashboardScheduleQuery(DateTime.now());
     final localOwner = _localOwner;
     if (localOwner != null && await _storesLocally) {
@@ -165,13 +150,9 @@ class DashboardRepository {
   }
 
   //=====================================================================================================
-  Future<DashboardSetting> loadDashboardSetting({
+  Future<DashboardBootstrap> loadDashboardBootstrap({
     required String account,
   }) async {
-    _bootstrapAccounting = null;
-    _bootstrapPoints = null;
-    _bootstrapTodayEvents = null;
-    _bootstrapSharedLedgers = const [];
     if (await _storesLocally) {
       final row = await LocalDataStore.instance.readOnlyRow(
         owner: account,
@@ -181,10 +162,12 @@ class DashboardRepository {
       if (row != null) {
         final saved = DashboardSetting.fromJson(row);
         if (saved.accountingAccountId != null || saved.pointAccountId != null) {
-          return saved;
+          return DashboardBootstrap(setting: saved);
         }
       }
-      return _recoverLocalDashboardSetting(account);
+      return DashboardBootstrap(
+        setting: await _recoverLocalDashboardSetting(account),
+      );
     }
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
@@ -209,12 +192,12 @@ class DashboardRepository {
         result['shared_ledgers'] is! List) {
       throw const FormatException('Invalid dashboard bootstrap response');
     }
-    _bootstrapSharedLedgers = List<Map<String, dynamic>>.unmodifiable(
+    final sharedLedgers = List<Map<String, dynamic>>.unmodifiable(
       (result['shared_ledgers'] as List).map(
         (row) => Map<String, dynamic>.unmodifiable(row as Map),
       ),
     );
-    _bootstrapTodayEvents = ModelDashboardScheduleQuery(now).decodeRows(
+    final todayEvents = ModelDashboardScheduleQuery(now).decodeRows(
       (result['today_events'] as List).map(
         (row) => Map<String, dynamic>.from(row as Map),
       ),
@@ -222,21 +205,17 @@ class DashboardRepository {
     final setting = DashboardSetting.fromJson(
       Map<String, dynamic>.from(result['setting'] as Map),
     );
-    final accountingId = setting.accountingAccountId;
-    if (accountingId != null && accountingId.isNotEmpty) {
-      _bootstrapAccounting = (
-        accountId: accountingId,
-        summary: _decodeAccountingSummary(result['accounting']),
-      );
-    }
-    final pointId = setting.pointAccountId;
-    if (pointId != null && pointId.isNotEmpty) {
-      _bootstrapPoints = (
-        accountId: pointId,
-        summary: _decodePointSummary(result['points']),
-      );
-    }
-    return setting;
+    return DashboardBootstrap(
+      setting: setting,
+      todayEvents: todayEvents,
+      accounting: setting.accountingAccountId?.isNotEmpty == true
+          ? _decodeAccountingSummary(result['accounting'])
+          : null,
+      points: setting.pointAccountId?.isNotEmpty == true
+          ? _decodePointSummary(result['points'])
+          : null,
+      sharedLedgers: sharedLedgers,
+    );
   }
 
   Future<DashboardSetting> _recoverLocalDashboardSetting(String account) async {
@@ -269,8 +248,6 @@ class DashboardRepository {
     required String account,
     required DashboardSetting setting,
   }) async {
-    _bootstrapAccounting = null;
-    _bootstrapPoints = null;
     if (await _storesLocally) {
       await LocalDataStore.instance.put(
         owner: account,
@@ -393,11 +370,6 @@ class DashboardRepository {
     required String accountId,
   }) async {
     if (accountId.isEmpty) return const AccountingDashboardSummary.empty();
-    final bootstrap = _bootstrapAccounting;
-    if (bootstrap != null && bootstrap.accountId == accountId) {
-      _bootstrapAccounting = null;
-      return bootstrap.summary;
-    }
     final localOwner = _localOwner;
     if (localOwner != null && await _storesLocally) {
       final account = await LocalDataStore.instance.readOnlyRow(
@@ -460,11 +432,6 @@ class DashboardRepository {
     required String accountId,
   }) async {
     if (accountId.isEmpty) return const PointDashboardSummary.empty();
-    final bootstrap = _bootstrapPoints;
-    if (bootstrap != null && bootstrap.accountId == accountId) {
-      _bootstrapPoints = null;
-      return bootstrap.summary;
-    }
     final localOwner = _localOwner;
     if (localOwner != null && await _storesLocally) {
       final account = await LocalDataStore.instance.readOnlyRow(

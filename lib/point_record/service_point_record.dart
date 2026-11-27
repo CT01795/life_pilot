@@ -462,7 +462,6 @@ class ServicePointRecord {
     required String type,
     required List<PointRecordPreview> records,
   }) async {
-    _cloudHistory.invalidate();
     final now = DateTime.now();
     try {
       if (await _storesLocally) {
@@ -489,7 +488,7 @@ class ServicePointRecord {
         }
         return;
       }
-      await supabase.rpc(
+      await _writeHistory(
         'add_point_records_batch',
         params: {
           'p_account_id': accountId,
@@ -522,7 +521,6 @@ class ServicePointRecord {
     required String newPrimaryCategory,
     String? newSecondaryCategory,
   }) async {
-    _cloudHistory.invalidate();
     try {
       final owner = _localOwner;
       if (await _storesLocally) {
@@ -544,7 +542,7 @@ class ServicePointRecord {
         );
         return;
       }
-      await supabase.rpc(
+      await _writeHistory(
         'update_my_ledger_detail',
         params: {
           'p_kind': 'points',
@@ -565,7 +563,6 @@ class ServicePointRecord {
   }
 
   Future<void> deletePointRecordDetail({required String detailId}) async {
-    _cloudHistory.invalidate();
     final owner = _localOwner;
     if (await _storesLocally) {
       if (owner == null) {
@@ -578,9 +575,22 @@ class ServicePointRecord {
       );
       return;
     }
-    await supabase.rpc(
+    await _writeHistory(
       'delete_my_point_record_detail',
       params: {'p_detail_id': detailId},
     );
+  }
+
+  Future<void> _writeHistory(
+    String function, {
+    required Map<String, dynamic> params,
+  }) async {
+    final client = supabase;
+    _cloudHistory.invalidate(client, kind: 'points');
+    try {
+      await client.rpc(function, params: params);
+    } finally {
+      _cloudHistory.invalidate(client, kind: 'points');
+    }
   }
 }

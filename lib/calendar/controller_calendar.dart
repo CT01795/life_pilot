@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/controller_page_calendar_add.dart';
@@ -55,8 +56,8 @@ class ControllerCalendar extends SafeChangeNotifier {
   final Set<String> _previewMonths = {};
   int _dataGeneration = 0;
   String? _dataScopeKey;
-  bool _isChangingMonth = false;
-  int _monthChangeToken = 0;
+  RefreshRequestCoordinator _monthLoads = RefreshRequestCoordinator();
+  ({DateTime month, bool notify})? _requestedMonth;
 
   late ServiceEventTransfer _serviceEventTransfer;
 
@@ -78,7 +79,20 @@ class ControllerCalendar extends SafeChangeNotifier {
   List<EventItem> get events => _modelCalendar.events;
 
   void invalidateEventCache({required DateTime? startDate, DateTime? endDate}) {
+    final keys = ModelCalendar.affectedMonthKeys(
+      startDate: startDate,
+      endDate: endDate,
+    );
+    _invalidateMonthReads(keys);
+    _previewMonths.removeAll(keys);
     _modelCalendar.invalidateEventRange(startDate: startDate, endDate: endDate);
+  }
+
+  void _invalidateMonthReads(Iterable<String> keys) {
+    for (final key in keys) {
+      final token = _reloadTokensByMonth[key];
+      if (token != null) _reloadTokensByMonth[key] = token + 1;
+    }
   }
 
   static final DateTime baseDate = DateTime(1911, 1);
@@ -321,36 +335,66 @@ class ControllerCalendar extends SafeChangeNotifier {
   // ------------------------
   // 跳轉月並同步資料（若有快取則不重新拉）
   Future<void> goToMonth({required DateTime month, bool notify = true}) async {
-    if (notifierDisposed || _isChangingMonth) return;
+    if (notifierDisposed) return;
+    final target = DateTimeFormatter.monthOnly(month);
+    final loads = _monthLoads;
+    final requested = _requestedMonth;
+    if (loads.isRunning &&
+        requested == null &&
+        currentMonth.toMonthKey() == target.toMonthKey()) {
+      await loads.pending;
+      return;
+    }
+    _requestedMonth = (
+      month: target,
+      notify: notify || (requested?.notify ?? false),
+    );
+    try {
+      await loads.run(() async {
+        if (notifierDisposed || !identical(loads, _monthLoads)) return;
+        final latest = _requestedMonth;
+        _requestedMonth = null;
+        if (latest != null) {
+          await _goToMonth(latest.month, notify: latest.notify);
+        }
+      }, force: true);
+    } catch (_) {
+      if (notifierDisposed || !identical(loads, _monthLoads)) return;
+      if (loads.pending == null) rethrow;
+    }
+    // Navigation callers (e.g. the month picker) must not animate the page
+    // back to an intermediate month while the latest destination is queued.
+    while (!notifierDisposed && identical(loads, _monthLoads)) {
+      final next = loads.pending;
+      if (next == null) break;
+      await next;
+    }
+  }
+
+  Future<void> _goToMonth(DateTime targetMonth, {required bool notify}) async {
     final generation = _dataGeneration;
     final scope = _currentDataScopeKey(auth);
-    final transition = ++_monthChangeToken;
-    _isChangingMonth = true;
-    try {
-      final targetMonth = DateTimeFormatter.dateOnly(month);
-      final key = targetMonth.toMonthKey();
-      currentMonth = targetMonth;
-      if (_modelCalendar.cachedEvents.containsKey(key) &&
-          !_previewMonths.contains(key)) {
-        // ✅ 同步更新 events
-        _modelCalendar.setMonthFromCache(key);
-        if (notify) notifyListeners();
-      } else {
-        await reloadEvents(month: targetMonth, notify: notify);
-      }
-      if (!_isCurrentDataScope(generation, scope)) return;
-      for (final offset in [1, -1]) {
-        unawaited(
-          _preloadMonth(
-            DateTime(targetMonth.year, targetMonth.month + offset),
-            generation,
-            scope,
-          ),
-        );
-      }
-    } finally {
-      // clearAll can release an old transition while a new account starts one.
-      if (transition == _monthChangeToken) _isChangingMonth = false;
+    final key = targetMonth.toMonthKey();
+    currentMonth = targetMonth;
+    if (_modelCalendar.cachedEvents.containsKey(key) &&
+        !_previewMonths.contains(key)) {
+      // ✅ 同步更新 events
+      _modelCalendar.setMonthFromCache(key);
+      if (notify) notifyListeners();
+    } else {
+      await reloadEvents(month: targetMonth, notify: notify);
+    }
+    if (!_isCurrentDataScope(generation, scope) || _requestedMonth != null) {
+      return;
+    }
+    for (final offset in [1, -1]) {
+      unawaited(
+        _preloadMonth(
+          DateTime(targetMonth.year, targetMonth.month + offset),
+          generation,
+          scope,
+        ),
+      );
     }
   }
 
@@ -374,7 +418,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   }
 
   Future<void> goToOffsetMonth({required int offset}) async {
-    final current = _modelCalendar.currentMonth;
+    final current = _requestedMonth?.month ?? _modelCalendar.currentMonth;
     await goToMonth(month: DateTime(current.year, current.month + offset));
   }
 
@@ -463,9 +507,7 @@ class ControllerCalendar extends SafeChangeNotifier {
       await goToMonth(month: DateTimeFormatter.monthOnly(newEvent.startDate!));
       return;
     }
-    // Do not rely on goToMonth here. A month transition may already be in
-    // progress, in which case goToMonth intentionally returns early and the
-    // newly saved event would remain invisible until a manual refresh.
+    // Re-read the current month without navigating or reusing a snapshot.
     await reloadEvents(
       month: DateTimeFormatter.monthOnly(_modelCalendar.currentMonth),
     );
@@ -501,16 +543,22 @@ class ControllerCalendar extends SafeChangeNotifier {
       event: event,
       tableName: _tableName,
     );
-    // The persisted deletion still needs its old reminder removed if the user
-    // has left this page. Only the UI/cache update below is scope-dependent.
+    if (_isCurrentDataScope(generation, scope)) {
+      _invalidateMonthReads(
+        event.startDate == null && event.endDate == null
+            ? _reloadTokensByMonth.keys.toList()
+            : ModelCalendar.affectedMonthKeys(
+                startDate: event.startDate,
+                endDate: event.endDate,
+              ),
+      );
+      _modelCalendar
+        ..removeEvent(event)
+        ..markRemoved(event.id);
+      notifyListeners();
+    }
+    // Reminder cleanup is still needed after the view has switched accounts.
     await _controllerNotification.cancelAllEventReminders(eventId: event.id);
-    if (!_isCurrentDataScope(generation, scope)) return;
-
-    // 移除事件並更新快取
-    _modelCalendar
-      ..removeEvent(event)
-      ..markRemoved(event.id);
-    notifyListeners();
   }
 
   Future<void> saveEventWithNotification({
@@ -778,8 +826,8 @@ class ControllerCalendar extends SafeChangeNotifier {
   void clearAll({bool notify = true}) {
     _previewMonths.clear();
     _dataGeneration++;
-    _monthChangeToken++;
-    _isChangingMonth = false;
+    _monthLoads = RefreshRequestCoordinator();
+    _requestedMonth = null;
     _reloadTokensByMonth.clear();
     _modelCalendar.clearAll();
     if (notify && !notifierDisposed) notifyListeners();

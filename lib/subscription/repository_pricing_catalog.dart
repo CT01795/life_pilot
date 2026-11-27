@@ -4,7 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class _CatalogState {
   Object? scope;
   int revision = 0;
+  final readRevisions = <bool, int>{};
   final pending = <bool, Future<List<dynamic>>>{};
+  final queued = <bool, Future<List<dynamic>>>{};
   final values = <bool, ({DateTime expires, List<dynamic> rows})>{};
 }
 
@@ -28,6 +30,7 @@ class RepositoryPricingCatalog {
     if (state == null) return;
     state.revision++;
     state.pending.clear();
+    state.queued.clear();
     state.values.clear();
   }
 
@@ -76,7 +79,34 @@ class RepositoryPricingCatalog {
       invalidate();
       state.scope = scope;
     }
-    if (force) invalidate();
+    final queued = state.queued[vendor];
+    if (queued != null) return queued;
+    if (force) {
+      state.values.remove(vendor);
+      state.readRevisions.update(
+        vendor,
+        (value) => value + 1,
+        ifAbsent: () => 1,
+      );
+      final active = state.pending[vendor];
+      if (active != null) {
+        final revision = state.revision;
+        Future<List<dynamic>> followUp() async {
+          try {
+            await active;
+          } catch (_) {
+            // A forced read must still run after an obsolete or failed read.
+          }
+          if (_scope != scope || state.revision != revision) {
+            throw StateError('Pricing request scope changed');
+          }
+          state.queued.remove(vendor);
+          return _readCatalog(state, scope, vendor);
+        }
+
+        return state.queued[vendor] = followUp();
+      }
+    }
     final cached = state.values[vendor];
     if (displayOnly &&
         scope != null &&
@@ -86,15 +116,25 @@ class RepositoryPricingCatalog {
     }
     final active = state.pending[vendor];
     if (active != null) return active;
+    return _readCatalog(state, scope, vendor);
+  }
+
+  Future<List<dynamic>> _readCatalog(
+    _CatalogState state,
+    Object? scope,
+    bool vendor,
+  ) {
     final revision = state.revision;
+    final readRevision = state.readRevisions[vendor];
     late Future<List<dynamic>> request;
     request =
         Future<List<dynamic>>.sync(() async {
-          final result = await client.rpc(
-            'get_pricing_catalog',
-            params: {'p_vendor': vendor},
-          );
-          if (_scope != scope || state.revision != revision) {
+          final result = await client
+              .rpc('get_pricing_catalog', params: {'p_vendor': vendor})
+              .timeout(const Duration(seconds: 30));
+          if (_scope != scope ||
+              state.revision != revision ||
+              state.readRevisions[vendor] != readRevision) {
             throw StateError('Pricing request scope changed');
           }
           if (result is! Map || result['versions'] is! List) {

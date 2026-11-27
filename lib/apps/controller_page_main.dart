@@ -1,11 +1,11 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/service_module.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -62,6 +62,7 @@ class ControllerPageMain extends SafeChangeNotifier {
   Set<String> _moduleKeys = const {};
   Object? modulesError;
   int _moduleRequest = 0;
+  RefreshRequestCoordinator _moduleLoads = RefreshRequestCoordinator();
   PageType _selectedPage;
   final Map<PageType, String?> _pendingCities = {};
   Timer? _debounce;
@@ -103,7 +104,17 @@ class ControllerPageMain extends SafeChangeNotifier {
 
   Future<void> refreshModules() => _reloadModules(force: true);
 
-  Future<void> _reloadModules({bool force = false}) async {
+  Future<void> _reloadModules({bool force = false}) {
+    if (notifierDisposed) return Future<void>.value();
+    final loads = _moduleLoads;
+    if (force && loads.isRunning) _moduleRequest++;
+    return loads.run(() async {
+      if (notifierDisposed || !identical(loads, _moduleLoads)) return;
+      await _readModules(force: force);
+    }, force: force);
+  }
+
+  Future<void> _readModules({required bool force}) async {
     final account = _accountKey;
     final request = ++_moduleRequest;
     if (account == null || account.isEmpty || auth.isSysAdmin) {
@@ -116,7 +127,10 @@ class ControllerPageMain extends SafeChangeNotifier {
     modulesError = null;
     if (force) _notifyDebounced();
     try {
-      final keys = await _serviceModule.loadModulesFromServer(account);
+      final keys = await _serviceModule.loadModulesFromServer(
+        account,
+        force: force,
+      );
       if (request != _moduleRequest || account != _accountKey) return;
       _moduleKeys = keys.toSet();
       _validateSelectedPage();
@@ -155,6 +169,8 @@ class ControllerPageMain extends SafeChangeNotifier {
           nextIsVendor != _wasVendor;
       _auth = auth;
       if (sessionChanged) {
+        _moduleRequest++;
+        _moduleLoads = RefreshRequestCoordinator();
         _accountKey = nextAccount;
         _wasAdmin = nextIsAdmin;
         _wasVendor = nextIsVendor;

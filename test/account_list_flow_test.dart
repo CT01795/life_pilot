@@ -212,7 +212,7 @@ class _Harness {
       hasMore = (() => c.hasMore),
       error = (() => c.loadError);
   final SafeChangeNotifier controller;
-  final Future<void> Function({String? inputCategory}) load;
+  final Future<void> Function({String? inputCategory, bool force}) load;
   final Future<void> Function() loadMore;
   final Future<void> Function(String) select;
   final Future<void> Function(String) search;
@@ -410,6 +410,21 @@ void main() {
         requests.pending.single.complete(['personal']);
         await Future.wait([first, second]);
         expect(h.ids(), ['personal']);
+      });
+
+      test('forced reload replaces an active first page only once', () async {
+        final initial = h.load();
+        final refresh = h.load(force: true);
+        expect(h.load(force: true), same(refresh));
+        expect(requests.pending, hasLength(1));
+        requests.pending.first.complete(['obsolete']);
+        await initial;
+        await Future<void>.delayed(Duration.zero);
+        expect(h.ids(), isEmpty);
+        expect(requests.pending, hasLength(2));
+        requests.pending.last.complete(['fresh']);
+        await refresh;
+        expect(h.ids(), ['fresh']);
       });
 
       test('synchronous service re-entry awaits the actual request', () async {

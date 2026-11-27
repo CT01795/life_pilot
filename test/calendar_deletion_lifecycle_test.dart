@@ -6,6 +6,8 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
+import 'package:life_pilot/calendar/model_calendar_month_query.dart';
+import 'package:life_pilot/calendar/service_calendar_month.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
@@ -51,6 +53,17 @@ class _Notifications implements ControllerNotification {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _MonthLoader extends ServiceCalendarMonth {
+  final pending = Completer<List<EventItem>>();
+
+  @override
+  Future<List<EventItem>> loadMonth(
+    ModelCalendarMonthQuery query, {
+    bool Function()? shouldContinue,
+    void Function(List<EventItem>)? onEventsReady,
+  }) => pending.future;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late _Auth auth;
@@ -60,16 +73,23 @@ void main() {
   late ControllerCalendar controller;
   late ProviderLocale locale;
   late EventItem event;
+  late _MonthLoader loader;
   setUp(() {
     auth = _Auth();
     service = _Service();
     notifications = _Notifications();
     model = ModelCalendar();
     locale = ProviderLocale(locale: const Locale('en'));
-    event = EventItem(id: 'event', name: 'old');
+    event = EventItem(
+      id: 'event',
+      name: 'old',
+      startDate: DateTime(2026, 10, 9),
+    );
+    loader = _MonthLoader();
     model.setEvents([event]);
     controller = ControllerCalendar(
       modelCalendar: model,
+      monthLoader: loader,
       serviceEvent: service,
       auth: auth,
       controllerNotification: notifications,
@@ -107,6 +127,25 @@ void main() {
     expect(model.events, [event]);
     expect(model.removedEventIds, isEmpty);
   });
+
+  test(
+    'late month read cannot restore a deleted row or discard its peers',
+    () async {
+      final month = DateTime(2026, 10);
+      final kept = EventItem(id: 'kept', name: 'kept', startDate: month);
+      controller.currentMonth = month;
+      model.setEvents([event, kept]);
+      model.cacheMonthEvents(month, [event, kept]);
+      final old = controller.reloadEvents();
+      final deletion = controller.deleteEvent(event);
+      service.deleted.complete();
+      await deletion;
+      loader.pending.complete([event, kept]);
+      await old;
+      expect(model.events, [kept]);
+      expect(model.eventsForMonth(month), [kept]);
+    },
+  );
 
   for (final local in [false, true]) {
     test(

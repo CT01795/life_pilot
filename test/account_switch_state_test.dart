@@ -74,7 +74,10 @@ class _FakeModuleService extends ServiceModule {
   final List<String> modules;
 
   @override
-  Future<List<String>> loadModulesFromServer(String account) async => modules;
+  Future<List<String>> loadModulesFromServer(
+    String account, {
+    bool force = false,
+  }) async => modules;
 }
 
 class _FakeNotificationService implements ServiceNotificationPlatform {

@@ -8,11 +8,14 @@ import 'package:life_pilot/utils/repository_session_reads.dart';
 class ServiceModule {
   ServiceModule();
 
-  Future<List<String>> loadModulesFromServer(String account) =>
-      RepositorySessionReads(supabase).read('modules', (
-        'own',
-        normalizeText(account),
-      ), () => _loadModulesFromServer(account));
+  Future<List<String>> loadModulesFromServer(
+    String account, {
+    bool force = false,
+  }) => RepositorySessionReads(supabase).read('modules', (
+    'own',
+    normalizeText(account),
+    force,
+  ), () => _loadModulesFromServer(account));
 
   Future<List<String>> _loadModulesFromServer(String account) async {
     try {

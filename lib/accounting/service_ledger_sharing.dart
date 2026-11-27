@@ -101,7 +101,10 @@ class ServiceLedgerSharing {
         },
       );
 
-  Future<SharedLedgerHomeSnapshot> homePreview(String id) {
+  Future<SharedLedgerHomeSnapshot> homePreview(
+    String id, {
+    bool force = false,
+  }) {
     const rpc = 'get_my_shared_ledger_home_preview';
     final db = _db;
     final now = DateTime.now();
@@ -109,7 +112,7 @@ class ServiceLedgerSharing {
     String utc(DateTime date) => date.toUtc().toIso8601String();
     return RepositorySessionReads(
       db,
-    ).read(_group, ('home-preview', id, day), () async {
+    ).read(_group, ('home-preview', id, day, force), () async {
       final result =
           await db.rpc(
                 rpc,

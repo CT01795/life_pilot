@@ -98,6 +98,50 @@ void main() {
     public.close();
   });
 
+  test('editing blocks a late list response and re-reads once', () async {
+    final original = EventItem(id: 'event', name: 'old');
+    final updated = EventItem(id: 'event', name: 'new');
+    events.rows = [original];
+    await controller.loadEvents(isGetPublicEvents: false);
+    final stale = events.pending = Completer<List<EventItem>>();
+    final oldRead = controller.loadEvents(isGetPublicEvents: false);
+    final edit = controller.onEditEvent(event: original, updatedEvent: updated);
+    expect(controller.findEventById('event')?.name, 'new');
+    final latest = events.pending = Completer<List<EventItem>>();
+    stale.complete([original]);
+    await oldRead;
+    await Future<void>.delayed(Duration.zero);
+    expect(controller.findEventById('event')?.name, 'new');
+    expect(events.calls, hasLength(3));
+    latest.complete([updated]);
+    await edit;
+    expect(controller.findEventById('event')?.name, 'new');
+  });
+
+  test(
+    'public import queues one fresh page behind an active list read',
+    () async {
+      await controller.checkPublicEventsUpdatedToday();
+      final old = events.pending = Completer<List<EventItem>>();
+      final first = controller.loadEvents(isGetPublicEvents: false);
+      final refresh = controller.refreshPublicEvents();
+      await Future<void>.delayed(Duration.zero);
+      expect(events.calls, hasLength(1));
+      expect(public.refreshCalls, 1);
+
+      final fresh = events.pending = Completer<List<EventItem>>();
+      old.complete([EventItem(id: 'old', name: 'old')]);
+      await first;
+      await Future<void>.delayed(Duration.zero);
+      expect(events.calls, hasLength(2));
+      expect(controller.findEventById('old'), isNull);
+      fresh.complete([EventItem(id: 'fresh', name: 'fresh')]);
+      await refresh;
+      expect(controller.findEventById('fresh'), isNotNull);
+      expect(controller.findEventById('old'), isNull);
+    },
+  );
+
   test(
     'loading another page preserves existing card presentation models',
     () async {

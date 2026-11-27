@@ -35,8 +35,16 @@ class ControllerAuth extends SafeChangeNotifier {
   bool get accountVerificationFailed =>
       _lastAccountValidationResult == AccountValidationResult.unavailable;
   Future<AccountValidationResult>? _accountValidationInFlight;
+  Future<AccountValidationResult>? _queuedAccountValidation;
+  int _accountValidationScope = 0;
+  int _subscriptionRequest = 0;
   Future<void>? _invalidAccountSignOutInFlight;
-  ControllerAuth({this.controllerCalendar, this.dashboardController});
+  final LocalDataStore _localStore;
+  ControllerAuth({
+    this.controllerCalendar,
+    this.dashboardController,
+    LocalDataStore? localStore,
+  }) : _localStore = localStore ?? LocalDataStore.instance;
 
   bool _initialized = false;
 
@@ -148,12 +156,12 @@ class ControllerAuth extends SafeChangeNotifier {
     if (account == null) return;
     final localConfigured =
         !subscriptionConfigurationMissing || hasActiveLocalSubscription;
-    LocalDataStore.instance.setCreateAllowed(
+    _localStore.setCreateAllowed(
       account,
       localConfigured && canUseLocalStorage,
     );
-    LocalDataStore.instance.setDeleteAllowed(account, localConfigured);
-    LocalDataStore.instance.setWriteCheck(account, () => canUseLocalStorage);
+    _localStore.setDeleteAllowed(account, localConfigured);
+    _localStore.setWriteCheck(account, () => canUseLocalStorage);
   }
 
   DataStorageLocation get preferredStorage => _preferredStorage;
@@ -167,20 +175,27 @@ class ControllerAuth extends SafeChangeNotifier {
 
   Future<void> refreshSubscriptionUsage({bool notify = true}) async {
     if (!_isLoggedIn || _isAnonymous || notifierDisposed) return;
+    final request = ++_subscriptionRequest;
     final owner = _currentAccount;
     final storage = _preferredStorage;
     final userId = supabase.auth.currentUser?.id;
     bool current() =>
         !notifierDisposed &&
+        request == _subscriptionRequest &&
         _isLoggedIn &&
         !_isAnonymous &&
         owner == _currentAccount &&
         storage == _preferredStorage &&
         userId == supabase.auth.currentUser?.id;
     try {
-      final loaded = await _loadSubscriptionUsage();
+      final loaded = await _loadSubscriptionUsage(current);
       if (!current()) return;
-      _subscription = loaded;
+      _quotaFreePeriodActive = _applyQuotaFreePeriods(loaded.periods);
+      _subscription =
+          (isSysAdmin ||
+              (_quotaFreePeriodActive && !loaded.snapshot.configurationMissing))
+          ? _withUnlimitedUsage(loaded.snapshot)
+          : loaded.snapshot;
       _syncLocalCreatePermission();
       if (notify) notifyListeners();
     } catch (error, stackTrace) {
@@ -195,7 +210,8 @@ class ControllerAuth extends SafeChangeNotifier {
     }
   }
 
-  Future<SubscriptionSnapshot> _loadSubscriptionUsage() async {
+  Future<({SubscriptionSnapshot snapshot, List<QuotaFreePeriod> periods})>
+  _loadSubscriptionUsage(bool Function() current) async {
     final loadingAccount = _currentAccount;
     final loadingStorage = _preferredStorage;
     final selectedStoragePlan = _preferredStorage == DataStorageLocation.local
@@ -204,15 +220,14 @@ class ControllerAuth extends SafeChangeNotifier {
     final base = await ServiceSubscription().fetchMyUsage(
       storagePlan: selectedStoragePlan,
     );
-    if (loadingAccount != _currentAccount ||
-        loadingStorage != _preferredStorage) {
+    if (!current()) {
       throw StateError('Subscription request scope changed');
     }
-    _quotaFreePeriodActive = _applyQuotaFreePeriods(base.promotionPeriods!);
-    if (base.configurationMissing && !isSysAdmin) return base;
-    final account = _currentAccount;
+    if (base.configurationMissing && !isSysAdmin) {
+      return (snapshot: base, periods: base.promotionPeriods!);
+    }
     var presented = base;
-    if (loadingStorage != DataStorageLocation.local || account == null) {
+    if (loadingStorage != DataStorageLocation.local || loadingAccount == null) {
       presented = _withCloudPresentation(base);
     } else {
       try {
@@ -227,13 +242,7 @@ class ControllerAuth extends SafeChangeNotifier {
         );
       }
     }
-    if (loadingAccount != _currentAccount ||
-        loadingStorage != _preferredStorage) {
-      throw StateError('Subscription request scope changed');
-    }
-    return isSysAdmin || _quotaFreePeriodActive
-        ? _withUnlimitedUsage(presented)
-        : presented;
+    return (snapshot: presented, periods: base.promotionPeriods!);
   }
 
   bool _applyQuotaFreePeriods(List<QuotaFreePeriod> periods) {
@@ -359,7 +368,7 @@ class ControllerAuth extends SafeChangeNotifier {
       'game_translation',
       TableNames.gameSocialScenarios,
     ];
-    final counts = await LocalDataStore.instance.countByResources(
+    final counts = await _localStore.countByResources(
       owner: account,
       resources: resources,
     );
@@ -478,7 +487,7 @@ class ControllerAuth extends SafeChangeNotifier {
   Future<void> setPreferredStorage(DataStorageLocation location) async {
     final account = _currentAccount;
     if (account == null || _isAnonymous) return;
-    await LocalDataStore.instance.setPreferredLocation(account, location);
+    await _localStore.setPreferredLocation(account, location);
     _preferredStorage = location;
     _personalDataRevision++;
     _markSubscriptionUnverified(pending: true);
@@ -569,6 +578,9 @@ class ControllerAuth extends SafeChangeNotifier {
       _lastAccountValidationAt = null;
       _lastAccountValidationResult = null;
       _accountValidationInFlight = null;
+      _queuedAccountValidation = null;
+      _accountValidationScope++;
+      _subscriptionRequest++;
     }, notify: false);
 
     dashboardController?.switchAccount(null);
@@ -577,7 +589,7 @@ class ControllerAuth extends SafeChangeNotifier {
     _accountValidationTimer = null;
     AppNavigator.returnToRoot();
     if (signedOutAccount != null) {
-      LocalDataStore.instance.clearCreatePermission(signedOutAccount);
+      _localStore.clearCreatePermission(signedOutAccount);
     }
     notifyListeners();
   }
@@ -589,12 +601,36 @@ class ControllerAuth extends SafeChangeNotifier {
   /// therefore required before access is allowed. Temporary failures retain
   /// the session, but do not count as successful validation.
   Future<AccountValidationResult> validateCurrentAccount({bool force = false}) {
+    if (notifierDisposed) {
+      return Future.value(AccountValidationResult.unavailable);
+    }
     if (!_isLoggedIn || _isAnonymous) {
       return Future.value(AccountValidationResult.valid);
     }
 
+    final queued = _queuedAccountValidation;
+    if (queued != null) return queued;
     final inFlight = _accountValidationInFlight;
-    if (inFlight != null) return inFlight;
+    final scope = _accountValidationScope;
+    if (inFlight != null) {
+      if (!force) return inFlight;
+      final userId = supabase.auth.currentUser?.id;
+      late final Future<AccountValidationResult> followUp;
+      followUp = inFlight.then<AccountValidationResult>((result) {
+        if (identical(_queuedAccountValidation, followUp)) {
+          _queuedAccountValidation = null;
+        }
+        if (result == AccountValidationResult.signedOut) return result;
+        if (notifierDisposed ||
+            scope != _accountValidationScope ||
+            userId != supabase.auth.currentUser?.id) {
+          return AccountValidationResult.unavailable;
+        }
+        return validateCurrentAccount(force: true);
+      });
+      _queuedAccountValidation = followUp;
+      return followUp;
+    }
 
     final now = DateTime.now();
     final lastValidation = _lastAccountValidationAt;
@@ -618,26 +654,45 @@ class ControllerAuth extends SafeChangeNotifier {
     final userId = supabase.auth.currentUser?.id;
     final retrying = accountVerificationFailed;
     if (retrying) _lastAccountValidationResult = null;
-    final validation = _validateCurrentAccountRemotely().then((result) {
+    bool current() =>
+        !notifierDisposed &&
+        scope == _accountValidationScope &&
+        userId == supabase.auth.currentUser?.id;
+    final validation = _validateCurrentAccountRemotely(current).then((result) {
+      if (result != AccountValidationResult.signedOut && !current()) {
+        return AccountValidationResult.unavailable;
+      }
       if (result != AccountValidationResult.signedOut &&
-          userId != null &&
-          supabase.auth.currentUser?.id == userId) {
+          _queuedAccountValidation == null) {
         final changed = _lastAccountValidationResult != result;
         _lastAccountValidationResult = result;
         if (changed) notifyListeners();
       }
       return result;
     });
-    _accountValidationInFlight = validation;
-    if (retrying) notifyListeners();
-    return validation.whenComplete(() {
-      if (identical(_accountValidationInFlight, validation)) {
+    late final Future<AccountValidationResult> tracked;
+    tracked = validation.whenComplete(() {
+      if (identical(_accountValidationInFlight, tracked)) {
         _accountValidationInFlight = null;
       }
     });
+    _accountValidationInFlight = tracked;
+    if (retrying) notifyListeners();
+    return tracked.then<AccountValidationResult>((result) {
+      if (result == AccountValidationResult.signedOut || !current()) {
+        return result;
+      }
+      // Initial session restoration must also wait for the queued check,
+      // rather than opening protected views on the superseded response.
+      final next = _queuedAccountValidation;
+      if (next != null) return next;
+      return result;
+    });
   }
 
-  Future<AccountValidationResult> _validateCurrentAccountRemotely() async {
+  Future<AccountValidationResult> _validateCurrentAccountRemotely(
+    bool Function() current,
+  ) async {
     _lastAccountValidationAt = DateTime.now();
     final localUser = supabase.auth.currentUser;
     if (localUser == null) {
@@ -649,12 +704,12 @@ class ControllerAuth extends SafeChangeNotifier {
       final recoveredSession = supabase.auth.currentSession;
       if (recoveredSession?.isExpired ?? false) {
         await supabase.auth.refreshSession();
-        if (supabase.auth.currentUser?.id != localUser.id) {
+        if (!current()) {
           return AccountValidationResult.unavailable;
         }
       }
       final response = await supabase.auth.getUser();
-      if (supabase.auth.currentUser?.id != localUser.id) {
+      if (!current()) {
         return AccountValidationResult.unavailable;
       }
       final remoteUser = response.user;
@@ -666,7 +721,7 @@ class ControllerAuth extends SafeChangeNotifier {
         final disabled = await supabase.rpc(
           'is_my_life_pilot_account_disabled',
         );
-        if (supabase.auth.currentUser?.id != localUser.id) {
+        if (!current()) {
           return AccountValidationResult.unavailable;
         }
         if (disabled == true) {
@@ -678,7 +733,7 @@ class ControllerAuth extends SafeChangeNotifier {
         }
       } on PostgrestException catch (error) {
         if (error.code == 'PT401' && error.message == 'user_banned') {
-          if (supabase.auth.currentUser?.id != localUser.id) {
+          if (!current()) {
             return AccountValidationResult.unavailable;
           }
           await _signOutInvalidAccount();
@@ -688,7 +743,7 @@ class ControllerAuth extends SafeChangeNotifier {
       }
       return AccountValidationResult.valid;
     } on AuthException catch (error, stackTrace) {
-      if (supabase.auth.currentUser?.id != localUser.id) {
+      if (!current()) {
         return AccountValidationResult.unavailable;
       }
       if (_isInvalidRemoteAccount(error)) {
@@ -776,6 +831,9 @@ class ControllerAuth extends SafeChangeNotifier {
           _lastAccountValidationAt = null;
           _lastAccountValidationResult = null;
           _accountValidationInFlight = null;
+          _queuedAccountValidation = null;
+          _accountValidationScope++;
+          _subscriptionRequest++;
         }
         _accountType = user?.userMetadata?['account_type'] == 'vendor'
             ? 'vendor'
@@ -786,12 +844,12 @@ class ControllerAuth extends SafeChangeNotifier {
       }, notify: false);
 
       if (_isLoggedIn && !_isAnonymous) {
-        final storedLocation = await LocalDataStore.instance.preferredLocation(
+        final storedLocation = await _localStore.preferredLocation(
           _currentAccount!,
         );
         _preferredStorage = storedLocation ?? DataStorageLocation.cloud;
         if (_preferredStorage == DataStorageLocation.local) {
-          LocalDataStore.instance.setCreateAllowed(_currentAccount!, false);
+          _localStore.setCreateAllowed(_currentAccount!, false);
         }
       }
 

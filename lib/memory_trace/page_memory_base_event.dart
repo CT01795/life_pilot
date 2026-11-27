@@ -118,7 +118,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
 
     if (newEvent != null) {
       await widget.auth.refreshSubscriptionUsage();
-      await _controller.loadEvents(isGetPublicEvents: false);
+      await _controller.loadEvents(isGetPublicEvents: false, force: true);
     }
   }
 

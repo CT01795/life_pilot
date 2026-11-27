@@ -76,6 +76,7 @@ class ControllerStock extends SafeChangeNotifier {
   Future<void>? _dashboardLoad;
   Future<void>? _activeLoad;
   final RefreshRequestCoordinator _dateLoads = RefreshRequestCoordinator();
+  DateTime? _forcedDate;
 
   ControllerStock(
     this.service, {
@@ -274,8 +275,18 @@ class ControllerStock extends SafeChangeNotifier {
   Future<void> loadDate(DateTime date, {bool force = false}) {
     if (_isDisposed) return Future<void>.value();
     if (!force && _canReuseSelectedDate(date)) return Future<void>.value();
-    if (force && _dateLoads.isRunning) _dataRequestId++;
-    return _dateLoads.run(() => _loadDate(date), force: force);
+    if (force) {
+      _forcedDate = date;
+      if (_dateLoads.isRunning) _dataRequestId++;
+    }
+    return _dateLoads.run(() {
+      final target = force ? _forcedDate ?? date : date;
+      if (force) {
+        _forcedDate = null;
+        _invalidateDashboardReads();
+      }
+      return _loadDate(target);
+    }, force: force);
   }
 
   Future<void> _loadDate(DateTime date) async {

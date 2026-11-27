@@ -18,11 +18,10 @@ class CloudRecordHistoryWindow {
 
 /// Reads rows, total and the next history cursor in one database response.
 class RepositoryCloudRecordHistory {
-  int _revision = 0;
+  String _group(String kind) => 'ledger-history-window:$kind';
 
-  void invalidate() {
-    _revision++;
-  }
+  void invalidate(SupabaseClient client, {required String kind}) =>
+      RepositorySessionReads(client).invalidate(_group(kind));
 
   Future<CloudRecordHistoryWindow> window(
     SupabaseClient client, {
@@ -41,21 +40,11 @@ class RepositoryCloudRecordHistory {
         until.difference(from) > const Duration(days: 36525)) {
       throw ArgumentError('Invalid ledger history window');
     }
-    final revision = _revision;
     final boundary = from.toUtc().toIso8601String();
     final upper = until.toUtc().toIso8601String();
     final result = await RepositorySessionReads(client).read(
-      'ledger-history-window',
-      (
-        kind,
-        accountId,
-        type,
-        boundary,
-        upper,
-        includeReserved,
-        includeLatest,
-        revision,
-      ),
+      _group(kind),
+      (kind, accountId, type, boundary, upper, includeReserved, includeLatest),
       () => client.rpc(
         'get_my_ledger_history_window_v2',
         params: {

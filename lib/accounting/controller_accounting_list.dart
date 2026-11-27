@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/utils/model_personal_data_scope.dart';
@@ -18,9 +19,9 @@ class ControllerAccountingList extends SafeChangeNotifier {
   ModelPersonalDataScope? _dataScopeKey;
   int _accountGeneration = 0;
   int _listRequest = 0;
-  String? _loadingCategory;
-  String? _loadingSearchQuery;
-  Future<void>? _loadFuture;
+  RefreshRequestCoordinator _loads = RefreshRequestCoordinator();
+  (String, String)? _loadKey;
+  Future<void>? get _loadFuture => _loads.pending;
   Timer? _searchDebounce;
   bool _hasLoadedAccounts = false;
   final _accountRefreshes = <String, Object>{};
@@ -122,44 +123,38 @@ class ControllerAccountingList extends SafeChangeNotifier {
     }
   }
 
-  Future<void> loadAccounts({String? inputCategory}) {
+  Future<void> loadAccounts({String? inputCategory, bool force = false}) {
     if (notifierDisposed) return Future.value();
     final requestedCategory = inputCategory ?? category;
     final requestedSearchQuery = searchQuery;
-    if (isLoading &&
-        _loadingCategory == requestedCategory &&
-        _loadingSearchQuery == requestedSearchQuery) {
-      return _loadFuture ?? Future.value();
+    final key = (requestedCategory, requestedSearchQuery);
+    if (_loadKey != key) {
+      _loads = RefreshRequestCoordinator();
+      _loadKey = key;
     }
-    final request = ++_listRequest;
     final generation = _accountGeneration;
-    final user = auth?.currentAccount ?? '';
-    _loadingCategory = requestedCategory;
-    _loadingSearchQuery = requestedSearchQuery;
-    isLoading = true;
-    hasRequestedMore = false;
-    isLoadingMore = false;
-    loadMoreError = null;
-    loadError = null;
-    final completion = Completer<void>();
-    final future = completion.future;
-    // Publish before invoking the service or listeners; either can re-enter.
-    _loadFuture = future;
-    unawaited(
-      _loadAccounts(
-        user,
+    final loads = _loads;
+    if (force && loads.isRunning) _listRequest++;
+    return loads.run(() {
+      if (!_isCurrent(generation) || !identical(_loads, loads)) {
+        return Future<void>.value();
+      }
+      final request = ++_listRequest;
+      isLoading = true;
+      hasRequestedMore = false;
+      isLoadingMore = false;
+      loadMoreError = null;
+      loadError = null;
+      final future = _loadAccounts(
+        auth?.currentAccount ?? '',
         requestedCategory,
         requestedSearchQuery,
         generation,
         request,
-      ).then<void>(
-        (_) => completion.complete(),
-        onError: (Object error, StackTrace stack) =>
-            completion.completeError(error, stack),
-      ),
-    );
-    if (_isCurrent(generation) && request == _listRequest) notifyListeners();
-    return future;
+      );
+      if (_isCurrent(generation) && request == _listRequest) notifyListeners();
+      return future;
+    }, force: force);
   }
 
   Future<void> _loadAccounts(
@@ -193,9 +188,6 @@ class ControllerAccountingList extends SafeChangeNotifier {
     } finally {
       if (_isCurrent(generation) && request == _listRequest) {
         isLoading = false;
-        _loadingCategory = null;
-        _loadingSearchQuery = null;
-        _loadFuture = null;
         notifyListeners();
       }
     }
@@ -212,9 +204,8 @@ class ControllerAccountingList extends SafeChangeNotifier {
     _dataScopeKey = nextScope;
     _accountGeneration++;
     _listRequest++;
-    _loadFuture = null;
-    _loadingCategory = null;
-    _loadingSearchQuery = null;
+    _loads = RefreshRequestCoordinator();
+    _loadKey = null;
     _searchDebounce?.cancel();
     _searchDebounce = null;
     isLoading = false;
@@ -341,7 +332,7 @@ class ControllerAccountingList extends SafeChangeNotifier {
       eventId: eventId,
     );
     // ⭐ 統一來源：重新拉一次
-    if (_isCurrent(generation)) await loadAccounts();
+    if (_isCurrent(generation)) await loadAccounts(force: true);
     return modelAccountingAccount;
   }
 
@@ -349,7 +340,7 @@ class ControllerAccountingList extends SafeChangeNotifier {
     if (notifierDisposed) return;
     final generation = _accountGeneration;
     await _service.deleteAccount(accountId: accountId);
-    if (_isCurrent(generation)) await loadAccounts();
+    if (_isCurrent(generation)) await loadAccounts(force: true);
   }
 
   Future<void> updateAccountImage(String accountId, XFile pickedFile) async {
@@ -417,6 +408,6 @@ class ControllerAccountingList extends SafeChangeNotifier {
     if (notifierDisposed) return;
     final generation = _accountGeneration;
     await _service.switchMainCurrency(accountId: accountId, currency: currency);
-    if (_isCurrent(generation)) await loadAccounts();
+    if (_isCurrent(generation)) await loadAccounts(force: true);
   }
 }

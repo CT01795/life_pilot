@@ -377,7 +377,7 @@ class ControllerEvent extends SafeChangeNotifier {
     required EventItem event,
     required EventItem? updatedEvent,
   }) async {
-    if (updatedEvent == null) return;
+    if (updatedEvent == null || _disposed) return;
     _modelEvent.updateEvent(updatedEvent);
     _sortRecommendedContent();
     _invalidateViewModel(event.id);
@@ -385,6 +385,9 @@ class ControllerEvent extends SafeChangeNotifier {
       _invalidateViewModel(updatedEvent.id);
     }
     if (!_disposed) notifyListeners();
+    if (_eventLoads.isRunning || _isLoadingMoreEvents || isLoadingMoreMemory) {
+      await loadEvents(isGetPublicEvents: false, force: true);
+    }
   }
 
   void onCreateEvent(EventItem event) {
@@ -1162,25 +1165,9 @@ class ControllerEvent extends SafeChangeNotifier {
         _hasCheckedPublicEventsUpdate = true;
         return false;
       }
-      final newList = await _serviceEvent.getEvents(
-        tableName: _tableName,
-        inputUser: auth.currentAccount,
-        storageLocation: auth.preferredStorage,
-        limit: usesCloudPagination ? _cloudPageSize + 1 : null,
-        shouldContinue: () => _isCurrentDataScope(generation),
-      );
+      await loadEvents(isGetPublicEvents: false, force: true);
       if (!_isCurrentDataScope(generation)) return false;
-      var refreshedEvents = newList ?? <EventItem>[];
-      if (usesCloudPagination) {
-        refreshedEvents = _acceptCloudPage(refreshedEvents);
-      }
-      _modelEvent.setEvents(refreshedEvents);
-      _hasLoadedEventsSuccessfully = true;
-      _loadEventsError = null;
-      _sortRecommendedContent();
-      _invalidateViewModelCache();
-      notifyListeners();
-      if (!_isCurrentDataScope(generation)) return false;
+      if (_loadEventsError case final Object error) throw error;
       final status = await _serviceEventPublic.getRefreshStatus();
       if (!_isCurrentDataScope(generation)) return false;
       _publicEventsUpdatedToday = status.updated;

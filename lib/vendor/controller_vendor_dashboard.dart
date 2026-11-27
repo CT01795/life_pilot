@@ -67,7 +67,12 @@ class ControllerVendorDashboard extends SafeChangeNotifier {
         _owner != auth.currentAccount) {
       return Future.value();
     }
-    return _loads.run(() => _load(force: force), force: force);
+    final loads = _loads;
+    if (force && loads.isRunning) _revision++;
+    return loads.run(() async {
+      if (notifierDisposed || !identical(loads, _loads)) return;
+      await _load(force: force);
+    }, force: force);
   }
 
   Future<void> _load({required bool force}) async {
@@ -102,7 +107,11 @@ class ControllerVendorDashboard extends SafeChangeNotifier {
     required bool force,
   }) async {
     if (!shouldContinue()) return null;
-    final dashboard = await service.fetchDashboard(_owner!, force: force);
+    final dashboard = await service.fetchDashboard(
+      _owner!,
+      force: force,
+      shouldContinue: shouldContinue,
+    );
     if (!shouldContinue()) return null;
     return dashboard;
   }
@@ -116,7 +125,13 @@ class ControllerVendorDashboard extends SafeChangeNotifier {
     required bool attraction,
   }) {
     final currentData = _data;
-    if (notifierDisposed || currentData == null) return;
+    if (!_active(_revision)) return;
+    if (currentData == null) {
+      unawaited(load(force: true));
+      return;
+    }
+    _revision++;
+    _loading = false;
     final now = DateTime.now();
     final updated = currentData.applySubmissionSaved(
       previous: previous,
@@ -132,10 +147,13 @@ class ControllerVendorDashboard extends SafeChangeNotifier {
 
   Future<void> _refreshRecentSubmissions() async {
     final revision = _revision;
+    final before = _data;
     try {
       final result = await service.refreshRecentSubmissions();
       if (result == null || !_active(revision)) return;
-      _data = result;
+      _data = identical(_data, before)
+          ? result
+          : _data?.withRecentSubmissions(result.metrics.recentSubmissions);
       notifyListeners();
     } catch (error, stackTrace) {
       logger.w(
@@ -148,10 +166,13 @@ class ControllerVendorDashboard extends SafeChangeNotifier {
 
   Future<void> refreshPlans() async {
     final revision = _revision;
+    final before = _data;
     try {
       final result = await service.refreshDashboardPlans();
       if (result == null || !_active(revision)) return;
-      _data = result;
+      _data = identical(_data, before)
+          ? result
+          : _data?.withPlans(result.plans);
       notifyListeners();
     } catch (error, stackTrace) {
       logger.w(

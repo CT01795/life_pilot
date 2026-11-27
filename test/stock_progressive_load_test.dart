@@ -689,6 +689,34 @@ void main() {
     expect(c.futures.single.productName, 'fresh');
   });
 
+  test(
+    'forced historical refresh starts fresh foreign and futures reads',
+    () async {
+      final service = _Service();
+      final c = ControllerStock(service)..loading = false;
+      addTearDown(c.dispose);
+      await c.loadDate(_day);
+      final oldForeign = service.foreign[_day]!;
+      final oldFutures = service.futuresByDate[_day]!;
+      service.foreign[_day] = Completer<List<ModelInstitutional>>();
+      service.futuresByDate[_day] = Completer<List<ModelFuture>>();
+
+      await c.loadDate(_day, force: true);
+      expect(service.foreignCalls, 2);
+      expect(service.futuresCalls, 2);
+      service.foreign[_day]!.complete([_foreign('fresh')]);
+      service.futuresByDate[_day]!.complete([
+        ModelFuture(productName: 'fresh'),
+      ]);
+      await _flush();
+      oldForeign.complete([_foreign('old')]);
+      oldFutures.complete([ModelFuture(productName: 'old')]);
+      await _flush();
+      expect(c.foreignBuy.single.stockNo, 'fresh');
+      expect(c.futures.single.productName, 'fresh');
+    },
+  );
+
   test('retry reloads only the failed section', () async {
     final service = _Service();
     final c = ControllerStock(service)..selectedDate = _day;

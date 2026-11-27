@@ -333,10 +333,12 @@ class ServiceSubscription {
 
   Future<List<SubscriptionPricingVersion>> fetchPricingVersions({
     bool displayOnly = false,
+    bool force = false,
   }) async {
     final rows = await RepositoryPricingCatalog().read(
       vendor: false,
       displayOnly: displayOnly,
+      force: force,
     );
     return rows
         .map(

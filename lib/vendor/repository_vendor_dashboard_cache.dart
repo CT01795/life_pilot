@@ -8,6 +8,7 @@ class _VendorDashboardCacheState {
   DateTime? expiresAt;
   ModelVendorDashboard? value;
   int revision = 0;
+  int bootstrapRequest = 0;
   int? recentRefreshRevision;
   Future<ModelVendorDashboard?>? recentRefresh;
 }
@@ -45,6 +46,23 @@ class RepositoryVendorDashboardCache {
     return state.value;
   }
 
+  bool Function() beginBootstrapRead() {
+    final state = _states[client] ??= _VendorDashboardCacheState();
+    final requestScope = scope;
+    final revision = state.revision;
+    final request = ++state.bootstrapRequest;
+    return () =>
+        requestScope != null &&
+        scope == requestScope &&
+        state.revision == revision &&
+        state.bootstrapRequest == request;
+  }
+
+  void writeLocalSnapshot(ModelVendorDashboard value) {
+    (_states[client] ??= _VendorDashboardCacheState()).revision++;
+    write(value);
+  }
+
   void write(ModelVendorDashboard value) {
     final currentScope = scope;
     if (currentScope == null) return;
@@ -66,9 +84,9 @@ class RepositoryVendorDashboardCache {
     required EventItem current,
     required bool attraction,
   }) {
+    (_states[client] ??= _VendorDashboardCacheState()).revision++;
     final cached = read();
     if (cached == null) return;
-    (_states[client] ??= _VendorDashboardCacheState()).revision++;
     final now = _now();
     write(
       cached.applySubmissionSaved(
@@ -84,9 +102,9 @@ class RepositoryVendorDashboardCache {
     required EventItem previous,
     required bool attraction,
   }) {
+    (_states[client] ??= _VendorDashboardCacheState()).revision++;
     final cached = read();
     if (cached == null) return;
-    (_states[client] ??= _VendorDashboardCacheState()).revision++;
     final now = _now();
     write(
       cached.applySubmissionDeleted(

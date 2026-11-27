@@ -1,15 +1,116 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
+import 'package:life_pilot/pages/home/controller_dashboard.dart';
+import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/utils/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test(
+    'pull refresh reuses a current shared summary, never a late bootstrap',
+    () async {
+      const account = 'person@example.com';
+      final bootstraps = <Completer<Object>>[];
+      var standaloneReads = 0;
+      Map<String, Object> event(String id) => {
+        'id': id,
+        'name': id,
+        'start_date': DateTime.now().toUtc().toIso8601String(),
+        'is_completed': false,
+        'account': account,
+        'is_shared': false,
+      };
+      Map<String, Object> snapshot(String id, int total) => {
+        'setting': {
+          'recommend_event_city': '台北',
+          'recommend_place_city': '台中',
+          'language': 'zh',
+        },
+        'today_events': [event(id)],
+        'shared_ledgers': [
+          {
+            'share_id': 'share',
+            'kind': 'accounting',
+            'account_name': 'shared',
+            'snapshot': {
+              'totals': {'total': total},
+              'entries': [],
+            },
+          },
+        ],
+      };
+      final client = SupabaseClient(
+        'https://example.supabase.co',
+        'test-key',
+        httpClient: MockClient((request) async {
+          final Object body;
+          if (request.url.path.endsWith(
+            '/get_or_create_my_dashboard_core_v2',
+          )) {
+            final pending = Completer<Object>();
+            bootstraps.add(pending);
+            body = await pending.future;
+          } else {
+            expect(request.url.path, endsWith('/calendar_events'));
+            standaloneReads++;
+            body = [event('direct')];
+          }
+          return http.Response(
+            jsonEncode(body),
+            200,
+            headers: {'content-type': 'application/json'},
+            request: request,
+          );
+        }),
+      );
+      supabase = client;
+      addTearDown(client.dispose);
+      final locale = ProviderLocale(locale: const Locale('zh'));
+      addTearDown(locale.dispose);
+      final controller = ControllerDashboard(
+        repository: DashboardRepository(),
+        localeProvider: locale,
+      )..switchAccount(account);
+      addTearDown(controller.dispose);
+      Future<void> flush() => Future<void>.delayed(Duration.zero);
+
+      final initial = controller.refreshCore(account: account);
+      await flush();
+      bootstraps.single.complete(snapshot('initial', 1));
+      await initial;
+      expect(controller.sharedToday(points: false)?['total'], 1);
+
+      final older = controller.refreshCore(
+        account: account,
+        refreshShared: true,
+      );
+      final newest = controller.refreshCore(
+        account: account,
+        refreshShared: true,
+      );
+      await flush();
+      bootstraps[2].complete(snapshot('newest', 3));
+      await newest;
+      bootstraps[1].complete(snapshot('obsolete', 2));
+      await older;
+      expect(controller.sharedToday(points: false)?['total'], 3);
+      expect(controller.state.todayEvents.single.id, 'newest');
+      expect(standaloneReads, 0);
+
+      await controller.refreshTodaySchedule(account: account);
+      expect(controller.state.todayEvents.single.id, 'direct');
+      expect(standaloneReads, 1);
+    },
+  );
 
   test('dashboard bootstrap returns setting and both summaries once', () async {
     final requests = <http.Request>[];
@@ -58,19 +159,14 @@ void main() {
     supabase = client;
 
     final repository = DashboardRepository();
-    final setting = await repository.loadDashboardSetting(
+    final bootstrap = await repository.loadDashboardBootstrap(
       account: 'person@example.com',
     );
-    final accounting = await repository.loadAccountingSummary(
-      accountId: 'accounting-id',
-    );
-    final points = await repository.loadPointSummary(accountId: 'point-id');
-    final today = await repository.loadTodayEvents('person@example.com');
 
-    expect(setting.accountingAccountName, '現金');
-    expect(accounting.total, 120);
-    expect(points.total, 50);
-    expect(today.single.id, 'today');
+    expect(bootstrap.setting.accountingAccountName, '現金');
+    expect(bootstrap.accounting?.total, 120);
+    expect(bootstrap.points?.total, 50);
+    expect(bootstrap.todayEvents?.single.id, 'today');
     expect(requests, hasLength(1));
     expect(
       requests.single.url.path,

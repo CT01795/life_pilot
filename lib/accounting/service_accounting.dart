@@ -465,7 +465,6 @@ class ServiceAccounting {
     required List<AccountingPreview> records,
     required String? currency,
   }) async {
-    _cloudHistory.invalidate();
     final now = DateTime.now();
     final recordsMap = records
         .map(
@@ -498,7 +497,7 @@ class ServiceAccounting {
         }
         return;
       }
-      await supabase.rpc(
+      await _writeHistory(
         'add_accountings_batch2',
         params: {
           'p_account_id': accountId,
@@ -521,7 +520,6 @@ class ServiceAccounting {
     required String newPrimaryCategory,
     String? newSecondaryCategory,
   }) async {
-    _cloudHistory.invalidate();
     try {
       final owner = _localOwner;
       if (await _storesLocally) {
@@ -544,7 +542,7 @@ class ServiceAccounting {
         );
         return;
       }
-      await supabase.rpc(
+      await _writeHistory(
         'update_my_ledger_detail',
         params: {
           'p_kind': 'accounting',
@@ -610,7 +608,6 @@ class ServiceAccounting {
   }
 
   Future<void> deleteAccountingDetail({required String detailId}) async {
-    _cloudHistory.invalidate();
     final owner = _localOwner;
     if (await _storesLocally) {
       if (owner == null) {
@@ -623,9 +620,22 @@ class ServiceAccounting {
       );
       return;
     }
-    await supabase.rpc(
+    await _writeHistory(
       'delete_my_accounting_detail',
       params: {'p_detail_id': detailId},
     );
+  }
+
+  Future<void> _writeHistory(
+    String function, {
+    required Map<String, dynamic> params,
+  }) async {
+    final client = supabase;
+    _cloudHistory.invalidate(client, kind: 'accounting');
+    try {
+      await client.rpc(function, params: params);
+    } finally {
+      _cloudHistory.invalidate(client, kind: 'accounting');
+    }
   }
 }

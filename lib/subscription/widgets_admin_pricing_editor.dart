@@ -45,7 +45,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
 
   void _loadVersions({bool refresh = false}) {
     if (_versions != null && !refresh) return;
-    final request = ServiceSubscription().fetchPricingVersions();
+    final request = ServiceSubscription().fetchPricingVersions(force: refresh);
     // Observe immediate failures before the next frame attaches FutureBuilder.
     // FutureBuilder still receives the original error and displays retry UI.
     request.ignore();

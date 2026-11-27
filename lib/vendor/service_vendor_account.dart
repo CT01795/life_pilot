@@ -12,7 +12,7 @@ class ServiceVendorAccount {
       RepositoryVendorDashboardCache(supabase);
 
   void cacheDashboard(ModelVendorDashboard value) =>
-      _dashboardCache.write(value);
+      _dashboardCache.writeLocalSnapshot(value);
 
   void applySubmissionSaved({
     required EventItem? previous,
@@ -78,6 +78,7 @@ class ServiceVendorAccount {
   Future<ModelVendorDashboard> fetchDashboard(
     String account, {
     bool force = false,
+    bool Function()? shouldContinue,
   }) async {
     final normalized = normalizeText(account);
     final client = supabase;
@@ -91,8 +92,9 @@ class ServiceVendorAccount {
       final cached = cache.read();
       if (cached != null) return cached;
     }
+    final isCurrent = cache.beginBootstrapRead();
     final now = DateTime.now();
-    final cachedPlans = pricing.peek(vendor: true);
+    final cachedPlans = force ? null : pricing.peek(vendor: true);
     final includePlans = cachedPlans == null;
     final value = await client.rpc(
       'get_my_vendor_dashboard_bootstrap',
@@ -106,8 +108,14 @@ class ServiceVendorAccount {
         'p_include_plans': includePlans,
       },
     );
-    if (normalizeText(client.auth.currentUser?.email) != normalized) {
-      throw StateError('Account scope changed');
+    if (!isCurrent() || shouldContinue?.call() == false) {
+      // A local mutation or a newer bootstrap already owns the snapshot.
+      final latest = cache.read();
+      if (latest != null &&
+          normalizeText(client.auth.currentUser?.email) == normalized) {
+        return latest;
+      }
+      throw StateError('Dashboard read superseded');
     }
     if (value is! Map) {
       throw const FormatException('Invalid vendor dashboard');

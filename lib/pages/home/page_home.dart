@@ -148,6 +148,7 @@ class _PageHomeState extends State<PageHome> {
         final coreOperation = dashboard.refreshCore(
           account: account,
           includePoints: pointsEnabled,
+          refreshShared: true,
         );
         _coreAccount = account;
         await coreOperation;

@@ -8,13 +8,14 @@ class RefreshRequestCoordinator {
   Future<void>? _queued;
 
   bool get isRunning => _active != null;
+  Future<void>? get pending => _queued ?? _active;
 
   Future<void> run(Future<void> Function() refresh, {bool force = false}) {
+    final queued = _queued;
+    if (queued != null) return force ? queued : _active ?? queued;
     final active = _active;
     if (active == null) return _start(refresh);
     if (!force) return active;
-    final queued = _queued;
-    if (queued != null) return queued;
     final completion = Completer<void>();
     _queued = completion.future;
     unawaited(_after(active, refresh, completion));

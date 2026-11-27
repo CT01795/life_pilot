@@ -159,7 +159,7 @@ Future<EventItem?> copyEventToAnotherPage({
 
   if (created != null) {
     if (destination.tableName == sourceTableName && sourceController != null) {
-      await sourceController.loadEvents(isGetPublicEvents: false);
+      await sourceController.loadEvents(isGetPublicEvents: false, force: true);
     }
     await auth.refreshSubscriptionUsage();
   }

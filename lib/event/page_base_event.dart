@@ -142,7 +142,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
 
     if (newEvent != null) {
       await widget.auth.refreshSubscriptionUsage();
-      await _controller.loadEvents(isGetPublicEvents: false);
+      await _controller.loadEvents(isGetPublicEvents: false, force: true);
     }
   }
 

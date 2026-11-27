@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -10,11 +11,14 @@ void main() {
   test('history window returns rows, total and next cursor together', () async {
     final requests = <http.Request>[];
     var missing = false;
+    Completer<void>? gate;
     final client = SupabaseClient(
       'https://example.supabase.co',
       'test-key',
       httpClient: MockClient((request) async {
         requests.add(request);
+        final pending = gate;
+        if (pending != null) await pending.future;
         if (missing) {
           return http.Response(
             '{"code":"PGRST202","message":"missing"}',
@@ -71,12 +75,22 @@ void main() {
     expect(simultaneous.first.nextBefore.toUtc(), DateTime.utc(2026, 9, 15));
     expect(simultaneous.first.nextDate?.toUtc(), DateTime.utc(2026, 9, 12));
 
-    repository.invalidate();
-    await read();
+    final oldGate = gate = Completer<void>();
+    final old = read();
+    final obsolete = expectLater(old, throwsStateError);
+    await Future<void>.delayed(Duration.zero);
     expect(requests, hasLength(2));
 
+    // A different service instance can invalidate reads after a write.
+    RepositoryCloudRecordHistory().invalidate(client, kind: 'accounting');
+    gate = null;
+    await read();
+    expect(requests, hasLength(3));
+    oldGate.complete();
+    await obsolete;
+
     missing = true;
-    repository.invalidate();
+    repository.invalidate(client, kind: 'accounting');
     await expectLater(
       read(),
       throwsA(

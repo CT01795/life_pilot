@@ -46,7 +46,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
 
   void _loadVersions({bool refresh = false}) {
     if (_versions != null && !refresh) return;
-    final request = ServiceSubscription().fetchPricingVersions();
+    final request = ServiceSubscription().fetchPricingVersions(force: refresh);
     // Keep immediate errors observed until FutureBuilder attaches next frame.
     request.ignore();
     setState(() {

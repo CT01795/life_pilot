@@ -30,6 +30,12 @@ class _Auth extends ControllerAuth {
 class _Accounting extends ServiceAccounting {
   final requests = <Completer<ModelRecordHistoryPage<ModelAccountingDetail>>>[];
   final includeReserved = <bool>[];
+  final deleted = <String>[];
+
+  @override
+  Future<void> deleteAccountingDetail({required String detailId}) async {
+    deleted.add(detailId);
+  }
 
   @override
   Future<ModelRecordHistoryPage<ModelAccountingDetail>> fetchRecordsPage({
@@ -51,6 +57,12 @@ class _Points extends ServicePointRecord {
   final requests =
       <Completer<ModelRecordHistoryPage<ModelPointRecordDetail>>>[];
   final includeReserved = <bool>[];
+  final deleted = <String>[];
+
+  @override
+  Future<void> deletePointRecordDetail({required String detailId}) async {
+    deleted.add(detailId);
+  }
 
   @override
   Future<ModelRecordHistoryPage<ModelPointRecordDetail>> fetchRecordsPage({
@@ -99,6 +111,85 @@ ModelPointRecordDetail _pointRow(String id, DateTime date) =>
     );
 
 void main() {
+  test(
+    'accounting delete while loading replaces the stale detail page',
+    () async {
+      final service = _Accounting();
+      final controller = ControllerAccountingDetail(
+        service: service,
+        auth: null,
+        accountId: 'account',
+      );
+      addTearDown(controller.dispose);
+      final initial = controller.loadToday();
+      final deleting = controller.deleteAccountingDetail('deleted');
+      await Future<void>.delayed(Duration.zero);
+      expect(service.deleted, ['deleted']);
+      expect(service.requests, hasLength(1));
+      final date = DateTime.now();
+      service.requests.first.complete(
+        ModelRecordHistoryPage(
+          rows: [_accountingRow('deleted', date)],
+          total: 10,
+          nextBefore: date,
+          nextDate: null,
+        ),
+      );
+      await initial;
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.todayRecords, isEmpty);
+      expect(service.requests, hasLength(2));
+      service.requests.last.complete(
+        ModelRecordHistoryPage(
+          rows: [_accountingRow('fresh', date)],
+          total: 2,
+          nextBefore: date,
+          nextDate: null,
+        ),
+      );
+      await deleting;
+      expect(controller.todayRecords.single.id, 'fresh');
+    },
+  );
+
+  test('points delete while loading replaces the stale detail page', () async {
+    final service = _Points();
+    final controller = ControllerPointRecordDetail(
+      service: service,
+      auth: null,
+      accountId: 'account',
+    );
+    addTearDown(controller.dispose);
+    final initial = controller.loadToday();
+    final deleting = controller.deletePointRecordDetail('deleted');
+    await Future<void>.delayed(Duration.zero);
+    expect(service.deleted, ['deleted']);
+    expect(service.requests, hasLength(1));
+    final date = DateTime.now();
+    service.requests.first.complete(
+      ModelRecordHistoryPage(
+        rows: [_pointRow('deleted', date)],
+        total: 10,
+        nextBefore: date,
+        nextDate: null,
+      ),
+    );
+    await initial;
+    await Future<void>.delayed(Duration.zero);
+    expect(controller.todayRecords, isEmpty);
+    expect(service.requests, hasLength(2));
+    service.requests.last.complete(
+      ModelRecordHistoryPage(
+        rows: [_pointRow('fresh', date)],
+        total: 2,
+        nextBefore: date,
+        nextDate: null,
+      ),
+    );
+    await deleting;
+    expect(controller.todayRecords.single.id, 'fresh');
+  });
+
   test(
     'accounting pages include the next cursor without metadata probes',
     () async {

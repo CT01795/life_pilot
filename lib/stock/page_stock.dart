@@ -119,7 +119,7 @@ Widget _buildDateSelector(BuildContext context, ControllerStock controller) {
       latestAvailableDate: state.$2,
       loading: state.$3,
       enabled: state.$4,
-      onSelected: controller.loadDate,
+      onSelected: (date) => controller.loadDate(date, force: true),
     ),
   );
 }

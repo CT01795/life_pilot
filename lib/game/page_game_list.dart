@@ -309,7 +309,24 @@ class _PageGameListState extends State<PageGameList> {
       controller.dispose();
     });
     if (created && mounted) {
-      await controllerGameList.loadGames();
+      try {
+        await controllerGameList.loadGames(force: true);
+      } catch (error, stackTrace) {
+        // The write succeeded. Report the read failure without retrying it.
+        logger.e(
+          'Reload game catalog after creation failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.dashboardLoadFailed),
+            ),
+          );
+        }
+        return;
+      }
       if (!mounted) return;
       final createdLevels =
           controllerGameList.gamesByCategory[gameType]?[gameName];

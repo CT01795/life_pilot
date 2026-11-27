@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:life_pilot/accounting/service_ledger_sharing.dart';
 
 import 'package:life_pilot/apps/config_app.dart';
+import 'package:life_pilot/pages/home/model/dashboard/dashboard_bootstrap.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_upcoming_schedule.dart';
@@ -30,7 +31,7 @@ class ControllerDashboard extends SafeChangeNotifier {
   final ProviderLocale localeProvider;
   int _accountGeneration = 0;
   String? _activeAccount;
-  Future<DashboardSetting>? _settingsLoad;
+  Future<DashboardBootstrap>? _settingsLoad;
   int _settingsRequest = 0;
   Future<void>? _settingsSaveTail;
 
@@ -88,6 +89,8 @@ class ControllerDashboard extends SafeChangeNotifier {
 
   final _sharedLedgers = <bool, ({String id, String name})>{};
   final _sharedSummaries = <bool, Future<SharedLedgerHomeSnapshot>>{};
+  final _sharedReads = <bool, RefreshRequestCoordinator>{};
+  final _sharedReadRevisions = <bool, int>{};
   final _sharedToday = <bool, Map<String, dynamic>>{};
   Map<String, dynamic>? sharedToday({required bool points}) =>
       _sharedToday[points];
@@ -100,33 +103,52 @@ class ControllerDashboard extends SafeChangeNotifier {
   Future<SharedLedgerHomeSnapshot>? sharedSummary({required bool points}) =>
       _sharedSummaries[points];
 
-  void refreshSharedSummary({required bool points}) {
+  Future<void> refreshSharedSummary({required bool points, bool force = true}) {
     final id = _sharedLedgers[points]?.id;
-    if (id == null || notifierDisposed) return;
-    final future = _sharing.homePreview(id);
-    _sharedSummaries[points] = future;
-    // The panel may be collapsed; observe errors until a view subscribes.
-    unawaited(
-      future.then<void>(
-        (data) {
-          if (notifierDisposed ||
-              !identical(_sharedSummaries[points], future)) {
-            return;
-          }
-          _sharedToday[points] = data.totals;
-          notifyListeners();
-        },
-        onError: (Object _, StackTrace _) {
-          if (notifierDisposed ||
-              !identical(_sharedSummaries[points], future)) {
-            return;
-          }
-          _sharedToday.remove(points);
-          notifyListeners();
-        },
-      ),
+    if (id == null || notifierDisposed) return Future<void>.value();
+    final loads = _sharedReads.putIfAbsent(
+      points,
+      RefreshRequestCoordinator.new,
     );
+    if (force) {
+      _sharedReadRevisions.update(
+        points,
+        (value) => value + 1,
+        ifAbsent: () => 1,
+      );
+    }
+    return loads.run(() async {
+      if (notifierDisposed ||
+          !identical(_sharedReads[points], loads) ||
+          _sharedLedgers[points]?.id != id) {
+        return;
+      }
+      await _readSharedSummary(points, id, force: force);
+    }, force: force);
+  }
+
+  Future<void> _readSharedSummary(
+    bool points,
+    String id, {
+    required bool force,
+  }) async {
+    final revision = _sharedReadRevisions[points];
+    final future = Future<SharedLedgerHomeSnapshot>.sync(
+      () => _sharing.homePreview(id, force: force),
+    );
+    _sharedSummaries[points] = future;
+    bool current() =>
+        !notifierDisposed &&
+        revision == _sharedReadRevisions[points] &&
+        identical(_sharedSummaries[points], future);
     notifyListeners();
+    try {
+      final snapshot = await future;
+      if (current()) _sharedToday[points] = snapshot.totals;
+    } catch (_) {
+      if (current()) _sharedToday.remove(points);
+    }
+    if (current()) notifyListeners();
   }
 
   ({String id, String name})? sharedLedger({required bool points}) =>
@@ -150,6 +172,8 @@ class ControllerDashboard extends SafeChangeNotifier {
     final id = selection?.id ?? previous?.id;
     if (id != null) await _sharing.setHomeLink(id, selection != null);
     if (!_isCurrentRequest(account, generation)) return;
+    _sharedReads.remove(points);
+    _sharedReadRevisions.remove(points);
     _sharedToday.remove(points);
     if (selection == null) {
       _sharedLedgers.remove(points);
@@ -157,16 +181,19 @@ class ControllerDashboard extends SafeChangeNotifier {
       notifyListeners();
     } else {
       _sharedLedgers[points] = selection;
-      refreshSharedSummary(points: points);
+      unawaited(refreshSharedSummary(points: points, force: false));
     }
   }
 
-  Future<void> _restoreSharedLedgers(String account, int generation) async {
+  Future<void> _restoreSharedLedgers(
+    String account,
+    int generation,
+    List<Map<String, dynamic>> links,
+  ) async {
     if (!_includeCloudShares || _sharedRestored) return;
     _sharedRestored = true;
     final revision = _sharedSelectionRevision;
     try {
-      final links = repository.takeBootstrapSharedLedgers();
       if (!_isCurrentRequest(account, generation) ||
           revision != _sharedSelectionRevision) {
         return;
@@ -182,29 +209,30 @@ class ControllerDashboard extends SafeChangeNotifier {
           id: id,
           name: row['account_name']?.toString() ?? '',
         );
-        final rawSnapshot = row['snapshot'];
-        if (rawSnapshot is! Map ||
-            rawSnapshot['totals'] is! Map ||
-            rawSnapshot['entries'] is! List) {
-          throw const FormatException('Invalid shared ledger bootstrap');
-        }
-        final snapshot = (
-          totals: Map<String, dynamic>.unmodifiable(
-            rawSnapshot['totals'] as Map,
-          ),
-          entries: List<Map<String, dynamic>>.unmodifiable(
-            (rawSnapshot['entries'] as List).map(
-              (entry) => Map<String, dynamic>.unmodifiable(entry as Map),
-            ),
-          ),
-        );
-        _sharedSummaries[points] = Future.value(snapshot);
-        _sharedToday[points] = snapshot.totals;
+        _applySharedSnapshot(points, row);
       }
       notifyListeners();
     } catch (_) {
       if (_isCurrentRequest(account, generation)) _sharedRestored = false;
     }
+  }
+
+  void _applySharedSnapshot(bool points, Map<String, dynamic> row) {
+    final raw = row['snapshot'];
+    if (raw is! Map || raw['totals'] is! Map || raw['entries'] is! List) {
+      throw const FormatException('Invalid shared ledger bootstrap');
+    }
+    final snapshot = (
+      totals: Map<String, dynamic>.unmodifiable(raw['totals'] as Map),
+      entries: List<Map<String, dynamic>>.unmodifiable(
+        (raw['entries'] as List).map(
+          (entry) => Map<String, dynamic>.unmodifiable(entry as Map),
+        ),
+      ),
+    );
+    _sharedReads.remove(points);
+    _sharedSummaries[points] = Future.value(snapshot);
+    _sharedToday[points] = snapshot.totals;
   }
 
   List<DashboardCity> _eventCities = [];
@@ -222,6 +250,8 @@ class ControllerDashboard extends SafeChangeNotifier {
     _includeCloudShares = includeCloudShares;
     _sharedLedgers.clear();
     _sharedSummaries.clear();
+    _sharedReads.clear();
+    _sharedReadRevisions.clear();
     _sharedToday.clear();
     _sharedRestored = false;
     _sharedRestore = null;
@@ -282,9 +312,8 @@ class ControllerDashboard extends SafeChangeNotifier {
     }
   }
 
-  Future<DashboardSetting> _loadSettings(String account, int generation) {
-    if (!_isCurrentRequest(account, generation)) return Future.value(_setting);
-    final completion = Completer<DashboardSetting>();
+  Future<DashboardBootstrap> _loadSettings(String account, int generation) {
+    final completion = Completer<DashboardBootstrap>();
     final request = completion.future;
     // Publish before repository callbacks can start a newer account/refresh.
     _settingsLoad = request;
@@ -298,16 +327,15 @@ class ControllerDashboard extends SafeChangeNotifier {
     return request;
   }
 
-  Future<DashboardSetting> _readSettings(
+  Future<DashboardBootstrap> _readSettings(
     String account,
     int generation,
     int request,
   ) async {
-    var setting = _setting;
+    var bootstrap = DashboardBootstrap(setting: _setting);
     try {
-      if (!_isCurrentRequest(account, generation)) return setting;
-      final loaded = await repository.loadDashboardSetting(account: account);
-      setting = loaded.copyWith(language: localeProvider.locale.languageCode);
+      if (!_isCurrentRequest(account, generation)) return bootstrap;
+      bootstrap = await repository.loadDashboardBootstrap(account: account);
     } catch (error, stackTrace) {
       logger.e(
         'Could not load dashboard settings.',
@@ -315,14 +343,24 @@ class ControllerDashboard extends SafeChangeNotifier {
         stackTrace: stackTrace,
       );
     }
-    if (_isCurrentRequest(account, generation) && request == _settingsRequest) {
-      _setting = setting;
-      if (_includeCloudShares && !_sharedRestored) {
-        _sharedRestore = _restoreSharedLedgers(account, generation);
-      }
-      notifyListeners();
+    if (!_isCurrentRequest(account, generation) ||
+        request != _settingsRequest) {
+      return DashboardBootstrap(setting: _setting);
     }
-    return setting;
+    _setting = bootstrap.setting.copyWith(
+      language: localeProvider.locale.languageCode,
+    );
+    if (_includeCloudShares &&
+        !_sharedRestored &&
+        bootstrap.sharedLedgers != null) {
+      _sharedRestore = _restoreSharedLedgers(
+        account,
+        generation,
+        bootstrap.sharedLedgers!,
+      );
+    }
+    notifyListeners();
+    return bootstrap;
   }
 
   Future<void> loadRecommendationCities(
@@ -374,14 +412,17 @@ class ControllerDashboard extends SafeChangeNotifier {
 
     try {
       if (!_isCurrentRequest(account, generation)) return;
-      final setting = await _loadSettings(account, generation);
+      final bootstrap = await _loadSettings(account, generation);
+      final setting = bootstrap.setting;
       if (!_isCurrentRequest(account, generation)) return;
 
       final todayEventsFuture =
           _loadSection(
             DashboardSection.todaySchedule,
             scheduleRequest,
-            () => repository.loadTodayEvents(account),
+            () async =>
+                bootstrap.todayEvents ??
+                await repository.loadTodayEvents(account),
             pendingSections: pendingSections,
           ).then((todayEvents) {
             if (_isCurrentRequest(account, generation) &&
@@ -434,9 +475,11 @@ class ControllerDashboard extends SafeChangeNotifier {
           _loadSection(
             DashboardSection.accounting,
             accountingRequest,
-            () => repository.loadAccountingSummary(
-              accountId: setting.accountingAccountId ?? '',
-            ),
+            () async =>
+                bootstrap.accounting ??
+                await repository.loadAccountingSummary(
+                  accountId: setting.accountingAccountId ?? '',
+                ),
             pendingSections: pendingSections,
           ).then((accounting) {
             if (!_isCurrentRequest(account, generation)) return;
@@ -454,9 +497,11 @@ class ControllerDashboard extends SafeChangeNotifier {
           _loadSection(
             DashboardSection.points,
             pointsRequest,
-            () => repository.loadPointSummary(
-              accountId: setting.pointAccountId ?? '',
-            ),
+            () async =>
+                bootstrap.points ??
+                await repository.loadPointSummary(
+                  accountId: setting.pointAccountId ?? '',
+                ),
             pendingSections: pendingSections,
           ).then((points) {
             if (!_isCurrentRequest(account, generation)) return;
@@ -488,6 +533,7 @@ class ControllerDashboard extends SafeChangeNotifier {
   Future<void> refreshCore({
     required String account,
     bool includePoints = true,
+    bool refreshShared = false,
   }) async {
     final sections = [
       DashboardSection.todaySchedule,
@@ -500,20 +546,37 @@ class ControllerDashboard extends SafeChangeNotifier {
     final scheduleRequest = ++_todayScheduleRequest;
     final accountingRequest = ++_accountingRequest;
     final pointsRequest = ++_pointsRequest;
+    final sharedAtStart = refreshShared ? Map.of(_sharedSummaries) : null;
+    final sharedRevisions = refreshShared ? Map.of(_sharedReadRevisions) : null;
+    final selectionRevision = _sharedSelectionRevision;
     _beginLoading(sections);
     _failedSections.removeAll(sections);
     notifyListeners();
 
     try {
       if (!_isCurrentRequest(account, generation)) return;
-      final setting = await _loadSettings(account, generation);
+      final bootstrap = await _loadSettings(account, generation);
+      final setting = bootstrap.setting;
       if (!_isCurrentRequest(account, generation)) return;
 
+      final sharedFuture =
+          sharedAtStart != null &&
+              scheduleRequest == _todayScheduleRequest &&
+              selectionRevision == _sharedSelectionRevision
+          ? _refreshSelectedSharedLedgers(
+              bootstrap.sharedLedgers,
+              sharedAtStart,
+              sharedRevisions!,
+              includePoints: includePoints,
+            )
+          : Future<void>.value();
       final todayEventsFuture =
           _loadSection(
             DashboardSection.todaySchedule,
             scheduleRequest,
-            () => repository.loadTodayEvents(account),
+            () async =>
+                bootstrap.todayEvents ??
+                await repository.loadTodayEvents(account),
             pendingSections: pendingSections,
           ).then((todayEvents) {
             if (_isCurrentRequest(account, generation) &&
@@ -529,9 +592,11 @@ class ControllerDashboard extends SafeChangeNotifier {
           _loadSection(
             DashboardSection.accounting,
             accountingRequest,
-            () => repository.loadAccountingSummary(
-              accountId: setting.accountingAccountId ?? '',
-            ),
+            () async =>
+                bootstrap.accounting ??
+                await repository.loadAccountingSummary(
+                  accountId: setting.accountingAccountId ?? '',
+                ),
             pendingSections: pendingSections,
           ).then((accounting) {
             if (_isCurrentRequest(account, generation) &&
@@ -550,9 +615,11 @@ class ControllerDashboard extends SafeChangeNotifier {
           ? _loadSection(
               DashboardSection.points,
               pointsRequest,
-              () => repository.loadPointSummary(
-                accountId: setting.pointAccountId ?? '',
-              ),
+              () async =>
+                  bootstrap.points ??
+                  await repository.loadPointSummary(
+                    accountId: setting.pointAccountId ?? '',
+                  ),
               pendingSections: pendingSections,
             ).then((points) {
               if (_isCurrentRequest(account, generation) &&
@@ -567,13 +634,46 @@ class ControllerDashboard extends SafeChangeNotifier {
               }
             })
           : Future<void>.value();
-      await Future.wait([todayEventsFuture, accountingFuture, pointsFuture]);
+      await Future.wait([
+        todayEventsFuture,
+        accountingFuture,
+        pointsFuture,
+        sharedFuture,
+      ]);
     } finally {
       if (_isCurrentRequest(account, generation)) {
         _endLoading(pendingSections);
         notifyListeners();
       }
     }
+  }
+
+  Future<void> _refreshSelectedSharedLedgers(
+    List<Map<String, dynamic>>? links,
+    Map<bool, Future<SharedLedgerHomeSnapshot>> previous,
+    Map<bool, int> previousRevisions, {
+    required bool includePoints,
+  }) async {
+    final pending = <Future<void>>[];
+    for (final points in [false, if (includePoints) true]) {
+      final id = _sharedLedgers[points]?.id;
+      if (id == null ||
+          !identical(previous[points], _sharedSummaries[points]) ||
+          previousRevisions[points] != _sharedReadRevisions[points]) {
+        continue;
+      }
+      final row = links?.where((row) => row['share_id'] == id).firstOrNull;
+      if (row != null) {
+        try {
+          _applySharedSnapshot(points, row);
+          continue;
+        } on FormatException catch (error) {
+          logger.w('Invalid shared ledger snapshot', error: error);
+        }
+      }
+      pending.add(refreshSharedSummary(points: points));
+    }
+    await Future.wait(pending);
   }
 
   int _sectionRequest(DashboardSection section) => switch (section) {

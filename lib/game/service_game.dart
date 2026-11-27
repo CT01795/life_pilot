@@ -42,6 +42,10 @@ class GameQuestionHasAnswersException implements Exception {
 }
 
 class ServiceGame {
+  ServiceGame({LocalDataStore? catalogStore})
+    : _catalogStore = catalogStore ?? LocalDataStore.instance;
+
+  final LocalDataStore _catalogStore;
   static const _grammarQuestionTable = GameQuestionSourceRules.grammarTable;
   static const _sentenceQuestionTable = GameQuestionSourceRules.sentenceTable;
   static const _translationQuestionTable =
@@ -150,21 +154,38 @@ class ServiceGame {
     });
   }
 
-  Future<List<ModelGameItem>> fetchGames() async {
+  Future<List<ModelGameItem>> fetchGames({bool force = false}) async {
     final client = supabase;
     final session = client.auth.currentSession;
     final owner = _ownerEmail;
     final local =
-        await LocalDataStore.instance.preferredLocation(owner) ==
+        await _catalogStore.preferredLocation(owner) ==
         DataStorageLocation.local;
     if (session == null ||
         client.auth.currentSession?.accessToken != session.accessToken) {
       throw StateError('Game catalog account changed');
     }
-    return RepositorySessionReads(client).read('game-catalog', (
-      owner,
-      local,
-    ), () => _readGameCatalog(client, owner, local, session.accessToken));
+    return RepositorySessionReads(client).read(
+      'game-catalog',
+      (owner, local, force && local),
+      () async {
+        if (force && local) {
+          final result = await RepositoryVersionedGameCatalog(_catalogStore)
+              .refresh(
+                client,
+                owner,
+                ensureCurrent: () {
+                  if (client.auth.currentSession?.accessToken !=
+                      session.accessToken) {
+                    throw StateError('Game catalog account changed');
+                  }
+                },
+              );
+          return _mapAndSortGames(result.catalog.rows);
+        }
+        return _readGameCatalog(client, owner, local, session.accessToken);
+      },
+    );
   }
 
   Future<List<ModelGameItem>> _readGameCatalog(
@@ -175,10 +196,10 @@ class ServiceGame {
   ) async {
     if (local) {
       final snapshot = await RepositoryVersionedGameCatalog(
-        LocalDataStore.instance,
+        _catalogStore,
       ).read(owner);
       if (snapshot != null) return _mapAndSortGames(snapshot.rows);
-      final cached = await LocalDataStore.instance.list(
+      final cached = await _catalogStore.list(
         owner: owner,
         resource: localGameListCache,
       );
@@ -220,7 +241,7 @@ class ServiceGame {
       rows.map((row) {
         final id = parseStringValue(row[Fields.id]);
         if (id.isEmpty) return Future<void>.value();
-        return LocalDataStore.instance.put(
+        return _catalogStore.put(
           owner: owner,
           resource: localGameListCache,
           id: id,
@@ -609,8 +630,9 @@ class ServiceGame {
     required String gameName,
     required int level,
   }) async {
+    final client = supabase;
     try {
-      await supabase.rpc(
+      await client.rpc(
         'create_game_level',
         params: {
           'p_game_type': gameType.trim(),
@@ -618,6 +640,7 @@ class ServiceGame {
           'p_level': level,
         },
       );
+      RepositorySessionReads(client).invalidate('game-catalog');
     } on PostgrestException catch (error) {
       if (error.code == '23505') throw const DuplicateGameLevelException();
       rethrow;
@@ -955,14 +978,15 @@ class ServiceGame {
     if (reportedTotal == null || reportedTotal < offset + rows.length) {
       throw const FormatException('Invalid question total count');
     }
-    final groups = rawGroups
-        .map(parseStringValue)
-        .where(
-          (value) => value.isNotEmpty && _groupMatchesGame(gameName, value),
-        )
-        .toSet()
-        .toList()
-      ..sort();
+    final groups =
+        rawGroups
+            .map(parseStringValue)
+            .where(
+              (value) => value.isNotEmpty && _groupMatchesGame(gameName, value),
+            )
+            .toSet()
+            .toList()
+          ..sort();
     return MyGameQuestionManagementPage(
       page: MyGameQuestionPage(
         questions: rows.map(MyGameQuestion.fromJson).toList(),

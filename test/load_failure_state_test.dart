@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
@@ -69,8 +71,15 @@ class _Points extends ServicePointRecord {
 
 class _Modules extends ServiceModule {
   bool fail = false;
+  final forces = <bool>[];
+  Completer<List<String>>? pending;
   @override
-  Future<List<String>> loadModulesFromServer(String account) async {
+  Future<List<String>> loadModulesFromServer(
+    String account, {
+    bool force = false,
+  }) async {
+    forces.add(force);
+    if (pending case final request?) return request.future;
     if (fail) throw StateError('offline');
     return ['game'];
   }
@@ -106,6 +115,31 @@ class _Feedback extends ServiceFeedback {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('module force refresh waits for and discards an older read', () async {
+    final auth = _Auth();
+    final service = _Modules();
+    final old = service.pending = Completer<List<String>>();
+    final controller = ControllerPageMain(
+      auth: auth,
+      serviceModule: service,
+      loc: await AppLocalizations.delegate.load(const Locale('en')),
+      initialLocale: const Locale('en'),
+    );
+    addTearDown(auth.dispose);
+    addTearDown(controller.dispose);
+    final forced = controller.refreshModules();
+    expect(controller.refreshModules(), same(forced));
+    expect(service.forces, [false]);
+    final fresh = service.pending = Completer<List<String>>();
+    old.complete(['game']);
+    await Future<void>.delayed(Duration.zero);
+    expect(service.forces, [false, true]);
+    expect(controller.canAccess(PageType.game), isFalse);
+    fresh.complete(['pointsRecord']);
+    await forced;
+    expect(controller.canAccess(PageType.pointsRecord), isTrue);
+    expect(controller.canAccess(PageType.game), isFalse);
+  });
   test('account reload failure retains cards; retry clears error', () async {
     final service = _Accounting();
     final controller = ControllerAccountingList(

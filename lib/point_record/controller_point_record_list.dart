@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
@@ -18,9 +19,9 @@ class ControllerPointRecordList extends SafeChangeNotifier {
   ModelPersonalDataScope? _dataScopeKey;
   int _accountGeneration = 0;
   int _listRequest = 0;
-  String? _loadingCategory;
-  String? _loadingSearchQuery;
-  Future<void>? _loadFuture;
+  RefreshRequestCoordinator _loads = RefreshRequestCoordinator();
+  (String, String)? _loadKey;
+  Future<void>? get _loadFuture => _loads.pending;
   Timer? _searchDebounce;
   final _accountRefreshes = <String, Object>{};
 
@@ -134,44 +135,38 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     }
   }
 
-  Future<void> loadAccounts({String? inputCategory}) {
+  Future<void> loadAccounts({String? inputCategory, bool force = false}) {
     if (notifierDisposed) return Future.value();
     final requestedCategory = inputCategory ?? category;
     final requestedSearchQuery = searchQuery;
-    if (isLoading &&
-        _loadingCategory == requestedCategory &&
-        _loadingSearchQuery == requestedSearchQuery) {
-      return _loadFuture ?? Future.value();
+    final key = (requestedCategory, requestedSearchQuery);
+    if (_loadKey != key) {
+      _loads = RefreshRequestCoordinator();
+      _loadKey = key;
     }
-    final request = ++_listRequest;
     final generation = _accountGeneration;
-    final user = auth?.currentAccount ?? '';
-    _loadingCategory = requestedCategory;
-    _loadingSearchQuery = requestedSearchQuery;
-    isLoading = true;
-    hasRequestedMore = false;
-    isLoadingMore = false;
-    loadMoreError = null;
-    loadError = null;
-    final completion = Completer<void>();
-    final future = completion.future;
-    // Publish before invoking the service or listeners; either can re-enter.
-    _loadFuture = future;
-    unawaited(
-      _loadAccounts(
-        user,
+    final loads = _loads;
+    if (force && loads.isRunning) _listRequest++;
+    return loads.run(() {
+      if (!_isCurrent(generation) || !identical(_loads, loads)) {
+        return Future<void>.value();
+      }
+      final request = ++_listRequest;
+      isLoading = true;
+      hasRequestedMore = false;
+      isLoadingMore = false;
+      loadMoreError = null;
+      loadError = null;
+      final future = _loadAccounts(
+        auth?.currentAccount ?? '',
         requestedCategory,
         requestedSearchQuery,
         generation,
         request,
-      ).then<void>(
-        (_) => completion.complete(),
-        onError: (Object error, StackTrace stack) =>
-            completion.completeError(error, stack),
-      ),
-    );
-    if (_isCurrent(generation) && request == _listRequest) notifyListeners();
-    return future;
+      );
+      if (_isCurrent(generation) && request == _listRequest) notifyListeners();
+      return future;
+    }, force: force);
   }
 
   Future<void> _loadAccounts(
@@ -201,9 +196,6 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     } finally {
       if (_isCurrent(generation) && request == _listRequest) {
         isLoading = false;
-        _loadingCategory = null;
-        _loadingSearchQuery = null;
-        _loadFuture = null;
         notifyListeners();
       }
     }
@@ -220,9 +212,8 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     _dataScopeKey = nextScope;
     _accountGeneration++;
     _listRequest++;
-    _loadFuture = null;
-    _loadingCategory = null;
-    _loadingSearchQuery = null;
+    _loads = RefreshRequestCoordinator();
+    _loadKey = null;
     _searchDebounce?.cancel();
     _searchDebounce = null;
     isLoading = false;
@@ -250,7 +241,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
       eventId: eventId,
     );
     // ⭐ 統一來源：重新拉一次
-    if (_isCurrent(generation)) await loadAccounts();
+    if (_isCurrent(generation)) await loadAccounts(force: true);
     return modelPointRecordAccount;
   }
 
@@ -258,7 +249,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     if (notifierDisposed) return;
     final generation = _accountGeneration;
     await service.deleteAccount(accountId: accountId);
-    if (_isCurrent(generation)) await loadAccounts();
+    if (_isCurrent(generation)) await loadAccounts(force: true);
   }
 
   Future<void> loadMoreAccounts() async {

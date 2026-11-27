@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -18,18 +19,24 @@ void main() {
   late SupabaseClient client;
   late List<http.Request> requests;
   dynamic response;
+  Completer<void>? gate;
   var status = 200;
   setUp(() async {
     requests = [];
     status = 200;
+    gate = null;
     client = SupabaseClient(
       'https://example.supabase.co',
       'test-key',
       httpClient: MockClient((request) async {
         requests.add(request);
+        final body = jsonEncode(response);
+        final code = status;
+        final pending = gate;
+        if (pending != null) await pending.future;
         return http.Response(
-          jsonEncode(response),
-          status,
+          body,
+          code,
           request: request,
           headers: {'content-type': 'application/json'},
         );
@@ -52,6 +59,33 @@ void main() {
     );
   });
   tearDown(() => client.dispose());
+  test('obsolete workbench response cannot repopulate the cache', () async {
+    response = {
+      'status': {
+        'plan': {'plan_code': 'free'},
+        'status': 'active',
+      },
+      'metrics': {
+        'published': 0,
+        'pending': 0,
+        'recent_submissions': [],
+        'totals': <String, int>{},
+      },
+      'plans': [],
+    };
+    final service = ServiceVendorAccount();
+    final initial = await service.fetchDashboard('one@example.com');
+    final pending = gate = Completer<void>();
+    final obsolete = service.fetchDashboard('one@example.com', force: true);
+    await Future<void>.delayed(Duration.zero);
+    expect(requests, hasLength(2));
+    final updated = initial.withRecentSubmissions([]);
+    service.cacheDashboard(updated);
+    gate = null;
+    pending.complete();
+    expect(await obsolete, same(updated));
+    expect(RepositoryVendorDashboardCache(client).read(), same(updated));
+  });
   test('changed performance snapshot cannot be appended to old totals', () {
     ModelContentPerformance page(String version) =>
         ModelContentPerformance.fromPage({
@@ -207,7 +241,7 @@ void main() {
           'totals': {'page_views': 123456},
           'recent_submissions': [],
         },
-        'plans': null,
+        'plans': [],
       };
       await ServiceVendorAccount().fetchDashboard(
         'one@example.com',
@@ -215,7 +249,7 @@ void main() {
       );
       expect(requests, hasLength(3));
       expect(jsonDecode(requests.last.body)['p_force_refresh'], true);
-      expect(jsonDecode(requests.last.body)['p_include_plans'], false);
+      expect(jsonDecode(requests.last.body)['p_include_plans'], true);
 
       await ServiceVendorAccount().fetchPricingPlans();
       expect(requests, hasLength(3));

@@ -191,6 +191,30 @@ void main() {
     expect(requests, hasLength(1));
   });
   test(
+    'personal force waits for the old read and shares one fresh read',
+    () async {
+      final repo = RepositoryPricingCatalog(client: client);
+      final oldGate = gate = Completer<void>();
+      final old = repo.read(vendor: false);
+      final obsolete = expectLater(old, throwsStateError);
+      await Future<void>.delayed(Duration.zero);
+
+      final refresh = repo.read(vendor: false, force: true);
+      expect(repo.read(vendor: false, force: true), same(refresh));
+      expect(requests, hasLength(1));
+      response = {
+        'versions': [
+          {'id': 'fresh'},
+        ],
+      };
+      gate = null;
+      oldGate.complete();
+      await obsolete;
+      expect((await refresh).single['id'], 'fresh');
+      expect(requests, hasLength(2));
+    },
+  );
+  test(
     'forced catalog read bypasses cache and invalidates an active read',
     () async {
       final repo = RepositoryPricingCatalog(client: client);

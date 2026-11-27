@@ -184,35 +184,10 @@ class ServiceLocalDataTransfer {
     String account,
     void Function() current,
   ) async {
-    final catalog = RepositoryVersionedGameCatalog(_store);
-    final cached = await catalog.read(account);
-    current();
-    final setup = await _client.rpc(
-      'get_my_cloud_transfer_setup',
-      params: {'p_catalog_version': cached?.version},
-    );
-    current();
-    if (setup is! Map) throw const FormatException('Invalid transfer setup');
-    final version = setup['catalog_version'];
-    final rows = setup['game_rows'];
-    if (version is! String ||
-        version.isEmpty ||
-        (rows == null && cached?.version != version) ||
-        (rows != null && rows is! List)) {
-      throw const FormatException('Invalid game catalog version response');
-    }
-    final setting = setup['dashboard_setting'];
-    if (setting != null && setting is! Map) {
-      throw const FormatException('Invalid transfer dashboard settings');
-    }
-    if (rows is List) {
-      final gameRows = List<Map<String, dynamic>>.from(rows);
-      if (gameRows.any((row) => parseStringValue(row['id']).isEmpty)) {
-        throw const FormatException('Invalid game catalog row');
-      }
-      await catalog.write(account, (version: version, rows: gameRows));
-    }
-    return setting == null ? null : Map<String, dynamic>.from(setting as Map);
+    final result = await RepositoryVersionedGameCatalog(
+      _store,
+    ).refresh(_client, account, ensureCurrent: current);
+    return result.dashboardSetting;
   }
 
   Future<LocalDataTransferResult> uploadLocalToCloud(

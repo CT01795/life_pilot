@@ -25,6 +25,7 @@ class _Service extends ServiceGame {
   bool fail = false;
   List<ModelGameItem> games = [];
   Completer<List<ModelGameItem>>? pending;
+  final forcedReads = <bool>[];
   void Function()? onFetch;
   @override
   Future<GameProgressWindow> fetchUserProgressWindow({
@@ -44,8 +45,9 @@ class _Service extends ServiceGame {
   }
 
   @override
-  Future<List<ModelGameItem>> fetchGames() async {
+  Future<List<ModelGameItem>> fetchGames({bool force = false}) async {
     loads++;
+    forcedReads.add(force);
     onFetch?.call();
     if (pending != null) return pending!.future;
     if (fail) throw StateError('unavailable');
@@ -55,7 +57,8 @@ class _Service extends ServiceGame {
 
 class _SyncFailure extends ServiceGame {
   @override
-  Future<List<ModelGameItem>> fetchGames() => throw StateError('sync failure');
+  Future<List<ModelGameItem>> fetchGames({bool force = false}) =>
+      throw StateError('sync failure');
 }
 
 class _Auth extends ControllerAuth {
@@ -77,6 +80,26 @@ Widget _app(_Service service, _Auth auth) =>
     );
 
 void main() {
+  test('catalog refresh supersedes an active read and coalesces', () async {
+    final service = _Service();
+    final old = service.pending = Completer<List<ModelGameItem>>();
+    final controller = ControllerGameList(serviceGame: service);
+    addTearDown(controller.dispose);
+    final initial = controller.loadGames();
+    final refresh = controller.loadGames(force: true);
+    expect(controller.loadGames(force: true), same(refresh));
+    expect(service.forcedReads, [false]);
+    final fresh = service.pending = Completer<List<ModelGameItem>>();
+    old.complete([_game('type', 'old', 1)]);
+    await initial;
+    await Future<void>.delayed(Duration.zero);
+    expect(controller.firstGame, isNull);
+    expect(service.forcedReads, [false, true]);
+    fresh.complete([_game('type', 'fresh', 2)]);
+    await refresh;
+    expect(controller.firstGame?.gameName, 'fresh');
+  });
+
   test('catalog preserves service category/name/level order', () {
     final rows = [
       _game('B', 'Second', 3),

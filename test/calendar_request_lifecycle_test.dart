@@ -175,6 +175,23 @@ void main() {
     expect(model.requests.length, 1);
   });
 
+  test('rapid navigation keeps the latest pending month', () async {
+    final october = controller.goToMonth(month: DateTime(2026, 10));
+    final november = controller.goToMonth(month: DateTime(2026, 11));
+    final february = controller.goToMonth(month: DateTime(2027, 2));
+    expect(model.months, [DateTime(2026, 10)]);
+    model.requests.first.complete([]);
+    await Future<void>.delayed(Duration.zero);
+    expect(model.months, [DateTime(2026, 10), DateTime(2027, 2)]);
+    model.requests[1].complete([]);
+    await Future.wait([october, november, february]);
+    expect(controller.currentMonth, DateTime(2027, 2));
+    expect(model.months, isNot(contains(DateTime(2026, 11))));
+    for (final request in model.requests.skip(2)) {
+      request.complete([]);
+    }
+  });
+
   test('old completion cannot unlock a newer month transition', () async {
     final old = controller.goToMonth(month: DateTime(2026, 10));
     controller.clearAll(notify: false);
@@ -182,11 +199,15 @@ void main() {
     expect(model.requests.length, 2);
     model.requests.first.complete([]);
     await old;
-    await controller.goToMonth(month: DateTime(2026, 12));
+    final latest = controller.goToMonth(month: DateTime(2026, 12));
     expect(model.requests.length, 2);
-    controller.dispose();
     model.requests[1].complete([]);
-    await fresh;
+    await Future<void>.delayed(Duration.zero);
+    expect(model.months.last, DateTime(2026, 12));
+    expect(model.requests.length, 3);
+    controller.dispose();
+    model.requests[2].complete([]);
+    await Future.wait([fresh, latest]);
   });
 
   test('active month still refreshes both adjacent months', () async {

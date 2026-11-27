@@ -4,6 +4,7 @@ import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 import 'package:life_pilot/utils/model_record_history.dart';
 import 'package:life_pilot/utils/model_record_history_page.dart';
 import 'package:life_pilot/utils/nlp.dart';
@@ -16,6 +17,8 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
   ModelPersonalDataScope? _accountKey;
   int _accountGeneration = 0;
   int _requestId = 0;
+  RefreshRequestCoordinator _loads = RefreshRequestCoordinator();
+  String? _loadAccountId;
   final String accountId;
   final void Function()? onRecordsChanged;
 
@@ -74,6 +77,8 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     _accountKey = nextAccount;
     _accountGeneration++;
     _requestId++;
+    _loads = RefreshRequestCoordinator();
+    _loadAccountId = null;
     todayRecords = [];
     todayTotal = 0;
     total = null;
@@ -84,11 +89,23 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     if (notify) notifyListeners();
   }
 
-  Future<void> loadToday({String? inputAccountId}) async {
-    if (notifierDisposed || isLoading || !_isCurrent(_accountGeneration)) {
-      return;
-    }
+  Future<void> loadToday({String? inputAccountId, bool force = false}) {
     final generation = _accountGeneration;
+    if (!_isCurrent(generation)) return Future<void>.value();
+    final targetAccountId = inputAccountId ?? accountId;
+    if (_loadAccountId != targetAccountId) {
+      _loads = RefreshRequestCoordinator();
+      _loadAccountId = targetAccountId;
+    }
+    final loads = _loads;
+    if (force && loads.isRunning) _requestId++;
+    return loads.run(() async {
+      if (!_isCurrent(generation) || !identical(_loads, loads)) return;
+      await _loadToday(generation, inputAccountId: inputAccountId);
+    }, force: force);
+  }
+
+  Future<void> _loadToday(int generation, {String? inputAccountId}) async {
     final request = ++_requestId;
     isLoadingMore = false;
     isLoading = true;
@@ -232,7 +249,7 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     await auth?.refreshSubscriptionUsage();
     if (!_isCurrent(generation)) return;
 
-    await loadToday(inputAccountId: inputAccountId ?? accountId);
+    await loadToday(inputAccountId: inputAccountId ?? accountId, force: true);
   }
 
   Future<void> updatePointRecordDetail(PointRecordPreview preview) async {
@@ -249,7 +266,7 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     );
     if (!_isCurrent(generation)) return;
     onRecordsChanged?.call();
-    await loadToday();
+    await loadToday(force: true);
   }
 
   Future<void> deletePointRecordDetail(String detailId) async {
@@ -260,6 +277,6 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     onRecordsChanged?.call();
     await auth?.refreshSubscriptionUsage();
     if (!_isCurrent(generation)) return;
-    await loadToday();
+    await loadToday(force: true);
   }
 }

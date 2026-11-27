@@ -139,7 +139,22 @@ class ModelCalendar {
 
   void removeEvent(EventItem event) {
     _events.removeWhere((e) => e.id == event.id);
-    updateCachedEvent(event: event); // 清快取
+    // Keep unrelated rows visible while an obsolete month read is discarded.
+    final affected = flatMonthEventsCache.entries
+        .where((entry) => entry.value.any((row) => row.id == event.id))
+        .toList(growable: false);
+    for (final entry in affected) {
+      final rows = entry.value.where((row) => row.id != event.id).toList();
+      flatMonthEventsCache[entry.key] = rows;
+      _weekLayouts.remove(entry.key);
+      final weeks = weeksCache[entry.key];
+      if (weeks != null) {
+        cachedEvents[entry.key] = groupEventsByWeekAndDay(
+          weeks: weeks,
+          inEvents: rows,
+        );
+      }
+    }
   }
 
   // 清除該事件相關月份的快取
@@ -148,6 +163,20 @@ class ModelCalendar {
   }
 
   void invalidateEventRange({required DateTime? startDate, DateTime? endDate}) {
+    for (final key in affectedMonthKeys(
+      startDate: startDate,
+      endDate: endDate,
+    )) {
+      cachedEvents.remove(key);
+      flatMonthEventsCache.remove(key);
+      _weekLayouts.remove(key);
+    }
+  }
+
+  static Iterable<String> affectedMonthKeys({
+    required DateTime? startDate,
+    required DateTime? endDate,
+  }) sync* {
     if (startDate == null && endDate == null) return;
 
     var first = startDate ?? endDate!;
@@ -160,21 +189,15 @@ class ModelCalendar {
 
     var month = DateTime(first.year, first.month - 1);
     final lastAffectedMonth = DateTime(last.year, last.month + 1);
-    final keysToRemove = <String>{};
     while (!month.isAfter(lastAffectedMonth)) {
-      keysToRemove.add(month.toMonthKey());
+      yield month.toMonthKey();
       month = DateTime(month.year, month.month + 1);
-    }
-
-    for (var key in keysToRemove) {
-      cachedEvents.remove(key);
-      flatMonthEventsCache.remove(key);
-      _weekLayouts.remove(key);
     }
   }
 
   void clearAll() {
     _events.clear();
+    removedEventIds.clear();
     cachedEvents.clear();
     flatMonthEventsCache.clear();
     _weekLayouts.clear();
