@@ -1,4 +1,5 @@
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_schedule_query.dart';
 
 /// Projects a newly created itinerary into the existing dashboard window.
 /// No account state, notification or persistence belongs in this model.
@@ -11,10 +12,10 @@ class ModelUpcomingSchedule {
   }) {
     final startDate = event.startDate;
     if (startDate == null || event.isCompleted) return null;
-    final today = DateTime(now.year, now.month, now.day);
-    final visibleUntil = today.add(const Duration(days: 3));
-    final eventDate = DateTime(startDate.year, startDate.month, startDate.day);
-    if (eventDate.isBefore(today) || !eventDate.isBefore(visibleUntil)) {
+    final window = ModelDashboardScheduleQuery(now);
+    final boundary = event.endDate ?? startDate;
+    if (boundary.isBefore(event.isShared ? window.today : window.reviewStart) ||
+        !startDate.isBefore(window.rangeEnd)) {
       return null;
     }
     final keys = [

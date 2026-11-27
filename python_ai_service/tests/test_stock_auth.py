@@ -1,16 +1,17 @@
 import os
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from unittest.mock import ANY, MagicMock, patch
 
 from fastapi.testclient import TestClient
+import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 
 os.environ.setdefault("DB_URL", "sqlite:///:memory:")
 
 from app import app
 from security.supabase_auth import require_supabase_user
-from stock import service_stock
+from stock import service_stock, train_model as training
 
 
 class StockAuthorizationTest(unittest.TestCase):
@@ -106,6 +107,24 @@ class StockAuthorizationTest(unittest.TestCase):
         self.assertEqual(status["started_at"], "2026-08-18T00:00:00+00:00")
         self.assertIsNotNone(status["finished_at"])
 
+    def test_selected_date_training_calls_only_the_requested_day(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        with patch(
+            "stock.service_stock.train_and_save_model", return_value=[{"signal": 1}]
+        ) as train_model:
+            response = self.client.post(
+                "/stock/update_model_for_date",
+                json={"prediction_date": "2026-08-20"},
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(train_model.call_args.args[0].isoformat(), "2026-08-20")
+        status = self.client.get("/stock/model_training_status").json()
+        self.assertEqual(status["prediction_date"], "2026-08-20")
+        self.assertEqual(status["status"], "succeeded")
+
     def test_model_training_status_requires_admin(self):
         app.dependency_overrides[require_supabase_user] = lambda: {
             "id": "regular-user-id",
@@ -115,6 +134,22 @@ class StockAuthorizationTest(unittest.TestCase):
         response = self.client.get("/stock/model_training_status")
 
         self.assertEqual(response.status_code, 403)
+
+    def test_selected_date_without_data_never_uses_adjacent_market_day(self):
+        earlier_data = pd.DataFrame([{
+            "date": "2026-08-19T00:00:00Z",
+            "traded_number": 40_000_000,
+            "closing_price": 25,
+        }])
+        with (
+            patch.object(training.pd, "read_sql", return_value=earlier_data),
+            patch.object(training, "prepare_stock_data", return_value=earlier_data),
+            patch.object(training, "train_model") as train,
+        ):
+            result = training.train_and_save_model(date(2026, 8, 20))
+
+        self.assertEqual(result["stocks"], [])
+        train.assert_not_called()
 
     def test_stock_date_batch_rejects_unknown_table(self):
         app.dependency_overrides[require_supabase_user] = lambda: {

@@ -142,6 +142,10 @@ class StockQuantitativeCountRequest(BaseModel):
     date: datetime
 
 
+class StockModelDateRequest(BaseModel):
+    prediction_date: Date
+
+
 class InstitutionalDateQueryRequest(BaseModel):
     date: Date
 
@@ -189,12 +193,14 @@ def _set_model_training_state(
     *,
     started_at: str | None = None,
     finished_at: str | None = None,
+    prediction_date: Date | None = None,
 ):
     with _model_training_state_lock:
       _model_training_state.update({
           "status": status,
           "started_at": started_at,
           "finished_at": finished_at,
+          "prediction_date": prediction_date.isoformat() if prediction_date else None,
       })
 
 
@@ -203,14 +209,18 @@ def _get_model_training_state() -> dict:
       return dict(_model_training_state)
 
 
-def _run_model_training():
+def _run_model_training(prediction_date: Date | None = None):
     try:
-      train_and_save_model()
+      result = (
+          train_and_save_model() if prediction_date is None
+          else train_and_save_model(prediction_date)
+      )
       current_state = _get_model_training_state()
       _set_model_training_state(
-          "succeeded",
+          "no_data" if prediction_date is not None and not isinstance(result, list) else "succeeded",
           started_at=current_state["started_at"],
           finished_at=_utc_now_iso(),
+          prediction_date=prediction_date,
       )
     except Exception:
       current_state = _get_model_training_state()
@@ -218,6 +228,7 @@ def _run_model_training():
           "failed",
           started_at=current_state["started_at"],
           finished_at=_utc_now_iso(),
+          prediction_date=prediction_date,
       )
       raise
     finally:
@@ -718,6 +729,23 @@ def route_update_stock_technical_for_date(payload: dict = Body(...)):
       , summary="於背景訓練模型"
       , description="於背景訓練模型")
 def route_update_model(background_tasks: BackgroundTasks):
+    return _start_model_training(background_tasks)
+
+
+@router.post("/stock/update_model_for_date", summary="補跑指定日期的股票預測")
+def route_update_model_for_date(
+    payload: StockModelDateRequest, background_tasks: BackgroundTasks
+):
+    prediction_date = payload.prediction_date
+    if prediction_date > datetime.now(ZoneInfo("Asia/Taipei")).date():
+      raise HTTPException(status_code=422, detail="Prediction date cannot be in the future")
+    return _start_model_training(background_tasks, prediction_date)
+
+
+def _start_model_training(
+    background_tasks: BackgroundTasks,
+    prediction_date: Date | None = None,
+):
     if not _model_training_lock.acquire(blocking=False):
       raise HTTPException(
           status_code=409,
@@ -728,16 +756,18 @@ def route_update_model(background_tasks: BackgroundTasks):
         "training",
         started_at=_utc_now_iso(),
         finished_at=None,
+      prediction_date=prediction_date,
     )
     logging.info("update_model started")
     try:
-      background_tasks.add_task(_run_model_training)
+      background_tasks.add_task(_run_model_training, prediction_date)
     except Exception:
       current_state = _get_model_training_state()
       _set_model_training_state(
           "failed",
           started_at=current_state["started_at"],
           finished_at=_utc_now_iso(),
+          prediction_date=prediction_date,
       )
       _model_training_lock.release()
       raise

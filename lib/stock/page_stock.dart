@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show listEquals;
+import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/stock/controller_stock.dart';
 import 'package:life_pilot/stock/model_stock.dart';
@@ -46,6 +47,7 @@ class PageStock extends StatelessWidget {
                       _buildDateSelector(context, controller),
                       Gaps.h8,
                     ],
+                    _buildRunDateButton(context, controller),
                     _buildLoadFailure(context, controller),
                   ],
                 );
@@ -67,6 +69,10 @@ class PageStock extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _buildDateSelector(context, controller),
+                      Builder(
+                        builder: (context) =>
+                            _buildRunDateButton(context, controller),
+                      ),
                       Gaps.h8,
                       Selector<ControllerStock, String>(
                         selector: (_, c) => c.searchQuery,
@@ -108,6 +114,66 @@ class PageStock extends StatelessWidget {
           ),
     );
   }
+}
+
+Widget _buildRunDateButton(BuildContext context, ControllerStock controller) {
+  if (!context.select<ControllerAuth?, bool>(
+    (auth) => auth?.isSysAdmin == true,
+  )) {
+    return const SizedBox.shrink();
+  }
+  return Selector<ControllerStock, (bool, bool)>(
+    selector: (_, c) => (c.canRunSelectedDate, c.runningSelectedDate),
+    builder: (context, state, _) {
+      final loc = AppLocalizations.of(context)!;
+      return Tooltip(
+        message: loc.stockRunSelectedDateHint,
+        child: TextButton.icon(
+          onPressed: !state.$1
+              ? null
+              : () async {
+                  final today = DateUtils.dateOnly(DateTime.now());
+                  final earliest = DateTime(2000);
+                  final selected = controller.selectedDate;
+                  final initial =
+                      selected == null ||
+                          selected.isBefore(earliest) ||
+                          selected.isAfter(today)
+                      ? today
+                      : selected;
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: initial,
+                    firstDate: earliest,
+                    lastDate: today,
+                    helpText: loc.stockRunSelectedDate,
+                    confirmText: loc.stockRunSelectedDate,
+                  );
+                  if (!context.mounted || picked == null) return;
+                  final result = await controller.runSelectedDate(picked);
+                  if (!context.mounted) return;
+                  final message = switch (result) {
+                    StockDateRunResult.succeeded => loc.stockUpdateSucceeded,
+                    StockDateRunResult.noData => loc.noData,
+                    StockDateRunResult.failed => loc.stockUpdateFailed,
+                  };
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(message)));
+                },
+          icon: state.$2
+              ? const SizedBox.square(
+                  dimension: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.play_arrow_outlined),
+          label: Text(
+            state.$2 ? loc.stockUpdateInProgress : loc.stockRunSelectedDate,
+          ),
+        ),
+      );
+    },
+  );
 }
 
 Widget _buildDateSelector(BuildContext context, ControllerStock controller) {

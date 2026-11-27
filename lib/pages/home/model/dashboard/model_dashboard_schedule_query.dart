@@ -2,19 +2,17 @@ import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_event_ordering.dart';
 
-/// Pure projection for the dashboard's three-day schedule window.
+/// Current schedule plus three calendar days of unfinished follow-ups.
 /// Filter lightweight fields before decoding descriptions or sub-events.
 class ModelDashboardScheduleQuery {
   final DateTime today;
+  final DateTime reviewStart;
   final DateTime rangeEnd;
 
   ModelDashboardScheduleQuery(DateTime now)
     : today = DateTime(now.year, now.month, now.day),
-      rangeEnd = DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ).add(const Duration(days: 3));
+      reviewStart = DateTime(now.year, now.month, now.day - 3),
+      rangeEnd = DateTime(now.year, now.month, now.day + 3);
 
   List<CalendarEvent> selectLocal(Iterable<Map<String, dynamic>> rows) =>
       decodeRows(rows.where(_matchesWindow));
@@ -46,6 +44,11 @@ class ModelDashboardScheduleQuery {
       parseStringValue(row['end_date']),
       toLocal: true,
     );
-    return !(end ?? start).isBefore(today);
+    return !(end ?? start).isBefore(reviewStart);
+  }
+
+  bool isReviewEvent(CalendarEvent event) {
+    final boundary = event.endDate ?? event.startDate;
+    return !event.isShared && boundary != null && boundary.isBefore(today);
   }
 }

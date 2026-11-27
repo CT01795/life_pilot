@@ -1,4 +1,5 @@
 import json
+from datetime import date, timedelta
 from time import perf_counter
 
 from config import engine
@@ -65,14 +66,24 @@ def prepare_stock_data(df: pd.DataFrame, is_train=True) -> pd.DataFrame:
         ], inplace=True)
     return df
 
-def train_sell_model():
+class InsufficientStockHistory(ValueError):
+    pass
+
+
+def positive_probability(model, features):
+    classes = model.classes_.tolist()
+    return model.predict_proba(features)[:, classes.index(1)] if 1 in classes else 0.0
+
+
+def train_sell_model(before: date | None = None):
     logging.info("train_sell_model started")
-    df = pd.read_sql("""
+    df = pd.read_sql(text("""
         SELECT security_code, date, ma5, ma20, high20, vol5, rsi,
                pct_change, closing_price, traded_number
         FROM stock_daily_price
+        """ + (" WHERE date < :before " if before is not None else "") + """
         ORDER BY date, security_code
-    """, engine)
+    """), engine, params={"before": before} if before is not None else None)
 
     df = prepare_stock_data(df, is_train=False)
 
@@ -97,6 +108,8 @@ def train_sell_model():
     ]
 
     df = df.dropna(subset=features + ['sell_target'])
+    if df.empty:
+        raise InsufficientStockHistory("No eligible sell training rows")
 
     X = df[features]
     y = df['sell_target']
@@ -113,15 +126,16 @@ def train_sell_model():
     logging.info("train_sell_model ended")
     return model
 
-def train_model():
+def train_model(before: date | None = None):
     logging.info("train_model started")
     # 抓資料
     query = """
     SELECT security_code, date, ma5, ma20, high20, vol5, rsi, pct_change, closing_price,traded_number
     FROM stock_daily_price
+    """ + (" WHERE date < :before " if before is not None else "") + """
     ORDER BY date, security_code
     """
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(text(query), engine, params={"before": before} if before is not None else None)
     # 計算 target
     df = prepare_stock_data(df, is_train=True)
     df['date'] = pd.to_datetime(df['date'])
@@ -145,18 +159,16 @@ def train_model():
 
     # 2️⃣ 用「日期切分」（關鍵）
     unique_dates = df['date'].drop_duplicates().sort_values()
+    if len(unique_dates) < 2:
+        raise InsufficientStockHistory("Fewer than two eligible buy training dates")
 
     split_index = int(len(unique_dates) * 0.8)
     split_date = unique_dates.iloc[split_index]
 
     train_df = df[df['date'] < split_date]
-    test_df = df[df['date'] >= split_date]
 
     X_train = train_df[features]
     y_train = train_df['target']
-
-    X_test = test_df[features]
-    y_test = test_df['target']
 
     model = RandomForestClassifier(
         n_estimators=300,       # ✅ 增加樹的數量
@@ -168,23 +180,16 @@ def train_model():
     )
     model.fit(X_train, y_train)
 
-    y_pred = model.predict(X_test)
-    y_prob = model.predict_proba(X_test)[:, 1]
     # 儲存模型
     # joblib.dump(model, "stock_model.pkl")
     # logging.info("模型已儲存: stock_model.pkl")
     logging.info("train_model ended")
     return model
 
-def train_and_save_model():
+def train_and_save_model(prediction_date: date | None = None):
     started_at = perf_counter()
     logger.info("Model training started")
     try:
-        model = train_model()
-        logger.info("Buy model training completed")
-        model2 = train_sell_model()
-        logger.info("Sell model training completed")
-
         # 取得最新日期資料
         query = """
             SELECT *
@@ -193,7 +198,19 @@ def train_and_save_model():
             AND ma5 IS NOT NULL AND ma20 IS NOT NULL AND high20 IS NOT NULL
             AND vol5 IS NOT NULL AND rsi IS NOT NULL;
         """
-        df = pd.read_sql(query, engine)
+        params = None
+        if prediction_date is not None:
+            query = """
+                SELECT * FROM stock_daily_price
+                WHERE date >= :window_start AND date < :window_end
+                  AND ma5 IS NOT NULL AND ma20 IS NOT NULL AND high20 IS NOT NULL
+                  AND vol5 IS NOT NULL AND rsi IS NOT NULL
+            """
+            params = {
+                "window_start": prediction_date - timedelta(days=22),
+                "window_end": prediction_date + timedelta(days=1),
+            }
+        df = pd.read_sql(text(query), engine, params=params)
         if df.empty:
             logger.warning(
                 "Model training stopped: no prediction data available"
@@ -207,8 +224,20 @@ def train_and_save_model():
         df = df[df['traded_number'] > 35000000]
         df = df[df['closing_price'] > 18]
         df['date'] = pd.to_datetime(df['date'], utc=True)
-        latest_date = df['date'].max()
-        df = df[df['date'] == latest_date] # 取最新的一天
+        if prediction_date is None:
+            df = df[df['date'] == df['date'].max()]
+        else:
+            df = df[df['date'].dt.date == prediction_date]
+        if df.empty:
+            return {"stocks": [], "message": "No data available"}
+        # Historical training cannot learn from prices after the selected date.
+        try:
+            model = train_model(prediction_date)
+            model2 = train_sell_model(prediction_date)
+        except InsufficientStockHistory:
+            if prediction_date is None:
+                raise
+            return {"stocks": [], "message": "Not enough historical training data"}
 
         # 👉 特徵
         features = [
@@ -220,8 +249,8 @@ def train_and_save_model():
         X = df[features]
         df['pred_class'] = model.predict(X)
         #df['pred_prob'] = model.predict_proba(X)[:, 1]
-        df['buy_prob'] = model.predict_proba(X)[:, 1]
-        df['sell_prob'] = model2.predict_proba(X)[:, 1]
+        df['buy_prob'] = positive_probability(model, X)
+        df['sell_prob'] = positive_probability(model2, X)
         #df['pred_pct'] = df['pred_prob']
         df['buy_pct'] = df['buy_prob']
         df['sell_pct'] = df['sell_prob']
@@ -315,8 +344,11 @@ def train_and_save_model():
                 text("""
                     INSERT INTO stock_predicted (date, data)
                     VALUES (:date, :data)
-                    ON CONFLICT (date) DO UPDATE SET data = EXCLUDED.data
-                """),
+                    ON CONFLICT (date)
+                """ + (
+                    " DO NOTHING" if prediction_date is not None
+                    else " DO UPDATE SET data = EXCLUDED.data"
+                )),
                 {"date": latest_date.to_pydatetime(), "data": json.dumps(data_json)}
             )
         logger.info(

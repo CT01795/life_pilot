@@ -48,6 +48,7 @@ class _PageEventAddState extends State<PageEventAdd> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
   final Map<String, FocusNode> _focusNodes = {};
+  final Set<String> _editedRangeFields = {};
   bool _isSaving = false;
   bool _hasUnsavedChanges = false;
   bool _allowPop = false;
@@ -67,9 +68,6 @@ class _PageEventAddState extends State<PageEventAdd> {
       templateEvent: widget.templateEvent,
       initialDate: widget.initialDate,
     );
-    for (final controller in controllerAdd.controllerMap.values) {
-      controller.addListener(_markUnsavedChanges);
-    }
     controllerAdd.onContentChanged = _markUnsavedChanges;
   }
 
@@ -106,19 +104,21 @@ class _PageEventAddState extends State<PageEventAdd> {
     if (mounted) Navigator.of(context).pop();
   }
 
-  FocusNode getFocusNode(String key) {
+  FocusNode getFocusNode(String key, {bool validateRange = false}) {
     return _focusNodes.putIfAbsent(key, () {
       final node = FocusNode();
 
-      node.addListener(() {
-        if (!node.hasFocus) {
-          controllerAdd.updateField(
-            key,
-            controllerAdd.getController(key: key).text,
-            true,
-          );
-        }
-      });
+      if (validateRange) {
+        node.addListener(() {
+          if (!node.hasFocus && mounted && _editedRangeFields.remove(key)) {
+            controllerAdd.updateField(
+              key,
+              controllerAdd.getController(key: key).text,
+              true,
+            );
+          }
+        });
+      }
 
       return node;
     });
@@ -664,8 +664,9 @@ class _PageEventAddState extends State<PageEventAdd> {
                   isDense: true,
                   contentPadding: const EdgeInsets.all(6),
                 ),
-                focusNode: getFocusNode(minKey),
+                focusNode: getFocusNode(minKey, validateRange: true),
                 onChanged: (value) {
+                  _editedRangeFields.add(minKey);
                   ctl.updateField(
                     minKey,
                     ctl.getController(key: minKey).text,
@@ -697,8 +698,9 @@ class _PageEventAddState extends State<PageEventAdd> {
                   isDense: true,
                   contentPadding: const EdgeInsets.all(6),
                 ),
-                focusNode: getFocusNode(maxKey),
+                focusNode: getFocusNode(maxKey, validateRange: true),
                 onChanged: (value) {
+                  _editedRangeFields.add(maxKey);
                   ctl.updateField(
                     maxKey,
                     ctl.getController(key: maxKey).text,
@@ -712,7 +714,10 @@ class _PageEventAddState extends State<PageEventAdd> {
       }
 
       return SpeechTextField(
+        key: ValueKey(keyField),
         keyField: keyField,
+        focusNode: getFocusNode(keyField),
+        minLines: e.key == EventFields.description ? 3 : 1,
         label: e.value,
         controller: ctl,
         loc: loc,
@@ -934,6 +939,7 @@ class SpeechTextField extends StatelessWidget {
   final String keyField;
   final String label;
   final int minLines;
+  final FocusNode? focusNode;
   final ControllerPageEventAdd controller;
   final AppLocalizations loc;
   final ValueChanged<String> onChanged;
@@ -946,6 +952,7 @@ class SpeechTextField extends StatelessWidget {
     required this.controller,
     required this.loc,
     this.minLines = 1,
+    this.focusNode,
   });
 
   @override
@@ -955,28 +962,37 @@ class SpeechTextField extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ValueListenableBuilder<TextEditingValue>(
-          valueListenable: ctrl,
-          builder: (_, value, _) {
-            if (value.text.isEmpty) return const SizedBox.shrink();
-            return IconButton(
-              icon: const Icon(Icons.volume_up),
-              tooltip: loc.speakUp,
-              onPressed: () => controller.speakText(text: ctrl.text),
-            );
-          },
+        SizedBox(
+          width: 48,
+          child: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: ctrl,
+            builder: (_, value, _) {
+              if (value.text.isEmpty) return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.volume_up),
+                tooltip: loc.speakUp,
+                onPressed: () => controller.speakText(text: ctrl.text),
+              );
+            },
+          ),
         ),
         Expanded(
           child: TextFormField(
             controller: ctrl,
+            focusNode: focusNode,
             decoration: InputDecoration(
               labelText: label,
               isDense: true,
               contentPadding: Insets.all3,
             ),
-            maxLines: 3,
+            maxLines: minLines == 1 ? 1 : 3,
             minLines: minLines,
-            keyboardType: TextInputType.multiline,
+            keyboardType: minLines == 1
+                ? TextInputType.text
+                : TextInputType.multiline,
+            textInputAction: minLines == 1
+                ? TextInputAction.next
+                : TextInputAction.newline,
             onChanged: onChanged,
           ),
         ),

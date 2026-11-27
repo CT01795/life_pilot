@@ -12,6 +12,8 @@ import 'package:life_pilot/utils/refresh_request_coordinator.dart';
 
 enum StockUpdateStatus { idle, updating, succeeded, failed }
 
+enum StockDateRunResult { succeeded, noData, failed }
+
 class ControllerStock extends SafeChangeNotifier {
   final ServiceStock service;
 
@@ -58,6 +60,7 @@ class ControllerStock extends SafeChangeNotifier {
   bool loading = true;
   bool loadFailed = false;
   bool dateLoading = false;
+  bool runningSelectedDate = false;
   bool institutionalsLoading = false;
   bool futuresLoading = false;
   Object? institutionalsError;
@@ -111,6 +114,7 @@ class ControllerStock extends SafeChangeNotifier {
   bool get canSelectDate =>
       !_isDisposed &&
       !loading &&
+      !runningSelectedDate &&
       !dateLoading &&
       !institutionalsLoading &&
       !futuresLoading &&
@@ -118,10 +122,41 @@ class ControllerStock extends SafeChangeNotifier {
       (updateStatus == StockUpdateStatus.succeeded ||
           updateStatus == StockUpdateStatus.failed);
 
+  bool get canRunSelectedDate =>
+      !_isDisposed &&
+      !loading &&
+      !dateLoading &&
+      !runningSelectedDate &&
+      updateStatus != StockUpdateStatus.updating;
+
+  Future<StockDateRunResult> runSelectedDate(DateTime date) async {
+    if (!canRunSelectedDate) return StockDateRunResult.failed;
+    runningSelectedDate = true;
+    _notifyListenersIfActive();
+    try {
+      final found = await service.runSelectedDate(date);
+      if (!found || _isDisposed) return StockDateRunResult.noData;
+      await loadDate(date, force: true);
+      return loadFailed
+          ? StockDateRunResult.failed
+          : StockDateRunResult.succeeded;
+    } catch (error, stackTrace) {
+      logger.e(
+        'Selected date stock update failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return StockDateRunResult.failed;
+    } finally {
+      runningSelectedDate = false;
+      _notifyListenersIfActive();
+    }
+  }
+
   /// Reuse only the current page load, including its backend update. Completed
   /// results are not cached, and repeated calls never queue another update.
   Future<void> load() {
-    if (_isDisposed) return Future<void>.value();
+    if (_isDisposed || runningSelectedDate) return Future<void>.value();
     final active = _activeLoad;
     if (active != null) return active;
 

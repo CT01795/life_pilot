@@ -9,6 +9,15 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get homeUnfinishedPastSchedules => '지난 3일간의 미완료 일정';
+
+  @override
+  String get stockRunSelectedDate => '선택한 날짜 처리';
+
+  @override
+  String get stockRunSelectedDateHint => '선택한 날짜만 처리하며 다른 날짜의 데이터는 삭제하지 않습니다.';
+
+  @override
   String get noMoreData => '더 이상 데이터가 없습니다';
 
   @override

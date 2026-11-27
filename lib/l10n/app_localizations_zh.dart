@@ -9,6 +9,15 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get homeUnfinishedPastSchedules => '前三天未完成的行程';
+
+  @override
+  String get stockRunSelectedDate => '補跑指定日';
+
+  @override
+  String get stockRunSelectedDateHint => '只處理所選日期，不會刪除其他日期的資料。';
+
+  @override
   String get noMoreData => '沒有更多資料了';
 
   @override

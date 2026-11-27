@@ -1,4 +1,7 @@
 {
+  "homeUnfinishedPastSchedules": "過去3日間の未完了の予定",
+  "stockRunSelectedDate": "選択した日を処理",
+  "stockRunSelectedDateHint": "選択した日だけを処理します。他の日付のデータは削除されません。",
   "noMoreData": "これ以上のデータはありません",
   "@noMoreData": {"description": "Pagination has no further matching records"},
   "ledgerDeclineShare": "閲覧をやめる",

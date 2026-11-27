@@ -1,4 +1,7 @@
 {
+  "homeUnfinishedPastSchedules": "Unfinished events from the past 3 days",
+  "stockRunSelectedDate": "Run for selected date",
+  "stockRunSelectedDateHint": "Only the selected date is processed. Other dates are not deleted.",
   "noMoreData": "There’s no more data",
   "@noMoreData": {"description": "Pagination has no further matching records"},
   "ledgerDeclineShare": "Stop viewing",

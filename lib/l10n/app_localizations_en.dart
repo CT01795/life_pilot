@@ -9,6 +9,15 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get homeUnfinishedPastSchedules => 'Unfinished events from the past 3 days';
+
+  @override
+  String get stockRunSelectedDate => 'Run for selected date';
+
+  @override
+  String get stockRunSelectedDateHint => 'Only the selected date is processed. Other dates are not deleted.';
+
+  @override
   String get noMoreData => 'There’s no more data';
 
   @override

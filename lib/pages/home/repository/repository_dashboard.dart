@@ -58,7 +58,7 @@ class DashboardRepository {
       final rows = await LocalDataStore.instance.calendarRowsInRange(
         owner: localOwner,
         resource: TableNames.calendarEvents,
-        start: query.today,
+        start: query.reviewStart,
         end: query.rangeEnd,
       );
       return query.selectLocal(
@@ -78,12 +78,12 @@ class DashboardRepository {
         .eq('is_completed', false)
         .lt('start_date', query.rangeEnd.toUtc().toIso8601String())
         .or(
-          'end_date.gte.${query.today.toUtc().toIso8601String()},'
-          'and(end_date.is.null,start_date.gte.${query.today.toUtc().toIso8601String()})',
+          'end_date.gte.${query.reviewStart.toUtc().toIso8601String()},'
+          'and(end_date.is.null,start_date.gte.${query.reviewStart.toUtc().toIso8601String()})',
         );
 
     // Calendar SELECT policies expose only the owner and accepted shares.
-    return query.decodeRows([
+    final events = query.decodeRows([
       for (final row in result)
         {
           ...row,
@@ -92,6 +92,14 @@ class DashboardRepository {
               normalizeStringValue(account),
         },
     ]);
+    return events
+        .where((event) {
+          final boundary = event.endDate ?? event.startDate;
+          return !event.isShared ||
+              boundary == null ||
+              !boundary.isBefore(query.today);
+        })
+        .toList(growable: false);
   }
 
   Future<CalendarEvent> loadCalendarEventDetail({

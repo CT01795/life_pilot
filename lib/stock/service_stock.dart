@@ -65,26 +65,46 @@ class ServiceStock {
       logger.i(
         "Loading stock data for date: ${DateFormat('yyyy-MM-dd').format(targetDate)}",
       );
-      await loadRawDataTWSE(targetDate);
-      await loadRawDataOTC(targetDate);
-      await loadStockInstitutionalTWSE(targetDate);
-      await loadStockInstitutionalOTC(targetDate);
-      try {
-        await insertStockInstitutionalToSupabase(targetDate);
-      } catch (e) {
-        logger.e(
-          "Error occurred while inserting stock institutional data",
-          error: e,
-        );
-      }
-      await loadFuturesInstitutional(targetDate);
-      try {
-        await insertFuturesToSupabase(targetDate);
-      } catch (e) {
-        logger.e("Error occurred while inserting futures data", error: e);
-      }
+      await _loadDateInputs(targetDate);
       await quantitativeCalculation(500, targetDate);
     }
+  }
+
+  Future<void> _loadDateInputs(DateTime targetDate) async {
+    await loadRawDataTWSE(targetDate);
+    await loadRawDataOTC(targetDate);
+    await loadStockInstitutionalTWSE(targetDate);
+    await loadStockInstitutionalOTC(targetDate);
+    try {
+      await insertStockInstitutionalToSupabase(targetDate);
+    } catch (e) {
+      logger.e(
+        "Error occurred while inserting stock institutional data",
+        error: e,
+      );
+    }
+    await loadFuturesInstitutional(targetDate);
+    try {
+      await insertFuturesToSupabase(targetDate);
+    } catch (e) {
+      logger.e("Error occurred while inserting futures data", error: e);
+    }
+  }
+
+  /// Backfill only one day. The rolling cleanup and newest-date training
+  /// remain exclusive to the normal startup workflow.
+  Future<bool> runSelectedDate(DateTime selected) async {
+    final day = DateTime.utc(selected.year, selected.month, selected.day);
+    if ((await _predictionsRepository.readDate(day)).isNotEmpty) return true;
+    await _loadDateInputs(day);
+    await quantitativeCalculation(500, day, runModel: false);
+    final dayKey = DateFormat('yyyy-MM-dd').format(day);
+    await api.post('stock/update_model_for_date', {'prediction_date': dayKey});
+    if (!await _waitForModelTraining(predictionDate: dayKey)) return false;
+    final models = await fetchStocksFromApiMac(day);
+    if (models == null || models.isEmpty) return false;
+    await insertFromApi(models, day);
+    return true;
   }
 
   Future<void> loadRawDataTWSE(DateTime date) async {
@@ -652,7 +672,11 @@ class ServiceStock {
   List<ModelStock> filterRisingStocks(List<ModelStock> stocks) =>
       ModelStockStrategy.rising(stocks);
 
-  Future<void> quantitativeCalculation(int batch, DateTime date) async {
+  Future<void> quantitativeCalculation(
+    int batch,
+    DateTime date, {
+    bool runModel = true,
+  }) async {
     /*ma5           → 5日均線
       ma20          → 20日均線
       high20        → 過去20日最高收盤價
@@ -663,6 +687,9 @@ class ServiceStock {
       'date': date.toUtc().toIso8601String(),
     });
     if (result["count"] == 0) {
+      // A manual request may be for a non-trading day. Do not advance the
+      // latest technical-update marker without any rows to process.
+      if (!runModel) return;
       try {
         await api.post('stock/insert_stock_date_batch', {
           'table_name': TableNames.stockDate,
@@ -696,6 +723,7 @@ class ServiceStock {
         },
       ],
     });
+    if (!runModel) return;
     try {
       await api.post('stock/update_model', {});
     } on ServiceApiException catch (error) {
@@ -723,14 +751,21 @@ class ServiceStock {
     }
   }
 
-  Future<void> _waitForModelTraining() async {
+  Future<bool> _waitForModelTraining({String? predictionDate}) async {
     final deadline = DateTime.now().add(_modelTrainingTimeout);
 
     while (DateTime.now().isBefore(deadline)) {
       final response = await api.get('stock/model_training_status');
+      if (predictionDate != null &&
+          response['prediction_date'] != predictionDate) {
+        throw StateError(
+          'Stock training status does not match the selected date',
+        );
+      }
       final status = parseOptionalStringValue(response['status']);
 
-      if (status == 'succeeded') return;
+      if (status == 'succeeded') return true;
+      if (status == 'no_data' && predictionDate != null) return false;
       if (status == 'failed') {
         throw StateError('Model training failed');
       }

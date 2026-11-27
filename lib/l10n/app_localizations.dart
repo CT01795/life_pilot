@@ -99,6 +99,24 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
+  /// No description provided for @homeUnfinishedPastSchedules.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfinished events from the past 3 days'**
+  String get homeUnfinishedPastSchedules;
+
+  /// No description provided for @stockRunSelectedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Run for selected date'**
+  String get stockRunSelectedDate;
+
+  /// No description provided for @stockRunSelectedDateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the selected date is processed. Other dates are not deleted.'**
+  String get stockRunSelectedDateHint;
+
   /// Pagination has no further matching records
   ///
   /// In en, this message translates to:

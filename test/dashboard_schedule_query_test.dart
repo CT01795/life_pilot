@@ -72,7 +72,9 @@ void main() {
       _row('ended', start: past, end: _today.subtract(const Duration(days: 1))),
       _row('old-single-day', start: past),
     ];
-    expect(query.selectLocal(rows).map((event) => event.id), ['ongoing']);
+    final results = query.selectLocal(rows);
+    expect(results.map((event) => event.id), ['ended', 'ongoing']);
+    expect(results.where(query.isReviewEvent).single.id, 'ended');
   });
 
   test('completed and invalid-start rows are excluded before decoding', () {
@@ -109,8 +111,8 @@ void main() {
   });
 
   test('timezone-bearing timestamps are compared as instants', () {
-    final midnight = _today.toUtc().toIso8601String();
-    final justBefore = _today
+    final midnight = query.reviewStart.toUtc().toIso8601String();
+    final justBefore = query.reviewStart
         .subtract(const Duration(seconds: 1))
         .toUtc()
         .toIso8601String();
@@ -119,6 +121,22 @@ void main() {
       _row('excluded')..['start_date'] = justBefore,
     ];
     expect(query.selectLocal(rows).single.id, 'included');
+  });
+
+  test('all three prior days can be checked off separately', () {
+    final rows = [
+      for (var day = 1; day <= 4; day++)
+        _row(
+          'day-$day',
+          start: DateTime(_today.year, _today.month, _today.day - day),
+        ),
+      _row('today'),
+      _row('done', start: query.reviewStart, completed: true),
+    ];
+    expect(
+      query.selectLocal(rows).where(query.isReviewEvent).map((e) => e.id),
+      ['day-3', 'day-2', 'day-1'],
+    );
   });
 
   test('large historical source only decodes matching records', () {

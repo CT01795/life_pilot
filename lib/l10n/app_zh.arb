@@ -1,4 +1,7 @@
 {
+  "homeUnfinishedPastSchedules": "前三天未完成的行程",
+  "stockRunSelectedDate": "補跑指定日",
+  "stockRunSelectedDateHint": "只處理所選日期，不會刪除其他日期的資料。",
   "noMoreData": "沒有更多資料了",
   "@noMoreData": {"description": "分頁沒有更多符合條件的資料"},
   "ledgerDeclineShare": "取消查看",

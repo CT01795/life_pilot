@@ -27,6 +27,8 @@ class _Service extends ServiceStock {
   int foreignCalls = 0, futuresCalls = 0;
   int cloudCalls = 0, serverCalls = 0, rawCalls = 0;
   int historyCalls = 0;
+  final manualRunDates = <DateTime>[];
+  bool manualRunHasData = true;
   final initial = Completer<List<ModelStock>>();
   final raw = Completer<void>();
   Completer<List<ModelStock>>? serverInitial;
@@ -50,6 +52,12 @@ class _Service extends ServiceStock {
   Future<void> loadRawData() {
     rawCalls++;
     return raw.future;
+  }
+
+  @override
+  Future<bool> runSelectedDate(DateTime selected) async {
+    manualRunDates.add(selected);
+    return manualRunHasData;
   }
 
   @override
@@ -120,6 +128,34 @@ class _CountedSell extends ModelInstitutional {
 Future<void> _flush() => Future<void>.delayed(Duration.zero);
 
 void main() {
+  test('running a selected day does not start the rolling update', () async {
+    final service = _Service();
+    final controller = ControllerStock(service)..loading = false;
+    addTearDown(controller.dispose);
+    final historical = _day.subtract(const Duration(days: 7));
+    final result = controller.runSelectedDate(historical);
+    await _flush();
+    service.foreign[historical]?.complete([]);
+    service.futuresByDate[historical]?.complete([]);
+
+    expect(await result, StockDateRunResult.succeeded);
+    expect(service.manualRunDates, [historical]);
+    expect(service.rawCalls, 0);
+    expect(controller.selectedDate, historical);
+  });
+
+  test('no data on a manual run does not switch dates', () async {
+    final service = _Service()..manualRunHasData = false;
+    final controller = ControllerStock(service)..loading = false;
+    addTearDown(controller.dispose);
+    final selectedBefore = controller.selectedDate;
+
+    expect(await controller.runSelectedDate(_day), StockDateRunResult.noData);
+    expect(controller.selectedDate, selectedBefore);
+    expect(service.historyCalls, 0);
+    expect(service.rawCalls, 0);
+  });
+
   test(
     'forced date load during an active read queues one fresh read',
     () async {

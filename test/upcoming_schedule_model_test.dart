@@ -112,7 +112,7 @@ void main() {
       }
     },
   );
-  for (final day in [19, 20, 21]) {
+  for (final day in [16, 17, 18, 19, 20, 21]) {
     test('day $day remains inside the three-day dashboard window', () {
       final added = event('new', day: day);
       expect(
@@ -124,7 +124,7 @@ void main() {
 
   test('past outside-window missing-date and completed events are ignored', () {
     for (final row in [
-      event('past', day: 18),
+      event('past', day: 15),
       event('future', day: 22),
       event('done', completed: true),
       CalendarEvent(id: 'missing', name: ''),

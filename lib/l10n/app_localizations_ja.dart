@@ -9,6 +9,15 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get homeUnfinishedPastSchedules => '過去3日間の未完了の予定';
+
+  @override
+  String get stockRunSelectedDate => '選択した日を処理';
+
+  @override
+  String get stockRunSelectedDateHint => '選択した日だけを処理します。他の日付のデータは削除されません。';
+
+  @override
   String get noMoreData => 'これ以上のデータはありません';
 
   @override
